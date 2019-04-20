@@ -1,29 +1,3 @@
-/*
- * The MIT License (MIT)
- *
- * Copyright (c) 2019 by Vjacheslav Brichkovskiy (original author)
- *
- * Permission is hereby granted, free of charge, to any person
- * obtaining a copy of this software and associated documentation
- * files (the "Software"), to deal in the Software without
- * restriction, including without limitation the rights to use,
- * copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following
- * conditions:
- *
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
- * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
- * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
- * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
- * OTHER DEALINGS IN THE SOFTWARE.
- */
 
 Definitions.
 
@@ -31,7 +5,7 @@ OpenMultilineComment  = \/\*
 CloseMultiLineComment = \*\/
 SingleLineComment     = \/\/
 
-RegularExpressionLiteral = /(?:)/
+RegularExpressionLiteral = /()/
 
 OpenBracket = \[
 CloseBracket = \]
@@ -40,38 +14,38 @@ CloseParen = \)
 OpenBrace = \{
 CloseBrace = \}
 Semicolon = ;
-Comma = ,
-Assign = =
+Comma = \,
+Assign = \=
 QuestionMark = \?
-Colon = :
-Ellipsis = ...
-Dot = .
+Colon = \:
+Ellipsis = \.\.\.
+Dot = \.
 PlusPlus = \+\+
-MinusMinus = --
+MinusMinus = \--
 Plus = \+
-Minus = -
-BitNot = ~
-Not = !
+Minus = \-
+BitNot = \~
+Not = \!
 Multiply = \*
-Divide = /
-Modulus = %
-RightShiftArithmetic = >>
-LeftShiftArithmetic = <<
-RightShiftLogical = >>>
-LessThan = <
-MoreThan = >
-LessThanEquals = <=
-GreaterThanEquals = >=
-Equals = ==
-NotEquals = !=
-IdentityEquals = ===
-IdentityNotEquals = !==
+Divide = \/
+Modulus = \%
+RightShiftArithmetic = \>>
+LeftShiftArithmetic = \<<
+RightShiftLogical = \>>>
+LessThan = \<
+MoreThan = \>
+LessThanEquals = \<=
+GreaterThanEquals = \>=
+Equals = \==
+NotEquals = \!=
+IdentityEquals = \===
+IdentityNotEquals = \!==
 BitAnd = &
 BitXOr = \^
 BitOr = \|
 And = &&
 Or = \|\|
-MultiplyAssign = *=
+MultiplyAssign = \*=
 DivideAssign = \/=
 ModulusAssign = %=
 PlusAssign = \+=
@@ -83,6 +57,13 @@ BitAndAssign = &=
 BitXOrAssign = \^=
 BitOrAssign = \|=
 Arrow = =>
+
+NonPrintableCharacters =  [\s\t\f\r\n\e\v]+
+
+HtmlComment = <\!--.*?-->
+CDataComment = <\!\[CDATA\[.*?\]\]>
+
+UnexpectedCharacter = .
 
 Rules.
 
@@ -143,8 +124,17 @@ Rules.
 {BitOrAssign} : operator('|=', TokenLine).
 {Arrow} : operator('=>', TokenLine).
 
+{HtmlComment} : skip().
+{CDataComment} : skip().
+
+{NonPrintableCharacters} : skip().
+
+{UnexpectedCharacter} : skip().
+
 Erlang code.
 
 operator(ID, TokenLine) -> {token, {ID, TokenLine}}.
 
 operator(ID, TokenLine, TokenChars) -> {token, {ID, TokenLine, TokenChars}}.
+
+skip() -> skip_token.
