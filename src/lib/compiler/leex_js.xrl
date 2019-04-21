@@ -58,6 +58,12 @@ BitXOrAssign = \^=
 BitOrAssign = \|=
 Arrow = =>
 
+NullLiteral = null
+
+BooleanLiteral = true|false
+
+DecimalLiteral = [+-]?(0|[1-9]*)(\.[0-9]+)?([eE][+-][1-9]+)?
+
 NonPrintableCharacters =  [\s\t\f\r\n\e\v]+
 
 HtmlComment = <\!--.*?-->
@@ -123,6 +129,7 @@ Rules.
 {BitXOrAssign} : operator('^=', TokenLine).
 {BitOrAssign} : operator('|=', TokenLine).
 {Arrow} : operator('=>', TokenLine).
+
 
 {HtmlComment} : skip().
 {CDataComment} : skip().
