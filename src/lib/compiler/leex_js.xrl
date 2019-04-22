@@ -64,6 +64,10 @@ BooleanLiteral = true|false
 
 DecimalLiteral = [+-]?(0|[1-9]*)(\.[0-9]+)?([eE][+-][1-9]+)?
 
+HexIntegerLiteral = 0[xX][0-9a-fA-F]+
+BinaryIntegerLiteral = 0[bB][0-1]+
+OctalIntegerLiteral = 0[oO][0-7]+
+
 NonPrintableCharacters =  [\s\t\f\r\n\e\v]+
 
 HtmlComment = <\!--.*?-->
