@@ -5,7 +5,7 @@ OpenMultilineComment  = \/\*
 CloseMultiLineComment = \*\/
 SingleLineComment     = \/\/
 
-RegularExpressionLiteral = /()/
+RegularExpressionLiteral = (\A\/|[^\d]\/)(\/\/|[^\/])+(\/\Z|\/[^\d])
 
 OpenBracket = \[
 CloseBracket = \]
@@ -62,7 +62,9 @@ NullLiteral = null
 
 BooleanLiteral = true|false
 
-DecimalLiteral = [+-]?(0|[1-9]*)(\.[0-9]+)?([eE][+-][1-9]+)?
+FloatLiteral = [+-]?(0|[1-9]+)(\.[0-9]+)([eE][+-][1-9]+)?
+
+IntegerLiteral = [+-]?(0|[1-9]+)
 
 HexIntegerLiteral = 0[xX][0-9a-fA-F]+
 BinaryIntegerLiteral = 0[bB][0-1]+
@@ -134,6 +136,13 @@ Rules.
 {BitOrAssign} : operator('|=', TokenLine).
 {Arrow} : operator('=>', TokenLine).
 
+{NullLiteral} : null(TokenLine).
+
+{BooleanLiteral} : bool(TokenChars, TokenLine).
+
+{FloatLiteral} : float(TokenChars, TokenLine).
+
+{IntegerLiteral} : integer(TokenChars, TokenLine).
 
 {HtmlComment} : skip().
 {CDataComment} : skip().
@@ -147,5 +156,15 @@ Erlang code.
 operator(ID, TokenLine) -> {token, {ID, TokenLine}}.
 
 operator(ID, TokenLine, TokenChars) -> {token, {ID, TokenLine, TokenChars}}.
+
+null(TokenLine) -> {token, {'null', TokenLine}}.
+
+bool("true", TokenLine) -> {token, {'true', TokenLine}};
+bool("false", TokenLine) -> {token, {'false', TokenLine}}.
+
+float(TokenChars, TokenLine) -> {token, {erlang:list_to_float(TokenChars), TokenLine}}.
+
+integer(TokenChars, TokenLine) -> {token, {erlang:list_to_integer(TokenChars), TokenLine}}.
+
 
 skip() -> skip_token.
