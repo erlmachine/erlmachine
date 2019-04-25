@@ -144,6 +144,10 @@ Rules.
 
 {IntegerLiteral} : integer(TokenChars, TokenLine).
 
+{HexIntegerLiteral} : hexinteger(TokenChars, TokenLine).
+{BinaryIntegerLiteral} : binaryinteger(TokenChars, TokenLine).
+{OctalIntegerLiteral} : octalinteger(TokenChars, TokenLine).
+
 {HtmlComment} : skip().
 {CDataComment} : skip().
 
@@ -165,6 +169,10 @@ bool("false", TokenLine) -> {token, {'false', TokenLine}}.
 float(TokenChars, TokenLine) -> {token, {erlang:list_to_float(TokenChars), TokenLine}}.
 
 integer(TokenChars, TokenLine) -> {token, {erlang:list_to_integer(TokenChars), TokenLine}}.
+
+hexinteger([_, _|TokenChars], TokenLine) -> {token, {erlang:list_to_integer(TokenChars, 16), TokenLine}}.
+binaryinteger([_, _|TokenChars], TokenLine) -> {token, {erlang:list_to_integer(TokenChars, 2), TokenLine}}.
+octalinteger([_,_|TokenChars], TokenLine) -> {token, {erlang:list_to_integer(TokenChars, 8), TokenLine}}.
 
 
 skip() -> skip_token.
