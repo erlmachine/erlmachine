@@ -5,6 +5,7 @@ OpenMultilineComment  = \/\*
 CloseMultiLineComment = \*\/
 SingleLineComment     = \/\/
 
+%% Note
 RegularExpressionLiteral = (\A\/|[^\d]\/)(\/\/|[^\/])+(\/\Z|\/[^\d])
 
 OpenBracket = \[
@@ -65,6 +66,10 @@ BooleanLiteral = true|false
 FloatLiteral = [+-]?(0|[1-9]+)(\.[0-9]+)([eE][+-][1-9]+)?
 
 IntegerLiteral = [+-]?(0|[1-9]+)
+
+%% Note (Erlang does not support exponent notation at integer)
+
+ExponentIntegerLiteral = [+-]?(0|[1-9]+)([eE][+-][1-9]+)
 
 HexIntegerLiteral = 0[xX][0-9a-fA-F]+
 BinaryIntegerLiteral = 0[bB][0-1]+
