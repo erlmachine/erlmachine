@@ -5,9 +5,6 @@ OpenMultilineComment  = \/\*
 CloseMultiLineComment = \*\/
 SingleLineComment     = \/\/
 
-%% Note
-RegularExpressionLiteral = (\A\/|[^\d]\/)(\/\/|[^\/])+(\/\Z|\/[^\d])
-
 OpenBracket = \[
 CloseBracket = \]
 OpenParen = \(
@@ -28,7 +25,12 @@ Minus = \-
 BitNot = \~
 Not = \!
 Multiply = \*
-Divide = \/
+
+%% Note (To do carry out divide and regex operators on syntax level)
+%% 1. Do context analysis. What does is left? For regex only operators available, for divide only values or values returned operators
+%% 2. Does it is open regex slash? If is it, to do analysis for closing slash and flags (optionally)
+Slash = \/
+
 Modulus = \%
 RightShiftArithmetic = \>>
 LeftShiftArithmetic = \<<
@@ -63,13 +65,15 @@ NullLiteral = null
 
 BooleanLiteral = true|false
 
-FloatLiteral = [+-]?(0|[1-9]+)(\.[0-9]+)([eE][+-][1-9]+)?
+%% Note (To do carry out operators +/- on syntax level)
 
-IntegerLiteral = [+-]?(0|[1-9]+)
+FloatLiteral = (0|[1-9]+)(\.[0-9]+)([eE][+-][1-9]+)?
+
+IntegerLiteral = (0|[1-9]+)
 
 %% Note (Erlang does not support exponent notation at integer)
 
-ExponentIntegerLiteral = [+-]?(0|[1-9]+)([eE][+-][1-9]+)
+ExponentIntegerLiteral = (0|[1-9]+)([eE][+-][1-9]+)
 
 HexIntegerLiteral = 0[xX][0-9a-fA-F]+
 BinaryIntegerLiteral = 0[bB][0-1]+
@@ -87,8 +91,6 @@ Rules.
 {OpenMultilineComment} : operator('/*', TokenLine).
 {CloseMultiLineComment} : operator('*/', TokenLine).
 {SingleLineComment} : operator('//', TokenLine).
-
-{RegularExpressionLiteral} : operator('regexp', TokenLine, TokenChars).
 
 {OpenBracket} : operator('[', TokenLine).
 {CloseBracket} : operator(']', TokenLine).
@@ -110,7 +112,7 @@ Rules.
 {BitNot} : operator('~', TokenLine).
 {Not} : operator('!', TokenLine).
 {Multiply} : operator('*', TokenLine).
-{Divide} : operator('/', TokenLine).
+{Slash} : operator('/', TokenLine).
 {Modulus} : operator('%', TokenLine).
 {RightShiftArithmetic} : operator('>>', TokenLine).
 {LeftShiftArithmetic} : operator('<<', TokenLine).
@@ -162,22 +164,20 @@ Rules.
 
 Erlang code.
 
-operator(ID, TokenLine) -> {token, {ID, TokenLine}}.
+operator(ID, TokenLine) -> io:format("~nOperator: ~p~n",[ID]), {token, {ID, TokenLine}}.
 
-operator(ID, TokenLine, TokenChars) -> {token, {ID, TokenLine, TokenChars}}.
+null(TokenLine) -> io:format("~nnull~n"), {token, {'null', TokenLine}}.
 
-null(TokenLine) -> {token, {'null', TokenLine}}.
+bool("true", TokenLine) -> io:format("~ntrue~n"), {token, {'true', TokenLine}};
+bool("false", TokenLine) -> io:format("~nfalse~n"), {token, {'false', TokenLine}}.
 
-bool("true", TokenLine) -> {token, {'true', TokenLine}};
-bool("false", TokenLine) -> {token, {'false', TokenLine}}.
+float(TokenChars, TokenLine) -> io:format("~nFloat: ~p~n",[TokenChars]), {token, {erlang:list_to_float(TokenChars), TokenLine}}.
 
-float(TokenChars, TokenLine) -> {token, {erlang:list_to_float(TokenChars), TokenLine}}.
+integer(TokenChars, TokenLine) -> io:format("~nInteger: ~p~n",[TokenChars]), {token, {erlang:list_to_integer(TokenChars), TokenLine}}.
 
-integer(TokenChars, TokenLine) -> {token, {erlang:list_to_integer(TokenChars), TokenLine}}.
-
-hexinteger([_, _|TokenChars], TokenLine) -> {token, {erlang:list_to_integer(TokenChars, 16), TokenLine}}.
-binaryinteger([_, _|TokenChars], TokenLine) -> {token, {erlang:list_to_integer(TokenChars, 2), TokenLine}}.
-octalinteger([_,_|TokenChars], TokenLine) -> {token, {erlang:list_to_integer(TokenChars, 8), TokenLine}}.
+hexinteger([_, _|TokenChars], TokenLine) -> io:format("~nhexinteger: ~p~n",[TokenChars]), {token, {erlang:list_to_integer(TokenChars, 16), TokenLine}}.
+binaryinteger([_, _|TokenChars], TokenLine) -> io:format("~nbinaryinteger: ~p~n",[TokenChars]), {token, {erlang:list_to_integer(TokenChars, 2), TokenLine}}.
+octalinteger([_,_|TokenChars], TokenLine) -> io:format("~noctalinteger: ~p~n",[TokenChars]), {token, {erlang:list_to_integer(TokenChars, 8), TokenLine}}.
 
 
 skip() -> skip_token.
