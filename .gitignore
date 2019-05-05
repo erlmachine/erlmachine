@@ -1,0 +1,4 @@
+.erlang.mk/
+*.idea/
+*.iml
+deps/
