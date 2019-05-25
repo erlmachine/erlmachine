@@ -26,9 +26,10 @@ BitNot = \~
 Not = \!
 Multiply = \*
 
-%% Note (To do carry out divide and regex operators on syntax level)
-%% 1. Do context analysis. What does is left? For regex only operators available, for divide only values or values returned operators;
-%% 2. Does it is open regex slash? If is it, to do analysis for closing slash and flags (optionally);
+%% Note (To do carry out "divide" and "regex" operators on syntax analysing level)
+%% 1. Do context analysis. What does is left? For regex only operators in left side available, for divide only values or values returned operators available;
+%% 2. Is it open regex slash? If it's, to do analysing for closing slash (flags are optionally);
+
 Slash = \/
 
 Modulus = \%
