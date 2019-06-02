@@ -7,5 +7,4 @@
 start(_Type, _Args) ->
 	erlmachine_sup:start_link().
 
-stop(_State) ->
-	ok.
+stop(_State) ->	ok.

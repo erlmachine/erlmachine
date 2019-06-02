@@ -26,9 +26,10 @@ BitNot = \~
 Not = \!
 Multiply = \*
 
-%% Note (To do carry out "divide" and "regex" operators on syntax analysing level)
-%% 1. Do context analysis. What does is left? For regex only operators in left side available, for divide only values or values returned operators available;
-%% 2. Is it open regex slash? If it's, to do analysing for closing slash (flags are optionally);
+%% Note (To do for carry out "divide" and "regex" operators on a syntax analysing level)
+%% 1. Do context analysis. Wha
+t is at left? For regex only operators at left side available, for divide - only the values or the returned values from operators available;
+%% 2. Is open regex slash? If yes, to do analyse for closing slash (flags are option);
 
 Slash = \/
 
@@ -66,7 +67,7 @@ NullLiteral = null
 
 BooleanLiteral = true|false
 
-%% Note (To do carry out operators +/- on syntax level)
+%% Note (To do for carry out operators +/- on syntax level)
 
 FloatLiteral = (0|[1-9]+)(\.[0-9]+)([eE][+-][1-9]+)?
 
