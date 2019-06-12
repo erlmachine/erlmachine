@@ -1,0 +1,2 @@
+-module(erlmachine_prototype).
+-export([]).
