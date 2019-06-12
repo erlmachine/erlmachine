@@ -1,2 +1,0 @@
--module(erlmachine_resource_tracker).
--export([]).

@@ -1,2 +1,0 @@
--module(erlmachine_prototype_tracker).
--export([]).
