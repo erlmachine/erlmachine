@@ -1,4 +1,4 @@
--module(erlmachine_compiler).
+-module(erlmachine_storage).
 -behaviour(gen_server).
 
 %% API.

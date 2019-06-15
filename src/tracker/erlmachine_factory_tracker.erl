@@ -1,0 +1,2 @@
+-module(erlmachine_factory_tracker).
+-export([]).

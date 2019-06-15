@@ -4,21 +4,23 @@
   {vsn,          "0.0.1"},
   {modules,      
    [
+    erlmachine_compiler,
+    erlmachine_leex_js,
     erlmachine, 
     erlmachine_app,
-    erlmachine_compiler,
     erlmachine_factory,
-    erlmachine_guid,
     erlmachine_scheduler,
+    erlmachine_storage,
     erlmachine_sup,
     erlmachine_tracker,
-    erlmachine_leex_js,
-    erlmachine_assembly_line,
+    erlmachine_assembly,
+    erlmachine_guid,
     erlmachine_prototype,
-    erlmachine_resource_commit,
-    erlmachine_time_line,
-    erlmachine_prototype_tracker,
-    erlmachine_resource_tracker
+    erlmachine_warehouse,
+    erlmachine_commit,
+    erlmachine_commit_tracker,
+    erlmachine_factory_tracker,
+    erlmachine_prototype_tracker
    ]},
   {maxP,         infinity},
   {maxT,         infinity},
@@ -27,5 +29,11 @@
   {applications, []},
   {env,          [{trace, [erlmachine_leex_js]}]},
   {application_starter,[erlmachine_app, [{fingerprint, "Xzk0AV5YD7Tvvro0l69OtQ=="}]]}}
-  {start_phases, []},
+  {start_phases, 
+   [
+    {erlmachine_storage, []},
+    {erlmachine_factory, []},
+    {erlmachine_scheduler, []},
+    {erlmachine_tracker, []}
+   ]},
   {runtime_dependencies, []}]}.
