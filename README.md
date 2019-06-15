@@ -7,7 +7,7 @@ Languages are inside of machines (Javascript, Erlang - both compiled to BEAM);
 
 Machines registry are inside of ecosystem  network  (via SYN);
 
-An Each machine has its own ID (GUID);
+Each machine has its own ID (GUID);
 
 Machines allocator (via Poolboy);
 
