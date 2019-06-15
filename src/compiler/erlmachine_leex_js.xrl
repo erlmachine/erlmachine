@@ -27,8 +27,7 @@ Not = \!
 Multiply = \*
 
 %% Note (To do for carry out "divide" and "regex" operators on a syntax analysing level)
-%% 1. Do context analysis. Wha
-t is at left? For regex only operators at left side available, for divide - only the values or the returned values from operators available;
+%% 1. Do context analysis. What is at left? For regex only operators at left side available, for divide - only the values or the returned values from operators available;
 %% 2. Is open regex slash? If yes, to do analyse for closing slash (flags are option);
 
 Slash = \/
