@@ -14,6 +14,7 @@
     erlmachine_sup,
     erlmachine_tracker,
     erlmachine_assembly,
+    erlmachine_catalogue,
     erlmachine_guid,
     erlmachine_prototype,
     erlmachine_warehouse,

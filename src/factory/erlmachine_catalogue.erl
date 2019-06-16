@@ -1,0 +1,2 @@
+-module(erlmachine_catalogue).
+-export([]).
