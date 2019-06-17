@@ -3,6 +3,8 @@
 
 %% API.
 -export([start_link/0]).
+-export([start_tracking/1, stop_tracking/1]).
+-export([get_catalogue/0]).
 
 %% gen_server.
 -export([init/1]).
@@ -12,20 +14,36 @@
 -export([terminate/2]).
 -export([code_change/3]).
 
--record(state, {
-}).
+-callback tracking_id(Packakge::map()) -> ID::binary().
+-callback tracking_info(Package::map()) -> Info::binary().
 
--callback start_tracking() -> ok.
--callback stamp() -> Stamp::map().
--callback tracking_number(Packakge::map()) -> map().
--callback stop_tracking() -> ok.
+-optional_callbacks([tracking_info/1]).
+
 %% API.
+
+-record('tracking.start', {package :: map()}).
+-record('tracking.stop', {package :: map()}).
+-record('tracking.catalogue', {}).
 
 -spec start_link() -> {ok, pid()}.
 start_link() ->
 	gen_server:start_link(?MODULE, [], []).
 
+-spec start_tracking(Package::map()) -> {ok, ID::binary()} | {error, Reason::term()}.
+start_tracking(Package) ->
+    gen_server:call(?MODULE, #'tracking.start'{package = Package}).
+
+-spec stop_tracking(Package::map()) -> ok | {error, Reason::term()}.
+stop_tracking(Package) ->
+    gen_server:call(?MODULE, #'tracking.stop'{package = Package}).
+
+-spec get_catalogue() -> {ok, List::list()} | {error, Reason::term()}.
+get_catalogue() ->
+    gen_server:call(?MODULE, #'tracking.catalogue'{}).
+
 %% gen_server.
+
+-record(state, {catalogue = #{} :: map()}).
 
 init([]) ->
 	{ok, #state{}}.
