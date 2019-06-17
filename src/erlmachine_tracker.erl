@@ -15,6 +15,9 @@
 -record(state, {
 }).
 
+-callback stamp() -> Stamp::map().
+-callback tracking_number(Packakge::map()) -> map().
+
 %% API.
 
 -spec start_link() -> {ok, pid()}.
