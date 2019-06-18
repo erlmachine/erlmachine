@@ -3,8 +3,8 @@
 
 %% API.
 -export([start_link/0]).
--export([start_tracking/1, stop_tracking/1]).
--export([get_catalogue/0]).
+-export([start_tracking/1, track/1, stop_tracking/1]).
+-export([catalogue/0]).
 
 %% gen_server.
 -export([init/1]).
@@ -21,32 +21,46 @@
 
 %% API.
 
--record('tracking.start', {package :: map()}).
--record('tracking.stop', {package :: map()}).
--record('tracking.catalogue', {}).
+-record('start', {package :: map()}).
+-record('stop', {package :: map()}).
+-record('catalogue', {filter = <<"*">> :: binary()}).
+-record('track', {package :: map()}).
 
 -spec start_link() -> {ok, pid()}.
 start_link() ->
-	gen_server:start_link(?MODULE, [], []).
+    EmptyCatalog = #{},
+    start_link(EmptyCatalog).
+
+-spec start_link(Catalog::map()) -> {ok, pid()}.
+start_link(Catalog) ->
+    gen_server:start_link({local, ?MODULE}, ?MODULE, Catalog, []).
 
 -spec start_tracking(Package::map()) -> {ok, ID::binary()} | {error, Reason::term()}.
 start_tracking(Package) ->
-    gen_server:call(?MODULE, #'tracking.start'{package = Package}).
+    gen_server:call(?MODULE, #'start'{package = Package}).
 
--spec stop_tracking(Package::map()) -> ok | {error, Reason::term()}.
+-spec stop_tracking(Package::map()) -> {ok, ID::binary()} | {error, Reason::term()}.
 stop_tracking(Package) ->
-    gen_server:call(?MODULE, #'tracking.stop'{package = Package}).
+    gen_server:call(?MODULE, #'stop'{package = Package}).
 
--spec get_catalogue() -> {ok, List::list()} | {error, Reason::term()}.
-get_catalogue() ->
-    gen_server:call(?MODULE, #'tracking.catalogue'{}).
+-spec catalogue() -> {ok, List::list()} | {error, Reason::term()}.
+catalogue() ->
+    catalogue(<<"*">>).
+
+-spec catalogue(Filter::binary()) -> {ok, List::list()} | {error, Reason::term()}.
+catalogue(Filter) ->
+    gen_server:call(?MODULE, #'catalogue'{filter = Filter}).
+
+-spec track(Package::map()) -> {ok, ID::binary()} | {error, Reason::term()}.
+track(Package) ->
+     gen_server:call(?MODULE, #'track'{package = Package}).
 
 %% gen_server.
 
 -record(state, {catalogue = #{} :: map()}).
 
-init([]) ->
-	{ok, #state{}}.
+init(Catalogue) ->
+	{ok, #state{catalogue = Catalogue}}.
 
 handle_call(_Request, _From, State) ->
 	{reply, ignored, State}.
