@@ -44,8 +44,8 @@ catalogue() ->
 catalogue(Filter) ->
     gen_server:call(?MODULE, #'catalogue'{filter = Filter}).
 
--spec trace(Package::map(), TrackingNumber::binary()) -> TrackingNumber::binary().
-trace(Package, TrackingNumber) ->
+-spec trace(TrackingNumber::binary(), Package::map()) -> TrackingNumber::binary().
+trace(TrackingNumber, Package) ->
      gen_server:call(?MODULE, #'trace'{package = Package, tracking_number = TrackingNumber}).
 
 %% gen_server.
