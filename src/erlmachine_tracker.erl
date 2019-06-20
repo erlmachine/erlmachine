@@ -3,7 +3,7 @@
 
 %% API.
 -export([start_link/0]).
--export([start_tracking/2, track/1, stop_tracking/1]).
+-export([tracking_number/2, trace/2]).
 -export([catalogue/0]).
 
 %% gen_server.
@@ -15,14 +15,10 @@
 -export([code_change/3]).
 
 -callback tracking_id(Packakge::map()) -> ID::binary().
--callback tracking_info(Package::map()) -> Info::binary().
 
 %% API.
 
--record('start', {tracker :: atom(), package :: map(), id :: binary(), number :: binary(), info :: binary()}).
--record('stop', {package :: map(), number :: binary()}).
--record('track', {package :: map(), number :: binary()}).
-
+-record('trace', {package :: map(), tracking_number :: binary()}).
 -record('catalogue', {filter = <<"*">> :: binary()}).
 
 -spec start_link() -> {ok, pid()}.
@@ -34,18 +30,11 @@ start_link() ->
 start_link(Catalog) ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, Catalog, []).
 
--spec start_tracking(Tracker::atom(), Package::map()) -> Number::binary().
-start_tracking(Tracker, Package) ->
+-spec tracking_number(Tracker::atom(), Package::map()) -> Number::binary().
+tracking_number(Tracker, Package) ->
     ID = Tracker:tracking_id(Package), %% TODO implement a composition with GUID
     GUID = <<"GUID">>, %% TODO 
-    Number = <<ID/binary, ".", GUID/binary>>, 
-    Info = Tracker:tracking_info(Package),
-    erlang:send(?MODULE, #'start'{tracker = Tracker, id = ID, package = Package, number = Number, info = Info}), 
-    Number.
-
--spec stop_tracking(Package::map()) -> {ok, ID::binary()} | {error, Reason::term()}.
-stop_tracking(Package) ->
-    gen_server:call(?MODULE, #'stop'{package = Package}).
+    <<ID/binary, ".", GUID/binary>>.
 
 -spec catalogue() -> {ok, List::list()} | {error, Reason::term()}.
 catalogue() ->
@@ -55,9 +44,9 @@ catalogue() ->
 catalogue(Filter) ->
     gen_server:call(?MODULE, #'catalogue'{filter = Filter}).
 
--spec track(Package::map()) -> {ok, ID::binary()} | {error, Reason::term()}.
-track(Package) ->
-     gen_server:call(?MODULE, #'track'{package = Package}).
+-spec trace(Package::map(), TrackingNumber::binary()) -> TrackingNumber::binary().
+trace(Package, TrackingNumber) ->
+     gen_server:call(?MODULE, #'trace'{package = Package, tracking_number = TrackingNumber}).
 
 %% gen_server.
 
