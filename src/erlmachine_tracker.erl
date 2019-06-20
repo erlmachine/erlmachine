@@ -3,7 +3,7 @@
 
 %% API.
 -export([start_link/0]).
--export([start_tracking/1, track/1, stop_tracking/1]).
+-export([start_tracking/2, track/1, stop_tracking/1]).
 -export([catalogue/0]).
 
 %% gen_server.
@@ -17,14 +17,13 @@
 -callback tracking_id(Packakge::map()) -> ID::binary().
 -callback tracking_info(Package::map()) -> Info::binary().
 
--optional_callbacks([tracking_info/1]).
-
 %% API.
 
--record('start', {package :: map()}).
--record('stop', {package :: map()}).
+-record('start', {tracker :: atom(), package :: map(), id :: binary(), number :: binary(), info :: binary()}).
+-record('stop', {package :: map(), number :: binary()}).
+-record('track', {package :: map(), number :: binary()}).
+
 -record('catalogue', {filter = <<"*">> :: binary()}).
--record('track', {package :: map()}).
 
 -spec start_link() -> {ok, pid()}.
 start_link() ->
@@ -35,9 +34,14 @@ start_link() ->
 start_link(Catalog) ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, Catalog, []).
 
--spec start_tracking(Package::map()) -> {ok, ID::binary()} | {error, Reason::term()}.
-start_tracking(Package) ->
-    gen_server:call(?MODULE, #'start'{package = Package}).
+-spec start_tracking(Tracker::atom(), Package::map()) -> Number::binary().
+start_tracking(Tracker, Package) ->
+    ID = Tracker:tracking_id(Package), %% TODO implement a composition with GUID
+    GUID = <<"GUID">>, %% TODO 
+    Number = <<ID/binary, ".", GUID/binary>>, 
+    Info = Tracker:tracking_info(Package),
+    erlang:send(?MODULE, #'start'{tracker = Tracker, id = ID, package = Package, number = Number, info = Info}), 
+    Number.
 
 -spec stop_tracking(Package::map()) -> {ok, ID::binary()} | {error, Reason::term()}.
 stop_tracking(Package) ->
