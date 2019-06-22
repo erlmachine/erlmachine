@@ -28,13 +28,7 @@
   {registered,   []},
   {included_applications, []},
   {applications, []},
-  {env,          [{trace, [erlmachine_leex_js]}]},
-  {application_starter,[erlmachine_app, [{fingerprint, "Xzk0AV5YD7Tvvro0l69OtQ=="}]]}}
-  {start_phases, 
-   [
-    {erlmachine_storage, []},
-    {erlmachine_factory, []},
-    {erlmachine_scheduler, []},
-    {erlmachine_tracker, []}
-   ]},
+  {env,          [{plugins, [erlmachine_admin]}]},
+  {application_starter,[erlmachine_app, [{fingerprint, "Xzk0AV5YD7Tvvro0l69OtQ=="}, {name, "spaceinterstellarspace@gmail.com"}]]}}
+  {start_phases, [{erlmachine_filesystem, []}],
   {runtime_dependencies, []}]}.
