@@ -13,7 +13,7 @@ Machines allocator (via Poolboy);
 
 Cowboy used as a machine state engine and driven by RESTfull design (via HTTP);
 
-We improved a much funny concept about engines and gears. Gears are main building elements of an engine. An engine is one of the most important  parts of a machine itself.  
+We improved a much funny concept about engines and gears. As the result an our machine consists basically of gears and engines. Gears are main building elements of an engine. An engine is one of the most important parts of a machine itself.  
 
 All modules which don't represent running parts of machine must be named with a convenient part “gear_”. There are just tool modules.
 Otherwise all running processes and its respective implementations must be named with a convenient part “engine_”. 
