@@ -1,0 +1,2 @@
+-module(tool_sample).
+-export([]).
