@@ -8,7 +8,7 @@
   {registered,   []},
   {included_applications, []},
   {applications, []},
-  {env,          [{plugins, [erlmachine_admin]}]},
-  {application_starter,[erlmachine_app, [{fingerprint, "Xzk0AV5YD7Tvvro0l69OtQ=="}, {id, "spaceinterstellarspace@gmail.com"}]]}}
-  {start_phases, [{erlmachine_catalog, []}, {erlmachine_factory, []}, {erlmachine_filesystem, []}],
+  {env,          [{id, "spaceinterstellarspace@gmail.com"}]},
+  {application_starter,[erlmachine_app, [{fingerprint, "Xzk0AV5YD7Tvvro0l69OtQ=="}]]}}
+  {start_phases, [{erlmachine_catalog, []}]},
   {runtime_dependencies, []}]}.
