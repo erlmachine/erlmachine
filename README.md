@@ -1,13 +1,13 @@
-# erlmachine
+# Erlmachine
 
 Erlmachine - is an application level virtual machine based on Erlang/OTP. It provides a real-time allocation and allows to control hundreds, thousands low cost resource consuming and isolated code engines. You can set a wide range of rules, permissions, allocated resources (processor, memory, network, application data etc.). 
 Erlmachine is used as high load, capacity emulation testing framework and also as an external programmable API engine.
 
 Short owerview:
 
-1. Languages are inside of machines (Javascript, Erlang - both compiled to BEAM);  
+1. Languages of the machine (Javascript, Erlang - both compiled to BEAM);  
 
-2. Machines registry are inside of ecosystem  network  (via SYN);
+2. Machine's registry are inside of ecosystem network (via SYN);
 
 3. Each machine can have its own domain name inside a cluster and tagged by the unique serial number;
 
