@@ -8,7 +8,7 @@
   {registered,   []},
   {included_applications, []},
   {applications, []},
-  {env,          [{id, "spaceinterstellarspace@gmail.com"}]},
-  {application_starter,[erlmachine_app, [{fingerprint, "Xzk0AV5YD7Tvvro0l69OtQ=="}]]}}
+  {env,          [{email, "spaceinterstellarspace@gmail.com"}, {name, "Skynet"}]},
+  {application_starter,[erlmachine_app, [{signature, "Xzk0AV5YD7Tvvro0l69OtQ=="}]]}}
   {start_phases, [{erlmachine_catalog, []}]},
   {runtime_dependencies, []}]}.

@@ -1,4 +1,4 @@
--module(erlmachine_scheduler).
+-module(erlmachine_assembly).
 -behaviour(gen_server).
 
 %% API.
