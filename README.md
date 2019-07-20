@@ -18,7 +18,7 @@ Short owerview:
 6. Cowboy used as a machine state engine and driven by RESTfull design (via HTTP);
 
 
-We improved a much funny concept about tools, gears, gearboxes and transmission as lead term which corresponding to your system design itself. As the result the erlmachine project is consists basically of tools and gears which can be used in your top level assembly parts - gearboxes. This is our main vocabulary around the erlmachine project. 
+We improved a much funny concept about shafts, clutches, gears, gearboxes and transmission as lead term which corresponding to your system design itself. As the result the erlmachine project is consists basically of tools and gears which can be used in your top level assembly parts - gearboxes. This is our main vocabulary around the erlmachine project. 
 
 Tool is just an api module which can be reused as a library.
 
