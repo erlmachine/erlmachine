@@ -1,4 +1,5 @@
 -module(erlmachine_tracker).
+
 -behaviour(gen_server).
 -behaviour(erlmachine_catalogue).
 -behaviour(erlmachine_transmission).
@@ -6,7 +7,8 @@
 %% API.
 -export([start_link/0]).
 -export([tracking_number/2, trace/2]).
--export([directory/0, directory/3]).
+
+%% Callbacks
 
 %% gen_server.
 -export([init/1]).
@@ -16,12 +18,16 @@
 -export([terminate/2]).
 -export([code_change/3]).
 
+%% erlmachine_catalogue
+-export([directory/0, directory/3]).
+
+
 -callback tracking_id(Packakge::map()) -> ID::binary().
 
 %% API.
 
 -record('trace', {package :: map(), tracking_number :: binary()}).
--record('directory', {pattern = <<"*">> :: binary(), user = <<"quest">> :: binary(), options :: list()}).
+-record('directory', {path :: binary(), user :: user(), options :: list()}).
 
 -spec start_link() -> {ok, pid()}.
 start_link() ->
@@ -38,15 +44,17 @@ tracking_number(Tracker, Package) ->
     GUID = <<"GUID">>, %% TODO 
     <<ID/binary, ".", GUID/binary>>.
 
--spec directory() -> {ok, Files::list()} | {error, Reason::term()}.
-directory() ->
-    erlang:send(?MODULE, #'directory'{}),
-    %% TODO execute the direct function call here
-    [].
+-spec root(Path::binary(), User::user()) -> {ok, Files::list()} | {error, Reason::term()}.
+root(Path, User) ->
+    root(Path, User, []).
 
--spec directory(Pattern::binary(), User::binary(), Options::list()) -> {ok, Files::list()} | {error, Reason::term()}.
-directory(Pattern, User, Options) ->
-    erlang:send(?MODULE, #'directory'{filter = Filter, user = User, options = Options}),
+-spec home(Path::binary(), User::user()) -> {ok, Files::list() | {error, Reason::term()}}.
+home(Path, User) ->
+    ok. %% TODO 
+
+-spec directory(Path::binary(), User::uesr(), Options::list()) -> {ok, Files::list()} | {error, Reason::term()}.
+directory(Path, User, Options) ->
+    erlang:send(?MODULE, #'directory'{path = Path, user = User, options = Options}),
     %% TODO execute the direct function call here
     [].
 
