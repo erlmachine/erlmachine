@@ -22,7 +22,7 @@
 -export([directory/0, directory/3]).
 
 
--callback tracking_id(Packakge::map()) -> ID::binary().
+-callback tag(Packakge::term()) -> ID::binary().
 
 %% API.
 
