@@ -1,3 +1,8 @@
+
+<p align="center">
+  <img src="http://www.tapedeck.org/400/SHAPE%20C90_MCiPjH_121006-thumb.jpg" width="350" title="Logo">
+</p>
+
 # Erlmachine
 
 Erlmachine - is an application level virtual machine based on Erlang/OTP. It provides a real-time allocation and allows to control hundreds, thousands low cost resource consuming and isolated code engines. You can set a wide range of rules, permissions, allocated resources (processor, memory, network, application data etc.). 
