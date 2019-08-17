@@ -44,16 +44,8 @@ tracking_number(Tracker, Package) ->
     GUID = <<"GUID">>, %% TODO 
     <<ID/binary, ".", GUID/binary>>.
 
--spec root(Path::binary(), User::user()) -> {ok, Files::list()} | {error, Reason::term()}.
-root(Path, User) ->
-    root(Path, User, []).
-
--spec home(Path::binary(), User::user()) -> {ok, Files::list() | {error, Reason::term()}}.
-home(Path, User) ->
-    ok. %% TODO 
-
--spec directory(Path::binary(), User::uesr(), Options::list()) -> {ok, Files::list()} | {error, Reason::term()}.
-directory(Path, User, Options) ->
+-spec folder(Path::binary(), User::user(), Options::list()) -> {ok, Files::list()} | {error, Reason::term()}.
+folder(Path, User, Options) ->
     erlang:send(?MODULE, #'directory'{path = Path, user = User, options = Options}),
     %% TODO execute the direct function call here
     [].
