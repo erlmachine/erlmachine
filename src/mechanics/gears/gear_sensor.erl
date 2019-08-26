@@ -1,4 +1,4 @@
--module(erlmachine_user).
+-module(gear_sensor).
 -behaviour(gen_server).
 
 %% API.
