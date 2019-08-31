@@ -1,5 +1,9 @@
 -module(shaft_tracker).
+
+-folder(<<"erlmachine/mechanics/shaft_tracker">>).
+
 -behaviour(gen_server).
+-behaviour(erlmachine_shaft).
 
 %% API.
 -export([start_link/0]).
@@ -20,6 +24,10 @@
 -spec start_link() -> {ok, pid()}.
 start_link() ->
 	gen_server:start_link(?MODULE, [], []).
+
+-spec shape() -> ok.
+shape() ->
+    ok.
 
 %% gen_server.
 

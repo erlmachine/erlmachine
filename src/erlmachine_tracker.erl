@@ -1,7 +1,8 @@
 -module(erlmachine_tracker).
 
+-folder(<<"erlmachine/erlmachine_tracker">>).
+
 -behaviour(gen_server).
--behaviour(erlmachine_catalogue).
 -behaviour(erlmachine_transmission).
 
 %% API.
@@ -18,7 +19,7 @@
 -export([terminate/2]).
 -export([code_change/3]).
 
-%% erlmachine_catalogue
+%% erlmachine_filesystem
 -export([directory/0, directory/3]).
 
 
@@ -27,7 +28,6 @@
 %% API.
 
 -record('trace', {package :: map(), tracking_number :: binary()}).
--record('directory', {path :: binary(), user :: user(), options :: list()}).
 
 -spec start_link() -> {ok, pid()}.
 start_link() ->
@@ -44,20 +44,9 @@ tracking_number(Tracker, Package) ->
     GUID = <<"GUID">>, %% TODO 
     <<ID/binary, ".", GUID/binary>>.
 
--spec folder(Path::binary(), User::user(), Options::list()) -> {ok, Files::list()} | {error, Reason::term()}.
-folder(Path, User, Options) ->
-    erlang:send(?MODULE, #'directory'{path = Path, user = User, options = Options}),
-    %% TODO execute the direct function call here
-    [].
-
 -spec trace(TrackingNumber::binary(), Package::map()) -> TrackingNumber::binary().
 trace(TrackingNumber, Package) ->
      erlang:send(?MODULE, #'trace'{package = Package, tracking_number = TrackingNumber}).
-
--spec shape() -> ok.
-shape() ->
-     ok.
-
 
 
 %% gen_server.
