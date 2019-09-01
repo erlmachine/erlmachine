@@ -6,7 +6,7 @@
 -behaviour(erlmachine_transmission).
 
 %% API.
--export([start_link/0]).
+-export([start_link/1]).
 -export([tracking_number/2, trace/2]).
 
 %% Callbacks
@@ -28,11 +28,6 @@
 %% API.
 
 -record('trace', {package :: map(), tracking_number :: binary()}).
-
--spec start_link() -> {ok, pid()}.
-start_link() ->
-    EmptyCatalog = #{},
-    start_link(EmptyCatalog).
 
 -spec start_link(Catalog::map()) -> {ok, pid()}.
 start_link(Catalog) ->

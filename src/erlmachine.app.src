@@ -8,7 +8,7 @@
   {registered,   []},
   {included_applications, []},
   {applications, []},
-  {env,          [{email, "spaceinterstellarspace@gmail.com"}, {name, "Skynet"}]},
-  {application_starter,[erlmachine_app, [{signature, "Xzk0AV5YD7Tvvro0l69OtQ=="}]]}}
-  {start_phases, [{erlmachine_catalog, []}]},
+  {env,          [{chief_engineers, ["spaceinterstellarspace@gmail.com"]}]},
+  {application_starter,[erlmachine_app, [{serial_number, "Xzk0AV5YD7Tvvro0l69OtQ=="}, {model, "Prototype of Skynet"}]]}}
+  {start_phases, [{erlmachine_filesystem, []}]},
   {runtime_dependencies, []}]}.
