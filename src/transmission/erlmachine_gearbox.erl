@@ -1,5 +1,9 @@
 -module(erlmachine_gearbox).
 -behaviour(gen_server).
+%% Gearbox is a component which responsible for reliable spatial placement for all processes;
+%% Gearbox is the place where shafts are fixed. 
+%% Gearbox is the main structural component
+%% All mechanisms need to inform gearbox about their presence
 
 %% API.
 -export([start_link/0]).
@@ -27,6 +31,7 @@ init([]) ->
 	{ok, #state{}}.
 
 handle_call(_Request, _From, State) ->
+    %% We need to provide REST API for management within all gearboxes
 	{reply, ignored, State}.
 
 handle_cast(_Msg, State) ->
