@@ -6,8 +6,8 @@
 -behaviour(erlmachine_transmission).
 
 %% API.
--export([start_link/1]).
--export([tracking_number/2, trace/2]).
+-export([start_link/0]).
+-export([tracking_number/1, tracking_number/2, trace/2]).
 
 %% Callbacks
 
@@ -29,29 +29,36 @@
 
 -record('trace', {package :: map(), tracking_number :: binary()}).
 
--spec start_link(Catalog::map()) -> {ok, pid()}.
-start_link(Catalog) ->
+-spec start_link() -> {ok, pid()}.
+start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, Catalog, []).
 
--spec tracking_number(Tracker::atom(), Package::map()) -> Number::binary().
+-spec tracking_number(Tracker::atom(), Package::term()) -> Number::binary().
 tracking_number(Tracker, Package) ->
-    ID = Tracker:tracking_id(Package), %% TODO implement a composition with GUID
+    Tag = Tracker:tag(Package),
+    tracking_number(Tag).
+
+-spec tracking_number(Tag::binary()) -> Number::binary().
+tracking_number(Tag) when is_binary(Tag) ->
     GUID = <<"GUID">>, %% TODO 
-    <<ID/binary, ".", GUID/binary>>.
+    <<Tag/binary, ".", GUID/binary>>.
 
 -spec trace(TrackingNumber::binary(), Package::map()) -> TrackingNumber::binary().
 trace(TrackingNumber, Package) ->
-     erlang:send(?MODULE, #'trace'{package = Package, tracking_number = TrackingNumber}).
+    erlmachine_transmission:rotate(?MODULE, #{TrackingNumber => Package}).
 
 
 %% gen_server.
 
--record(state, {catalogue = #{} :: map()}).
+-record(state, {transmission :: atom()}).
 
 init(Catalogue) ->
-	{ok, #state{catalogue = Catalogue}}.
+    {ok, #state{transmission = ?MODULE}}.
 
 handle_call(_Request, _From, State) ->
+    %% We need to provide REST API for management inside transmission
+    %% We need to incapsulate transmission management inside callbacks
+    %% We need to provide  measurements of transmission loading, etc..
 	{reply, ignored, State}.
 
 handle_cast(_Msg, State) ->
@@ -65,10 +72,6 @@ terminate(_Reason, _State) ->
 
 code_change(_OldVsn, State, _Extra) ->
 	{ok, State}.
-
-
-%% erlmachine_catalogue.
-
 
 %% erlmachine_transmission.
 
