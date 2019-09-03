@@ -19,19 +19,13 @@
 -export([terminate/2]).
 -export([code_change/3]).
 
-%% erlmachine_filesystem
--export([directory/0, directory/3]).
-
-
 -callback tag(Packakge::term()) -> ID::binary().
 
 %% API.
 
--record('trace', {package :: map(), tracking_number :: binary()}).
-
 -spec start_link() -> {ok, pid()}.
 start_link() ->
-    gen_server:start_link({local, ?MODULE}, ?MODULE, Catalog, []).
+    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 -spec tracking_number(Tracker::atom(), Package::term()) -> Number::binary().
 tracking_number(Tracker, Package) ->
@@ -43,16 +37,18 @@ tracking_number(Tag) when is_binary(Tag) ->
     GUID = <<"GUID">>, %% TODO 
     <<Tag/binary, ".", GUID/binary>>.
 
+-record('trace', {package :: map(), tracking_number :: binary()}).
+
 -spec trace(TrackingNumber::binary(), Package::map()) -> TrackingNumber::binary().
 trace(TrackingNumber, Package) ->
-    erlmachine_transmission:rotate(?MODULE, #{TrackingNumber => Package}).
+    erlmachine_transmission:load(?MODULE, #{TrackingNumber => Package}).
 
 
 %% gen_server.
 
 -record(state, {transmission :: atom()}).
 
-init(Catalogue) ->
+init([]) ->
     {ok, #state{transmission = ?MODULE}}.
 
 handle_call(_Request, _From, State) ->

@@ -3,7 +3,12 @@
 
 %% API.
 -export([start_link/0]).
+-export([load/2]).
 
+%% Transmission will be loaded directly by call where ID argument is provided. Transmission can have a lot of copies where each of them is marked by unique serial number
+
+%% Callbacks
+ 
 %% gen_server.
 -export([init/1]).
 -export([handle_call/3]).
@@ -19,7 +24,25 @@
 
 -spec start_link() -> {ok, pid()}.
 start_link() ->
-	gen_server:start_link(?MODULE, [], []).
+    gen_server:start_link({local, ?MODULE}, [], []).
+
+-spec load(ID::term(), Force::term()) -> Force.
+load(ID, Force) -> 
+    erlang:send(ID, Force).
+
+-spec output(ID::term(), Force::term()) -> Motion::term().
+output(ID, Force) ->
+    output(ID, Force, 5000).
+
+output(ID, Force, TimeOut) ->
+    erlang:send(ID, Force), %% TODO implement sender notify via envelop
+    receive
+        Motion ->
+            Motion
+    after
+        TimeOut ->
+            throw(timeout)
+    end.
 
 %% gen_server.
 

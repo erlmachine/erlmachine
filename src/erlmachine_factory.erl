@@ -4,6 +4,7 @@
 %% API.
 -export([start_link/0]).
 
+%% We assume that factory will also provide production of all components and their registration  by consistent way
 %% gen_server.
 -export([init/1]).
 -export([handle_call/3]).
