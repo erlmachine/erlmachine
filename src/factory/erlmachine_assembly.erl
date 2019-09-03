@@ -12,6 +12,8 @@
 -export([terminate/2]).
 -export([code_change/3]).
 
+%% The main purpose of this module is to instantiate proceses accordingly to design file;
+
 -record(state, {
 }).
 
