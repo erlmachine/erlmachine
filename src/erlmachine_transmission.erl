@@ -6,7 +6,7 @@
 -export([load/2]).
 
 %% Transmission will be loaded directly by call where ID argument is provided. Transmission can have a lot of copies where each of them is marked by unique serial number
-
+%% I guess erlmachine_factory will be able to provide convenient way for elements registration (for example {via, syn, <<"your process name">>}) and motion method which is applicable to that registry
 %% Callbacks
  
 %% gen_server.
