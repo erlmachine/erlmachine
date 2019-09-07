@@ -26,8 +26,8 @@
 start_link() ->
     gen_server:start_link({local, ?MODULE}, [], []).
 
--spec load(ID::term(), Force::term()) -> Force.
-load(ID, Force) -> 
+-spec rotate(ID::term(), Force::term()) -> Force.
+rotate(ID, Force) -> 
     erlang:send(ID, Force).
 
 -spec output(ID::term(), Force::term()) -> Motion::term().

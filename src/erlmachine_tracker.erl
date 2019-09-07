@@ -41,7 +41,7 @@ tracking_number(Tag) when is_binary(Tag) ->
 
 -spec trace(TrackingNumber::binary(), Package::map()) -> TrackingNumber::binary().
 trace(TrackingNumber, Package) ->
-    erlmachine_transmission:load(?MODULE, #{TrackingNumber => Package}).
+    erlmachine_transmission:rotate(?MODULE, #{TrackingNumber => Package}).
 
 
 %% gen_server.
