@@ -7,6 +7,7 @@
 
 %% Transmission will be loaded directly by call where ID argument is provided. Transmission can have a lot of copies where each of them is marked by unique serial number
 %% I guess erlmachine_factory will be able to provide convenient way for elements registration (for example {via, syn, <<"your process name">>}) and motion method which is applicable to that registry
+%% I guess each module can determinate motion
 %% Callbacks
  
 %% gen_server.
@@ -25,10 +26,6 @@
 -spec start_link() -> {ok, pid()}.
 start_link() ->
     gen_server:start_link({local, ?MODULE}, [], []).
-
--spec rotate(ID::term(), Force::term()) -> Force.
-rotate(ID, Force) -> 
-    erlang:send(ID, Force).
 
 -spec output(ID::term(), Force::term()) -> Motion::term().
 output(ID, Force) ->

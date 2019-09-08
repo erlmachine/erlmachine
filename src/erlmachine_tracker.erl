@@ -3,7 +3,7 @@
 -folder(<<"erlmachine/erlmachine_tracker">>).
 
 -behaviour(gen_server).
--behaviour(erlmachine_transmission).
+-behaviour(erlmachine_shaft).
 
 %% API.
 -export([start_link/0]).
@@ -37,19 +37,22 @@ tracking_number(Tag) when is_binary(Tag) ->
     GUID = <<"GUID">>, %% TODO 
     <<Tag/binary, ".", GUID/binary>>.
 
--record('trace', {package :: map(), tracking_number :: binary()}).
+-record(trace, {package :: map(), tracking_number :: binary()}).
 
 -spec trace(TrackingNumber::binary(), Package::map()) -> TrackingNumber::binary().
 trace(TrackingNumber, Package) ->
-    erlmachine_transmission:rotate(?MODULE, #{TrackingNumber => Package}).
+    erlang:send(?MODULE, #trace{tracking_number = TrackingNumber, package = Package}).
 
 
 %% gen_server.
 
--record(state, {transmission :: atom()}).
+-record(produce, {model :: atom()}).
+-record(state, {model = ?MODULE :: atom, serial_number :: binary()}).
 
 init([]) ->
-    {ok, #state{transmission = ?MODULE}}.
+    %% I guess model doesn't change without specialized behaviour supporting; 
+    Model = erlmachine_transmission:model(?MODULE),
+    {ok,  #state{model = Model}, {continue, #produce{model = Model}}}.
 
 handle_call(_Request, _From, State) ->
     %% We need to provide REST API for management inside transmission
@@ -60,14 +63,40 @@ handle_call(_Request, _From, State) ->
 handle_cast(_Msg, State) ->
 	{noreply, State}.
 
-handle_info(_Info, State) ->
-	{noreply, State}.
-
-terminate(_Reason, _State) ->
-	ok.
+handle_info(#trace{} = Command, #state{transmission = Transmission} = State) ->
+    #trace{tracking_number = TrackingNumber, package = Package} = Command,
+    erlmachine_transmission:rotate(Transmission, #{TrackingNumber => Package}),
+    {noreply, State};
+handle_info() ->
+    {noreply, State}.
 
 code_change(_OldVsn, State, _Extra) ->
 	{ok, State}.
+
+-record(check, {model :: atom()}).
+
+handle_continue(#produce{model = Model}, State) -> 
+    try
+        SerialNumber = erlmachine_factory:produce(?MODULE, Model), 
+        {noreply, State#state{serial_number = SerialNumber}, {continue, #check{model = Model}}};
+    catch E:R ->
+            {stop, {E, R}, State} 
+    end;
+handle_continue(#check{model = Model}, State) -> 
+    try
+        erlmachine_factory:check(SerialNumber),
+        {noreply, State};
+    catch E:R ->
+            {stop, {E, R}, State} 
+    end;
+handle_continue(_, State) -> 
+    {noreply, State}.
+
+terminate(_Reason, _State) ->
+    ok.
+
+format_status(Opt, [PDict, State]) -> 
+    [].
 
 %% erlmachine_transmission.
 

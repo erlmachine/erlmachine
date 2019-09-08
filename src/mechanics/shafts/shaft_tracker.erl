@@ -2,49 +2,18 @@
 
 -folder(<<"erlmachine/mechanics/shaft_tracker">>).
 
--behaviour(gen_server).
 -behaviour(erlmachine_shaft).
 
+%% At that point we need a prototype registration layer;
+%% So, instead of schema with gen_server:call which can be expanded by behaviours module we need to improve additional layer between them and provide registration abilities for that layer too;
+%% I guess synchronous call can be achived by the next way - asynchronous message is sended on input and output is checked for the result at the same time (with specified timeout); 
 %% API.
--export([start_link/0]).
+-export([rotate/2]).
 
-%% gen_server.
--export([init/1]).
--export([handle_call/3]).
--export([handle_cast/2]).
--export([handle_info/2]).
--export([terminate/2]).
--export([code_change/3]).
-
--record(state, {
-}).
-
-%% API.
-
--spec start_link() -> {ok, pid()}.
-start_link() ->
-	gen_server:start_link(?MODULE, [], []).
+-spec rotate(Force::term()) -> Motion::term() | Blockage::{error, Reason::term()}.
+rotate(Force) -> 
+    erlmachine_shaft:rotate(?MODULE, Force).
 
 -spec shape() -> ok.
 shape() ->
     ok.
-
-%% gen_server.
-
-init([]) ->
-	{ok, #state{}}.
-
-handle_call(_Request, _From, State) ->
-	{reply, ignored, State}.
-
-handle_cast(_Msg, State) ->
-	{noreply, State}.
-
-handle_info(_Info, State) ->
-	{noreply, State}.
-
-terminate(_Reason, _State) ->
-	ok.
-
-code_change(_OldVsn, State, _Extra) ->
-	{ok, State}.

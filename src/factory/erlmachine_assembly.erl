@@ -13,6 +13,7 @@
 -export([code_change/3]).
 
 %% The main purpose of this module is to instantiate proceses accordingly to design file;
+%% In this module will be provided incapsulation around building of independent parts and whole transmission as well; 
 -record(state, {
 }).
 
