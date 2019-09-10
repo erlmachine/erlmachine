@@ -1,5 +1,7 @@
 -module(shaft_base_prototype).
+
 -behaviour(gen_server).
+-behaviour(shaft_prototype).
 
 %% API.
 -export([start_link/0]).
@@ -12,14 +14,15 @@
 -export([terminate/2]).
 -export([code_change/3]).
 
--record(state, {
-}).
+-record(state, {}).
 
 %% API.
 
--spec start_link() -> {ok, pid()}.
-start_link() ->
+-spec mount() -> {ok, pid()}.
+mount() ->
 	gen_server:start_link(?MODULE, [], []).
+
+-spec load() -> 
 
 %% gen_server.
 

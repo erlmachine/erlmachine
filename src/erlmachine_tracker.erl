@@ -2,8 +2,9 @@
 
 -folder(<<"erlmachine/erlmachine_tracker">>).
 
+-motor([?MODULE]).
+
 -behaviour(gen_server).
--behaviour(erlmachine_shaft).
 
 %% API.
 -export([start_link/0]).

@@ -12,8 +12,13 @@
 -export([terminate/2]).
 -export([code_change/3]).
 
--record(state, {
-}).
+-record(state, {}).
+
+-callback ratio() -> float().
+
+-callback speed() -> integer().
+
+-callback load() -> integer().
 
 %% API.
 

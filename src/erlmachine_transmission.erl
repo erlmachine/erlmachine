@@ -8,6 +8,12 @@
 %% Transmission will be loaded directly by call where ID argument is provided. Transmission can have a lot of copies where each of them is marked by unique serial number
 %% I guess erlmachine_factory will be able to provide convenient way for elements registration (for example {via, syn, <<"your process name">>}) and motion method which is applicable to that registry
 %% I guess each module can determinate motion
+
+
+%% Gear trains with two gears[edit]
+%% The simplest example of a gear train has two gears. The "input gear" (also known as drive gear) transmits power to the "output gear" (also known as driven gear). The input gear will typically be connected to a power source, such as a motor or engine. In such an example, the output of torque and rotational speed from the output (driven) gear depend on the ratio of the dimensions of the two gears.
+
+
 %% Callbacks
  
 %% gen_server.
