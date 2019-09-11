@@ -19,14 +19,20 @@
 
 %% API.
 
+name() ->
+     {local, ?MODULE}.
+
 -spec install() -> {ok, pid()}.
 install() ->
     gen_server:start_link(?MODULE, [], []).
 
-start_repair() ->
+repair() ->
      ok.
 
-stop_repair() ->
+resume() ->
+     ok.
+
+pause() ->
      ok.
 
 -spec uninstall() -> ok.
