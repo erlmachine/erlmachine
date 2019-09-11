@@ -1,6 +1,7 @@
 -module(shaft_base_prototype).
 
 -behaviour(gen_server).
+-behaviour(erlmachine_assembly).
 -behaviour(shaft_prototype).
 
 %% API.
@@ -18,11 +19,19 @@
 
 %% API.
 
--spec mount() -> {ok, pid()}.
-mount() ->
-	gen_server:start_link(?MODULE, [], []).
+-spec install() -> {ok, pid()}.
+install() ->
+    gen_server:start_link(?MODULE, [], []).
 
--spec load() -> 
+start_repair() ->
+     ok.
+
+stop_repair() ->
+     ok.
+
+-spec uninstall() -> ok.
+uninstall(ServerRef) ->
+    gen_server:stop().
 
 %% gen_server.
 

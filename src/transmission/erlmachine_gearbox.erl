@@ -4,6 +4,7 @@
 %% Gearbox is the place where shafts, gears and clutches are fixed. 
 %% Gearbox is the main container component
 %% All mechanisms shell to provide the specialized callbacks to inform gearbox about their presence
+%% The gearbox is divided on so called stages (stage is a torgue between two independent gears);
 
 %% API.
 -export([start_link/0]).
