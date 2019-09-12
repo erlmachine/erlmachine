@@ -19,14 +19,21 @@
 
 %% API.
 
-name() ->
-     {local, ?MODULE}.
+name(SerialNumber) -> %% I guess registration method and serial number preparation can be provided on gearbox instantination;
+     {local, SerialNumber}.
 
 -spec install() -> {ok, pid()}.
-install() ->
-    gen_server:start_link(?MODULE, [], []).
+install(SerialNumber, DataSheet) ->
+    gen_server:start_link(SerialNumber, ?MODULE, DataSheet, []).
 
-repair() ->
+rotate(SerialNumber, Force) ->
+    erlang:send(SerialNumber, Force),
+    Force.
+
+output(SerialNumber, Force) ->
+    gen_server:call(SerialNumber, Force).
+
+update(SerialNumber) ->
      ok.
 
 resume() ->
@@ -36,8 +43,8 @@ pause() ->
      ok.
 
 -spec uninstall() -> ok.
-uninstall(ServerRef) ->
-    gen_server:stop().
+uninstall(SerialNumber) ->
+    gen_server:stop(SerialNumber).
 
 %% gen_server.
 
