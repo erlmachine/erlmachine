@@ -2,8 +2,8 @@
 
 -folder(<<"erlmachine/erlmachine_tracker">>).
 
--motor([?MODULE]).
-
+-rotate([?MODULE]).
+%%-output([?MODULE]). We can use as output  only the last element of branch inside topology cause prevention of blocking by sync calls
 -behaviour(gen_server).
 
 %% API.
@@ -66,7 +66,7 @@ handle_cast(_Msg, State) ->
 
 handle_info(#trace{} = Command, #state{transmission = Transmission} = State) ->
     #trace{tracking_number = TrackingNumber, package = Package} = Command,
-    erlmachine_transmission:rotate(Transmission, #{TrackingNumber => Package}),
+    erlmachine_transmission:rotate(Transmission, #{TrackingNumber => Package}), %% we need to find default input here
     {noreply, State};
 handle_info() ->
     {noreply, State}.

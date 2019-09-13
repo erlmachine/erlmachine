@@ -2,7 +2,7 @@
 
 -behaviour(gen_server).
 -behaviour(erlmachine_assembly).
--behaviour(shaft_prototype).
+-behaviour(shaft_protorype).
 
 %% API.
 -export([start_link/0]).
@@ -26,7 +26,13 @@ name(SerialNumber) -> %% I guess registration method and serial number preparati
 install(SerialNumber, DataSheet) ->
     gen_server:start_link(SerialNumber, ?MODULE, DataSheet, []).
 
-rotate(SerialNumber, Force) ->
+mount(SerialNumber, DataSheet) ->
+     ok.
+
+pause() ->
+    ok.
+
+rotate(SerialNumber, Force, Gears) ->
     erlang:send(SerialNumber, Force),
     Force.
 
@@ -36,10 +42,10 @@ output(SerialNumber, Force) ->
 update(SerialNumber) ->
      ok.
 
-resume() ->
-     ok.
+unmount(SerialNumber, ) ->
+    ok.
 
-pause() ->
+resume() ->
      ok.
 
 -spec uninstall() -> ok.
