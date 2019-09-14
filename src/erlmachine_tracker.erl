@@ -3,7 +3,7 @@
 -folder(<<"erlmachine/erlmachine_tracker">>).
 
 -rotate([?MODULE]).
-%%-output([?MODULE]). We can use as output  only the last element of branch inside topology cause prevention of blocking by sync calls
+%%-output([?MODULE]). We can use as output  only the last element of branch inside topology because prevention of blocking by sync calls
 -behaviour(gen_server).
 
 %% API.
@@ -47,13 +47,14 @@ trace(TrackingNumber, Package) ->
 
 %% gen_server.
 
--record(produce, {model :: atom()}).
--record(state, {model = ?MODULE :: atom, serial_number :: binary()}).
+-record(produce, {datasheet :: term()}).
+-record(state, {input :: atom(), serial_number :: binary()}).
 
 init([]) ->
     %% I guess model doesn't change without specialized behaviour supporting; 
-    Model = erlmachine_transmission:model(?MODULE),
-    {ok,  #state{model = Model}, {continue, #produce{model = Model}}}.
+    DataSheet = erlmachine_factory:model(?MODULE),
+    Input = erlmachine_transmission:input(DataSheet),
+    {ok,  #state{input = Input}, {continue, #produce{datasheet = DataSheet}}}.
 
 handle_call(_Request, _From, State) ->
     %% We need to provide REST API for management inside transmission
@@ -74,18 +75,19 @@ handle_info() ->
 code_change(_OldVsn, State, _Extra) ->
 	{ok, State}.
 
--record(check, {model :: atom()}).
+-record(accept, {criteria = [] :: list()}).
 
-handle_continue(#produce{model = Model}, State) -> 
+%% We consider Module as implementation point (like class) and serial number as instance - (like object); 
+handle_continue(#produce{datasheet = DataSheet}, State) -> 
     try
-        SerialNumber = erlmachine_factory:produce(?MODULE, Model), 
-        {noreply, State#state{serial_number = SerialNumber}, {continue, #check{model = Model}}};
+        SerialNumber = erlmachine_factory:produce(?MODULE, DataSheet), 
+        {noreply, State#state{serial_number = SerialNumber}, {continue, #accept{criteria = []}}};
     catch E:R ->
             {stop, {E, R}, State} 
     end;
-handle_continue(#check{model = Model}, State) -> 
+handle_continue(#accept{criteria = Criteria}, #state{serial_number = SerialNumber} = State) -> 
     try
-        erlmachine_factory:check(SerialNumber),
+        true = erlmachine_factory:accept(SerialNumber, Criteria),
         {noreply, State};
     catch E:R ->
             {stop, {E, R}, State} 
