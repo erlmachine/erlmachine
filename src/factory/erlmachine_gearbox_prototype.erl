@@ -1,2 +1,0 @@
--module(erlmachine_gearbox_prototype).
--export([]).

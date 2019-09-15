@@ -75,19 +75,20 @@ handle_info() ->
 code_change(_OldVsn, State, _Extra) ->
 	{ok, State}.
 
--record(accept, {criteria = [] :: list()}).
+-record(accept, {}).
 
 %% We consider Module as implementation point (like class) and serial number as instance - (like object); 
+%% We can support polymorphism by different ways - by overriding prototype or by changing topology itself;
 handle_continue(#produce{datasheet = DataSheet}, State) -> 
     try
         SerialNumber = erlmachine_factory:produce(?MODULE, DataSheet), 
-        {noreply, State#state{serial_number = SerialNumber}, {continue, #accept{criteria = []}}};
+        {noreply, State#state{serial_number = SerialNumber}, {continue, #accept{}}};
     catch E:R ->
             {stop, {E, R}, State} 
     end;
-handle_continue(#accept{criteria = Criteria}, #state{serial_number = SerialNumber} = State) -> 
+handle_continue(#accept{}, #state{serial_number = SerialNumber} = State) -> 
     try
-        true = erlmachine_factory:accept(SerialNumber, Criteria),
+        true = erlmachine_factory:accept(SerialNumber),
         {noreply, State};
     catch E:R ->
             {stop, {E, R}, State} 

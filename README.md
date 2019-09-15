@@ -6,7 +6,7 @@
 # Erlmachine
 
 Erlmachine - is an application level virtual machine based on Erlang/OTP. It provides a real-time allocation and allows to control hundreds, thousands low cost resource consuming and isolated code engines. You can set a wide range of rules, permissions, allocated resources (processor, memory, network, application data etc.). 
-Erlmachine is used as high load, capacity emulation testing framework and also as an external programmable API engine.
+Erlmachine is used as high load, capacity emulation testing framework and also as an external programmable API engine. 
 
 Short owerview:
 
@@ -34,4 +34,10 @@ Gearbox is a messaging system represented as a set of gears composed accordingly
 We call the mechanical topology inside the one erlmachine as the same for distributed case as transmission. As you know later transmission can be between disrtibuted machines too. What is transmission itself? It is the logiacal pathways between your gears inside gearboxes, between gearboxes inside an erlmachine or even - between distributed machines. This is representation of your own messaging sistem pattern at the same time.
 
 
-We are working on this, please wait for release
+The main development approach of erlmachine engineer is:
+
+1. Make system from well tested predefined components (prototypes). Composed with implemented behaviours these elements will be able to decrease codebase and provide reliability. You can write your own prototypes - all prototypes have the same interface, so abilities for prolymorphism are provided;
+2. Provide the abilities for acceptance test for each system part. System needs to be able on selftest and selfcheck;
+3. Take care about data source. You can write some portion of data on a cassete. You can reuse this cassette at any time and anywhere.  Like mock data for development or like load data on capacity testing, the spectrum is wide, really 
+
+We are working on, please wait..
