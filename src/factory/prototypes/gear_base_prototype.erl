@@ -30,12 +30,18 @@ mount(SerialNumber, DataSheet) ->
 pause() ->
     ok.
 
-rotate(SerialNumber, Force, Gears) ->
+rotate(SerialNumber, Force) ->
     erlang:send(SerialNumber, Force),
     Force.
 
-output(SerialNumber, Force) ->
-    gen_server:call(SerialNumber, Force).
+transmit(SerialNumber, Force, Adress) ->
+    
+%% Prototype is the same for requestor and smart proxy, delivery needs to be guaranty by transmission instead;
+%% Resnond part needs to provided in detail implementation;
+
+
+output(SerialNumber, Force, Adress) ->
+    erlang:send(SerialNumber, Force).
 
 update(SerialNumber) ->
     ok.

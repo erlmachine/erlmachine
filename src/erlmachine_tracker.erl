@@ -2,8 +2,7 @@
 
 -folder(<<"erlmachine/erlmachine_tracker">>).
 
--rotate([?MODULE]).
-%%-output([?MODULE]). We can use as output  only the last element of branch inside topology because prevention of blocking by sync calls
+-motor([?MODULE]).
 -behaviour(gen_server).
 
 %% API.
@@ -75,21 +74,12 @@ handle_info() ->
 code_change(_OldVsn, State, _Extra) ->
 	{ok, State}.
 
--record(accept, {}).
-
 %% We consider Module as implementation point (like class) and serial number as instance - (like object); 
 %% We can support polymorphism by different ways - by overriding prototype or by changing topology itself;
 handle_continue(#produce{datasheet = DataSheet}, State) -> 
     try
         SerialNumber = erlmachine_factory:produce(?MODULE, DataSheet), 
         {noreply, State#state{serial_number = SerialNumber}, {continue, #accept{}}};
-    catch E:R ->
-            {stop, {E, R}, State} 
-    end;
-handle_continue(#accept{}, #state{serial_number = SerialNumber} = State) -> 
-    try
-        true = erlmachine_factory:accept(SerialNumber),
-        {noreply, State};
     catch E:R ->
             {stop, {E, R}, State} 
     end;
