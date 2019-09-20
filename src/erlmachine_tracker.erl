@@ -3,6 +3,7 @@
 -folder(<<"erlmachine/erlmachine_tracker">>).
 
 -motor([?MODULE]).
+
 -behaviour(gen_server).
 
 %% API.
@@ -19,7 +20,7 @@
 -export([terminate/2]).
 -export([code_change/3]).
 
--callback tag(Packakge::term()) -> ID::binary().
+-callback tag(Packakge::term()) -> Tag::binary().
 
 %% API.
 

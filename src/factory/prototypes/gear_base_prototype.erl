@@ -1,4 +1,9 @@
 -module(gear_base_prototype).
+
+-folder(<<"erlmachine/factory/prototypes/gear_base_prototype">>).
+
+-behaviour(erlmachine_assembly).
+-bahaviour(erlmachine_tracker).
 -behaviour(gen_server).
 
 %% API.
@@ -12,60 +17,57 @@
 -export([terminate/2]).
 -export([code_change/3]).
 
--record(state, {
-}).
-
 %% API.
 
-name(SerialNumber) -> %% I guess registration method and serial number preparation can be provided on gearbox instantination;
-    {local, SerialNumber}.
+%% I guess factory will write to catalogue via catalogue behaviour;
+-spec tag(Package::map()) -> Tag::binary().
+tag(#{<<"model">> := Model}) ->
+    ID = atom_to_binary(Model, latin1),
+    ID.
 
--spec install() -> {ok, pid()}.
-install(SerialNumber, DataSheet) ->
-    gen_server:start_link(SerialNumber, ?MODULE, DataSheet, []).
+%% Model is an instance. Determined with serial number and built over prototype.
 
-mount(SerialNumber, DataSheet) ->
+id(SerialNumber) -> %% I guess registration method and serial number preparation can be provided on gearbox instantination by assymbly part;
+    ID = erlang:binary_to_atom(SerialNumber, latin1),
+    {local, ID}.
+
+-spec install(ID::atom(), Assembly::term()) -> {ok, pid()}.
+install(ID, Assembly) -> %% Datasheet corresponds to top level components, so at that place we work with assebly;
+    gen_server:start_link(ID, ?MODULE, Assembly, []).
+
+ratio() ->
     ok.
 
-pause() ->
-    ok.
+transmission() ->
+     ok.
 
-rotate(SerialNumber, Force) ->
+rotate(SerialNumber, Motion) ->
     erlang:send(SerialNumber, Force),
     Force.
 
 transmit(SerialNumber, Force, Adress) ->
     
 %% Prototype is the same for requestor and smart proxy, delivery needs to be guaranty by transmission instead;
-%% Resnond part needs to provided in detail implementation;
-
-
-output(SerialNumber, Force, Adress) ->
-    erlang:send(SerialNumber, Force).
-
-update(SerialNumber) ->
-    ok.
-
-unmount(SerialNumber, ) ->
-    ok.
-
-resume() ->
+%% R esnond part needs to provided in detail implementation;
+reassembly(SerialNumber) ->
     ok.
 
 -spec uninstall() -> ok.
 uninstall(SerialNumber) ->
     gen_server:stop(SerialNumber).
 
-%% API.
-
--spec start_link() -> {ok, pid()}.
-start_link() ->
-	gen_server:start_link(?MODULE, [], []).
+accept() ->
+     ok.
 
 %% gen_server.
 
-init([]) ->
-	{ok, #state{}}.
+%% From erlmachine_assembly we wait the specialized callback to erlmachine_gear with install/2
+init(Assembly::term()) ->
+    %% I guess tracking time will be filled by tracker itself;
+    Package = package(Assembly),
+    TrackingNumber = erlmachine_traker:tracking_number(?MODULE, Package),
+    erlmachine_traker:trace(TrackingNumber, #{install => Package}),
+    {ok, Assembly}.
 
 handle_call(_Request, _From, State) ->
 	{reply, ignored, State}.
@@ -76,8 +78,17 @@ handle_cast(_Msg, State) ->
 handle_info(_Info, State) ->
 	{noreply, State}.
 
-terminate(_Reason, _State) ->
-	ok.
+terminate(_Reason, Assembly) ->
+    Package = package(Assembly),
+    TrackingNumber = erlmachine_traker:tracking_number(?MODULE, Package),
+    erlmachine_traker:trace(TrackingNumber, #{uninstall => Package}),
+    ok.
 
 code_change(_OldVsn, State, _Extra) ->
 	{ok, State}.
+
+package(Assembly) ->
+    Model = erlmachine_assembly:model(Assembly),
+    SerialNumber = erlmachine_assembly:serial_number(Assembly),
+    Package = #{prototype => ?MODULE, model => Model, serial_number => SerialNumber},
+    Package.
