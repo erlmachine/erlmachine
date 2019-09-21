@@ -1,2 +1,0 @@
--module(clutch_sample).
--export([]).

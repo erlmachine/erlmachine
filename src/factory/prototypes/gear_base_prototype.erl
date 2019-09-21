@@ -17,11 +17,13 @@
 -export([terminate/2]).
 -export([code_change/3]).
 
--type assembly() :: erlmachine_assembly:assembly().
+-type assembly()::erlmachine_assembly:assembly().
 
--type success(Result) :: erlmachine_system:success(Result::term()).
--type failure(E, R) :: erlmachine_system:failure(E::term(), R::term()).
--type failure(E) ::  erlmachine_system:failure(E::term()).
+-type success(Result)::erlmachine_system:success(Result::term()).
+-type failure(E, R)::erlmachine_system:failure(E::term(), R::term()).
+-type failure(E)::erlmachine_system:failure(E::term()).
+
+-type timeout()::int() > 0|infinity.
 
 %% API.
 
@@ -33,16 +35,16 @@ tag(#{<<"model">> := Model}) ->
 
 %% Model is an instance. Determined with serial number and built over prototype.
 
-id(SerialNumber) -> %% I guess registration method and serial number preparation can be provided on gearbox instantination by assymbly part;
+id(SerialNumber) -> %% I guess serial number preparation can be provided on gearbox instantination by assembly;
     ID = erlang:binary_to_atom(SerialNumber, latin1),
     ID.
 
--spec install(ID::atom(), Assembly::assembly()) -> success(pid()) | ingnore | failure(E).
-install(ID, Assembly) -> %% Datasheet corresponds to the top level components, so at that place we want to work with assembly;
-    gen_server:start_link({local, ID}, ?MODULE, Assembly, []).
+-spec install(ID::atom(), Assembly::assembly(), Options::list()) -> success(pid()) | ingnore | failure(E).
+install(ID, Assembly, Options) -> %% Appropriate options can be provided by shaft or gearbox;
+    gen_server:start_link({local, ID}, ?MODULE, Assembly, Options).
 
-%% I think about ability to reflect the kind of switching - manually or automatically;
--spec switch(ID::atom(), Gears::list(gear())) -> success(Assembly::assembly()) | failure(E, R).
+%% I think about ability to reflect both kind of switching - manually or automatically;
+-spec switch(ID::atom(), Gears::list(gear()), Timeout::timeout()) -> success(Assembly::assembly()) | failure(E, R).
 switch() ->
     ok.
 
@@ -59,9 +61,9 @@ rotate(ID, Motion) ->
 transmit(ID, Motion) ->
     gen_server:call(ID, Force),
 
--spec uninstall() -> ok.
-uninstall(SerialNumber) ->
-    gen_server:stop(SerialNumber).
+-spec uninstall(ID::atom(), Reason::term(), Timeout::timeout()) -> ok.
+uninstall(ID, Reason, Timeout) ->
+    gen_server:stop(ID, Reason, Timeout).
 
 accept() -> %% TODO Acceptance criteria needs to be satisfied;
      ok.

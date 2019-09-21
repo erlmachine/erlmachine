@@ -14,17 +14,17 @@
 
 %% The main purpose of this module is to instantiate proceses accordingly to design file;
 %% In this module will be provided incapsulation around building of independent parts and whole transmission as well;
--type serial_number() :: erlmachine_serial_number::serial_number().
+-type serial_number()::erlmachine_serial_number::serial_number().
 
 -record (assembly, {
-                    serial_number :: serial_number(), %% We can get build info (ts etc..) by serial number from db;
-                    prototype :: prototype(), 
-                    model :: model(), 
-                    datasheet :: datasheet()
+                    serial_number::serial_number(), %% We can get build info (ts etc..) by serial number from db;
+                    prototype::prototype(), 
+                    model::model(), 
+                    datasheet::datasheet()
                    }
         ).
 
--export_type assembly() :: #assembly{}.
+-export_type assembly()::#assembly{}.
 
 
 %% API.

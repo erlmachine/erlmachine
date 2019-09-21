@@ -24,7 +24,7 @@
 
 -type success(Result) :: erlmachine_system:success(Result::term()).
 -type failure(E, R) :: erlmachine_system:failure(E::term(), R::term()).
--type failure(E) :: erlmachine_system:failure(E::term().
+-type failure(E) :: erlmachine_system:failure(E::term()).
 
 %% API.
 
@@ -42,7 +42,7 @@ tracking_number(Tag) when is_binary(Tag) ->
     GUID = <<"GUID">>, %% TODO 
     <<Tag/binary, ".", GUID/binary>>.
 
--record(trace, {package :: map(), tracking_number :: binary()}).
+-record(trace, {package::map(), tracking_number::binary()}).
 
 -spec trace(TrackingNumber::binary(), Package::map()) -> success(tracking_number()) | failure(term(), term()).
 trace(TrackingNumber, Package) ->
@@ -51,8 +51,8 @@ trace(TrackingNumber, Package) ->
 
 %% gen_server.
 
--record(produce, {datasheet :: term()}).
--record(state, {input :: atom(), serial_number :: binary()}).
+-record(produce, {datasheet::term()}).
+-record(state, {input::atom(), serial_number::binary()}).
 
 init([]) ->
     %% I guess model doesn't change without specialized behaviour supporting; 
