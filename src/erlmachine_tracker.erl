@@ -22,25 +22,29 @@
 
 -callback tag(Packakge::term()) -> Tag::binary().
 
+-type success(Result) :: erlmachine_system:success(Result::term()).
+-type failure(E, R) :: erlmachine_system:failure(E::term(), R::term()).
+-type failure(E) :: erlmachine_system:failure(E::term().
+
 %% API.
 
--spec start_link() -> {ok, pid()}.
+-spec start_link() -> success(pid()) | ignore | {error, Error:;term()}.
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
--spec tracking_number(Tracker::atom(), Package::term()) -> Number::binary().
+-spec tracking_number(Tracker::atom(), Package::term()) -> success(tracking_number()) | failure(term(), term()).
 tracking_number(Tracker, Package) ->
     Tag = Tracker:tag(Package),
     tracking_number(Tag).
 
--spec tracking_number(Tag::binary()) -> Number::binary().
+-spec tracking_number(Tag::binary()) -> success(tracking_number()) | failure(term(), term()).
 tracking_number(Tag) when is_binary(Tag) ->
     GUID = <<"GUID">>, %% TODO 
     <<Tag/binary, ".", GUID/binary>>.
 
 -record(trace, {package :: map(), tracking_number :: binary()}).
 
--spec trace(TrackingNumber::binary(), Package::map()) -> TrackingNumber::binary().
+-spec trace(TrackingNumber::binary(), Package::map()) -> success(tracking_number()) | failure(term(), term()).
 trace(TrackingNumber, Package) ->
     erlang:send(?MODULE, #trace{tracking_number = TrackingNumber, package = Package}).
 

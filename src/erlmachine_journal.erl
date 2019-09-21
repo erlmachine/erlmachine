@@ -1,4 +1,4 @@
--module(erlmachine_system).
+-module(erlmachine_journal).
 -behaviour(gen_server).
 
 %% API.
@@ -11,11 +11,6 @@
 -export([handle_info/2]).
 -export([terminate/2]).
 -export([code_change/3]).
-
--export_type failure(E, R) :: {error, {E::term(), R::term()}.
--export_type failure(E) ::  {error, E::term()}.
--export_type success(Result) :: {ok, Result::term()}.
--export_type success() :: ok.
 
 -record(state, {
 }).

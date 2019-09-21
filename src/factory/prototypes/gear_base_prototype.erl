@@ -17,6 +17,12 @@
 -export([terminate/2]).
 -export([code_change/3]).
 
+-type assembly() :: erlmachine_assembly:assembly().
+
+-type success(Result) :: erlmachine_system:success(Result::term()).
+-type failure(E, R) :: erlmachine_system:failure(E::term(), R::term()).
+-type failure(E) ::  erlmachine_system:failure(E::term()).
+
 %% API.
 
 %% I guess factory will write to catalogue via catalogue behaviour;
@@ -29,34 +35,35 @@ tag(#{<<"model">> := Model}) ->
 
 id(SerialNumber) -> %% I guess registration method and serial number preparation can be provided on gearbox instantination by assymbly part;
     ID = erlang:binary_to_atom(SerialNumber, latin1),
-    {local, ID}.
+    ID.
 
--spec install(ID::atom(), Assembly::term()) -> {ok, pid()}.
-install(ID, Assembly) -> %% Datasheet corresponds to top level components, so at that place we work with assebly;
-    gen_server:start_link(ID, ?MODULE, Assembly, []).
+-spec install(ID::atom(), Assembly::assembly()) -> success(pid()) | ingnore | failure(E).
+install(ID, Assembly) -> %% Datasheet corresponds to the top level components, so at that place we want to work with assembly;
+    gen_server:start_link({local, ID}, ?MODULE, Assembly, []).
 
-ratio() ->
+%% I think about ability to reflect the kind of switching - manually or automatically;
+-spec switch(ID::atom(), Gears::list(gear())) -> success(Assembly::assembly()) | failure(E, R).
+switch() ->
     ok.
 
-transmission() ->
-     ok.
+overload() ->
+    ok.
 
-rotate(SerialNumber, Motion) ->
-    erlang:send(SerialNumber, Force),
+replace() ->
+    ok.
+
+rotate(ID, Motion) ->
+    erlang:send(ID, Force),
     Force.
 
-transmit(SerialNumber, Force, Adress) ->
-    
-%% Prototype is the same for requestor and smart proxy, delivery needs to be guaranty by transmission instead;
-%% R esnond part needs to provided in detail implementation;
-reassembly(SerialNumber) ->
-    ok.
+transmit(ID, Motion) ->
+    gen_server:call(ID, Force),
 
 -spec uninstall() -> ok.
 uninstall(SerialNumber) ->
     gen_server:stop(SerialNumber).
 
-accept() ->
+accept() -> %% TODO Acceptance criteria needs to be satisfied;
      ok.
 
 %% gen_server.
