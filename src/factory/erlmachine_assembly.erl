@@ -17,7 +17,7 @@
 -type serial_number()::erlmachine_serial_number::serial_number().
 
 -record (assembly, {
-                    serial_number::serial_number(), %% We can get build info (ts etc..) by serial number from db;
+                    serial_number::serial_number(), %% We can get build info (ts, etc..) by serial number from db;
                     prototype::prototype(), 
                     model::model(), 
                     datasheet::datasheet()
@@ -25,7 +25,6 @@
         ).
 
 -export_type assembly()::#assembly{}.
-
 
 %% API.
 

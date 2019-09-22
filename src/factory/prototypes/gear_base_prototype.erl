@@ -17,13 +17,8 @@
 -export([terminate/2]).
 -export([code_change/3]).
 
--type assembly()::erlmachine_assembly:assembly().
-
--type success(Result)::erlmachine_system:success(Result::term()).
--type failure(E, R)::erlmachine_system:failure(E::term(), R::term()).
--type failure(E)::erlmachine_system:failure(E::term()).
-
--type timeout()::int() > 0|infinity.
+-include("erlmachine_factory.hrl").
+-include("erlmachine_system.hrl").
 
 %% API.
 
@@ -49,6 +44,9 @@ switch() ->
     ok.
 
 overload() ->
+    ok.
+
+blockage() ->
     ok.
 
 replace() ->

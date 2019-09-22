@@ -12,6 +12,9 @@
 %% API.
 -export([rotate/2]).
 
+%% I guess shaft will be indepented and reusable part and more universal and simplified then gear; 
+%% For example "one_to_one" shaft etc..
+
 -spec rotate(Force::term()) -> Motion::term() | Blockage::{error, Reason::term()}.
 rotate(Force) -> 
     erlmachine_shaft:rotate(?MODULE, Force).

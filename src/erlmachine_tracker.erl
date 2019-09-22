@@ -20,11 +20,9 @@
 -export([terminate/2]).
 -export([code_change/3]).
 
--callback tag(Packakge::term()) -> Tag::binary().
+-include("erlmachine_system.hrl").
 
--type success(Result) :: erlmachine_system:success(Result::term()).
--type failure(E, R) :: erlmachine_system:failure(E::term(), R::term()).
--type failure(E) :: erlmachine_system:failure(E::term()).
+-callback tag(Packakge::term()) -> Tag::binary().
 
 %% API.
 

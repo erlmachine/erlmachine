@@ -1,0 +1,2 @@
+-module(axle_sample).
+-export([]).

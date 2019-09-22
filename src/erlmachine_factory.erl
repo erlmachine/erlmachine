@@ -13,6 +13,11 @@
 -export([terminate/2]).
 -export([code_change/3]).
 
+-include("erlmachine_factory.hrl").
+
+-record(model, {id::atom(), model_no::model_no()}).
+-record(prototype, {id::atom()}).
+
 -record(state, {
 }).
 
