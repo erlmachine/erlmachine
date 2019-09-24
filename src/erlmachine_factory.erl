@@ -15,7 +15,7 @@
 
 -include("erlmachine_factory.hrl").
 
--record(model, {id::atom(), model_no::model_no()}).
+-record(model, {id::atom(), model_no::model_no(), product::gear()|shaft()|axle()|gearbox(), part_no::part_no()}).
 -record(prototype, {id::atom()}).
 
 -record(state, {

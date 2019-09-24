@@ -1,48 +1,13 @@
 -module(erlmachine_gearbox).
 -behaviour(gen_server).
 %% Gearbox is a component which responsible for reliable spatial placement for all processes;
-%% Gearbox is the place where shafts, gears and clutches are fixed. 
+%% Gearbox is the place where shafts, gears and axles are fixed. 
 %% Gearbox is the main container component
-%% All mechanisms shell to provide the specialized callbacks to inform gearbox about their presence
 %% The gearbox is divided on so called stages (stage is a torgue between two independent gears);
 
 %% API.
--export([start_link/0]).
+-export([]).
 
-%% gen_server.
--export([init/1]).
--export([handle_call/3]).
--export([handle_cast/2]).
--export([handle_info/2]).
--export([terminate/2]).
--export([code_change/3]).
+-record(gearbox, {mount=[]::list()}).
 
--record(state, {
-}).
-
-%% API.
-
--spec start_link() -> {ok, pid()}.
-start_link() ->
-	gen_server:start_link(?MODULE, [], []).
-
-%% gen_server.
-
-init([]) ->
-	{ok, #state{}}.
-
-handle_call(_Request, _From, State) ->
-    %% We need to provide REST API for management within all gearboxes
-	{reply, ignored, State}.
-
-handle_cast(_Msg, State) ->
-	{noreply, State}.
-
-handle_info(_Info, State) ->
-	{noreply, State}.
-
-terminate(_Reason, _State) ->
-	ok.
-
-code_change(_OldVsn, State, _Extra) ->
-	{ok, State}.
+-export_type gearbox()::#gearbox{}.
