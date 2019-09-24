@@ -4,9 +4,10 @@
 %% API.
 -export([start_link/0]).
 
-%% We assume that factory will also provide production of all components and their registration  by consistent way;
-%% My assumption is factory can be driven from production capacity perspective too; 
-%% Metrics by production activity for manufactures need to be provided too;
+%% We assume that factory will also provide production of all components and their registration too;
+%% My assumption that is factory can be driven from production capacity perspective; 
+%% Metrics for manufactures production activity needs to be provided too;
+
 %% gen_server.
 -export([init/1]).
 -export([handle_call/3]).
