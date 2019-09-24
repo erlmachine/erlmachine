@@ -85,6 +85,7 @@ handle_cast(_Msg, State) ->
 handle_info(_Info, State) ->
 	{noreply, State}.
 
+%% When reason is different from normal, or stop - the broken part event is occured;
 terminate(_Reason, Assembly) ->
     Package = package(Assembly),
     TrackingNumber = erlmachine_traker:tracking_number(?MODULE, Package),
