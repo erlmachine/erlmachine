@@ -15,6 +15,16 @@
 -record(state, {
 }).
 
+%% Name: Name is the symbolic file name and is the only information kept in human readable form.
+%% Identifier: This unique tag is a number that identifies the file within the file system; it is in non-human-readab%% le form of the file.
+%% Type: This information is needed for systems which support different types of files or its format.
+%% Location: This information is a pointer to a device which points to the location of the file on the device where it is stored.
+%% Size: The current size of the file (which is in bytes, words, etc.) which possibly the maximum allowed size gets included in this attribute.
+%% Protection: Access-control information establishes who can do the reading, writing, executing, etc.
+%% Date, Time & user identification: This information might be kept for the creation of the file, its last modification and last used. These data might be useful for in the field of protection, security, and monitoring its usage.
+
+%% The operating system can provide system calls to create, write, read, reposition, delete, and truncate files.
+
 %% API.
 
 -spec start_link() -> {ok, pid()}.

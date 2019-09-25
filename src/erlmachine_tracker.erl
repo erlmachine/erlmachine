@@ -49,17 +49,13 @@ trace(TrackingNumber, Package) ->
 
 %% gen_server.
 
--record(produce, {datasheet::term()}).
--record(state, {input::atom(), serial_number::binary()}).
+-record(accept, {}).
+-record(state, {gearbox::assembly(), file::file_id()}).
 
 init([]) ->
-    %% I guess model doesn't change without specialized behaviour supporting;
-    %% Abbreviations M/N and P/N will be represented on name;
-    ModelNumber = <<"erlmachine_tracker prototype">,
-    PartNumber = erlmachine_factory:part_number(),
-    DataSheet = erlmachine_factory:model(?MODULE, ModelNumber, PartNumber),
-    Input = erlmachine_transmission:input(DataSheet),
-    {ok,  #state{input = Input}, {continue, #produce{datasheet = DataSheet}}}.
+    GearBox = erlmachine_factory:gearbox(?MODULE),
+    FileId = erlmachine_file:create(<<"./run.rep">>),
+    {ok,  #state{gearbox = GearBox, file_id = FileId}, {continue, #accept{}}}.
 
 handle_call(_Request, _From, State) ->
     %% We need to provide REST API for management inside transmission
@@ -70,9 +66,9 @@ handle_call(_Request, _From, State) ->
 handle_cast(_Msg, State) ->
 	{noreply, State}.
 
-handle_info(#trace{} = Command, #state{transmission = Transmission} = State) ->
+handle_info(#trace{} = Command, #state{gearbox = GearBox} = State) ->
     #trace{tracking_number = TrackingNumber, package = Package} = Command,
-    erlmachine_transmission:rotate(Transmission, #{TrackingNumber => Package}), %% we need to find default input here
+    erlmachine_transmission:rotate(GearBox, #{TrackingNumber => Package}), %% we need to find default input here
     {noreply, State};
 handle_info() ->
     {noreply, State}.
@@ -82,20 +78,23 @@ code_change(_OldVsn, State, _Extra) ->
 
 %% We consider Module as implementation point (like class) and serial number as instance - (like object); 
 %% We can support polymorphism by different ways - by overriding prototype or by changing topology itself;
-handle_continue(#produce{datasheet = DataSheet}, State) -> 
+handle_continue(#accept{}, State#state{gearbox = GearBox, file_id = FileId}) ->
     try
-        SerialNumber = erlmachine_factory:produce(?MODULE, DataSheet), 
-        {noreply, State#state{serial_number = SerialNumber}, {continue, #accept{}}};
+        erlmachine_factory:accept(GearBox),
+        SN = erlmachine_assembly:serial_number(GearBox),
+        erlmachine_file:write(FileId, #{accept => #{serial_number => SN}}),
+        {noreply, State};
     catch E:R ->
-            {stop, {E, R}, State} 
+            erlmachine_file:write(FileId, #{accept => #{error => E, reason => R}}),
+            {stop, {E, R}, State}
     end;
-handle_continue(_, State) -> 
+handle_continue(_, State) ->
     {noreply, State}.
 
 terminate(_Reason, _State) ->
     ok.
 
-format_status(Opt, [PDict, State]) -> 
+format_status(Opt, [PDict, State]) ->
     [].
 
 
