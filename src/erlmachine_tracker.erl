@@ -53,8 +53,11 @@ trace(TrackingNumber, Package) ->
 -record(state, {input::atom(), serial_number::binary()}).
 
 init([]) ->
-    %% I guess model doesn't change without specialized behaviour supporting; 
-    DataSheet = erlmachine_factory:model(?MODULE),
+    %% I guess model doesn't change without specialized behaviour supporting;
+    %% Abbreviations M/N and P/N will be represented on name;
+    ModelNumber = <<"erlmachine_tracker prototype">,
+    PartNumber = erlmachine_factory:part_number(),
+    DataSheet = erlmachine_factory:model(?MODULE, ModelNumber, PartNumber),
     Input = erlmachine_transmission:input(DataSheet),
     {ok,  #state{input = Input}, {continue, #produce{datasheet = DataSheet}}}.
 
@@ -94,7 +97,5 @@ terminate(_Reason, _State) ->
 
 format_status(Opt, [PDict, State]) -> 
     [].
-
-%% erlmachine_transmission.
 
 
