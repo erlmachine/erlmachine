@@ -39,7 +39,8 @@ install(ID, Assembly, Options) -> %% Appropriate options can be provided by shaf
     gen_server:start_link({local, ID}, ?MODULE, Assembly, Options).
 
 %% I think about ability to reflect both kind of switching - manually or automatically;
--spec switch(ID::atom(), Gears::list(gear()), Timeout::timeout()) -> success(Assembly::assembly()) | failure(E, R).
+%% Shift pattern
+-spec switch(ID::atom(), Gear::gear() | Shaft::shaft(), Timeout::timeout()) -> success(Assembly::assembly()) | failure(E, R).
 switch() ->
     ok.
 

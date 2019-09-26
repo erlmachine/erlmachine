@@ -26,7 +26,7 @@
 
 %% API.
 
--spec start_link() -> success(pid()) | ignore | {error, Error:;term()}.
+-spec start_link() -> success(pid()) | ignore | failure(term()}.
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
