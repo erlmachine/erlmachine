@@ -1,7 +1,7 @@
 -module(shaft_base_prototype).
 -behaviour(gen_server).
 
--folder(<<"erlmachine/factory/prototypes/_base_prototype">>).
+-folder(<<"erlmachine/factory/prototypes/shaft_base_prototype">>).
 
 -behaviour(erlmachine_assembly).
 -behaviour(erlmachine_tracker).
@@ -29,23 +29,20 @@ tag(#{<<"model">> := Model}) ->
     ID = atom_to_binary(Model, latin1),
     ID.
 
-%% Model is an instance. Determined with serial number and built over prototype.
-
-id(SerialNumber) -> %% I guess serial number preparation can be provided on gearbox instantination by assembly;
+format(SerialNumber) ->
     ID = erlang:binary_to_atom(SerialNumber, latin1),
     ID.
 
--spec install(ID::atom(), Assembly::assembly(), Options::list()) -> success(pid()) | ingnore | failure(E).
-install(ID, Assembly, Options) -> %% Appropriate options can be provided by shaft or gearbox;
-    gen_server:start_link({local, ID}, ?MODULE, Assembly, Options).
+-spec install(ID::serial_number(), Assembly::assembly(), Options::list()) -> success(pid()) | ingnore | failure(E).
+install(SN, Assembly, Options) ->
+    gen_server:start_link({local, format(ID)}, ?MODULE, Assembly, Options).
 
-%% I think about ability to reflect both kind of switching - manually or automatically;
 %% Shift pattern
--spec attach(ID::atom(), SN::serial_number(), Timeout::timeout()) -> success(Assembly::assembly()) | failure(E, R).
+-spec attach(Name::serial_number(), Assembly::assembly(), Timeout::timeout()) -> success(Assembly::assembly()) | failure(E, R).
 attach() ->
     ok.
 
--spec detach(ID::atom(), SN::serial_number(), Timeout::timeout()) -> success(Assembly::assembly()) | failure(E, R).
+-spec detach(Name::serial_number(), ID::serial_number(), Timeout::timeout()) -> success(Assembly::assembly()) | failure(E, R).
 detach() ->
     ok.
 
