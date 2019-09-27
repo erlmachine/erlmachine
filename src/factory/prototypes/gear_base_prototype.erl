@@ -58,7 +58,7 @@ rotate(ID, Motion) ->
     Force.
 
 transmit(ID, Motion) ->
-    gen_server:call(ID, Force),
+    gen_server:call(ID, Force).
 
 -spec uninstall(ID::atom(), Reason::term(), Timeout::timeout()) -> ok.
 uninstall(ID, Reason, Timeout) ->
