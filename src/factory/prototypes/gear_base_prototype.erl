@@ -71,7 +71,7 @@ accept() -> %% TODO Acceptance criteria needs to be satisfied;
 
 %% From erlmachine_assembly we wait the specialized callback to erlmachine_gear with install/2
 init(Assembly::term()) ->
-    %% I guess tracking time will be filled by tracker itself;
+    process_flag(trap_exit, true),
     Package = package(Assembly),
     TrackingNumber = erlmachine_traker:tracking_number(?MODULE, Package),
     erlmachine_traker:trace(TrackingNumber, #{install => Package}),

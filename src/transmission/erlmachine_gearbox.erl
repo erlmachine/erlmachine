@@ -5,9 +5,18 @@
 %% Gearbox is the main container component
 %% The gearbox is divided on so called stages (stage is a torgue between two independent gears);
 
+-include("erlmachine_factory.hrl").
+
 %% API.
 -export([]).
 
--record(gearbox, {mount=[]::list()}).
+-record(gearbox, {
+                  input=[]::list(assembly()),
+                  env=[]::list(),
+                  mount=[]::list(),
+                  topology::graph(),
+                  output=[]::list(assembly())
+                 }
+       ).
 
 -export_type gearbox()::#gearbox{}.

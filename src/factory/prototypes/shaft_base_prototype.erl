@@ -29,29 +29,40 @@ tag(#{<<"model">> := Model}) ->
     ID = atom_to_binary(Model, latin1),
     ID.
 
-format(SerialNumber) ->
+format_name(SerialNumber) ->
     ID = erlang:binary_to_atom(SerialNumber, latin1),
     ID.
 
--spec install(ID::serial_number(), Assembly::assembly(), Options::list()) -> success(pid()) | ingnore | failure(E).
-install(SN, Assembly, Options) ->
-    gen_server:start_link({local, format(ID)}, ?MODULE, Assembly, Options).
+-spec install(Name::serial_number(), Assembly::assembly(), Options::list()) -> success(pid()) | ingnore | failure(E).
+install(Name, Assembly, Options) ->
+    gen_server:start_link({local, format_name(SN)}, ?MODULE, Assembly, Options).
 
-%% Shift pattern
--spec attach(Name::serial_number(), Assembly::assembly(), Timeout::timeout()) -> success(Assembly::assembly()) | failure(E, R).
-attach() ->
-    ok.
+
+-record(attach, {assembly::assembly()}).%% Shift pattern
+
+-spec attach(Name::serial_number(), Part::assembly(), Timeout::timeout()) -> success(Assembly::assembly()) | failure(E, R).
+attach(Name, Assembly, Timeout) ->
+    gen_server:call(name(Name), #attach{assembly = Assembly}, Timeout).
+
+-record(detach, {id::serial_number()}).
 
 -spec detach(Name::serial_number(), ID::serial_number(), Timeout::timeout()) -> success(Assembly::assembly()) | failure(E, R).
-detach() ->
-    ok.
+detach(Name, ID, TimeOut) ->
+    gen_server:call(name(Name), #detach{id = ID}, TimeOut).
 
-overload() ->
-    ok.
+-record(overload, {load::load()}).
 
+-spec overload(Name::serial_number(), Load::term()) -> Load::term().
+overload(Name, Load) ->
+    erlang:send(format_name(Name), #load{load = Load}).
+
+-record(blockage, {part::assembly()}).
+
+-spec blockage(Name::serial_number(), Part::assembly()) -> Part::assembly().
 blockage() ->
-    ok.
+    erlang:send(Name, #blockage{part = Part}).
 
+-spec replace(Name::serial_number(), Repair::assembly()) -> success(Assembly::assembly()) | failure(E, R).
 replace() ->
     ok.
 
@@ -73,6 +84,7 @@ accept() -> %% TODO Acceptance criteria needs to be satisfied;
 
 %% From erlmachine_assembly we wait the specialized callback to erlmachine_gear with install/2
 init(Assembly::term()) ->
+    process_flag(trap_exit, true),
     %% I guess tracking time will be filled by tracker itself;
     Package = package(Assembly),
     TrackingNumber = erlmachine_traker:tracking_number(?MODULE, Package),

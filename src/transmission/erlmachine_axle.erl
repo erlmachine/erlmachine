@@ -1,6 +1,6 @@
 -module(erlmachine_axle).
 -export([]).
 
--record(axle, {spline=[]::list()}).
+-record(axle, {mount=[]::list()}).
 
 -export_type axle()::#axle{}.

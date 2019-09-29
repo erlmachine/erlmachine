@@ -18,7 +18,14 @@
 
 -include("erlmachine_factory.hrl").
 %% Abbreviations M/N and P/N will be represented on name;
--record(model, {id::atom(), model_no::model_no(), product::gear()|shaft()|axle()|gearbox(), part_no::part_no()}).
+-record(model, {
+                id::atom(),
+                model_no::model_no(),
+                product::gear()|shaft()|axle()|gearbox(),
+                options::term(),
+                part_no::part_no()
+               }
+       ).
 -record(prototype, {id::atom()}).
 
 -record(state, {
