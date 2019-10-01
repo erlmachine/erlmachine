@@ -26,8 +26,8 @@
 %% API.
 
 %% I guess factory will write to catalogue via catalogue behaviour;
-%% The main purpose of prototype is to provide implemetation for communication and configuration;
-%% The main purpose of detail is to provide mechanical control API around internal isolated structure;
+%% The main purpose of prototype is to provide implemetation of both communication and configuration layers;
+%% The main purpose of detail is to provide mechanical intraface API over internal isolated product structure;
 %% The main purpose of the model is to provide mechanical reflection of modelling process over whole assembly;
 
 -spec tag(Package::map()) -> Tag::binary().
@@ -43,50 +43,57 @@ format_name(SerialNumber) ->
 install(Name, Assembly, Options) ->
     gen_server:start_link({local, format_name(SN)}, ?MODULE, Assembly, Options).
 
-
 -record(attach, {part::assembly()}).%% Shift pattern
 
 -spec attach(Name::serial_number(), Part::assembly(), Timeout::timeout()) -> success(Release::assembly()) | failure(E, R).
-attach(Name, Assembly, Timeout) ->
-    gen_server:call(format_name(Name), #attach{part = Assembly}, Timeout).
+attach(Name, Part, Timeout) ->
+    gen_server:call(format_name(Name), #attach{part = Part}, Timeout).
 
 -record(detach, {id::serial_number()}).
 
 -spec detach(Name::serial_number(), ID::serial_number(), Timeout::timeout()) -> success(Release::assembly()) | failure(E, R).
 detach(Name, ID, TimeOut) ->
-    gen_server:call(format_name(Name), #detach{id = ID}, TimeOut).
+    gen_server:call(format_name(Name), #detach{id = ID}, Timeout).
 
 -record(overload, {load::load()}).
 
--spec overload(Name::serial_number(), Load::term()) -> Load::term().
+-spec overload(Name::serial_number(), Load::term()) -> Load.
 overload(Name, Load) ->
-    erlang:send(format_name(Name), #load{load = Load}).
+    erlang:send(format_name(Name), #overload{load = Load}).
 
 -record(blockage, {part::assembly()}).
 
--spec blockage(Name::serial_number(), Part::assembly()) -> Part::assembly().
+-spec blockage(Name::serial_number(), Part::assembly(), Failure::failure(E, R)) -> Part.
 blockage() ->
-    erlang:send(Name, #blockage{part = Part}).
+    erlang:send(format_name(Name), #blockage{part = Part, failure = Failure}).
 
 -record(replace, {repair::assembly()}).
 
 -spec replace(Name::serial_number(), Repair::assembly(), Timeout::timeout()) -> success(Release::assembly()) | failure(E, R).
 replace(Name, Repair) ->
-    gen_server:call(format_name(Name), #replace{repair = Repair}, TimeOut).
+    gen_server:call(format_name(Name), #replace{repair = Repair}, Timeout).
 
-rotate(ID, Motion) ->
-    erlang:send(ID, Force),
-    Force.
+-record(rotate, {motion::term()}).
 
-transmit(ID, Motion) ->
-    gen_server:call(ID, Force).
+-spec rotate(Name::serial_number(), Motion::term()) -> Motion.
+rotate(Name, Motion) ->
+    erlang:send(format_name(Name), #rotate{motion = Motion}).
 
--spec uninstall(ID::atom(), Reason::term(), Timeout::timeout()) -> ok.
+-record(transmit, {motion::term()}).
+
+-spec transmit(Name::serial_number(), Motion::term(), Timeout::timeout()) -> Force::term().
+transmit(Name, Motion) ->
+    gen_server:call(ID, #transmit{motion = Motion}, Timeout).
+
+-spec uninstall(Name::serial_number(), Reason::term(), Timeout::timeout()) -> ok.
 uninstall(ID, Reason, Timeout) ->
     gen_server:stop(ID, Reason, Timeout).
 
-accept() -> %% TODO Acceptance criteria needs to be satisfied;
-     ok.
+-record(accept, {criteria::acceptance_criteria()}).
+
+-spec accept(Name::serial_number(), Criteria::acceptance_criteria()) -> accept() | reject().
+accept(Name, Criteria) -> %% I plan to reflect criteria in datasheet; 
+    gen_server:call(Name, #accept{criteria = Criteria}, Timeout).
 
 %% gen_server.
 -record(state, {tracking_number::tracking_number(), assembly::assembly()}).
@@ -104,7 +111,7 @@ init(Assembly::term()) ->
 handle_call(#attach{part = Part}, _From, #state{} = State) ->
     #state{tracking_number = TrackingNumber, assembly = Assembly} = State,
     Release = erlmachine_shaft:attach(Assembly, Part),
-    SerialNumber = erlmachine_assembly:serial_number(Part),
+    SerialNumber = erlmachine_factory:serial_number(Part),
     Package = package(Release),
     erlmachine_traker:trace(TrackingNumber, #{attach => Package, part => SerialNumber}),
     {reply, {ok, Release}, State#state{assembly = Release}};
@@ -119,24 +126,62 @@ handle_call(#detach{id = ID}, _From,  #state{} = State) ->
 handle_call(#replace{repair = Repair}, _From, #state{} = State) ->
     #state{tracking_number = TrackingNumber, assembly = Assembly} = State,
     Release = erlmachine_shaft:replace(Assembly, Repair),
-    SerialNumber = erlmachine_assembly:serial_number(Repair),
+    SerialNumber = erlmachine_factory:serial_number(Repair),
     Package = package(Release),
     erlmachine_traker:trace(TrackingNumber, #{replace => Package, repair => SerialNumber}),
     {reply, {ok, Release}, State#state{assembly = Release}};
-    
-    
-    
-    
-    
 
+handle_call(#transmit{motion = Motion}, _From, #state{} = State) ->
+    #state{assembly = Assembly} = State,
+    %% Transmit is a direct call to the current mechanical part;
+    %% It's always synchronous call and all management API around part needs to be provided by that way;
+    Force = erlmachine_shaft:transmit(Assembly, Motion),
+    {reply, Force, State};
 
+handle_call(#accept{criteria = Criteria}, _From, #state{} = State) ->
+    #state{tracking_number = TrackingNumber, assembly = Assembly} = State,
+    Result = erlmachine_factory:accept(Assembly, Criteria),
+    SerialNumber = erlmachine_factory:serial_number(Repair),
+    Package = package(Assembly),
+    if Result == true ->
+            erlmachine_traker:trace(TrackingNumber, #{accept => Package});
+       true -> 
+            erlmachine_traker:trace(TrackingNumber, #{reject => Package, report => Result}),
+            erlmachine_system:reject(Reason, Assembly), 
+    end,
+    {reply, Result, State};
 
+handle_call(Req, _From, #state{} = State) ->
+    #state{tracking_number = TrackingNumber, assembly = Assembly} = State,
+    SerialNumber = erlmachine_factory:serial_number(Assembly),
+    Package = package(Assembly),
+    erlmachine_traker:trace(TrackingNumber, #{req => Req}),
+    {reply, ignore, State}.
 
 handle_cast(_Msg, State) ->
 	{noreply, State}.
 
-handle_info(_Info, State) ->
-	{noreply, State}.
+handle_info(#rotate{motion = Motion}, State) ->
+    #state{assembly = Assembly} = State,
+    erlmachine_shaft:rotate(Assembly, Motion), 
+    %% At the moment we support default rotation (all parts will be rotated without specifications args);
+    %% That works very similar to direct exchange;
+    %% From on next versions we going to provide specified rotation (serial number will be passed as arg);
+    %% Serial numbers of parts will be stored inside prototype. That can provide support of different shift patterns;
+    {noreply, State};
+
+handle_info(#overload{load = Load}) ->
+    #state{tracking_number = TrackingNumber, assembly = Assembly} = State,
+    Package = package(Assembly),
+    erlmachine_traker:trace(TrackingNumber, #{overload => Package, load => Load}),
+    {noreply, State};
+
+handle_info(#blockage{part = Part, damage = Damage}, State) ->
+    #state{tracking_number = TrackingNumber, assembly = Assembly} = State,
+    Package = package(Release),
+    erlmachine_traker:trace(TrackingNumber, #{blockage => Package, part => Part, damage => Damage}),
+    erlmachine_system:damage(Assembly, Damage),
+    {noreply, State}.
 
 %% When reason is different from normal, or stop - the broken part event is occured;
 terminate(Reason, Assembly) ->
