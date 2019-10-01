@@ -28,7 +28,7 @@
 %% I guess factory will write to catalogue via catalogue behaviour;
 %% The main purpose of prototype is to provide implemetation of both communication and configuration layers;
 %% The main purpose of detail is to provide mechanical intraface API over internal isolated product structure;
-%% The main purpose of the model is to provide mechanical reflection of modelling process over whole assembly;
+%% The main purpose of model is to provide mechanical reflection of modelling process over whole assembly;
 
 -spec tag(Package::map()) -> Tag::binary().
 tag(#{model := Model}) ->
@@ -43,7 +43,7 @@ format_name(SerialNumber) ->
 install(Name, Assembly, Options) ->
     gen_server:start_link({local, format_name(SN)}, ?MODULE, Assembly, Options).
 
--record(attach, {part::assembly()}).%% Shift pattern
+-record(attach, {part::assembly()}).
 
 -spec attach(Name::serial_number(), Part::assembly(), Timeout::timeout()) -> success(Release::assembly()) | failure(E, R).
 attach(Name, Part, Timeout) ->
@@ -98,7 +98,6 @@ accept(Name, Criteria) -> %% I plan to reflect criteria in datasheet;
 %% gen_server.
 -record(state, {tracking_number::tracking_number(), assembly::assembly()}).
 
-%% From erlmachine_assembly we wait the specialized callback to erlmachine_gear with install/2
 init(Assembly::term()) ->
     process_flag(trap_exit, true),
     Release = erlmachine_shaft:install(Assembly),
@@ -134,7 +133,8 @@ handle_call(#replace{repair = Repair}, _From, #state{} = State) ->
 handle_call(#transmit{motion = Motion}, _From, #state{} = State) ->
     #state{assembly = Assembly} = State,
     %% Transmit is a direct call to the current mechanical part;
-    %% It's always synchronous call and all management API around part needs to be provided by that way;
+    %% It's always synchronous call;
+    %% This point is a place denoted to the  management API of the current mechanical instance;
     Force = erlmachine_shaft:transmit(Assembly, Motion),
     {reply, Force, State};
 
@@ -147,7 +147,7 @@ handle_call(#accept{criteria = Criteria}, _From, #state{} = State) ->
             erlmachine_traker:trace(TrackingNumber, #{accept => Package});
        true -> 
             erlmachine_traker:trace(TrackingNumber, #{reject => Package, report => Result}),
-            erlmachine_system:reject(Reason, Assembly), 
+            erlmachine_system:reject(Reason, Assembly)
     end,
     {reply, Result, State};
 
@@ -156,7 +156,7 @@ handle_call(Req, _From, #state{} = State) ->
     SerialNumber = erlmachine_factory:serial_number(Assembly),
     Package = package(Assembly),
     erlmachine_traker:trace(TrackingNumber, #{req => Req}),
-    {reply, ignore, State}.
+    {reply, ignored, State}.
 
 handle_cast(_Msg, State) ->
 	{noreply, State}.
@@ -164,10 +164,10 @@ handle_cast(_Msg, State) ->
 handle_info(#rotate{motion = Motion}, State) ->
     #state{assembly = Assembly} = State,
     erlmachine_shaft:rotate(Assembly, Motion), 
-    %% At the moment we support default rotation (all parts will be rotated without specifications args);
+    %% At the moment we support only default rotation (all parts will be rotated without certain args);
     %% That works very similar to direct exchange;
-    %% From on next versions we going to provide specified rotation (serial number will be passed as arg);
-    %% Serial numbers of parts will be stored inside prototype. That can provide support of different shift patterns;
+    %% We going to provide controlled rotation from our next versions (serial number will be passed as argument);
+    %% Serial numbers of parts will be stored inside prototype. It allows to support different shift patterns;
     {noreply, State};
 
 handle_info(#overload{load = Load}) ->
@@ -185,6 +185,7 @@ handle_info(#blockage{part = Part, damage = Damage}, State) ->
 
 %% When reason is different from normal, or stop - the broken part event is occured;
 terminate(Reason, Assembly) ->
+    erlmachine_shaft:uninstall(Assembly),
     Package = package(Assembly),
     TrackingNumber = erlmachine_traker:tracking_number(?MODULE, Package),
     erlmachine_traker:trace(TrackingNumber, #{terminate => Package, reason => Reason}),
