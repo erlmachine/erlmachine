@@ -55,17 +55,17 @@ attach(Name, Part, Timeout) ->
 detach(Name, ID, TimeOut) ->
     gen_server:call(format_name(Name), #detach{id = ID}, Timeout).
 
--record(overload, {load::load()}).
+-record(overloaded, {load::load()}).
 
--spec overload(Name::serial_number(), Load::term()) -> Load.
-overload(Name, Load) ->
-    erlang:send(format_name(Name), #overload{load = Load}).
+-spec overloaded(Name::serial_number(), Load::term()) -> Load.
+overloaded(Name, Load) ->
+    erlang:send(format_name(Name), #overloaded{load = Load}).
 
--record(blockage, {part::assembly()}).
+-record(blocked, {part::assembly()}).
 
--spec blockage(Name::serial_number(), Part::assembly(), Failure::failure(E, R)) -> Part.
-blockage() ->
-    erlang:send(format_name(Name), #blockage{part = Part, failure = Failure}).
+-spec blocked(Name::serial_number(), Part::assembly(), Failure::failure(E, R)) -> Part.
+blocked() ->
+    erlang:send(format_name(Name), #blocked{part = Part, failure = Failure}).
 
 -record(replace, {repair::assembly()}).
 
@@ -170,16 +170,16 @@ handle_info(#rotate{motion = Motion}, State) ->
     %% Serial numbers of parts will be stored inside prototype. It allows to support different shift patterns;
     {noreply, State};
 
-handle_info(#overload{load = Load}) ->
+handle_info(#overloaded{load = Load}) ->
     #state{tracking_number = TrackingNumber, assembly = Assembly} = State,
     Package = package(Assembly),
-    erlmachine_traker:trace(TrackingNumber, #{overload => Package, load => Load}),
+    erlmachine_traker:trace(TrackingNumber, #{overloaded => Package, load => Load}),
     {noreply, State};
 
-handle_info(#blockage{part = Part, damage = Damage}, State) ->
+handle_info(#blocked{part = Part, damage = Damage}, State) ->
     #state{tracking_number = TrackingNumber, assembly = Assembly} = State,
     Package = package(Release),
-    erlmachine_traker:trace(TrackingNumber, #{blockage => Package, part => Part, damage => Damage}),
+    erlmachine_traker:trace(TrackingNumber, #{blocked => Package, part => Part, damage => Damage}),
     erlmachine_system:damage(Assembly, Damage),
     {noreply, State}.
 
