@@ -51,7 +51,7 @@ overloaded(Name, Load) ->
 
 -record(blocked, {part::assembly()}).
 
--spec blocked(Name::serial_number(), Part::assembly(), Failure::failure(E, R)) -> Part.
+-spec blocked(Name::serial_number(), Part::assembly(), Reason::failure(E, R)) -> Part.
 blocked() ->
     erlang:send(format_name(Name), #blocked{part = Part, failure = Failure}).
 
@@ -104,7 +104,7 @@ handle_call(#switch{part = Part}, _From, #state{} = State) ->
 
 handle_call(#replace{repair = Repair}, _From, #state{} = State) ->
     #state{tracking_number = TrackingNumber, assembly = Assembly} = State,
-    Release = erlmachine_shaft:replace(Assembly, Repair),
+    Release = erlmachine_gear:install(Assembly),
     SerialNumber = erlmachine_factory:serial_number(Repair),
     Package = package(Release),
     erlmachine_traker:trace(TrackingNumber, #{replace => Package, repair => SerialNumber}),
@@ -156,7 +156,9 @@ handle_info(#blocked{part = Part, damage = Damage}, State) ->
     #state{tracking_number = TrackingNumber, assembly = Assembly} = State,
     Package = package(Release),
     erlmachine_traker:trace(TrackingNumber, #{blocked => Package, part => Part, damage => Damage}),
-    erlmachine_system:damage(Assembly, Damage),
+    erlmachine_system:damage(Assembly, Damage), 
+    %% Damage, Crash and Failure will be translated to specialized system gears;
+    %% This produced stream can be consumed by custom components which can be able to provide repair;
     {noreply, State}.
 
 %% When reason is different from normal, or stop - the broken part event is occured;
