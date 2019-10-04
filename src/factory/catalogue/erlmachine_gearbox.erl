@@ -11,11 +11,13 @@
 -export([]).
 
 -record(gearbox, {
-                  input=[]::list(assembly()),
-                  env=[]::list(),
-                  mount=[]::list(),
-                  topology::graph(),
-                  output=[]::list(assembly())
+                  input::assembly(),
+                  parts=[]::list(assembly()),
+                  placement::term(),
+                  %% Placement can be implemented by various ways and then represented by different formats; 
+                  %% Each implementation can do that over its own discretion;
+                  %% Erlmachine do that accordingly to YAML format;
+                  output::assembly()
                  }
        ).
 

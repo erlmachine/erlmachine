@@ -53,8 +53,10 @@ trace(TrackingNumber, Package) ->
 -record(state, {gearbox::assembly(), file::file_id()}).
 
 init([]) ->
-    GearBox = erlmachine_factory:gearbox(?MODULE),
-    FileId = erlmachine_file:create(<<"./run.rep">>),
+    GearBox = erlmachine_factory:gearbox(?MODULE, []), 
+    %% We need to implement storing gearboxes and also individual part inside warehouse;
+    %% After that we will be able to select needed parts by SN;
+    FileId = erlmachine_file:create(<<"./process.report">>),
     {ok,  #state{gearbox = GearBox, file_id = FileId}, {continue, #accept{}}}.
 
 handle_call(_Request, _From, State) ->

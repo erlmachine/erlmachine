@@ -1,6 +1,6 @@
 -module(erlmachine_axle).
 -export([]).
 
--record(axle, {mount=[]::list()}).
+-record(axle, {parts=[]::list(assembly()), mount=::assembly()}).
 
 -export_type axle()::#axle{}.
