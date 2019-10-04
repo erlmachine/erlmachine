@@ -1,6 +1,6 @@
 
 <p align="center">
-  <img src="http://www.tapedeck.org/400/SHAPE%20C90_MCiPjH_121006-thumb.jpg" width="350" title="Logo">
+  <img src="https://upload.wikimedia.org/wikipedia/commons/8/8a/Gear_reducer.gif" width="350" title="Logo">
 </p>
 
 # Erlmachine
