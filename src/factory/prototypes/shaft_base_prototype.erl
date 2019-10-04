@@ -1,5 +1,4 @@
 -module(shaft_base_prototype).
--behaviour(gen_server).
 
 -folder(<<"erlmachine/factory/prototypes/shaft_base_prototype">>).
 
@@ -30,164 +29,141 @@
 %% The main purpose of detail is to provide mechanical intraface API over internal isolated product structure;
 %% The main purpose of model is to provide mechanical reflection of modelling process over whole assembly;
 
--spec tag(Package::map()) -> Tag::binary().
-tag(#{model := Model}) ->
-    ID = atom_to_binary(Model, latin1),
-    ID.
-
 format_name(SerialNumber) ->
     ID = erlang:binary_to_atom(SerialNumber, latin1),
     ID.
 
--record(install, {gearbox::gearbox(), assembly::assembly()}).
+-record(install, {gearbox::gearbox(), shaft::assembly()}).
 
--spec install(Name::serial_number(), GearBox::assembly(), Assembly::assembly()) -> success(pid()) | ingnore | failure(E).
-install(Name, GearBox, Assembly) ->
-    gen_server:start_link({local, format_name(SN)}, ?MODULE, #install{gearbox=GearBox, assembly=Assembly}, []).
+-spec install(Name::serial_number(), GearBox::assembly(), Shaft::assembly()) -> 
+                     success(pid()) | ingnore | failure(E).
+install(Name, GearBox, Shaft) ->
+    gen_server:start_link({local, format_name(Name)}, ?MODULE, #install{gearbox=GearBox, shaft=Shaft}, []).
 
--record(attach, {gearbox::assembly(), part::assembly()}).
+-record(attach, {part::assembly()}).
 
--spec attach(Name::serial_number(), GearBox::assembly(), Part::assembly(), Timeout::timeout()) -> success(Release::assembly()) | failure(E, R).
-attach(Name, GearBox, Part, Timeout) ->
-    gen_server:call(format_name(Name), #attach{gearbox=GearBox, part=Part}, Timeout).
+-spec attach(Name::serial_number(), Part::assembly(), Timeout::timeout()) -> 
+                    success(Release::assembly()) | failure(E, R).
+attach(Name, Part, Timeout) ->
+    gen_server:call(format_name(Name), #attach{part=Part}, Timeout).
 
--record(detach, {assembly::assembly(), id::serial_number()}).
+-record(detach, {id::serial_number()}).
 
--spec detach(Name::serial_number(), GearBox::assembly(), ID::serial_number(), Timeout::timeout()) -> success(Release::assembly()) | failure(E, R).
-detach(Name, GearBox, ID, TimeOut) ->
-    gen_server:call(format_name(Name), #detach{assembly=GearBox, id=ID}, Timeout).
+-spec detach(Name::serial_number(), ID::serial_number(), Timeout::timeout()) ->
+                    success(Release::assembly()) | failure(E, R).
+detach(Name, ID, TimeOut) ->
+    gen_server:call(format_name(Name), #detach{id=ID}, Timeout).
 
--record(overload, {assembly::assembly(), load::load()}).
+-record(overload, {load::load()}).
 
--spec overload(Name::serial_number(), Assembly::assembly(), Load::term()) -> Load.
-overload(Name, Assembly, Load) ->
-    erlang:send(format_name(Name), #overload{assembly=Assembly,load=Load}).
+-spec overload(Name::serial_number(), Load::term()) ->
+                      Load.
+overload(Name, Load) ->
+    erlang:send(format_name(Name), #overload{load=Load}).
 
--record(block, {assembly::assembly(), part::assembly()}).
+-record(block, {part::assembly(), failure::failure()}).
 
--spec block(Name::serial_number(), Assembly::assembly(), Part::assembly(), Failure::failure(E, R)) -> Part.
-block(Name, Assembly, Part) ->
-    erlang:send(format_name(Name), #block{assembly=Assembly, part=Part, failure=Failure}).
+-spec block(Name::serial_number(), Failure::failure(E, R)) -> 
+                   Part.
+block(Name, Part, Failure) ->
+    erlang:send(format_name(Name), #block{part=Part, failure=Failure}).
 
--record(replace, {assembly::assembly(), repair::assembly()}).
+-record(replace, {repair::assembly()}).
 
--spec replace(Name::serial_number(), Assembly::assembly(), Repair::assembly(), Timeout::timeout()) -> success(Release::assembly()) | failure(E, R).
-replace(Name, Assembly, Repair) ->
-    gen_server:call(format_name(Name), #replace{assembly=Assembly, repair=Repair}, Timeout).
+-spec replace(Name::serial_number(), Repair::assembly(), Timeout::timeout()) -> 
+                     success(Release::assembly()) | failure(E, R).
+replace(Name, Repair) ->
+    gen_server:call(format_name(Name), #replace{repair=Repair}, Timeout).
 
--record(rotate, {assembly::assembly(), motion::term()}).
+-record(rotate, {motion::term()}).
 
--spec rotate(Name::serial_number(), Assembly::assembly(), Motion::term()) -> Motion.
-rotate(Name, Assembly, Motion) ->
-    erlang:send(format_name(Name), #rotate{assembly=Assembly, motion=Motion}).
+-spec rotate(Name::serial_number(), Motion::term()) -> 
+                    Motion.
+rotate(Name, Motion) ->
+    erlang:send(format_name(Name), #rotate{motion=Motion}).
 
--record(transmit, {assembly::assembly(), motion::term()}).
+-record(transmit, {motion::term()}).
 
--spec transmit(Name::serial_number(), Assembly::assembly(),  Motion::term(), Timeout::timeout()) -> Force::term().
-transmit(Name, Assembly, Motion) ->
-    gen_server:call(ID, #transmit{assembly=Assembly, motion=Motion}, Timeout).
+-spec transmit(Name::serial_number(), Motion::term(), Timeout::timeout()) ->
+                      Force::term().
+transmit(Name, Motion) ->
+    gen_server:call(ID, #transmit{motion=Motion}, Timeout).
 
--spec uninstall(Name::serial_number(), Assembly::assembly(), Reason::term(), Timeout::timeout()) -> ok.
-uninstall(ID, Assembly, Reason, Timeout) ->
+-spec uninstall(Name::serial_number(), Reason::term(), Timeout::timeout()) ->
+                       ok.
+uninstall(ID, Reason, Timeout) ->
     gen_server:stop(ID, Reason, Timeout).
 
--record(accept, {assembly::assembly(), criteria::acceptance_criteria()}).
+-record(accept, {criteria::acceptance_criteria()}).
 
--spec accept(Name::serial_number(), Assembly::assembly(), Criteria::acceptance_criteria()) -> accept() | reject().
-accept(Name, Criteria) -> %% I plan to reflect criteria in datasheet; 
-    gen_server:call(Name, #accept{assembly=Assembly, criteria=Criteria}, Timeout).
+-spec accept(Name::serial_number(), Criteria::acceptance_criteria()) ->
+                    accept() | reject().
+accept(Name, Criteria) -> 
+    gen_server:call(Name, #accept{criteria=Criteria}, Timeout).
 
 %% gen_server.
--record(state, {assembly::assembly(), tracking_number::tracking_number()}).
+-record(state, {gearbox::assembly(), shaft::assembly()}).
 
-init(#install{gearbox=GearBox, assembly=Assembly}) ->
+init(#install{gearbox=GearBox, shaft=Shaft}) ->
     process_flag(trap_exit, true),
-    {ok, Release} = erlmachine_shaft:install(GearBox, Assembly),
-    %% I guess tracking time will be filled by tracker itself;
-    Package = package(Release),
-    TrackingNumber = erlmachine_traker:tracking_number(?MODULE, Package),
-    erlmachine_traker:trace(TrackingNumber, #{init => Package}),
-    {ok, #state{tracking_number=TrackingNumber, assembly=Release}}.
+    {ok, Release} = erlmachine_shaft:install(GearBox, Shaft),
+    {ok, #state{gearbox=Gearbox, shaft=Release}}.
 
-handle_call(#attach{gearbox=GearBox, part=Part}, _From, #state{} = State) ->
-    #state{tracking_number=TrackingNumber} = State,
-    Result = erlmachine_shaft:attach(Gearbox, Part),
-    {reply, Result, State};
+handle_call(#attach{part=Part}, _From, #state{gearbox=GearBox, shaft=Shaft} = State) ->
+    Result = {ok, Release} = erlmachine_shaft:attach(Gearbox, Shaft, Part),
+    {reply, Result, State#state{shaft=Release}};
 
-handle_call(#detach{assembly=Assembly, id=ID}, _From, #state{} = State) ->
-    #state{tracking_number = TrackingNumber} = State,
-    Result = erlmachine_shaft:detach(Assembly, ID),
-    {reply, Result, State};
+handle_call(#detach{id=ID}, _From, #state{gearbox=Gearbox, shaft=Shaft} = State) ->
+    Result = {ok, Release} = erlmachine_shaft:detach(Gearbox, Shaft, ID),
+    {reply, Result, State#state{shaft=Release}};
 
-handle_call(#replace{assembly=Assembly, repair=Repair}, _From, #state{} = State) ->
-    #state{tracking_number = TrackingNumber} = State,
-    Result = erlmachine_shaft:replace(Assembly, Repair),
-    {reply, Result, State};
+handle_call(#replace{repair=Repair}, _From, #state{gearbox=GearBox, shaft=Shaft} = State) ->
+    Result = {ok, Release} = erlmachine_shaft:replace(Gearbox, Shaft, Repair),
+    {reply, Result, State#state{shaft=Release}};
 
-handle_call(#transmit{motion = Motion}, _From, #state{} = State) ->
-    #state{assembly = Assembly} = State,
+handle_call(#transmit{motion = Motion}, _From, #state{gearbox=GearBox, shaft=Shaft} = State) ->
     %% Transmit is a direct call to the current mechanical part;
     %% It's always synchronous call;
     %% This point is a place denoted to the  management API of the current mechanical instance;
-    Force = erlmachine_shaft:transmit(Assembly, Motion),
-    {reply, Force, State};
+    {ok, Result, Release} = erlmachine_shaft:transmit(Gearbox, Shaft, Motion),
+    {reply, Result, State#state{shaft=Release}};
 
-handle_call(#accept{criteria = Criteria}, _From, #state{} = State) ->
-    #state{tracking_number = TrackingNumber, assembly = Assembly} = State,
-    Result = erlmachine_factory:accept(Assembly, Criteria),
-    SerialNumber = erlmachine_factory:serial_number(Repair),
-    Package = package(Assembly),
-    if Result == true ->
-            erlmachine_traker:trace(TrackingNumber, #{accept => Package});
-       true -> 
-            erlmachine_traker:trace(TrackingNumber, #{reject => Package, report => Result}),
-            erlmachine_system:reject(Reason, Assembly)
-    end,
-    {reply, Result, State};
+handle_call(#accept{criteria = Criteria}, _From, #state{gearbox=GearBox, shaft=Shaft} = State) ->
+    Result = {ok, Release} = erlmachine_shaft:accept(Gearbox, Shaft, Criteria),
+    {reply, Result, State#state{shaft=Release}};
 
-handle_call(Req, _From, #state{} = State) ->
-    #state{tracking_number = TrackingNumber, assembly = Assembly} = State,
-    SerialNumber = erlmachine_factory:serial_number(Assembly),
-    Package = package(Assembly),
-    erlmachine_traker:trace(TrackingNumber, #{req => Req}),
+handle_call(Req, _From,  #state{gearbox=Gearbox, shaft=Shaft}=State) ->
+    erlmachine_shaft:call(Gearbox, Shaft, Req),
     {reply, ignored, State}.
 
-handle_cast(_Msg, State) ->
-	{noreply, State}.
+handle_cast(Message, #state{gearbox=Gearbox, shaft=Shaft}=State) ->
+    erlmachine_shaft:cast(Gearbox, Shaft, Message),
+    {noreply, State}.
 
-handle_info(#rotate{motion = Motion}, State) ->
-    #state{assembly = Assembly} = State,
-    erlmachine_shaft:rotate(Assembly, Motion), 
+handle_info(#rotate{motion = Motion}, #state{gearbox=Gearbox, shaft=Shaft}=State) ->
+    {ok, Release} = erlmachine_shaft:rotate(GearBox, Shaft, Motion),
     %% At the moment we support only default rotation (all parts will be rotated without certain args);
     %% That works very similar to direct exchange;
     %% We going to provide controlled rotation from our next versions (serial number will be passed as argument);
     %% Serial numbers of parts will be stored inside prototype. It allows to support different shift patterns;
-    {noreply, State};
+    {noreply, State#state{shaft=Release}};
 
-handle_info(#overload{load = Load}) ->
-    {noreply, State};
+handle_info(#overload{load = Load}, #state{gearbox=Gearbox, shaft=Shaft}=State) ->
+    {ok, Release} = erlmachine_shaft:overload(Gearbox, Shaft, Load),
+    {noreply, State#state{shaft=Release}};
 
-handle_info(#block{part = Part, damage = Damage}, State) ->
+handle_info(#block{part=Part, failure = Failure}, #state{gearbox=Gearbox, shaft=Shaft}=State) ->
+    {ok, Release} = erlmachine_shaft:block(Gearbox, Shaft, Part, Failure),
+    {noreply, State#state{shaft=Release}};
+
+handle_info(Message, #state{gearbox=Gearbox, shaft=Shaft}=State) ->
+    erlmachine_shaft:info(Gearbox, Shaft, Message),
     {noreply, State}.
 
 %% When reason is different from normal, or stop - the broken part event is occured;
-terminate(Reason, Assembly) ->
-    erlmachine_shaft:uninstall(Assembly),
-    Package = package(Assembly),
-    TrackingNumber = erlmachine_traker:tracking_number(?MODULE, Package),
-    erlmachine_traker:trace(TrackingNumber, #{terminate => Package, reason => Reason}),
-    (Reason == normal) orelse erlmachine_system:crash(Reason, Assembly),
+terminate(Reason, #state{gearbox=Gearbox, shaft=Shaft}=State) ->
+    erlmachine_shaft:uninstall(Gearbox, Shaft, Reason),
     ok.
 
 code_change(_OldVsn, State, _Extra) ->
 	{ok, State}.
-
-package(Assembly) ->
-    Model = erlmachine_assembly:model(Assembly),
-    SerialNumber = erlmachine_assembly:serial_number(Assembly),
-    Package = #{prototype => ?MODULE, model => Model, serial_number => SerialNumber},
-    Package.
-
-trace(Package) ->
-    TrackingNumber = erlmachine_traker:tracking_number(?MODULE, Package),
-    erlmachine_traker:trace(TrackingNumber, Package).
