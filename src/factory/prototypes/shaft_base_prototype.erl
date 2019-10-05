@@ -25,15 +25,15 @@
 %% API.
 
 %% I guess factory will write to catalogue via catalogue behaviour;
-%% The main purpose of prototype is to provide implemetation of both communication and configuration layers;
-%% The main purpose of detail is to provide mechanical intraface API over internal isolated product structure;
-%% The main purpose of model is to provide mechanical reflection of modelling process over whole assembly;
+%% The main purpose of a prototype is to provide implemetation of both communication and configuration layers;
+%% The main purpose of a detail is to provide mechanical intraface API over internal isolated product structure;
+%% The main purpose of a model is to provide mechanical reflection of modelling process over whole assembly;
 
 format_name(SerialNumber) ->
     ID = erlang:binary_to_atom(SerialNumber, latin1),
     ID.
 
--record(install, {gearbox::gearbox(), shaft::assembly()}).
+-record(install, {gearbox::assembly(), shaft::assembly()}).
 
 -spec install(Name::serial_number(), GearBox::assembly(), Shaft::assembly()) -> 
                      success(pid()) | ingnore | failure(E).
@@ -63,7 +63,7 @@ overload(Name, Load) ->
 
 -record(block, {part::assembly(), failure::failure()}).
 
--spec block(Name::serial_number(), Failure::failure(E, R)) -> 
+-spec block(Name::serial_number(), Part::assembly(), Failure::failure(E, R)) -> 
                    Part.
 block(Name, Part, Failure) ->
     erlang:send(format_name(Name), #block{part=Part, failure=Failure}).
@@ -124,7 +124,7 @@ handle_call(#replace{repair=Repair}, _From, #state{gearbox=GearBox, shaft=Shaft}
 handle_call(#transmit{motion = Motion}, _From, #state{gearbox=GearBox, shaft=Shaft} = State) ->
     %% Transmit is a direct call to the current mechanical part;
     %% It's always synchronous call;
-    %% This point is a place denoted to the  management API of the current mechanical instance;
+    %% This point usually is a place denoted to the management API of the current mechanical instance;
     {ok, Result, Release} = erlmachine_shaft:transmit(Gearbox, Shaft, Motion),
     {reply, Result, State#state{shaft=Release}};
 

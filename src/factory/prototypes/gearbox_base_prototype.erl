@@ -14,9 +14,9 @@
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
 
-%% Gearbox seems look like catalogue from my point of perspective;
+%% Gearbox seems look like catalogue’s storage for any design changes inside of particular instance;
 %% It is a place where statistics is collected;
-%% It can be reflected like view around topology;
+%% It can be reflected like view around whole topology;
 
 format_name(SerialNumber) ->
     ID = erlang:binary_to_atom(SerialNumber, latin1),
@@ -88,7 +88,7 @@ rejected(Name, Criteria) -> %% I plan to reflect criteria in datasheet;
     erlmachine_traker:trace(TrackingNumber, #{reject => Package, report => Result}),
     erlmachine_system:reject(Reason, Assembly).
 
-attach() -> %% Attach and detach are an optional callbacks, cause is different strategies;
+attach() -> %% Attach and detach are an optional callbacks, cause is on different strategies;
      ok.
 
 detach() ->
@@ -104,16 +104,6 @@ init(Gearbox) ->
     Procs = [],
     {ok, {{one_for_one, 1, 5}, Procs}}.
 
-package(Assembly) ->
-    Model = erlmachine_assembly:model(Assembly),
-    SerialNumber = erlmachine_assembly:serial_number(Assembly),
-    Package = #{prototype => ?MODULE, model => Model, serial_number => SerialNumber},
-    Package.
-
-trace(Package) ->
-    TrackingNumber = erlmachine_traker:tracking_number(?MODULE, Package),
-    erlmachine_traker:trace(TrackingNumber, Package).
-
 %% This callback is optional;
 uninstall(Name, Gearbox, Reason) ->
     %% We need to be careful with parts whoose are located outside of supervision;
@@ -123,5 +113,13 @@ uninstall(Name, Gearbox, Reason) ->
     Package = package(Assembly),
     erlmachine_traker:trace(TrackingNumber, #{reject => Package, report => Result}).
 
+package(Assembly) ->
+    Model = erlmachine_assembly:model(Assembly),
+    SerialNumber = erlmachine_assembly:serial_number(Assembly),
+    Package = #{prototype => ?MODULE, model => Model, serial_number => SerialNumber},
+    Package.
 
+trace(Package) ->
+    TrackingNumber = erlmachine_traker:tracking_number(?MODULE, Package),
+    erlmachine_traker:trace(TrackingNumber, Package).
 
