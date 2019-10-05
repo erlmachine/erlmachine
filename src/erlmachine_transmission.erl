@@ -29,6 +29,8 @@
 
 %% API.
 
+%% erlmachine_system:damage(Assembly, Damage), %% That will be produced by system itself,
+
 -spec start_link() -> {ok, pid()}.
 start_link() ->
     gen_server:start_link({local, ?MODULE}, [], []).

@@ -14,9 +14,12 @@
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
 
-%% Gearbox seems look like catalogue’s storage for any design changes inside of particular instance;
-%% It is a place where statistics is collected;
-%% It can be reflected like view around whole topology;
+%% Gearbox is designed with idea to be as catalogued storage for any design changes inside of particular instance;
+%% It is the place where statistics to collect;
+%% It can be reflected like formated and customized view around whole topology;
+%% I guess some kind of persistence will be provided;
+%% We can write any topology changes to our persistence storage;
+%% After that we will be able to build reflection of whole topology which was stored before;
 
 format_name(SerialNumber) ->
     ID = erlang:binary_to_atom(SerialNumber, latin1),
@@ -27,32 +30,38 @@ tag(#{model := Model}) ->
     ID = atom_to_binary(Model, latin1),
     ID.
 
--spec overloaded(Name::serial_number(),  Assembly::assembly(), Load::term()) -> Load.
-overloaded(Name, Assembly, Load) ->
-    %% I guess tracking time will be filled by tracker itself;
-    Package = package(Assembly),
-    TrackingNumber = erlmachine_traker:tracking_number(?MODULE, Package),
-    erlmachine_traker:trace(TrackingNumber, #{overloaded => Package, load => Load}), 
-    erlmachine_gearbox:overloaded(Assembly, Load).
+-spec installed(Name::serial_number(), Assembly::assembly(), Part::assembly()) ->
+                      ok.
+installed(Name, Assembly, Part) ->
+    trace(Assembly, #{installed => Part}),
+    erlmachine_gearbox:installed(Assembly, Part),
+    ok.
 
--spec blocked(Name::serial_number(), Assembly::assembly(), Part::assembly(), Damage::failure(E, R)) -> ok.
-blocked(Name, Assembly, Part, Damage) ->
-    Package = package(Assembly),
-    TrackingNumber = erlmachine_traker:tracking_number(?MODULE, Package),
-    erlmachine_traker:trace(TrackingNumber, #{blocked => Package, part => Part, damage => Damage}),
-    %% erlmachine_system:damage(Assembly, Damage), That will be produced by system itself;
-    erlmachine_gearbox:blocked(Assembly, Part, Damage).
+-spec overloaded(Name::serial_number(), Assembly::assembly(), Part::assembly(), Load::term()) ->
+                        ok.
+overloaded(Name, Assembly, Part, Load) ->
+    %% I guess tracking time can be filled by tracker itself;
+    trace(Assembly, #{overloaded => Part, load => Load}),
+    erlmachine_gearbox:overloaded(Assembly, Part, Load),
+    ok.
 
--spec attached(Name::serial_number(), Assembly::assembly(), Part::assembly()) -> ok.
-attached(Name, Assembly, Part) ->
-    SerialNumber = erlmachine_factory:serial_number(Part),
-    Package = package(Assembly),
-    TrackingNumber = erlmachine_traker:tracking_number(?MODULE, Package),
-    erlmachine_traker:trace(TrackingNumber, #{attach => Package, part => SerialNumber}),
-    erlmachine_gearbox:attached(Assembly, Part).
+-spec blocked(Name::serial_number(), Assembly::assembly(), Part::assembly(), Failure::failure(E, R)) ->
+                     ok.
+blocked(Name, Assembly, Part, Failure) ->
+    erlmachine_gearbox:blocked(Assembly, Part, Failure),
+    trace(Assembly, #{blocked => Part, damage => Failure}),
+    ok.
 
--spec detached(Name::serial_number(), Assembly::assembly(), ID::serial_number()) -> ok.
-detached(Name, Assembly, ID) ->
+-spec attached(Name::serial_number(), Assembly::assembly(), Part::assembly(), Extension::assembly()) ->
+                      ok.
+attached(Name, Assembly, Part, Extension) ->
+    erlmachine_gearbox:attached(Assembly, Part, Extension),
+    trace(Assembly, #{attached => Part, extension => Extension}), 
+    ok.
+
+-spec detached(Name::serial_number(), Assembly::assembly(),  Part::assembly(), Extension::assembly()) -> 
+                      ok.
+detached(Name, Assembly, Part, ID) ->
     %% (Reason == normal) orelse erlmachine_system:crash(Reason, Assembly),
     Package = package(Assembly),
     TrackingNumber = erlmachine_traker:tracking_number(?MODULE, Package),
@@ -88,38 +97,51 @@ rejected(Name, Criteria) -> %% I plan to reflect criteria in datasheet;
     erlmachine_traker:trace(TrackingNumber, #{reject => Package, report => Result}),
     erlmachine_system:reject(Reason, Assembly).
 
+-spec uninstalled(Name::serial_number(), Assembly::assembly(), Part::assembly()) ->
+                     ok.
+uninstalled(Name, Assembly, Part, Reason) ->
+    erlmachine_gearbox:uninstalled(Assembly, Part, Reason),
+    trace(Assembly, #{uninstalled => Part, reason => Reason}),
+    ok.
+
 attach() -> %% Attach and detach are an optional callbacks, cause is on different strategies;
      ok.
 
 detach() ->
     ok.
 
-install(Name, Gearbox) ->
+-record(install, {assembly::assembly(), parts=list(assembly()), procs=list(map()), options=list(tuple)}).
+
+-spec install(Name::serial_number(), Assembly::assembly(), Parts::list(assembly()), Procs::list(map()), Options::list(tuple())) -> 
+                     success(pid()) | ingnore | failure(E).
+install(Name, Gearbox, Parts) ->
     supervisor:start_link({local, format_name(Name)}, ?MODULE, Gearbox).
 
-init(Gearbox) ->
-    SerialNumber = erlmachine_factory:serial_number(Repair),
-    Package = package(Assembly),
-    erlmachine_traker:trace(TrackingNumber, #{reject => Package, report => Result}),
-    Procs = [],
-    {ok, {{one_for_one, 1, 5}, Procs}}.
+init(#install{assembly=Assembly, parts=Parts, procs=Procs, options=Options}) -> 
+    %% Procs need to be prepared by builder before;
+    %% Potentially we can validate on procs count at that place and on attach/detach calls too;
+    Strategy = one_for_all,
+    Intensity = proplists:get_value(intensity, Options, 1),
+    Period = proplists:get_value(period, Options, 5),
+    Spec = #{strategy => Strategy, intensity => Intensity, period => Period},
+    trace(Assembly, #{install => Parts, spec => Spec}),
+    erlmachine_gearbox:install(Assembly, Parts),
+    {ok, {Spec, Procs}}.
 
-%% This callback is optional;
-uninstall(Name, Gearbox, Reason) ->
+-spec uninstall(Name::serial_number(), Assembly::assembly(), Reason::term()) ->
+                       ok.
+uninstall(Name, Assembly, Reason) ->
     %% We need to be careful with parts whoose are located outside of supervision;
     %% They don't terminate within supervision tree;
     exit(whereis(format_name(Name)), Reason),
-    SerialNumber = erlmachine_factory:serial_number(Repair),
-    Package = package(Assembly),
-    erlmachine_traker:trace(TrackingNumber, #{reject => Package, report => Result}).
+    trace(Assembly, #{install => Parts, spec => Spec}),
+    erlmachine_gearbox:uninstall(Assembly, Reason),
+    ok.
 
-package(Assembly) ->
+trace(Assembly, Report) ->
     Model = erlmachine_assembly:model(Assembly),
     SerialNumber = erlmachine_assembly:serial_number(Assembly),
     Package = #{prototype => ?MODULE, model => Model, serial_number => SerialNumber},
-    Package.
-
-trace(Package) ->
     TrackingNumber = erlmachine_traker:tracking_number(?MODULE, Package),
-    erlmachine_traker:trace(TrackingNumber, Package).
+    erlmachine_traker:trace(TrackingNumber, Package#{insight => Insight}).
 

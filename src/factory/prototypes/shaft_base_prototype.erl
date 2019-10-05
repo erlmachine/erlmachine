@@ -33,12 +33,13 @@ format_name(SerialNumber) ->
     ID = erlang:binary_to_atom(SerialNumber, latin1),
     ID.
 
--record(install, {gearbox::assembly(), shaft::assembly()}).
+-record(install, {gearbox::assembly(), shaft::assembly(), options::list(tuple())}).
 
--spec install(Name::serial_number(), GearBox::assembly(), Shaft::assembly()) -> 
+-spec install(Name::serial_number(), GearBox::assembly(), Shaft::assembly(), Options::list(tuple())) -> 
                      success(pid()) | ingnore | failure(E).
-install(Name, GearBox, Shaft) ->
-    gen_server:start_link({local, format_name(Name)}, ?MODULE, #install{gearbox=GearBox, shaft=Shaft}, []).
+install(Name, GearBox, Shaft, Options) ->
+    ID = {local, format_name(Name)},
+    gen_server:start_link(ID, ?MODULE, #install{gearbox=GearBox, shaft=Shaft, options=Options}, []).
 
 -record(attach, {part::assembly()}).
 
@@ -96,16 +97,17 @@ uninstall(ID, Reason, Timeout) ->
 
 -record(accept, {criteria::acceptance_criteria()}).
 
--spec accept(Name::serial_number(), Criteria::acceptance_criteria()) ->
+-spec accept(Name::serial_number(), Criteria::acceptance_criteria(), Timeout::timeout()) ->
                     accept() | reject().
-accept(Name, Criteria) -> 
+accept(Name, Criteria, Timeout) -> 
     gen_server:call(Name, #accept{criteria=Criteria}, Timeout).
 
 %% gen_server.
 -record(state, {gearbox::assembly(), shaft::assembly()}).
 
-init(#install{gearbox=GearBox, shaft=Shaft}) ->
-    process_flag(trap_exit, true),
+init(#install{gearbox=GearBox, shaft=Shaft, options=Options}) ->
+    [process_flag(ID, Param)|| {ID, Param} <- Options],
+    %% process_flag(trap_exit, true), Needs to be passed by default;
     {ok, Release} = erlmachine_shaft:install(GearBox, Shaft),
     {ok, #state{gearbox=Gearbox, shaft=Release}}.
 
