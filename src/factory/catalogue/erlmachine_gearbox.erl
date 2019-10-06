@@ -1,5 +1,8 @@
 -module(erlmachine_gearbox).
 -behaviour(gen_server).
+
+%% The main puprouse of a product module is to provide API between clients part and system; 
+
 %% Gearbox is a component which responsible for reliable spatial placement for all processes;
 %% Gearbox is the place where shafts, gears and axles are fixed. 
 %% Gearbox is the main container component

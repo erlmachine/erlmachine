@@ -151,7 +151,7 @@ uninstall(Name, Assembly, Reason) ->
     %% We need to be careful with parts whoose are located outside of supervision;
     %% They don't terminate within supervision tree;
     exit(whereis(format_name(Name)), Reason),
-    trace(Assembly, #{install => Parts, spec => Spec}),
+    trace(Assembly, #{uninstall => Reason, spec => Spec}),
     {ok, _} = erlmachine_gearbox:uninstall(Assembly, Reason),
     ok.
 
