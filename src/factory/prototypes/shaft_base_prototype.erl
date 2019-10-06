@@ -2,10 +2,10 @@
 
 -folder(<<"erlmachine/factory/prototypes/shaft_base_prototype">>).
 
--behaviour(erlmachine_assembly).
--behaviour(erlmachine_transmission).
+%%-behaviour(erlmachine_assembly).
+%%-behaviour(erlmachine_transmission).
 -behaviour(erlmachine_tracker).
--behaviour(erlmachine_system).
+%%-behaviour(erlmachine_system).
 -behaviour(gen_server).
 
 %% API.

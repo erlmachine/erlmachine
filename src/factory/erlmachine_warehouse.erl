@@ -12,6 +12,15 @@
 -export([terminate/2]).
 -export([code_change/3]).
 
+%% We need to provide broken part issue callback for reason which is oposite to normal;
+%% Correct processing of issue will be provided by factory;
+%% It's need to be sent to warehouse;
+%% It's a not the same like standard unmount;
+%% The specialized "crash" callback from factory will be provided;
+%% From warehouse perspective are two key's message exist - produced and broken;
+%% I am going to store rejected parts on warehouse;
+%% We need to provide the specialized callback for that;
+
 -record(state, {
 }).
 

@@ -29,7 +29,13 @@
 
 %% API.
 
-%% erlmachine_system:damage(Assembly, Damage), %% That will be produced by system itself,
+%% That next statement will be produced by system itself: erlmachine_system:damage(Assembly, Damage);
+%% Transmission can provide a lot of abilities, for example:
+%% Time measurements between parts, different flow algorithms inside gearbox etc..
+%% Actually, it's just tree , and we'll be able to do that by various ways;
+%% We can even provide slowering between parts or persistence layer, because control level was provided;
+%% Error handling will be implemented by product API parts instead;
+%% In generally term transmission is about processing algorithms over mechanical topology;
 
 -spec start_link() -> {ok, pid()}.
 start_link() ->

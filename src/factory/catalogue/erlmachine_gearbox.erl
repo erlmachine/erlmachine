@@ -22,3 +22,8 @@
        ).
 
 -export_type gearbox()::#gearbox{}.
+
+%% detached;
+%% (Reason == normal) orelse erlmachine_system:crash(Assembly, Reason),
+
+%% erlmachine_system:damage(Assembly, Failure).
