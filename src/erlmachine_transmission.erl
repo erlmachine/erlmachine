@@ -3,7 +3,6 @@
 
 %% API.
 -export([start_link/0]).
--export([load/2]).
 
 %% Transmission will be loaded directly by call where ID argument is provided. Transmission can have a lot of copies where each of them is marked by unique serial number
 %% I guess erlmachine_factory will be able to provide convenient way for elements registration (for example {via, syn, <<"your process name">>}) and motion method which is applicable to that registry
@@ -17,12 +16,31 @@
 %% Callbacks
  
 %% gen_server.
--export([init/1]).
--export([handle_call/3]).
--export([handle_cast/2]).
--export([handle_info/2]).
--export([terminate/2]).
--export([code_change/3]).
+-export([
+         init/1, 
+         handle_call/3, handle_cast/2, handle_info/2, 
+         terminate/2,
+         code_change/3
+        ]).
+
+-export([switch_model/3]).
+
+-export([switched/3]).
+
+-spec switch_model(Assembly::assembly(), Part::assembly(), Body::term()) ->
+                          success(term()) | failure(term(), term()) | failure(term()).
+switch_model(Assembly, Part, Body) ->
+    Module = erlmachine_assembly:model_name(Assembly),
+    SN = erlmachine_assembly:serial_no(Assembly),
+    ID = erlmachine_assembly:serial_no(Part),
+    Module:switch(SN, ID, Body).
+
+-spec switched(Assembly::assembly(), Part::assembly(), Extension::assembly()) ->
+                      ok.
+switched(Assembly, Part, Extension) ->
+    Module = erlmachine_assembly:prototype_name(Assembly),
+    SN = erlmachine_assembly:serial_no(Assembly),
+    Module:switched(SN, Assembly, Part, Extension).
 
 -record(state, {
 }).

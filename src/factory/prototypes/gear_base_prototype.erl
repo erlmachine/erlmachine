@@ -107,7 +107,7 @@ handle_call(#switch{part = Part}, _From, #state{gearbox=Gearbox, gear=Gear} = St
 
 handle_call(#replace{repair=Repair}, _From, #state{gearbox=GearBox, gear=Gear} = State) ->
     Result = {ok, Release} = erlmachine_gear:replace(Gearbox, Gear, Repair),
-    {reply, Result, State#state{gear=Gear}};
+    {reply, Result, State#state{gear=Release}};
 
 handle_call(#transmit{motion = Motion}, _From, #state{gearbox=GearBox, gear=Gear} = State) ->
     {ok, Result, Release} = erlmachine_gear:transmit(Gearbox, Gear, Motion),

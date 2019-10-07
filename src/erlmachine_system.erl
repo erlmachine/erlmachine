@@ -5,15 +5,48 @@
 -export([start_link/0]).
 
 %% gen_server.
--export([init/1]).
--export([handle_call/3]).
--export([handle_cast/2]).
--export([handle_info/2]).
--export([terminate/2]).
--export([code_change/3]).
+-export([
+         init/1,
+         handle_call/3, handle_cast/2, handle_info/2, 
+         terminate/2,
+         code_change/3
+        ]).
+
+-export([overload_model/3, block_model/4]).
+
+-export([overloaded/3, blocked/4
 
 -record(state, {
 }).
+
+-spec overload_model(Assembly::assembly(), Load::term(), Body::term()) ->
+                            success(term()) | failure(term(), term()) | failure(term()).
+overload_model(Assembly, Load, Body) ->
+    Module = erlmachine_assembly:model_name(Assembly),
+    SN = erlmachine_assembly:serial_no(Assembly),
+    Module:overload(SN, Load, Body).
+
+-spec block_model(Assembly::assembly(), Part::term(), Failure::failure(), Body::term()) ->
+                         success(term()) | failure(term(), term()) | failure(term()).
+block_model(Assembly, Part, Failure, Body) ->
+    Module = erlmachine_assembly:model_name(Assembly),
+    SN = erlmachine_assembly:serial_no(Assembly),
+    ID = erlmachine_assembly:serial_no(Part),
+    Module:block(SN, ID, Failure, Body).
+
+-spec overloaded(Assembly::assembly(), Part::assembly(), Load::term()) ->
+                        ok.
+overloaded(Assembly, Part, Load) ->
+    Module = erlmachine_assembly:prototype_name(Assembly),
+    SN = erlmachine_assembly:serial_no(Assembly),
+    Module:overloaded(SN, Assembly, Part, Load).
+
+-spec blocked(Assembly::assembly(), Part::assembly(), Extension::assembly(), Failure::failure()) ->
+                     ok.
+blocked(Assembly, Part, Extension, Failure) ->
+    Module = erlmachine_assembly:prototype_name(Assembly),
+    SN = erlmachine_assembly:serial_no(Assembly),
+    Module:blocked(SN, Assembly, Part, Extension, Failure).
 
 %% API.
 

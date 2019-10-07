@@ -6,7 +6,7 @@
 
 %% gen_server.
 -export([
-         init/1, 
+         init/1,
          handle_call/3, handle_cast/2, handle_info/2,
          terminate/2,
          code_change/3
@@ -23,6 +23,10 @@
          model_options/1, model_options/2,
          product/1, product/2
         ]).
+
+-export([install_model/1, replace_model/3,  uninstall_model/3]).
+
+-export([installed/2, replaced/3, uninstalled/3]).
 
 %% The main purpose of this module is to instantiate proceses accordingly to design file;
 %% In this module will be provided incapsulation around building of independent parts and whole transmission as well;
@@ -78,33 +82,48 @@
 -spec install_model(Assembly::assembly()) ->
                            success(term()) | failure(term(), term()) | failure(term()).
 install_model(Assembly::assembly()) ->
-    Module = erlmachine_assembly:model_name(Assembly),
-    SN = erlmachine_assembly:serial_no(Assembly),
-    Options = erlmachine_assembly:model_options(Assembly),
-    MN = erlmachine_assembly:model_no(Assembly),
-    PN = erlmachine_assembly:part_no(Assembly),
+    Module = model_name(Assembly),
+    SN = serial_no(Assembly),
+    Options = model_options(Assembly),
+    MN = model_no(Assembly),
+    PN = part_no(Assembly),
     %% We can check exported functions accordingly to this kind of behaviour; 
     Module:install(SN, MN, PN, Options).
+
+-spec replace_model(Assembly::assembly(), Repair::assembly(), Body::term()) ->
+                         success(term()) | failure(term(), term()) | failure(term()).
+replace_model(Assembly, Repair, Body) ->
+    Module = model_name(Assembly),
+    SN = serial_no(Assembly),
+    ID = serial_no(Repair),
+    Module:replace(SN, ID, Body).
 
 -spec uninstall_model(Assembly::assembly(), Reason::term(), Body::term()) ->
                        ok.
 uninstall_model(Assembly, Reason, Body) ->
-    Module = erlmachine_assembly:model_name(Assembly),
-    SN = erlmachine_assembly:serial_no(Assembly),
+    Module = model_name(Assembly),
+    SN = serial_no(Assembly),
     Module:uninstall(SN, Reason, Body).
 
 -spec installed(Assembly::assembly(), Part::assembly()) ->
                        ok.
 installed(Assembly, Part) ->
-    Module = erlmachine_assembly:prototype_name(Assembly),
-    SN = erlmachine_assembly:serial_no(Assembly),
+    Module = prototype_name(Assembly),
+    SN = serial_no(Assembly),
     Module:installed(SN, Assembly, Part).
 
--spec uninstalled(Assembly::assembly(), Reason, Part::assembly()) ->
+-spec replaced(Assembly::assembly(), Part::assembly(), Extension::assembly()) ->
+                     ok.
+replaced(Assembly, Part, Extension) ->
+    Module = prototype_name(Assembly),
+    SN = serial_no(Assembly),
+    Module:replaced(SN, Assembly, Part, Extension).
+
+-spec uninstalled(Assembly::assembly(), Reason::term(), Part::assembly()) ->
                        ok.
-uninstalled(Assembly, Part) ->
-    Module = erlmachine_assembly:prototype_name(Assembly),
-    SN = erlmachine_assembly:serial_no(Assembly),
+uninstalled(Assembly, Reason, Part) ->
+    Module = prototype_name(Assembly),
+    SN = serial_no(Assembly),
     Module:uninstalled(SN, Assembly, Part, Reason).
 
 -spec start_link() -> {ok, pid()}.
