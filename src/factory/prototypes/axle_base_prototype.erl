@@ -89,8 +89,8 @@ accept(Name, Assembly, Criteria) ->
     Result.
 
 trace(Assembly, Report) ->
-    Model = erlmachine_assembly:model(Assembly),
-    SerialNumber = erlmachine_assembly:serial_number(Assembly),
-    Package = #{prototype => ?MODULE, model => Model, serial_number => SerialNumber},
-    TrackingNumber = erlmachine_traker:tracking_number(?MODULE, Package),
+    ModelName = erlmachine_assembly:model_name(Assembly),
+    SerialNumber = erlmachine_assembly:serial_no(Assembly),
+    Package = #{prototype => ?MODULE, model_name => Model, serial_no => SerialNumber},
+    TrackingNumber = erlmachine_traker:tracking_no(?MODULE, Package),
     erlmachine_traker:trace(TrackingNumber, Package#{insight => Insight}).

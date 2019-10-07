@@ -2,10 +2,10 @@
 
 -folder(<<"erlmachine/factory/prototypes/gear_base_prototype">>).
 
--behaviour(erlmachine_assembly).
--behaviour(erlmachine_transmission).
+%%-behaviour(erlmachine_assembly).
+%%-behaviour(erlmachine_transmission).
 -behaviour(erlmachine_tracker).
--behaviour(erlmachine_system).
+%%-behaviour(erlmachine_system).
 -behaviour(gen_server).
 
 %% API.
@@ -28,17 +28,19 @@ format_name(SerialNumber) ->
     ID = erlang:binary_to_atom(SerialNumber, latin1),
     ID.
 
--record(install, {gearbox::gearbox(), gear::assembly()}).
+-record(install, {gearbox::gearbox(), gear::assembly(), options::list(tuple())}).
 
--spec install(Name::serial_number(), GearBox::assembly(), Gear::assembly()) -> 
+-spec install(Name::serial_number(), GearBox::assembly(), Gear::assembly(), Options::list(tuple())) -> 
                      success(pid()) | ingnore | failure(E).
-install(Name, GearBox, Gear) ->
-    gen_server:start_link({local, format_name(SN)}, ?MODULE, #install{gearbox=GearBox, gear=Gear}, []).
+install(Name, GearBox, Gear, Options) ->
+    ID = {local, format_name(Name)},
+    gen_server:start_link(ID, ?MODULE, #install{gearbox=GearBox, gear=Gear, options=Options}, []).
 
 %% I think about ability to reflect both kind of switching - manual and automated;
 -record(switch, {part::assembly()}).
 
--spec switch(Name::serial_number(), Part::assembly(), Timeout::timeout()) -> success(Release::assembly()) | failure(E, R).
+-spec switch(Name::serial_number(), Part::assembly(), Timeout::timeout()) -> 
+                    success(Release::assembly()) | failure(E, R).
 switch(Name, Part, Timeout) ->
     gen_server:call(format_name(Name), #switch{part = Part}, Timeout).
 
@@ -79,22 +81,23 @@ transmit(Name, Motion) ->
 
 -spec uninstall(Name::serial_number(), Reason::term(), Timeout::timeout()) ->
                        ok.
-uninstall(ID, Reason, Timeout) ->
-    gen_server:stop(ID, Reason, Timeout).
+uninstall(Name, Reason, Timeout) ->
+    gen_server:stop({local, format_name(Name)}, Reason, Timeout).
 
 -record(accept, {criteria::acceptance_criteria()}).
 
--spec accept(Name::serial_number(), Criteria::acceptance_criteria()) ->
+-spec accept(Name::serial_number(), Criteria::acceptance_criteria(), Timeout::timeout()) ->
                     accept() | reject().
-accept(Name, Criteria) -> 
+accept(Name, Criteria, Timeout) -> 
     gen_server:call(Name, #accept{criteria=Criteria}, Timeout).
 
 %% gen_server.
 -record(state, {gearbox::assembly(), gear::assembly()}).
 
-init(#install{gearbox=GearBox, gear=Gear}) -> 
-    %% Gearbox is intended to use like specification of destination point (it's not about persistence); 
-    process_flag(trap_exit, true),
+init(#install{gearbox=GearBox, gear=Gear, options=Options}) ->
+    [process_flag(ID, Param)|| {ID, Param} <- Options],
+    %% process_flag(trap_exit, true), Needs to be passed by default;
+    %% Gearbox is intended to use like specification of destination point (it's not about persistence);
     {ok, Release} = erlmachine_gear:install(GearBox, Gear),
     {ok, #state{gearbox=Gearbox, gear=Release}}.
 

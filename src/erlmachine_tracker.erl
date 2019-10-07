@@ -8,7 +8,7 @@
 
 %% API.
 -export([start_link/0]).
--export([tracking_number/1, tracking_number/2, trace/2]).
+-export([tracking_no/1, tracking_no/2, trace/2]).
 
 %% Callbacks
 
@@ -20,6 +20,7 @@
 -export([terminate/2]).
 -export([code_change/3]).
 
+-include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
 
 -callback tag(Packakge::term()) -> Tag::binary().
@@ -30,21 +31,21 @@
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
--spec tracking_number(Tracker::atom(), Package::term()) -> success(tracking_number()) | failure(term(), term()).
-tracking_number(Tracker, Package) ->
+-spec tracking_no(Tracker::atom(), Package::term()) -> success(tracking_no()) | failure(term(), term()).
+tracking_no(Tracker, Package) ->
     Tag = Tracker:tag(Package),
-    tracking_number(Tag).
+    tracking_no(Tag).
 
--spec tracking_number(Tag::binary()) -> success(tracking_number()) | failure(term(), term()).
+-spec tracking_no(Tag::binary()) -> success(tracking_no()) | failure(term(), term()).
 tracking_number(Tag) when is_binary(Tag) ->
     GUID = <<"GUID">>, %% TODO 
     <<Tag/binary, ".", GUID/binary>>.
 
--record(trace, {package::map(), tracking_number::binary()}).
+-record(trace, {package::map(), tracking_no::binary()}).
 
--spec trace(TrackingNumber::binary(), Package::map()) -> success(tracking_number()) | failure(term(), term()).
+-spec trace(TrackingNumber::binary(), Package::map()) -> success(tracking_no()) | failure(term(), term()).
 trace(TrackingNumber, Package) ->
-    erlang:send(?MODULE, #trace{tracking_number = TrackingNumber, package = Package}).
+    erlang:send(?MODULE, #trace{tracking_no = TrackingNumber, package = Package}).
 
 
 %% gen_server.
@@ -69,7 +70,7 @@ handle_cast(_Msg, State) ->
 	{noreply, State}.
 
 handle_info(#trace{} = Command, #state{gearbox = GearBox} = State) ->
-    #trace{tracking_number = TrackingNumber, package = Package} = Command,
+    #trace{tracking_no = TrackingNumber, package = Package} = Command,
     erlmachine_transmission:rotate(GearBox, #{TrackingNumber => Package}), %% we need to find default input here
     {noreply, State};
 handle_info() ->
@@ -83,8 +84,8 @@ code_change(_OldVsn, State, _Extra) ->
 handle_continue(#accept{}, State#state{gearbox = GearBox, file_id = FileId}) ->
     try
         erlmachine_factory:accept(GearBox),
-        SN = erlmachine_assembly:serial_number(GearBox),
-        erlmachine_file:write(FileId, #{accept => #{serial_number => SN}}),
+        SN = erlmachine_assembly:serial_no(GearBox),
+        erlmachine_file:write(FileId, #{accept => #{serial_no => SN}}),
         {noreply, State};
     catch E:R ->
             erlmachine_file:write(FileId, #{accept => #{error => E, reason => R}}),

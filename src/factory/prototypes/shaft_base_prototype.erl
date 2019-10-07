@@ -35,7 +35,7 @@ format_name(SerialNumber) ->
 
 -record(install, {gearbox::assembly(), shaft::assembly(), options::list(tuple())}).
 
--spec install(Name::serial_number(), GearBox::assembly(), Shaft::assembly(), Options::list(tuple())) -> 
+-spec install(Name::serial_number(), GearBox::assembly(), Shaft::assembly(), Options::list(tuple())) ->
                      success(pid()) | ingnore | failure(E).
 install(Name, GearBox, Shaft, Options) ->
     ID = {local, format_name(Name)},
@@ -92,8 +92,8 @@ transmit(Name, Motion) ->
 
 -spec uninstall(Name::serial_number(), Reason::term(), Timeout::timeout()) ->
                        ok.
-uninstall(ID, Reason, Timeout) ->
-    gen_server:stop(ID, Reason, Timeout).
+uninstall(Name, Reason, Timeout) ->
+    gen_server:stop({local, format_name(Name)}, Reason, Timeout).
 
 -record(accept, {criteria::acceptance_criteria()}).
 
