@@ -12,12 +12,22 @@
 -export([start_link/0]).
 
 %% gen_server.
--export([init/1]).
--export([handle_call/3]).
--export([handle_cast/2]).
--export([handle_info/2]).
--export([terminate/2]).
--export([code_change/3]).
+-export([
+         init/1, 
+         handle_call/3, handle_cast/2, handle_info/2, 
+         terminate/2, 
+         code_change/3
+        ]).
+
+-export([
+         install/4, 
+         switch/3, 
+         overload/2, block/3, 
+         replace/3,
+         rotate/2, transmit/3, %% transmit/4
+         uninstall/3,
+         accept/3
+        ]).
 
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
@@ -49,20 +59,22 @@ switch(Name, Part, Timeout) ->
 -spec overload(Name::serial_number(), Load::term()) ->
                       Load.
 overload(Name, Load) ->
-    erlang:send(format_name(Name), #overload{load=Load}).
+    erlang:send(format_name(Name), #overload{load=Load}), 
+    Load.
 
 -record(block, {part::assembly(), failure::failure()}).
 
--spec block(Name::serial_number(), Failure::failure(E, R)) -> 
-                   Part.
+-spec block(Name::serial_number(), Part::assembly(), Failure::failure(E, R)) -> 
+                   Failure.
 block(Name, Part, Failure) ->
-    erlang:send(format_name(Name), #block{part=Part, failure=Failure}).
+    erlang:send(format_name(Name), #block{part=Part, failure=Failure}), 
+    Failure.
 
 -record(replace, {repair::assembly()}).
 
 -spec replace(Name::serial_number(), Repair::assembly(), Timeout::timeout()) -> 
                      success(Release::assembly()) | failure(E, R).
-replace(Name, Repair) ->
+replace(Name, Repair, Timeout) ->
     gen_server:call(format_name(Name), #replace{repair=Repair}, Timeout).
 
 -record(rotate, {motion::term()}).
@@ -70,13 +82,14 @@ replace(Name, Repair) ->
 -spec rotate(Name::serial_number(), Motion::term()) -> 
                     Motion.
 rotate(Name, Motion) ->
-    erlang:send(format_name(Name), #rotate{motion=Motion}).
+    erlang:send(format_name(Name), #rotate{motion=Motion}), 
+    Motion.
 
 -record(transmit, {motion::term()}).
 
 -spec transmit(Name::serial_number(), Motion::term(), Timeout::timeout()) ->
                       Force::term().
-transmit(Name, Motion) ->
+transmit(Name, Motion, Timeout) ->
     gen_server:call(ID, #transmit{motion=Motion}, Timeout).
 
 -spec uninstall(Name::serial_number(), Reason::term(), Timeout::timeout()) ->
@@ -110,12 +123,12 @@ handle_call(#replace{repair=Repair}, _From, #state{gearbox=GearBox, gear=Gear} =
     {reply, Result, State#state{gear=Release}};
 
 handle_call(#transmit{motion = Motion}, _From, #state{gearbox=GearBox, gear=Gear} = State) ->
-    {ok, Result, Release} = erlmachine_gear:transmit(Gearbox, Gear, Motion),
+    {ok, Result, Release} = erlmachine_gear:transmit(Gearbox, Gear, Gear, Motion),
     {reply, Result, State#state{gear=Release}};
 
 handle_call(#accept{criteria = Criteria}, _From, #state{gearbox=GearBox, gear=Gear} = State) ->
-    Result = {ok, Release} = erlmachine_gear:accept(Gearbox, Gear, Criteria),
-    {reply, Result, State#state{gear=Release}};
+    Result = {ok, Report, Release} = erlmachine_gear:accept(Gearbox, Gear, Criteria),
+    {reply, Report, State#state{gear=Release}};
 
 handle_call(Req, _From,  #state{gearbox=Gearbox, gear=Gear}=State) ->
     erlmachine_gear:call(Gearbox, Gear, Req),
@@ -126,10 +139,15 @@ handle_cast(Message, #state{gearbox=Gearbox, gear=Gear}=State) ->
     {noreply, State}.
 
 handle_info(#rotate{motion = Motion}, #state{gearbox=Gearbox, gear=Gear}=State) ->
-    {ok, Release} = erlmachine_gear:rotate(GearBox, Gear, Motion),
+    Parts = erlmachine_gear:parts(Gear),
     %% Potentially clients can provide sync delivery inside this call;
     %% It can work a very similar to job queue);
-    {noreply, State#state{gear=Release}};
+    case Parts of [Part|_] ->
+            {ok, Release} = erlmachine_gear:rotate(GearBox, Gear, Part, Motion),
+            {noreply, State#state{gear=Release}};
+        _ -> 
+            {noreply, State} 
+    end;
 
 handle_info(#overload{load = Load}, #state{gearbox=Gearbox, gear=Gear}=State) ->
     {ok, Release} = erlmachine_gear:overload(Gearbox, Gear, Load),

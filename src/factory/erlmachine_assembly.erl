@@ -24,9 +24,21 @@
          product/1, product/2
         ]).
 
--export([install_model/1, replace_model/3,  uninstall_model/3]).
+-export([install_model/1, replace_model/3, uninstall_model/3, accept_model/3]).
 
--export([installed/2, replaced/3, uninstalled/3]).
+-export([installed/2, replaced/3, uninstalled/3, accepted/4, rejected/4]).
+
+-callback install(SN::serial_no(), MN::model_no(), PN::part_no(), Options::list()) -> 
+    success(term()) | failure(term(), term(), term()) | failure(term()).
+
+-callback replace(SN::serial_no(), ID::serial_no(), Body::term()) -> 
+    success(term()) | failure(term(), term(), term()) | failure(term()).
+
+-callback uninstall(SN::serial_no(), Reason::term(), Body::term()) -> 
+    success(term()) | failure(term(), term(), term()) | failure(term()).
+
+-callback accept(SN::serial_no(), Criteria::term(), Body::term()) -> 
+    success(term(), term()) | failure(term(), term(), term()) | failure(term()).
 
 %% The main purpose of this module is to instantiate proceses accordingly to design file;
 %% In this module will be provided incapsulation around building of independent parts and whole transmission as well;
@@ -80,7 +92,7 @@
 %% API.
 
 -spec install_model(Assembly::assembly()) ->
-                           success(term()) | failure(term(), term()) | failure(term()).
+                           success(term()) | failure(term(), term(), term()) | failure(term()).
 install_model(Assembly::assembly()) ->
     Module = model_name(Assembly),
     SN = serial_no(Assembly),
@@ -91,12 +103,19 @@ install_model(Assembly::assembly()) ->
     Module:install(SN, MN, PN, Options).
 
 -spec replace_model(Assembly::assembly(), Repair::assembly(), Body::term()) ->
-                         success(term()) | failure(term(), term()) | failure(term()).
+                           success(term()) | failure(term(), term(), term()) | failure(term()).
 replace_model(Assembly, Repair, Body) ->
     Module = model_name(Assembly),
     SN = serial_no(Assembly),
     ID = serial_no(Repair),
     Module:replace(SN, ID, Body).
+
+-spec accept_model(Assembly::assembly(), Criteria::term(), Body::term()) ->
+                          success(Report::term(), Release::term()) | failure(Error::term(), Reason::term(), Reject::term()).
+accept_model(Assembly, Criteria, Body) ->
+    Module = model_name(Assembly),
+    SN = serial_no(Assembly),
+    Module:accept(SN, Criteria, Body).
 
 -spec uninstall_model(Assembly::assembly(), Reason::term(), Body::term()) ->
                        ok.
@@ -118,6 +137,20 @@ replaced(Assembly, Part, Extension) ->
     Module = prototype_name(Assembly),
     SN = serial_no(Assembly),
     Module:replaced(SN, Assembly, Part, Extension).
+
+-spec accepted(Assembly::assembly(), Part::assembly(), Criteria::term(), Report::term()) ->
+                      ok.
+accepted(Assembly, Part, Criteria, Report) ->
+    Module = prototype_name(Assembly),
+    SN = serial_no(Assembly),
+    Module:accepted(SN, Assembly, Part, Criteria, Report).
+
+-spec rejected(Assembly::assembly(), Part::assembly(), Criteria::term(), Report::term()) ->
+                      ok.
+rejected(Assembly, Part, Criteria, Report) ->
+    Module = prototype_name(Assembly),
+    SN = serial_no(Assembly),
+    Module:rejected(SN, Assembly, Part, Criteria, Report).
 
 -spec uninstalled(Assembly::assembly(), Reason::term(), Part::assembly()) ->
                        ok.

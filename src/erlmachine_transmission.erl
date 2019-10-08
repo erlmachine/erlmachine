@@ -23,17 +23,37 @@
          code_change/3
         ]).
 
--export([switch_model/3]).
+-export([switch_model/3, rotate_model/4, transmit_model/4]).
 
 -export([switched/3]).
 
+-callback switch(SN::serial_no(), ID::serial_no(), Body::term()) -> 
+    success(term()) | failure(term(), term(), term()) | failure(term()).
+
+-callback rotate(SN::serial_no(), Motion::term(), Body::term()) -> 
+    success(term()) | failure(term(), term(), term()) | failure(term()).
+
 -spec switch_model(Assembly::assembly(), Part::assembly(), Body::term()) ->
-                          success(term()) | failure(term(), term()) | failure(term()).
+                          success(term()) | failure(term(), term(), term()) | failure(term()).
 switch_model(Assembly, Part, Body) ->
     Module = erlmachine_assembly:model_name(Assembly),
     SN = erlmachine_assembly:serial_no(Assembly),
     ID = erlmachine_assembly:serial_no(Part),
     Module:switch(SN, ID, Body).
+
+-spec rotate_model(Assembly::assembly(), Part::assembly(), Motion::term(), Body::term()) ->
+                          success(term()) | failure(term(), term(), term()) | failure(term()).
+rotate_model(_Assembly, Part, Motion, Body) ->
+    Module = erlmachine_assembly:model_name(Part),
+    SN = erlmachine_assembly:serial_no(Part),
+    Module:rotate(SN, Motion, Body).
+
+-spec transmit_model(Assembly::assembly(), Part::assembly(), Motion::term(), Body::term()) ->
+                          success(term(), term()) | failure(term(), term(), term()) | failure(term()).
+transmit_model(_Assembly, Part, Motion, Body) ->
+    Module = erlmachine_assembly:model_name(Part),
+    SN = erlmachine_assembly:serial_no(Part),
+    Module:transmit(SN, Motion, Body).
 
 -spec switched(Assembly::assembly(), Part::assembly(), Extension::assembly()) ->
                       ok.
@@ -41,6 +61,8 @@ switched(Assembly, Part, Extension) ->
     Module = erlmachine_assembly:prototype_name(Assembly),
     SN = erlmachine_assembly:serial_no(Assembly),
     Module:switched(SN, Assembly, Part, Extension).
+
+
 
 -record(state, {
 }).

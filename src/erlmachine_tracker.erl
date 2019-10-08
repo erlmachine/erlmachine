@@ -8,26 +8,31 @@
 
 %% API.
 -export([start_link/0]).
--export([tracking_no/1, tracking_no/2, trace/2]).
-
-%% Callbacks
 
 %% gen_server.
--export([init/1]).
--export([handle_call/3]).
--export([handle_cast/2]).
--export([handle_info/2]).
--export([terminate/2]).
--export([code_change/3]).
+-export([
+         init/1, 
+         handle_call/3, handle_cast/2, handle_info/2,
+         handle_continue/2,
+         terminate/2,
+         code_change/3,
+         format_status/2
+        ]).
+
+-export([tracking_no/1, tracking_no/2, trace/2]).
 
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
 
 -callback tag(Packakge::term()) -> Tag::binary().
 
+-type tracking_no()::binary().
+
+-export_type([tracking_no/0]).
+
 %% API.
 
--spec start_link() -> success(pid()) | ignore | failure(term()}.
+-spec start_link() -> success(pid()) | ignore | failure(term()).
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
@@ -37,7 +42,7 @@ tracking_no(Tracker, Package) ->
     tracking_no(Tag).
 
 -spec tracking_no(Tag::binary()) -> success(tracking_no()) | failure(term(), term()).
-tracking_number(Tag) when is_binary(Tag) ->
+tracking_no(Tag) when is_binary(Tag) ->
     GUID = <<"GUID">>, %% TODO 
     <<Tag/binary, ".", GUID/binary>>.
 
@@ -51,7 +56,7 @@ trace(TrackingNumber, Package) ->
 %% gen_server.
 
 -record(accept, {}).
--record(state, {gearbox::assembly(), file::file_id()}).
+-record(state, {gearbox::assembly(), file_id::term()}).
 
 init([]) ->
     GearBox = erlmachine_factory:gearbox(?MODULE, []), 
@@ -73,7 +78,7 @@ handle_info(#trace{} = Command, #state{gearbox = GearBox} = State) ->
     #trace{tracking_no = TrackingNumber, package = Package} = Command,
     erlmachine_transmission:rotate(GearBox, #{TrackingNumber => Package}), %% we need to find default input here
     {noreply, State};
-handle_info() ->
+handle_info(_Message, State) ->
     {noreply, State}.
 
 code_change(_OldVsn, State, _Extra) ->
@@ -81,12 +86,12 @@ code_change(_OldVsn, State, _Extra) ->
 
 %% We consider Module as implementation point (like class) and serial number as instance - (like object); 
 %% We can support polymorphism by different ways - by overriding prototype or by changing topology itself;
-handle_continue(#accept{}, State#state{gearbox = GearBox, file_id = FileId}) ->
+handle_continue(#accept{}, #state{gearbox = GearBox, file_id = FileId}=State) ->
     try
         erlmachine_factory:accept(GearBox),
         SN = erlmachine_assembly:serial_no(GearBox),
         erlmachine_file:write(FileId, #{accept => #{serial_no => SN}}),
-        {noreply, State};
+        {noreply, State}
     catch E:R ->
             erlmachine_file:write(FileId, #{accept => #{error => E, reason => R}}),
             {stop, {E, R}, State}
@@ -97,7 +102,7 @@ handle_continue(_, State) ->
 terminate(_Reason, _State) ->
     ok.
 
-format_status(Opt, [PDict, State]) ->
+format_status(_Opt, [_PDict, _State]) ->
     [].
 
 

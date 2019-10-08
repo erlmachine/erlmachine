@@ -1,4 +1,4 @@
--module(erlmachine_system).
+ -module(erlmachine_system).
 -behaviour(gen_server).
 
 %% API.
@@ -14,7 +14,24 @@
 
 -export([overload_model/3, block_model/4]).
 
--export([overloaded/3, blocked/4
+-export([overloaded/3, blocked/4]).
+
+-include("erlmachine_factory.hrl").
+
+-type failure(E, R) :: {error, {E, R}}.
+-type failure(E) :: {error, E}.
+-type failure(E, R, State) :: {error, {E, R}, State}.
+-type success(Result) :: {ok, Result}.
+-type success(Result, State) :: {ok, Result, State}.
+-type success() :: ok.
+
+-export_type([failure/1, failure/2, failure/3, success/0, success/1, success/2]).
+
+-callback overload(SN::serial_no(), Load::term(), Body::term()) -> 
+    success(term()) | failure(term(), term(), term()) | failure(term()).
+
+-callback block(SN::serial_no(), ID::serial_no(), Failure::term(), Body::term()) -> 
+    success(term()) | failure(term(), term(), term()) | failure(term()).
 
 -record(state, {
 }).
@@ -26,7 +43,7 @@ overload_model(Assembly, Load, Body) ->
     SN = erlmachine_assembly:serial_no(Assembly),
     Module:overload(SN, Load, Body).
 
--spec block_model(Assembly::assembly(), Part::term(), Failure::failure(), Body::term()) ->
+-spec block_model(Assembly::assembly(), Part::term(), Failure::failure(term(), term()), Body::term()) ->
                          success(term()) | failure(term(), term()) | failure(term()).
 block_model(Assembly, Part, Failure, Body) ->
     Module = erlmachine_assembly:model_name(Assembly),
@@ -41,7 +58,7 @@ overloaded(Assembly, Part, Load) ->
     SN = erlmachine_assembly:serial_no(Assembly),
     Module:overloaded(SN, Assembly, Part, Load).
 
--spec blocked(Assembly::assembly(), Part::assembly(), Extension::assembly(), Failure::failure()) ->
+-spec blocked(Assembly::assembly(), Part::assembly(), Extension::assembly(), Failure::failure(term(), term())) ->
                      ok.
 blocked(Assembly, Part, Extension, Failure) ->
     Module = erlmachine_assembly:prototype_name(Assembly),

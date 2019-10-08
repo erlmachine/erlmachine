@@ -15,7 +15,7 @@
          attached/4, detached/4,
          replaced/3,
          switched/4,
-         accepted/4, rejected/4,
+         accepted/5, rejected/5,
          attach/4, detach/4, install/5, uninstall/3, accept/3
         ]).
 
@@ -92,18 +92,18 @@ switched(Name, Assembly, Part, Extension) ->
     trace(Assembly, #{switched => Part, extension => Extension}),
     ok.
 
--spec accepted(Name::serial_number(), Assembly::assembly(), Part::assembly(), Criteria::acceptance_criteria()) -> 
+-spec accepted(Name::serial_number(), Assembly::assembly(), Part::assembly(), Criteria::acceptance_criteria(), Report::term()) -> 
                       ok.
-accepted(Name, Assembly, Part, Criteria) ->
-    erlmachine_gearbox:accepted(Assembly, Part, Criteria),
-    erlmachine_traker:trace(TrackingNumber, #{accepted => Part, criteria => Criteria}),
+accepted(Name, Assembly, Part, Criteria, Report) ->
+    erlmachine_gearbox:accepted(Assembly, Part, Criteria, Report),
+    erlmachine_traker:trace(TrackingNumber, #{accepted => Part, criteria => Criteria, report => Report}),
     ok.
 
--spec rejected(Name::serial_number(),  Assembly::assembly(), Part::assembly(), Criteria::acceptance_criteria()) -> 
+-spec rejected(Name::serial_number(),  Assembly::assembly(), Part::assembly(), Criteria::acceptance_criteria(), Report::term()) -> 
                       ok.
-rejected(Name, Assembly, Part, Criteria) ->
-    erlmachine_gearbox:rejected(Assembly, Part, Criteria),
-    erlmachine_traker:trace(TrackingNumber, #{rejected => Part, criteria => Criteria}),
+rejected(Name, Assembly, Part, Criteria, Report) ->
+    erlmachine_gearbox:rejected(Assembly, Part, Criteria, Report),
+    erlmachine_traker:trace(TrackingNumber, #{rejected => Part, criteria => Criteria, report => Report}),
     ok.
 
 -spec uninstalled(Name::serial_number(), Assembly::assembly(), Part::assembly(), Reason::term()) ->
