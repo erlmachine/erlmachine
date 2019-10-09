@@ -1,14 +1,14 @@
 -module(erlmachine_gear).
 
 -export([
-         install/2,
-         switch/3,
-         replace/3,
-         transmit/4, rotate/4,
+         install_model/2,
+         switch_model/3,
+         replace_model/3,
+         transmit_model/4, rotate_model/3, rotate/2,
          call/3, cast/3, info/3,
-         accept/3,
-         overload/3, block/4,
-         uninstall/3
+         accept_model/3,
+         overload_model/3, block_model/4,
+         uninstall_model/3
         ]).
 
 -export([
@@ -29,9 +29,9 @@
 
 -export_type([gear/0]).
 
--spec install(GearBox::assembly(), Gear::assembly()) -> 
+-spec install_model(GearBox::assembly(), Gear::assembly()) -> 
                      success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
-install(GearBox, Gear) ->
+install_model(GearBox, Gear) ->
     Mount = mount(Gear),
     {ok, Body} = erlmachine_assembly:install_model(Gear),
     %% We are going to add error handling later; 
@@ -40,26 +40,27 @@ install(GearBox, Gear) ->
     (Mount == GearBox) orelse erlmachine_assembly:installed(GearBox, Release),
     {ok, Release}.
 
--spec switch(GearBox::assembly(), Gear::assembly(), Part::assembly()) ->
+-spec switch_model(GearBox::assembly(), Gear::assembly(), Part::assembly()) ->
                     success(Release::assembly()) | failure(E::term(), R::term(),  Rejected::assembly()).
-switch(GearBox, Gear, Part) ->
+switch_model(GearBox, Gear, Part) ->
+    Parts = erlmachine_assembly:switch(parts(Gear), Part),
     {ok, Body} = erlmachine_transmission:switch_model(Gear, Part, body(Gear)),
-    Release = body(Gear, Body),
+    Release = parts(body(Gear, Body), Parts),
     erlmachine_transmission:switched(GearBox, Release, Part),
     {ok, Release}.
 
--spec replace(GearBox::assembly(), Gear::assembly(), Repair::assembly()) ->
+-spec replace_model(GearBox::assembly(), Gear::assembly(), Repair::assembly()) ->
                      success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
-replace(GearBox, Gear, Repair) ->
+replace_model(GearBox, Gear, Repair) ->
     {ok, Body} = erlmachine_assembly:replace_model(Gear, Repair, body(Gear)),
     Release = body(Gear, Body),
     erlmachine_assembly:replaced(GearBox, Release, Repair),
     {ok, Repair}.
 
 %% Potentially transmit will be able to provide chained processing over list of elements;
--spec transmit(GearBox::assembly(), Gear::assembly(), Part::assembly(), Motion::term()) ->
+-spec transmit_model(GearBox::assembly(), Gear::assembly(), Part::assembly(), Motion::term()) ->
                       success(Result::term(), Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
-transmit(_GearBox, Gear, Part, Motion) ->
+transmit_model(_GearBox, Gear, Part, Motion) ->
     {ok, Result, Body} = erlmachine_transmission:transmit_model(Gear, Part, Motion, body(body)),
     Release = body(Gear, Body),
     {ok, Result, Release}.
@@ -74,9 +75,9 @@ call(_Gearbox, _Gear, _Req) ->
 cast(_Gearbox, _Gear, _Message) -> 
     ignore.
 
--spec accept(GearBox::assembly(), Gear::assembly(), Criteria::term()) ->
+-spec accept_model(GearBox::assembly(), Gear::assembly(), Criteria::term()) ->
                     success(Report::term(), Release::assembly())| failure(E::term(), R::term(), Rejected::assembly()).
-accept(GearBox, Gear, Criteria) ->
+accept_model(GearBox, Gear, Criteria) ->
     {Tag, Result, Body} = erlmachine_assembly:accept_model(Gear, Criteria, body(Gear)),
     Release = body(Gear, Body),
     case Tag of 
@@ -90,24 +91,29 @@ accept(GearBox, Gear, Criteria) ->
             {error, Result, Release} 
     end.
 
--spec rotate(GearBox::assembly(), Gear::assembly(), Part::assembly(), Motion::term()) ->
+-spec rotate_model(GearBox::assembly(), Gear::assembly(), Motion::term()) ->
                     success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
-rotate(_GearBox, Gear, Part, Motion) ->
-    {ok, Body} = erlmachine_transmission:rotate_model(Gear, Part, Motion, body(body)),
+rotate_model(_GearBox, Gear, Motion) ->
+    {ok, Body} = erlmachine_transmission:rotate_model(Gear, Motion, body(body)),
     Release = body(Gear, Body),
     {ok, Release}.
 
--spec overload(GearBox::assembly(), Gear::assembly(), Load::term()) ->
+-spec rotate(Part::assembly(), Motion::term()) ->
+                    success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
+rotate(Part, Motion) ->
+    erlmachine_transmission:rotate(Part, Motion).
+
+-spec overload_model(GearBox::assembly(), Gear::assembly(), Load::term()) ->
                       success(Release::assembly()) | failure(E::term(), R::term(), Reject::assembly()).
-overload(GearBox, Gear, Load) ->
+overload_model(GearBox, Gear, Load) ->
     {ok, Body} = erlmachine_system:overload_model(Gear, Load, body(Gear)),
     Release = body(Gear, Body),
     erlmachine_system:overloaded(GearBox, Release, Load),
     {ok, Release}.
 
--spec block(GearBox::assembly(), Gear::assembly(), Part::assembly(), Failure::term()) ->
+-spec block_model(GearBox::assembly(), Gear::assembly(), Part::assembly(), Failure::term()) ->
                       success(Release::assembly()) | failure(E::term(), R::term(), Reject::assembly()).
-block(GearBox, Gear, Part, Failure) ->
+block_model(GearBox, Gear, Part, Failure) ->
     {ok, Body} = erlmachine_system:block_model(Gear, Part, Failure, body(Gear)),
     Release = body(Gear, Body),
     erlmachine_system:blocked(GearBox, Release, Part, Failure),
@@ -118,9 +124,9 @@ block(GearBox, Gear, Part, Failure) ->
 info(_Gearbox, _Gear, _Message) -> 
     ignore.
 
--spec uninstall(GearBox::assembly(), Gear::assembly(), Reason::term()) -> 
+-spec uninstall_model(GearBox::assembly(), Gear::assembly(), Reason::term()) -> 
     ok.
-uninstall(GearBox, Gear, Reason) ->
+uninstall_model(GearBox, Gear, Reason) ->
     Mount = mount(Gear),
     {ok, Body} = erlmachine_assembly:uninstall_model(Gear, Reason, body(Gear)),
     Release = body(Gear, Body),

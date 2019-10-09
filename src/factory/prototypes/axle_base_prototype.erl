@@ -48,7 +48,7 @@ uninstalled(_Name, Axle, Part, Reason) ->
 attach(Name, GearBox, Axle, Part, Spec) ->
     trace(Axle, #{attach => Part}),
     Res = supervisor:start_child({local, format_name(Name)}, Spec),
-    erlmachine_axle:attach(GearBox, Axle, Part),
+    {ok, _} = erlmachine_axle:attach(GearBox, Axle, Part),
     Res.
 
 -spec detach(Name::serial_no(), GearBox::assembly(), Axle::assembly(), ID::serial_no(), ChieldID::term()) ->
@@ -75,7 +75,7 @@ init(#install{gearbox=GearBox, axle=Axle, options=Options}) ->
     Period = proplists:get_value(period, Options, 5),
     Parts = erlmachine_axle:parts(Axle),
     trace(Axle, #{install => Parts}),
-    {ok, _} = erlmachine_axle:install(GearBox, Axle),
+    {ok, _} = erlmachine_axle:install_model(GearBox, Axle),
     Specs = erlmachine_axle:specs(Axle),
     {ok, {#{strategy => Strategy, intensity => Intensity, period => Period}, Specs}}.
 
@@ -89,13 +89,13 @@ uninstall(Name, GearBox, Axle, Reason) ->
     exit(whereis(format_name(Name)), Reason),
     Parts = erlmachine_axle:parts(Axle),
     trace(Axle, #{uninstall => Parts, reason => Reason}),
-    {ok, _} = erlmachine_axle:uninstall(GearBox, Axle, Reason),
+    {ok, _} = erlmachine_axle:uninstall_model(GearBox, Axle, Reason),
     ok.
 
 -spec accept(Name::serial_no(), GearBox::assembly(), Axle::assembly(), Criteria::acceptance_criteria()) ->
                     accept() | reject().
 accept(_Name, GearBox, Axle, Criteria) ->
-    {ok, Report, _Release} = erlmachine_axle:accept(GearBox, Axle, Criteria),
+    {ok, Report, _Release} = erlmachine_axle:accept_model(GearBox, Axle, Criteria),
     Report.
 
 trace(Assembly, Insight) ->

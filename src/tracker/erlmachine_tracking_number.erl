@@ -1,4 +1,5 @@
 -module(erlmachine_tracking_number).
 -export([]).
 
--export_type tracking_no() :: binary().
+-type tracking_no()::binary().
+-export_type([tracking_no/0]).

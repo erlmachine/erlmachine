@@ -106,23 +106,23 @@ init(#install{gearbox=GearBox, gear=Gear, options=Options}) ->
     [process_flag(ID, Param)|| {ID, Param} <- Options],
     %% process_flag(trap_exit, true), Needs to be passed by default;
     %% Gearbox is intended to use like specification of destination point (it's not about persistence);
-    {ok, Release} = erlmachine_gear:install(GearBox, Gear),
+    {ok, Release} = erlmachine_gear:install_model(GearBox, Gear),
     {ok, #state{gearbox=GearBox, gear=Release}}.
 
 handle_call(#switch{part = Part}, _From, #state{gearbox=Gearbox, gear=Gear} = State) ->
-    Result = {ok, Release} = erlmachine_gear:switch(Gearbox, Gear, Part),
+    Result = {ok, Release} = erlmachine_gear:switch_model(Gearbox, Gear, Part),
     {reply, Result, State#state{gear=Release}};
 
 handle_call(#replace{repair=Repair}, _From, #state{gearbox=GearBox, gear=Gear} = State) ->
-    Result = {ok, Release} = erlmachine_gear:replace(GearBox, Gear, Repair),
+    Result = {ok, Release} = erlmachine_gear:replace_model(GearBox, Gear, Repair),
     {reply, Result, State#state{gear=Release}};
 
 handle_call(#transmit{motion = Motion}, _From, #state{gearbox=GearBox, gear=Gear} = State) ->
-    {ok, Result, Release} = erlmachine_gear:transmit(GearBox, Gear, Gear, Motion),
+    {ok, Result, Release} = erlmachine_gear:transmit_model(GearBox, Gear, Gear, Motion),
     {reply, Result, State#state{gear=Release}};
 
 handle_call(#accept{criteria = Criteria}, _From, #state{gearbox=GearBox, gear=Gear} = State) ->
-    {ok, Report, Release} = erlmachine_gear:accept(GearBox, Gear, Criteria),
+    {ok, Report, Release} = erlmachine_gear:accept_model(GearBox, Gear, Criteria),
     {reply, Report, State#state{gear=Release}};
 
 handle_call(Req, _From,  #state{gearbox=GearBox, gear=Gear}=State) ->
@@ -135,23 +135,20 @@ handle_cast(Message, #state{gearbox=GearBox, gear=Gear}=State) ->
 
 handle_info(#rotate{motion = Motion}, #state{gearbox=GearBox, gear=Gear}=State) ->
     Parts = erlmachine_gear:parts(Gear),
+    {ok, Release} = erlmachine_shaft:rotate_model(GearBox, Gear, Motion),
+    [erlmachine_shaft:rotate(GearBox, Part, Motion)|| Part <- Parts],
     %% Potentially clients can provide sync delivery inside this call;
     %% It can work a very similar to job queue);
-    case Parts of [Part|_] ->
-            {ok, Release} = erlmachine_gear:rotate(GearBox, Gear, Part, Motion),
-            {noreply, State#state{gear=Release}};
-        _ -> 
-            {noreply, State} 
-    end;
+    {noreply, State#state{gear=Release}};
 
 handle_info(#overload{load = Load}, #state{gearbox=GearBox, gear=Gear}=State) ->
-    {ok, Release} = erlmachine_gear:overload(GearBox, Gear, Load),
+    {ok, Release} = erlmachine_gear:overload_model(GearBox, Gear, Load),
     {noreply, State#state{gear=Release}};
 
 handle_info(#block{part=Part, failure = Failure}, #state{gearbox=GearBox, gear=Gear}=State) ->
     %% Damage, Crash and Failure will be translated to specialized system gears;
     %% This produced stream can be consumed by custom components which can be able to provide repair;
-    {ok, Release} = erlmachine_gear:block(GearBox, Gear, Part, Failure),
+    {ok, Release} = erlmachine_gear:block_model(GearBox, Gear, Part, Failure),
     {noreply, State#state{gear=Release}};
 
 handle_info(Message, #state{gearbox=GearBox, gear=Gear}=State) ->
@@ -160,7 +157,7 @@ handle_info(Message, #state{gearbox=GearBox, gear=Gear}=State) ->
 
 %% When reason is different from normal, or stop - the broken part event is occured;
 terminate(Reason, #state{gearbox=GearBox, gear=Gear}) ->
-    erlmachine_gear:uninstall(GearBox, Gear, Reason),
+    erlmachine_gear:uninstall_model(GearBox, Gear, Reason),
     ok.
 
 code_change(_OldVsn, State, _Extra) ->

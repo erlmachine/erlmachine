@@ -1,4 +1,6 @@
 -module(erlmachine_serial_number).
 -export([]).
 
--export_type serial_no() :: binary().
+-type serial_no()::binary().
+
+-export_type([serial_no/0]).

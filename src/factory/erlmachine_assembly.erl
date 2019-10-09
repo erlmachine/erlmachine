@@ -12,6 +12,8 @@
          code_change/3
         ]).
 
+-export([attach/2, detach/2, switch/2]).
+
 -export([
          serial_no/1, serial_no/2,
          model/1, model/2, model_name/1, model_name/2, model_options/1, model_options/2,
@@ -187,6 +189,19 @@ terminate(_Reason, _State) ->
 code_change(_OldVsn, State, _Extra) ->
 	{ok, State}.
 
+-spec attach(Parts::list(assembly()), Part::assembly()) -> list(assembly()).
+attach(Parts, Part) ->
+   lists:reverse([Part|Parts]).
+
+-spec detach(Parts::list(assembly()), ID::serial_no()) -> {assembly(), list(assembly())}.
+detach(Parts, ID) ->
+    {value, Part, Filtered} = lists:keytake(ID, #assembly.serial_no, Parts),
+    {Part, Filtered}.
+
+-spec switch(Parts::list(assembly()), Part::assembly()) -> assembly().
+switch(_Parts, Part) ->
+    Part. 
+ 
 -spec serial_no(Assembly::assembly()) -> SN::serial_no().
 serial_no(Assembly) ->
     SN = Assembly#assembly.serial_no,

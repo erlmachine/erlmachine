@@ -8,20 +8,20 @@
 
 
 -export([
-         install/4,
-         attach/5, detach/5, 
-         accept/4,
-         uninstall/4
+         install/3,
+         attach/4, detach/4, 
+         accept/3,
+         uninstall/3
         ]).
 
 -export([
-         installed/4,
+         installed/3,
          attached/4, detached/4,
          replaced/4,
          switched/4,
          overloaded/4, blocked/5,
-         uninstalled/5,
-         accepted/5 rejected/5
+         uninstalled/4,
+         accepted/5, rejected/5
         ]).
 
 -export([init/1]).
@@ -56,10 +56,10 @@ installed(_Name, GearBox, Part) ->
 -spec uninstalled(Name::serial_no(), GearBox::assembly(), Part::assembly(), Reason::term()) ->
                          ok.
 uninstalled(_Name, GearBox, Part, Reason) ->
-    trace(Assembly, #{uninstalled => Part, reason => Reason}),
+    trace(GearBox, #{uninstalled => Part, reason => Reason}),
     ok.
 
--spec overloaded(Name::serial_number(), GearBox::assembly(), Part::assembly(), Load::term()) ->
+-spec overloaded(Name::serial_no(), GearBox::assembly(), Part::assembly(), Load::term()) ->
                         ok.
 overloaded(_Name, GearBox, Part, Load) ->
     %% I guess the tracking time can be filled by tracker itself;
@@ -84,7 +84,7 @@ detached(_Name, GearBox, Part, Extension) ->
     trace(GearBox, #{detached => Part, extension => Extension}),
     ok.
 
--spec replaced(Name::serial_no(), GearBox::assembly(), Part::asssembly(), Extension::assembly()) ->
+-spec replaced(Name::serial_no(), GearBox::assembly(), Part::assembly(), Extension::assembly()) ->
                       ok.
 replaced(_Name, GearBox, Part, Extension) ->
     trace(GearBox, #{replaced => Part, extension => Extension}),
@@ -108,57 +108,59 @@ rejected(_Name, GearBox, Part, Criteria, Report) ->
     trace(GearBox, #{rejected => Part, criteria => Criteria, report => Report}),
     ok.
 
--spec attach(Name::serial_no(), Assembly::assembly(), Part::assembly(), Proc::map()) ->
-                    success(Child::child()) | {ok, Child::child(), Info::term()} | failure(E).
-attach(Name, Assembly, Part, Proc) ->
-    trace(Assembly, #{attach => Part}),
-    supervisor:start_child({local, format_name(Name)}, Proc).
-
--spec detach(Name::serial_no(), Assembly::assembly(), Part::assembly(), ID::serial_number()) -> 
-                     success() | failure(E).
-detach(Name, Assembly, Part, ID) ->
+-spec attach(Name::serial_no(), GearBox::assembly(), Part::assembly(), Spec::map()) ->
+                    success(Child::term()) | success(Child::term(), Info::term()) | failure(E::term()).
+attach(Name, GearBox, Part, Spec) ->
+    trace(GearBox, #{attach => Part}),
+    Res = supervisor:start_child({local, format_name(Name)}, Spec),
+    {ok, _} = erlmachine_gearbox:attach(GearBox, Part),
+    Res.
+    
+-spec detach(Name::serial_no(), GearBox::assembly(), ID::serial_no(), ChieldID::term()) ->
+                    success(Child::term()) | success(Child::term(), Info::term()) | failure(E::term()).
+detach(Name, GearBox, ID, ChieldID) ->
     SupRef = {local, format_name(Name)},
-    trace(Assembly, #{detach => Part}),
-    supervisor:terminate_child(SupRef, Id),
-    supervisor:delete_child(SupRef, ID).
+    trace(GearBox, #{detach => ID}),
+    supervisor:terminate_child(SupRef, ChieldID),
+    Res = supervisor:delete_child(SupRef, ChieldID), %% ID the same for chield and SN
+    erlmachine_axle:detach(GearBox, ID),
+    Res.
 
--record(install, {assembly::assembly(), parts=list(assembly()), procs=list(map()), options=list(tuple)}).
+-record(install, {gearbox::assembly(), options::list(tuple)}).
 
--spec install(Name::serial_number(), Assembly::assembly(), Parts::list(assembly()), Procs::list(map()), Options::list(tuple())) -> 
-                     success(pid()) | ingnore | failure(E).
-install(Name, Assembly, Parts, Procs, Options) ->
-    Args = #install{assembly=Assembly, parts=Parts, procs=Procs, options=Options},
+-spec install(Name::serial_no(), GearBox::assembly(), Options::list(tuple())) -> 
+                     success(pid()) | ingnore | failure(E::term()).
+install(Name, GearBox, Options) ->
+    Args = #install{gearbox=GearBox, options=Options},
     supervisor:start_link({local, format_name(Name)}, ?MODULE, Args).
 
-init(#install{assembly=Assembly, parts=Parts, procs=Procs, options=Options}) -> 
-    %% Procs need to be prepared by builder before;
-    %% Potentially we can validate on procs count at that place and on attach/detach calls too;
+init(#install{gearbox=GearBox, options=Options}) ->
     Strategy = one_for_all,
     Intensity = proplists:get_value(intensity, Options, 1),
     Period = proplists:get_value(period, Options, 5),
-    trace(Assembly, #{install => Parts}),
-    {ok, _} = erlmachine_gearbox:install(Assembly, Parts),
-    {ok, {#{strategy => Strategy, intensity => Intensity, period => Period}, Procs}}.
+    Parts = erlmachine_gearbox:parts(GearBox),
+    trace(GearBox, #{install => Parts}),
+    {ok, _} = erlmachine_gearbox:install_model(GearBox),
+    Specs = erlmachine_gearbox:specs(GearBox),
+    {ok, {#{strategy => Strategy, intensity => Intensity, period => Period}, Specs}}.
 
--spec uninstall(Name::serial_number(), Assembly::assembly(), Reason::term()) ->
+-spec uninstall(Name::serial_no(), GearBox::assembly(), Reason::term()) ->
                        ok.
-uninstall(Name, Assembly, Reason) ->
-    %% We need to be careful with parts whoose are located outside of supervision;
-    %% They don't terminate within supervision tree;
+uninstall(Name, GearBox, Reason) ->
     exit(whereis(format_name(Name)), Reason),
-    trace(Assembly, #{uninstall => Reason, spec => Spec}),
-    {ok, _} = erlmachine_gearbox:uninstall(Assembly, Reason),
+    Parts = erlmachine_gearbox:parts(GearBox),
+    trace(GearBox, #{uninstall => Parts, reason => Reason}),
+    {ok, _} = erlmachine_gearbox:uninstall_model(GearBox, Reason),
     ok.
 
--spec accept(Name::serial_number(), Assembly::assembly(), Criteria::acceptance_criteria()) ->
+-spec accept(Name::serial_no(), GearBox::assembly(), Criteria::acceptance_criteria()) ->
                     accept() | reject().
-accept(Name, Assembly, Criteria) ->
-    Result = {ok, _} = erlmachine_gearbox:accept(Assembly, Criteria),
-    trace(Assembly, #{accept => Result, criteria => Criteria}),
-    Result.
+accept(_Name, GearBox, Criteria) ->
+    {ok, Report, _Release} = erlmachine_gearbox:accept_model(GearBox, Criteria),
+    Report.
 
-trace(Assembly, Report) ->
-    ModelName = erlmachine_assembly:model_name(Assembly),
+trace(Assembly, Insight) ->
+    Model = erlmachine_assembly:model_name(Assembly),
     SerialNumber = erlmachine_assembly:serial_no(Assembly),
     Package = #{prototype => ?MODULE, model_name => Model, serial_no => SerialNumber},
     TrackingNumber = erlmachine_traker:tracking_no(?MODULE, Package),

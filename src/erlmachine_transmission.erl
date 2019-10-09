@@ -23,7 +23,9 @@
          code_change/3
         ]).
 
--export([switch_model/3, rotate_model/4, transmit_model/4]).
+-export([rotate/2]).
+
+-export([switch_model/3, attach_model/3, detach_model/3, rotate_model/3, transmit_model/4]).
 
 -export([switched/3, attached/3, detached/3]).
 
@@ -33,8 +35,19 @@
 -callback switch(SN::serial_no(), ID::serial_no(), Body::term()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
+-callback attach(SN::serial_no(), ID::serial_no(), Body::term()) -> 
+    success(term()) | failure(term(), term(), term()) | failure(term()).
+
+-callback detach(SN::serial_no(), ID::serial_no(), Body::term()) -> 
+    success(term()) | failure(term(), term(), term()) | failure(term()).
+
 -callback rotate(SN::serial_no(), Motion::term(), Body::term()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
+
+-callback transmit(SN::serial_no(), Motion::term(), Body::term()) -> 
+    success(term(), term()) | failure(term(), term(), term()) | failure(term()).
+
+-optional_callbacks([switch/3, attach/3, detach/3]).
 
 -spec switch_model(Assembly::assembly(), Part::assembly(), Body::term()) ->
                           success(term()) | failure(term(), term(), term()) | failure(term()).
@@ -44,12 +57,35 @@ switch_model(Assembly, Part, Body) ->
     ID = erlmachine_assembly:serial_no(Part),
     Module:switch(SN, ID, Body).
 
--spec rotate_model(Assembly::assembly(), Part::assembly(), Motion::term(), Body::term()) ->
+-spec attach_model(Assembly::assembly(), Part::assembly(), Body::term()) ->
                           success(term()) | failure(term(), term(), term()) | failure(term()).
-rotate_model(_Assembly, Part, Motion, Body) ->
-    Module = erlmachine_assembly:model_name(Part),
-    SN = erlmachine_assembly:serial_no(Part),
+attach_model(Assembly, Part, Body) ->
+    Module = erlmachine_assembly:model_name(Assembly),
+    SN = erlmachine_assembly:serial_no(Assembly),
+    ID = erlmachine_assembly:serial_no(Part),
+    Module:attach(SN, ID, Body).
+
+-spec detach_model(Assembly::assembly(), Part::assembly(), Body::term()) ->
+                          success(term()) | failure(term(), term(), term()) | failure(term()).
+detach_model(Assembly, Part, Body) ->
+    Module = erlmachine_assembly:model_name(Assembly),
+    SN = erlmachine_assembly:serial_no(Assembly),
+    ID = erlmachine_assembly:serial_no(Part),
+    Module:detach(SN, ID, Body).
+
+-spec rotate_model(Assembly::assembly(), Motion::term(), Body::term()) ->
+                          success(term()) | failure(term(), term(), term()) | failure(term()).
+rotate_model(Assembly, Motion, Body) ->
+    Module = erlmachine_assembly:model_name(Assembly),
+    SN = erlmachine_assembly:serial_no(Assembly),
     Module:rotate(SN, Motion, Body).
+
+-spec rotate(Assembly::assembly(), Motion::term()) ->
+                         Motion::term().
+rotate(Assembly, Motion) ->
+    Module = erlmachine_assembly:prototype_name(Assembly),
+    SN = erlmachine_assembly:serial_no(Assembly),
+    Module:rotate(SN, Motion).
 
 -spec transmit_model(Assembly::assembly(), Part::assembly(), Motion::term(), Body::term()) ->
                           success(term(), term()) | failure(term(), term(), term()) | failure(term()).
@@ -74,7 +110,7 @@ attached(Assembly, Part, Extension) ->
 
 -spec detached(Assembly::assembly(), Part::assembly(), Extension::assembly()) ->
                       ok.
-attached(Assembly, Part, Extension) ->
+detached(Assembly, Part, Extension) ->
     Module = erlmachine_assembly:prototype_name(Assembly),
     SN = erlmachine_assembly:serial_no(Assembly),
     Module:detached(SN, Assembly, Part, Extension).
