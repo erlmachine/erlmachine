@@ -25,7 +25,7 @@
 
 -export([switch_model/3, rotate_model/4, transmit_model/4]).
 
--export([switched/3]).
+-export([switched/3, attached/3, detached/3]).
 
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
@@ -64,6 +64,20 @@ switched(Assembly, Part, Extension) ->
     Module = erlmachine_assembly:prototype_name(Assembly),
     SN = erlmachine_assembly:serial_no(Assembly),
     Module:switched(SN, Assembly, Part, Extension).
+
+-spec attached(Assembly::assembly(), Part::assembly(), Extension::assembly()) ->
+                      ok.
+attached(Assembly, Part, Extension) ->
+    Module = erlmachine_assembly:prototype_name(Assembly),
+    SN = erlmachine_assembly:serial_no(Assembly),
+    Module:attached(SN, Assembly, Part, Extension).
+
+-spec detached(Assembly::assembly(), Part::assembly(), Extension::assembly()) ->
+                      ok.
+attached(Assembly, Part, Extension) ->
+    Module = erlmachine_assembly:prototype_name(Assembly),
+    SN = erlmachine_assembly:serial_no(Assembly),
+    Module:detached(SN, Assembly, Part, Extension).
 
 -record(state, {
 }).
