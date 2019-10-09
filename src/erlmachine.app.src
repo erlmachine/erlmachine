@@ -9,6 +9,6 @@
   {included_applications, []},
   {applications, []},
   {env,          [{engineers, [[{title, <<"Creator of Erlmachine">>}, {mail, <<"spaceinterstellarspace@gmail.com">>}]]}]},
-  {application_starter,[erlmachine_app, [{serial_number, <<"Xzk0AV5YD7Tvvro0l69OtQ==">>}, {model_no, <<"PROTOTYPE">>}, {part_no, <<"PROTOTYPE">>}]]}},
+  {mod, {application_starter,[erlmachine_app, []]}},
   {start_phases, [{erlmachine_filesystem, []}]},
   {runtime_dependencies, []}]}.
