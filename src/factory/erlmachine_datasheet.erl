@@ -1,4 +1,6 @@
 -module(erlmachine_datasheet).
 -export([]).
 
--export_type datasheet()::list().
+-type datasheet() :: list().
+
+-export_type([datasheet/0]).

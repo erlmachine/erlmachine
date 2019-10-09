@@ -14,19 +14,18 @@
 
 -export([
          serial_no/1, serial_no/2,
-         model/1, model/2,
-         prototype/1, prototype/2,
+         model/1, model/2, model_name/1, model_name/2, model_options/1, model_options/2,
+         prototype/1, prototype/2, prototype_name/1, prototype_name/2,
          model_no/1, model_no/2,
          part_no/1, part_no/2,
-         model_name/1, model_name/2,
-         prototype_name/1, prototype/2,
-         model_options/1, model_options/2,
          product/1, product/2
         ]).
 
 -export([install_model/1, replace_model/3, uninstall_model/3, accept_model/3]).
 
 -export([installed/2, replaced/3, uninstalled/3, accepted/4, rejected/4]).
+
+-include("erlmachine_system.hrl").
 
 -callback install(SN::serial_no(), MN::model_no(), PN::part_no(), Options::list()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
@@ -43,23 +42,25 @@
 %% The main purpose of this module is to instantiate proceses accordingly to design file;
 %% In this module will be provided incapsulation around building of independent parts and whole transmission as well;
 
--type serial_no()::erlmachine_serial_number::serial_no().
+-type serial_no() :: erlmachine_serial_number:serial_no().
 
--type gear()::erlmachine_gear::gear().
--type shaft()::erlmachine_shaft::shaft().
--type axle()::erlmachine_axle::axle().
--type gearbox()::erlmachine_gearbox::gearbox().
+-type gear() :: erlmachine_gear:gear().
+-type shaft() :: erlmachine_shaft:shaft().
+-type axle() :: erlmachine_axle:axle().
+-type gearbox() :: erlmachine_gearbox:gearbox().
 
--type datasheet()::erlmachine_datasheet::datasheet().
+-type datasheet() :: erlmachine_datasheet:datasheet().
 
--export_type model_no()::term().
--export_type part_no()::term().
+-type model_no() :: term().
+-type part_no() :: term().
+
+-type product() :: gear() | axle() | gearbox() | shaft().
 
 %% Abbreviations M/N and P/N will be represented on name;
 -record(model, {
                 name::atom(),
                 model_no::model_no(),
-                product::gear()|shaft()|axle()|gearbox(),
+                product::product(),
                 options::term(),
                 part_no::part_no()
                }
@@ -70,9 +71,8 @@
                    }
        ).
 
--export_type model()::#model{}.
--export_type product()::gear()|axle()|gearbox()|shaft().
--export_type prototype()::#prototype{}.
+-type model() :: #model{}.
+-type prototype() :: #prototype{}.
 
 -record (assembly, {
                     serial_no::serial_no(), %% We can get build info (ts, etc..) by serial number from db;
@@ -82,18 +82,20 @@
                    }
         ).
 
--export_type assembly()::#assembly{}.
+-type assembly() :: #assembly{}.
 
--export_type acceptance_criteria()::list().
--export_type accept()::true.
--export_type reject()::list().
+-type acceptance_criteria() :: list().
+-type accept() :: true.
+-type reject() :: list().
 
-
+-export_type([assembly/0, model/0, prototype/0, product/0]).
+-export_type([model_no/0, part_no/0]).
+-export_type([acceptance_criteria/0, accept/0, reject/0]).
 %% API.
 
 -spec install_model(Assembly::assembly()) ->
-                           success(term()) | failure(term(), term(), term()) | failure(term()).
-install_model(Assembly::assembly()) ->
+                           success(term()) | failure(E::term(), R::term(), Reject::term()).
+install_model(Assembly) ->
     Module = model_name(Assembly),
     SN = serial_no(Assembly),
     Options = model_options(Assembly),
@@ -103,7 +105,7 @@ install_model(Assembly::assembly()) ->
     Module:install(SN, MN, PN, Options).
 
 -spec replace_model(Assembly::assembly(), Repair::assembly(), Body::term()) ->
-                           success(term()) | failure(term(), term(), term()) | failure(term()).
+                           success(term()) | failure(E::term(), R::term(), Reject::term()).
 replace_model(Assembly, Repair, Body) ->
     Module = model_name(Assembly),
     SN = serial_no(Assembly),
@@ -111,7 +113,7 @@ replace_model(Assembly, Repair, Body) ->
     Module:replace(SN, ID, Body).
 
 -spec accept_model(Assembly::assembly(), Criteria::term(), Body::term()) ->
-                          success(Report::term(), Release::term()) | failure(Error::term(), Reason::term(), Reject::term()).
+                          success(Report::term(), Release::term()) | failure(E::term(), R::term(), Reject::term()).
 accept_model(Assembly, Criteria, Body) ->
     Module = model_name(Assembly),
     SN = serial_no(Assembly),
@@ -185,12 +187,12 @@ terminate(_Reason, _State) ->
 code_change(_OldVsn, State, _Extra) ->
 	{ok, State}.
 
--spec serial_no(Assembly::assembly()) -> SN::serial_number().
+-spec serial_no(Assembly::assembly()) -> SN::serial_no().
 serial_no(Assembly) ->
     SN = Assembly#assembly.serial_no,
     SN.
 
--spec serial_no(Assembly::assembly(), SN::serial_number()) -> Release::assembly().
+-spec serial_no(Assembly::assembly(), SN::serial_no()) -> Release::assembly().
 serial_no(Assembly, SN) ->
     Release = Assembly#assembly{serial_no=SN},
     Release.
@@ -234,7 +236,7 @@ part_no(Assembly) ->
     PN.
 
 -spec part_no(Assembly::assembly(), PN::term()) -> Release::assembly().
-part_no(Assembly) ->
+part_no(Assembly, PN) ->
     Model = model(Assembly),
     Release = model(Assembly, Model#model{part_no=PN}),
     Release.
@@ -272,7 +274,7 @@ model_options(Assembly) ->
 -spec model_options(Assembly::assembly(), Options::list()) -> Release::assembly().
 model_options(Assembly, Options) ->
     Model = model(Assembly),
-    Release = model(Assembly, Model#model{options = Options}),
+    Release = model(Assembly, Model#model{options=Options}),
     Release.
 
 -spec product(Assembly::assembly()) -> Product::product().
@@ -282,9 +284,9 @@ product(Assembly) ->
     Product.
 
 -spec product(Assembly::assembly(), Product::product()) -> Release::assembly().
-product(Assembly, Product::product()) ->
+product(Assembly, Product) ->
     Model = model(Assembly),
-    Release = model(Assembly, Model#model{product = Product}),
+    Release = model(Assembly, Model#model{product=Product}),
     Release.
 
 

@@ -27,6 +27,9 @@
 
 -export([switched/3]).
 
+-include("erlmachine_factory.hrl").
+-include("erlmachine_system.hrl").
+
 -callback switch(SN::serial_no(), ID::serial_no(), Body::term()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
@@ -62,8 +65,6 @@ switched(Assembly, Part, Extension) ->
     SN = erlmachine_assembly:serial_no(Assembly),
     Module:switched(SN, Assembly, Part, Extension).
 
-
-
 -record(state, {
 }).
 
@@ -80,20 +81,6 @@ switched(Assembly, Part, Extension) ->
 -spec start_link() -> {ok, pid()}.
 start_link() ->
     gen_server:start_link({local, ?MODULE}, [], []).
-
--spec output(ID::term(), Force::term()) -> Motion::term().
-output(ID, Force) ->
-    output(ID, Force, 5000).
-
-output(ID, Force, TimeOut) ->
-    erlang:send(ID, Force), %% TODO implement sender notify via envelop
-    receive
-        Motion ->
-            Motion
-    after
-        TimeOut ->
-            throw(timeout)
-    end.
 
 %% gen_server.
 
