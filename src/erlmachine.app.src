@@ -1,5 +1,5 @@
 {application, erlmachine,
- [{description,  "An application level virtual machine based on erlang OTP"},
+ [{description,  "An application level's mechanical world based on Erlang/OTP"},
   {id,           "erlmachine"},
   {vsn,          "0.0.1"},
   {modules,      []},
@@ -8,7 +8,9 @@
   {registered,   []},
   {included_applications, []},
   {applications, []},
-  {env,          [{engineers, [[{title, <<"Creator of Erlmachine">>}, {mail, <<"spaceinterstellarspace@gmail.com">>}]]}]},
+  {env,          [{engineers, [[{title, <<"Erlmachine">>}, {mail, <<"spaceinterstellarspace@gmail.com">>}]]}]},
   {mod, {application_starter,[erlmachine_app, []]}},
   {start_phases, [{erlmachine_filesystem, []}]},
   {runtime_dependencies, []}]}.
+
+

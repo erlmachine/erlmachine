@@ -20,7 +20,8 @@
          prototype/1, prototype/2, prototype_name/1, prototype_name/2,
          model_no/1, model_no/2,
          part_no/1, part_no/2,
-         product/1, product/2
+         product/1, product/2,
+         stations/1, stations/2
         ]).
 
 -export([install_model/1, replace_model/3, uninstall_model/3, accept_model/3]).
@@ -53,6 +54,8 @@
 
 -type datasheet() :: erlmachine_datasheet:datasheet().
 
+-type station() :: erlmachine_assembly_station:station().
+
 -type model_no() :: term().
 -type part_no() :: term().
 
@@ -63,8 +66,7 @@
                 name::atom(),
                 model_no::model_no(),
                 product::product(),
-                options::term(),
-                part_no::part_no()
+                options::term()
                }
        ).
 
@@ -79,8 +81,11 @@
 -record (assembly, {
                     serial_no::serial_no(), %% We can get build info (ts, etc..) by serial number from db;
                     prototype::prototype(),
-                    model::model(), 
-                    datasheet::datasheet()
+                    model::model(),
+                    stations=[]::list(station()),
+                    info::term(),
+                    time::integer(),
+                    part_no::part_no()
                    }
         ).
 
@@ -304,4 +309,13 @@ product(Assembly, Product) ->
     Release = model(Assembly, Model#model{product=Product}),
     Release.
 
+-spec stations(Assembly::assembly()) -> list(station()).
+stations(Assembly) ->
+    Stations = Assembly#assembly.stations,
+    Stations.
+
+-spec stations(Assembly::assembly(), Stations::list(station())) -> Release::assembly().
+stations(Assembly, Stations) ->
+    Release = Assembly#assembly{stations = Stations},
+    Release.
 

@@ -18,9 +18,19 @@
 
 -include("erlmachine_factory.hrl").
 
+%% Here are different kind of builders can be provided;
+%% For example - YAML builder;
+%% But from begining we are going to build directly from code;
 -record(state, {
 }).
 
+-spec сonveyor(Assembly::assembly(), Stations::list(station())) -> 
+                      success(Release::assembly()) | failure(term(), term(), Reject::assembly()).
+сonveyor(Assembly, Stations) ->
+    %% At that place we can fill time of station business;
+
+-spec produce(Datasheet::datasheet()) -> Assembly::assembly().
+  
 %% API.
 
 -spec start_link() -> {ok, pid()}.
