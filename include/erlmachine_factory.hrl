@@ -9,6 +9,8 @@
 -type product() :: erlmachine_assembly:product().
 -type prototype() :: erlmachine_assembly:prototype().
 
+-type station() :: erlmachine_station:station().
+
 -type acceptance_criteria() :: erlmachine_assembly:acceptance_criteria().
 
 -type accept() :: erlmachine_assembly:accept().

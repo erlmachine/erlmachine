@@ -16,6 +16,8 @@
 
 -export([overloaded/3, blocked/4]).
 
+-export([overtime/3]).
+
 -include("erlmachine_factory.hrl").
 
 -type failure(E, R) :: {error, {E, R}}.
@@ -90,3 +92,10 @@ terminate(_Reason, _State) ->
 
 code_change(_OldVsn, State, _Extra) ->
 	{ok, State}.
+
+-spec overtime(Assembly::assembly(), Station::station(), Throughput::time()) -> 
+                      ok.
+overtime(_Assembly, _Station, _Throughput) ->
+    ok.
+ 
+%% crash, damage, block, overtime, production_limit callbacks will be provided; 

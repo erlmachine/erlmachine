@@ -20,8 +20,7 @@
          prototype/1, prototype/2, prototype_name/1, prototype_name/2,
          model_no/1, model_no/2,
          part_no/1, part_no/2,
-         product/1, product/2,
-         stations/1, stations/2
+         product/1, product/2
         ]).
 
 -export([install_model/1, replace_model/3, uninstall_model/3, accept_model/3]).
@@ -82,8 +81,6 @@
                     serial_no::serial_no(), %% We can get build info (ts, etc..) by serial number from db;
                     prototype::prototype(),
                     model::model(),
-                    stations=[]::list(station()),
-                    info::term(),
                     time::integer(),
                     part_no::part_no()
                    }
@@ -308,14 +305,3 @@ product(Assembly, Product) ->
     Model = model(Assembly),
     Release = model(Assembly, Model#model{product=Product}),
     Release.
-
--spec stations(Assembly::assembly()) -> list(station()).
-stations(Assembly) ->
-    Stations = Assembly#assembly.stations,
-    Stations.
-
--spec stations(Assembly::assembly(), Stations::list(station())) -> Release::assembly().
-stations(Assembly, Stations) ->
-    Release = Assembly#assembly{stations = Stations},
-    Release.
-

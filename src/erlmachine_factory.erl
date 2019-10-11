@@ -24,12 +24,36 @@
 -record(state, {
 }).
 
+сonveyor(Input, Names) ->
+    Stations = [erlnachine_assembly_station:station(Name) || Name <- Names],
+    Start = erlang:system_time(),
+    Output =
+        lists:foldl(fun 
+                        (Station, Input) ->
+                            Load = erlnachine_assembly_station:input(Station, Input),
+                            
+                    end, Load, Stations),
+    Stop = erlang:system_time(),
+    Station#station{input=Input, throughput=Stop-Start, output=Output}.
+
 -spec сonveyor(Assembly::assembly(), Stations::list(station())) -> 
                       success(Release::assembly()) | failure(term(), term(), Reject::assembly()).
-сonveyor(Assembly, Stations) ->
+produce(Assembly, Stations) ->
+    Stations = stations(ProductStations),
+    AssemblyStations = [?MODULE], load(Assembly, []),
+    %% We are going to provide error handling later;
+    {ok, Assembly} = erlmachine_assembly_line:move(Assembly, Stations),
+    Went = erlang:system_time(),
+    
     %% At that place we can fill time of station business;
 
+%% Statins will be initialized here, before assembly;
 -spec produce(Datasheet::datasheet()) -> Assembly::assembly().
+produce(Datasheet) ->
+    %% TODO At that place internal builder will be involved
+    %% Datasheet will be supplied in YAML format;
+    Assembly = null,
+    Assembly.
   
 %% API.
 
