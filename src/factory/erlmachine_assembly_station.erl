@@ -14,21 +14,14 @@
 
 -export([steps/1]).
 
--export([station/1]).
+-export([station/1, station/2, pass/1]).
 
--export([throughput/1, throughput/2]).
-
--spec steps(Module::atom()) -> list(atom()).
-steps(Module) ->
-    Steps = erlmachine:attribute(Module, steps, []),
-    Steps.
-
-pass(Station) ->
-    Name = name(Station), Steps = steps(Station),
-    Start = erlang:system_time(),
-    Output = lists:foldl(fun (Step, Input) -> Name:Step(Input) end, Input, Steps),
-    Stop = erlang:system_time(),
-    Station#station{input=Input, throughput=Stop-Start, output=Output}.
+-export([
+         name/1, 
+         input/1, input/2, 
+         output/1, output/2, 
+         throughput/1, throughput/2
+        ]).
 
 -record(station, {
                   name::atom(),
@@ -39,6 +32,33 @@ pass(Station) ->
                  }).
 
 -type station()::station().
+
+-type step()::atom().
+-type throughput()::integer().
+
+-export_type([station/0, step/0, throughput/0]).
+
+-spec steps(Module::atom()) -> list(atom()).
+steps(Module) ->
+    Steps = erlmachine:attribute(Module, steps, []),
+    Steps.
+
+pass(Station) ->
+    #station{name=Name, steps=Steps} = Station,,
+    Start = erlang:system_time(),
+    Output = lists:foldl(fun (Step, Input) -> Name:Step(Input) end, Input, Steps),
+    Stop = erlang:system_time(),
+    Station#station{input=Input, throughput=Stop-Start, output=Output}.
+
+-spec station(Name::atom()) -> Station::station().
+station(Name) ->
+    Station = #station{name=Name, steps=steps(Name)},
+    Station.
+
+-spec station(Name::atom(), Load::term()) -> station().
+station(Name, Load) ->  
+    Station = station(Name),
+    input(Station, Load).
 
 -spec name(Station::station()) -> term().
 name(Station) ->
@@ -51,15 +71,6 @@ input(Station) ->
 -spec input(Station::station(), Input::term()) -> station().
 input(Station, Input) ->
     Station#station{input=Input}.
-
--spec station(Station::station(), Name::atom()) -> station().
-station(Station, Name) ->  
-    Module = Name, 
-    #station{name=Name, steps=steps(Name)}.
-
--spec steps(Station::station()) -> list(atom()).
-output(Station) ->
-    Station#station.steps.
 
 -spec output(Station::station()) -> term().
 output(Station) ->

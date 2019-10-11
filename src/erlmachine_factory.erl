@@ -25,8 +25,7 @@
 }).
 
 сonveyor(Input, Names) ->
-    Stations = [erlnachine_assembly_station:station(Name) || Name <- Names],
-    Start = erlang:system_time(),
+    Stations = [erlnachine_assembly_station:station(Name, Input) || Name <- Names],
     Output =
         lists:foldl(fun 
                         (Station, Input) ->
@@ -39,11 +38,11 @@
 -spec сonveyor(Assembly::assembly(), Stations::list(station())) -> 
                       success(Release::assembly()) | failure(term(), term(), Reject::assembly()).
 produce(Assembly, Stations) ->
+    
     Stations = stations(ProductStations),
     AssemblyStations = [?MODULE], load(Assembly, []),
     %% We are going to provide error handling later;
     {ok, Assembly} = erlmachine_assembly_line:move(Assembly, Stations),
-    Went = erlang:system_time(),
     
     %% At that place we can fill time of station business;
 

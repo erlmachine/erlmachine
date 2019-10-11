@@ -1,2 +1,0 @@
--module(erlmachine_guid).
--export([]).
