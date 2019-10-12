@@ -1,58 +1,34 @@
 -module(erlmachine_serial_no).
--behaviour(gen_server).
 
-%% API.
--export([start_link/0]).
-
-%% gen_server.
--export([init/1]).
--export([handle_call/3]).
--export([handle_cast/2]).
--export([handle_info/2]).
--export([terminate/2]).
--export([code_change/3]).
+-export([base64url/1, no/1, no/2]).
 
 -type serial_no()::binary().
 
+-record(no, {b1::binary(), b2::binary(), b3::binary(), b4::binary()}).
+
 -export_type([serial_no/0]).
 
--record(state, {
-}).
+-type serial()::erlmachine:serial().
 
 %% API.
-
--spec start_link() -> {ok, pid()}.
-start_link() ->
-	gen_server:start_link(?MODULE, [], []).
-
-%% gen_server.
-
-init([]) ->
-	{ok, #state{}}.
-
-handle_call(_Request, _From, State) ->
-	{reply, ignored, State}.
-
-handle_cast(_Msg, State) ->
-	{noreply, State}.
-
-handle_info(_Info, State) ->
-	{noreply, State}.
-
-terminate(_Reason, _State) ->
-	ok.
-
-code_change(_OldVsn, State, _Extra) ->
-	{ok, State}.
 
 %% generate a readable string representation of a SN.
 %%
 %% base64url encoding was provided; 
 %% This format is safer and more applicable by web (in comparison with base64);
 
-base64url(In) ->
-    lists:reverse(lists:foldl(fun ($\+, Acc) -> [$\- | Acc];
-                                  ($\/, Acc) -> [$\_ | Acc];
-                                  ($\=, Acc) -> Acc;
-                                  (Chr, Acc) -> [Chr | Acc]
-                              end, [], base64:encode_to_string(In))).
+-spec base64url(Hash::binary()) ->
+base64url(Hash) when is_binary(Hash) ->
+    Base64 = base64:encode(Hash),
+    << fun($+) -> <<"-">>; ($/) -> <<"_">>; (C) -> <<C>> end(C)|| <<C>> <= Base64, C /= $= >>.
+
+-spec no(Serial::serial()) -> #no{}.
+no(Serial) ->
+    GUID = erlmachine:guid(Serial),
+    <<B1:32, B2:32, B3:32, B4:32>> = GUID,
+    #no{b1=B1, b2=B2, b3=B3, b4=B4}.
+
+-spec no(Hash::hash(), Serial::serial()) -> #number{}.
+no(#number{b1=B1, b2=B2, b3=B3, b4=B4}, Serial) ->
+    B5 = erlang:phash2({B1, Serial}, 4294967296),
+    #no{b1=(B2 bxor B5), b2=(B3 bxor B5), b3=(B4 bxor B5), b4=B5}.

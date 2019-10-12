@@ -1,5 +1,18 @@
 -module(erlmachine).
+
+-folder(<<"erlmachine">>).
+
 -export([attribute/3]).
+
+-export([guid/0, guid/1, serial/0, serial/1, read_serial/1, write_serial/2]).
+
+-type serial()::integer().
+
+-record(guid, {node::node(), reference::reference(), serial::serial()}).
+
+-type guid()::#guid{}.
+
+-export_types([serial/0, guid/0]).
 
 %% The main purpouse of erlmachine project is providing a set of well designed behaviours which are accompanied with visualization tools as well.
 %%  Erlmachine doesn't restrict your workflow by the one possible way but instead provide to you ability to implement your own components. This ability is available under flexible mechanism of prototypes and overloading.  
@@ -12,3 +25,42 @@ attribute(Module, Tag, Default) ->
         Result == false -> Default;
         true -> Result 
     end.
+
+-spec guid() -> GUID::guid().
+guid() ->
+    guid(0).
+
+-spec guid(Serial::serial()) -> GUID::guid().
+guid(Serial) ->
+    GUID = #guid{node=node(), serial=Serial, reference=make_ref()},
+    MD5 = erlang:md5(term_to_binary(GUID)),
+    MD5.
+    
+
+%% At this point we provide persisnence layer over serial counter;
+%% Until persistence layer exists we can be sureabout uniqueness of SN;
+%% When persistence layer is lost it's usually about both kind of data (seed and actually data itself);
+
+-spec read_serial(Path::file_name()) -> Serial::integer().
+read_serial(FileName) ->
+    Serial = 
+        if erlmachine_filesystem:read(FileName) of
+           {ok, [Num]} -> Num;
+           true -> serial()
+        end,
+    Serial.
+
+%% At that place we consider to rewrite file instead of append;
+-spec write_serial(FileName::file_name(), Serial::integer()) -> success() | failure(E::term(), R::term()).
+write_serial(FileName, Serial) ->
+    Result = erlmachine_filesystem:write(Filename, [Serial]),
+    Result.
+
+-spec serial() -> serial().
+serial() ->
+    0.
+
+-spec serial(Serial::serial()) -> serial().
+serial(Serial) ->
+    Serial + 1.
+

@@ -1,4 +1,8 @@
 -module(erlmachine_factory).
+
+-folder(<<"erlmachine/factory">>).
+-file(<<"erlmachine_factory.serial">>).
+
 -behaviour(gen_server).
 
 %% API.
@@ -17,13 +21,17 @@
 -export([code_change/3]).
 
 -include("erlmachine_factory.hrl").
+-include("erlmachine_filesystem.hrl").
 
 %% Here are different kind of builders can be provided;
 %% For example - YAML builder;
 %% But from begining we are going to build directly from code;
--record(state, {
-}).
 
+%% The main puprouse of factory is to provide product planing abilities;
+%% We can control available capacity of all individual parts;
+%% We can utilize different pools for that purpouse;
+%% The all managment over thoose capabilities is warehouse option;
+ 
 сonveyor(Input, Names) ->
     Stations = [erlnachine_assembly_station:station(Name, Input) || Name <- Names],
     Output =
@@ -62,8 +70,11 @@ start_link() ->
 
 %% gen_server.
 
+-record(state, {serial::integer(), file::file_name()}).
+
 init([]) ->
-	{ok, #state{}}.
+    Serial = serial(?MODULE),
+    {ok, #state{serial=Serial, file=File}}.
 
 handle_call(_Request, _From, State) ->
 	{reply, ignored, State}.
@@ -73,8 +84,9 @@ handle_cast(_Msg, State) ->	{noreply, State}.
 handle_info(_Info, State) ->
 	{noreply, State}.
 
-terminate(_Reason, _State) ->
-	ok.
+terminate(_Reason, #state{serial=Serial, file=File}=State) ->
+    ok = serial(File, Serial),
+    ok.
 
 code_change(_OldVsn, State, _Extra) ->
 	{ok, State}.

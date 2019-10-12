@@ -56,14 +56,14 @@ trace(TrackingNumber, Package) ->
 %% gen_server.
 
 -record(accept, {}).
--record(state, {gearbox::assembly(), file_id::term()}).
+-record(state, {gearbox::assembly(), file::term()}).
 
 init([]) ->
     GearBox = erlmachine_factory:gearbox(?MODULE, []), 
     %% We need to implement storing gearboxes and also individual part inside warehouse;
     %% After that we will be able to select needed parts by SN;
-    FileId = erlmachine_file:create(<<"./process.report">>),
-    {ok,  #state{gearbox = GearBox, file_id = FileId}, {continue, #accept{}}}.
+    File = <<"erlmachine_traker.serial">>,
+    {ok,  #state{gearbox = GearBox, file = File}, {continue, #accept{}}}.
 
 handle_call(_Request, _From, State) ->
     %% We need to provide REST API for management inside transmission
@@ -86,14 +86,11 @@ code_change(_OldVsn, State, _Extra) ->
 
 %% We consider Module as implementation point (like class) and serial number as instance - (like object); 
 %% We can support polymorphism by different ways - by overriding prototype or by changing topology itself;
-handle_continue(#accept{}, #state{gearbox = GearBox, file_id = FileId}=State) ->
+handle_continue(#accept{}, #state{gearbox=GearBox, file=File}=State) ->
     try
-        erlmachine_factory:accept(GearBox),
-        SN = erlmachine_assembly:serial_no(GearBox),
-        erlmachine_file:write(FileId, #{accept => #{serial_no => SN}}),
+        true = erlmachine_factory:accept(GearBox),
         {noreply, State}
     catch E:R ->
-            erlmachine_file:write(FileId, #{accept => #{error => E, reason => R}}),
             {stop, {E, R}, State}
     end;
 handle_continue(_, State) ->
