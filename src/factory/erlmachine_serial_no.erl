@@ -6,7 +6,9 @@
 
 -record(no, {b1::binary(), b2::binary(), b3::binary(), b4::binary()}).
 
--export_type([serial_no/0]).
+-type no()::#no{}.
+
+-export_type([serial_no/0, no/0]).
 
 -type serial()::erlmachine:serial().
 
@@ -32,3 +34,9 @@ no(Serial) ->
 no(#number{b1=B1, b2=B2, b3=B3, b4=B4}, Serial) ->
     B5 = erlang:phash2({B1, Serial}, 4294967296),
     #no{b1=(B2 bxor B5), b2=(B3 bxor B5), b3=(B4 bxor B5), b4=B5}.
+
+-spec serial_no(no()) -> serial_no().
+serial_no(#no{b1=B1, b2=B2, b3=B3, b4=B4}) ->
+    Hash = <<B1:32, B2:32, B3:32, B4:32>>,
+    SN = base64url(Hash),
+    SN.

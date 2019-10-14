@@ -41,19 +41,19 @@ guid(Serial) ->
 %% Until persistence layer exists we can be sureabout uniqueness of SN;
 %% When persistence layer is lost it's usually about both kind of data (seed and actually data itself);
 
--spec read_serial(Path::file_name()) -> Serial::integer().
-read_serial(FileName) ->
+-spec read_serial(Path::path()) -> Serial::integer().
+read_serial(Path) ->
     Serial = 
-        if erlmachine_filesystem:read(FileName) of
+        if erlmachine_filesystem:read(Path) of
            {ok, [Num]} -> Num;
            true -> serial()
         end,
     Serial.
 
 %% At that place we consider to rewrite file instead of append;
--spec write_serial(FileName::file_name(), Serial::integer()) -> success() | failure(E::term(), R::term()).
-write_serial(FileName, Serial) ->
-    Result = erlmachine_filesystem:write(Filename, [Serial]),
+-spec write_serial(Path::path(), Serial::integer()) -> success() | failure(E::term(), R::term()).
+write_serial(Path, Serial) ->
+    Result = erlmachine_filesystem:write(Path, [Serial]),
     Result.
 
 -spec serial() -> serial().

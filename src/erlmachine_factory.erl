@@ -10,7 +10,7 @@
 
 %% We assume that factory will also provide production of all components and their registration too;
 %% My assumption that is factory can be driven from production capacity perspective; 
-%% Metrics for manufactures production activity needs to be provided too;
+%% Measurements over manufactures production activity needs to be provided too;
 
 %% gen_server.
 -export([init/1]).
@@ -23,69 +23,96 @@
 -include("erlmachine_factory.hrl").
 -include("erlmachine_filesystem.hrl").
 
+-record(conveyor, {assembly::assembly(), passed=[]::list(station()), stations=[]::list(atom())}).
+
+-type conveyor()::#conveyor{}.
+
+-export_type([conveyor/0]).
 %% Here are different kind of builders can be provided;
 %% For example - YAML builder;
 %% But from begining we are going to build directly from code;
 
-%% The main puprouse of factory is to provide product planing abilities;
+%% The main purpouse of the factory is to provide product planing abilities;
 %% We can control available capacity of all individual parts;
 %% We can utilize different pools for that purpouse;
-%% The all managment over thoose capabilities is warehouse option;
- 
-сonveyor(Input, Names) ->
-    Stations = [erlnachine_assembly_station:station(Name, Input) || Name <- Names],
-    Output =
-        lists:foldl(fun 
-                        (Station, Input) ->
-                            Load = erlnachine_assembly_station:input(Station, Input),
-                            
-                    end, Load, Stations),
-    Stop = erlang:system_time(),
-    Station#station{input=Input, throughput=Stop-Start, output=Output}.
+%% The all managment over thoose capabilities is a warehouse option;
 
 -spec сonveyor(Assembly::assembly(), Stations::list(station())) -> 
                       success(Release::assembly()) | failure(term(), term(), Reject::assembly()).
-produce(Assembly, Stations) ->
-    
-    Stations = stations(ProductStations),
-    AssemblyStations = [?MODULE], load(Assembly, []),
-    %% We are going to provide error handling later;
-    {ok, Assembly} = erlmachine_assembly_line:move(Assembly, Stations),
-    
-    %% At that place we can fill time of station business;
 
-%% Statins will be initialized here, before assembly;
--spec produce(Datasheet::datasheet()) -> Assembly::assembly().
-produce(Datasheet) ->
-    %% TODO At that place internal builder will be involved
-    %% Datasheet will be supplied in YAML format;
-    Assembly = null,
-    Assembly.
-  
+
+-spec pass(Conveyor::conveyor()) -> conveyor().
+pass(Conveyor) ->
+    #conveyor{names=Names}=Conveyor,
+    Pass = pipe(Conveyor#conveyor{names=[?MODULE|Names]}),
+    %% At that point we can store Pass information and provide research over this data;
+    Pass.
+
+-spec pipe(Conveyor::conveyor()) -> Pipe::conveyor().
+pipe(#conveyor{stations=Stations}=Conveyor) ->
+    BuildStations = [erlnachine_assembly_station:station(Name) || Name <- Stations],
+    Pipe =
+        lists:foldl(
+          fun(Station, #conveyor{assembly=Assembly, passed=Passed}=Conveyor) ->
+                  PassStation = erlmachine_assembly_station:pass(Station, Assembly),
+                  Release = erlmachine_assembly_station:output(Result),
+                  Conveyor#conveyor{assembly=Release, passed=[PassStation|Passed]}
+          end,
+          Conveyor,
+          BuildStations
+         ),
+    #conveyor{passed=Passed} = Pipe,
+    Pipe#conveyor{passed=lists:reverse(Passed)}.
+
 %% API.
 
--spec start_link() -> {ok, pid()}.
+-spec serial_no(Prefix::binary()) -> SN::binary().
+serial_no(Perfix) ->
+    SN = serial_no(),
+    <<Prefix/binary, "-", SN/binary>>.
+
+-record(serial_no, {}).
+
+-spec serial_no() -> SN::binary().
+serial_no() ->
+    %% Just default timeout for the first time;
+    ID = id(),
+    SN = gen_server:call(ID, #serial_no{}),
+    SN.
+
+id() -> 
+    {local, ?MODULE}.
+
+-spec start_link() -> 
+                        success(pid()) | ingnore | failure(E::term()).
 start_link() ->
-	gen_server:start_link(?MODULE, [], []).
+    ID = id(),
+    gen_server:start_link(ID, ?MODULE, [], []).
 
 %% gen_server.
 
--record(state, {serial::integer(), file::file_name()}).
+-record(state, {serial::integer(), no::no()}).
 
 init([]) ->
-    Serial = serial(?MODULE),
-    {ok, #state{serial=Serial, file=File}}.
+    Serial = erlmachine:read_serial(?MODULE), N = erlmachine_serial_no:no(Serial),
+    {ok, #state{serial=Serial, no=No}}.
+
+handle_call(#serial_no{}, _From, #{serial=Serial, no=No}=State) ->
+    SN = erlmachine_serial_no:serial_no(No),
+    IncSerial = erlmachine:serial(Serial),
+    RotateNo = erlmachine_serial_no:no(No, IncSerial),
+    {reply, SN, State#state{serial=IncSerial, no=RotateNo}};
 
 handle_call(_Request, _From, State) ->
-	{reply, ignored, State}.
+    {reply, ignored, State}.
 
 handle_cast(_Msg, State) ->	{noreply, State}.
 
 handle_info(_Info, State) ->
 	{noreply, State}.
 
-terminate(_Reason, #state{serial=Serial, file=File}=State) ->
-    ok = serial(File, Serial),
+terminate(_Reason, #state{serial=Serial}=State) ->
+    ok = erlmachine:write_serial(?MODULE, Serial),
     ok.
 
 code_change(_OldVsn, State, _Extra) ->
