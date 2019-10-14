@@ -22,13 +22,7 @@
 
 %% The main difference between gear and shaft in the next:
 %% Gear as working element, shaft is transmitter instead; 
-
--record(gear, {body::term(), parts::assembly(), mount::assembly()}).
-
--type gear() :: #gear{}.
-
--export_type([gear/0]).
-
+   
 -spec install_model(GearBox::assembly(), Gear::assembly()) -> 
                      success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
 install_model(GearBox, Gear) ->
@@ -136,13 +130,13 @@ uninstall_model(GearBox, Gear, Reason) ->
 
 -spec parts(Gear::assembly()) -> list(assembly()).
 parts(Gear) ->
-    Product = erlmachine_assembly:product(Gear),
-    Product#gear.parts.
+    Parts = erlmachine_assembly:parts(Gear),
+    Parts.
 
 -spec parts(Gear::assembly(), Parts::list(assembly())) -> Release::assembly().
 parts(Gear, Parts) ->
-    Product = erlmachine_assembly:product(Gear),
-    erlmachine_assembly:product(Gear, Product#gear{parts=Parts}).
+    Release = erlmachine_assembly:parts(Gear, Parts),
+    Release.
 
 -spec body(Gear::assembly()) -> Body::term().
 body(Gear) ->
@@ -156,10 +150,10 @@ body(Gear, Body) ->
 
 -spec mount(Gear::assembly()) -> Mount::assembly().
 mount(Gear) ->
-    Product = erlmachine_assembly:product(Gear),
-    Product#gear.mount.
+    Mount = erlmachine_assembly:mount(Gear),
+    Mount.
 
 -spec mount(Gear::assembly(), Mount::assembly()) -> Release::assembly().
 mount(Gear, Mount) ->
-    Product = erlmachine_assembly:product(Gear),
-    erlmachine_assembly:product(Gear, Product#gear{mount=Mount}).
+    Release = erlmachine_assembly:mount(Gear, Mount),
+    Release.

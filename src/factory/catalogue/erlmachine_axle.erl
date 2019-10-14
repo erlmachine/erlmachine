@@ -17,12 +17,6 @@
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
 
--record(axle, {body::term(), parts=[]::list(assembly()), mount::assembly(), specs=[]::list(map())}).
-
--type axle() :: #axle{}.
-
--export_type([axle/0]).
-
 -spec install_model(GearBox::assembly(), Axle::assembly()) -> 
                      success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
 install_model(GearBox, Axle) ->
@@ -84,13 +78,13 @@ specs(Axle, Specs) ->
 -spec parts(Axle::assembly()) -> list(assembly()).
 parts(Axle) ->
     %% Procs::list(map()),
-    Product = erlmachine_assembly:product(Axle),
-    Product#axle.parts.
+    Parts = erlmachine_assembly:parts(Axle),
+    Parts.
 
 -spec parts(Axle::assembly(), Parts::list(assembly())) -> Release::assembly().
 parts(Axle, Parts) ->
-    Product = erlmachine_assembly:product(Axle),
-    erlmachine_assembly:product(Axle, Product#axle{parts=Parts}).
+    Release = erlmachine_assembly:parts(Axle, Parts),
+    Release.
 
 -spec body(Axle::assembly()) -> Body::term().
 body(Axle) ->
@@ -104,13 +98,13 @@ body(Axle, Body) ->
 
 -spec mount(Axle::assembly()) -> Mount::assembly().
 mount(Axle) ->
-    Product = erlmachine_assembly:product(Axle),
-    Product#axle.mount.
+    Mount = erlmachine_assembly:mount(Axle),
+    Mount.
 
 -spec mount(Axle::assembly(), Mount::assembly()) -> Release::assembly().
 mount(Axle, Mount) ->
-    Product = erlmachine_assembly:product(Axle),
-    erlmachine_assembly:product(Axle, Product#axle{mount=Mount}).
+    Release = erlmachine_assembly:mount(Axle, Mount),
+    Release.
   
     
 %%#{id => child_id(),       % mandatory

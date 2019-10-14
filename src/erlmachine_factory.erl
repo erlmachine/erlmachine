@@ -3,6 +3,8 @@
 -folder(<<"erlmachine/factory">>).
 -file(<<"erlmachine_factory.serial">>).
 
+-steps([serial_no]).
+
 -behaviour(gen_server).
 
 %% API.
@@ -19,6 +21,8 @@
 -export([handle_info/2]).
 -export([terminate/2]).
 -export([code_change/3]).
+
+-export([gear/2, gear/3]).
 
 -include("erlmachine_factory.hrl").
 -include("erlmachine_filesystem.hrl").
@@ -37,16 +41,23 @@
 %% We can utilize different pools for that purpouse;
 %% The all managment over thoose capabilities is a warehouse option;
 
--spec сonveyor(Assembly::assembly(), Stations::list(station())) -> 
-                      success(Release::assembly()) | failure(term(), term(), Reject::assembly()).
+-spec gear(Model::atom(), Parts::list(assembly()), ModelOptions::term(), PrototypeOptions::term()) -> Gear::gear().
+gear(Model, Parts, ModelOptions, PrototypeOptions) ->
+    Prototype = gear_base_prototype:name(),
+    gear(Model, Prototype,  Parts, ModelOptions, PrototypeOptions).
 
-
+-spec gear(Model::atom(), Prototype::atom(),  Parts::list(assembly()), ModelOptions::term(), PrototypeOptions::list()) -> Gear::gear().
+gear(Model, Prototype, Parts, ModelOptions, PrototypeOptions) ->
+    Gear = erlmachine_assembly:gear(Model, Prototype, Parts, ModelOptions,  [{trap_exit, true}|PrototypeOptions]),
+    Release = pass(Gear, [?MODULE]),
+    Release.
+    
 -spec pass(Conveyor::conveyor()) -> conveyor().
-pass(Conveyor) ->
-    #conveyor{names=Names}=Conveyor,
-    Pass = pipe(Conveyor#conveyor{names=[?MODULE|Names]}),
+pass(Assembly, Stations) ->
+    Conveyor = #conveyor{assembly=Asssembly, stations=Stations},
+    Pass = pipe(Conveyor),
     %% At that point we can store Pass information and provide research over this data;
-    Pass.
+    Pass#conveyor.assembly.
 
 -spec pipe(Conveyor::conveyor()) -> Pipe::conveyor().
 pipe(#conveyor{stations=Stations}=Conveyor) ->
@@ -66,19 +77,15 @@ pipe(#conveyor{stations=Stations}=Conveyor) ->
 
 %% API.
 
--spec serial_no(Prefix::binary()) -> SN::binary().
-serial_no(Perfix) ->
-    SN = serial_no(),
-    <<Prefix/binary, "-", SN/binary>>.
-
 -record(serial_no, {}).
 
--spec serial_no() -> SN::binary().
-serial_no() ->
+-spec serial_no(Assembly::assembly()) -> assembly().
+serial_no(Assembly) ->
     %% Just default timeout for the first time;
     ID = id(),
     SN = gen_server:call(ID, #serial_no{}),
-    SN.
+    PrefixSN = <<"S/N", "-", SN/binary>>,
+    Assembly#assembly{serial_no=PrefixSN}.
 
 id() -> 
     {local, ?MODULE}.

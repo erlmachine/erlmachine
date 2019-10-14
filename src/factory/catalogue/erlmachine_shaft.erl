@@ -21,11 +21,6 @@
 -include("erlmachine_system.hrl").
 
 %% Instead of gear the main puropse of shaft is to transmit power between parts;
--record(shaft, {body::term(), parts=[]::list(assembly()), mount::assembly()}).
-
--type shaft() :: #shaft{}.
-
--export_type([shaft/0]).
 
 -spec install_model(GearBox::assembly(), Shaft::assembly()) -> 
                      success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
@@ -144,13 +139,13 @@ uninstall_model(GearBox, Shaft, Reason) ->
 
 -spec parts(Shaft::assembly()) -> list(assembly()).
 parts(Shaft) ->
-    Product = erlmachine_assembly:product(Shaft),
-    Product#shaft.parts.
+    Parts = erlmachine_assembly:parts(Shaft),
+    Parts.
 
 -spec parts(Shaft::assembly(), Parts::list(assembly())) -> Release::assembly().
 parts(Shaft, Parts) ->
-    Product = erlmachine_assembly:product(Shaft),
-    erlmachine_assembly:product(Shaft, Product#shaft{parts=Parts}).
+    Release = erlmachine_assembly:parts(Shaft, Parts),
+    Release.
 
 -spec body(Shaft::assembly()) -> Body::term().
 body(Shaft) ->
@@ -164,11 +159,11 @@ body(Shaft, Body) ->
 
 -spec mount(Shaft::assembly()) -> Mount::assembly().
 mount(Shaft) ->
-    Product = erlmachine_assembly:product(Shaft),
-    Product#shaft.mount.
+    Mount = erlmachine_assembly:mount(Shaft),
+    Mount.
 
 -spec mount(Shaft::assembly(), Mount::assembly()) -> Release::assembly().
 mount(Shaft, Mount) ->
-    Product = erlmachine_assembly:product(Shaft),
-    erlmachine_assembly:product(Shaft, Product#shaft{mount=Mount}).
+    Release = erlmachine_assembly:mount(Shaft, Mount),
+    Release.
 

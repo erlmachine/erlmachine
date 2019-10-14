@@ -23,24 +23,6 @@
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
 
-
--record(gearbox, {
-                  input::assembly(),
-                  body::term(),
-                  parts=[]::list(assembly()),
-                  placement::term(),
-                  %% Placement can be implemented by various ways and then represented by different formats; 
-                  %% Each implementation can do that over its own discretion;
-                  %% Erlmachine do that accordingly to YAML format;
-                  specs=[]::list(map()),
-                  output::assembly()
-                 }
-       ).
-
--type gearbox() :: #gearbox{}.
-
--export_type([gearbox/0]).
-
 -spec install_model(GearBox::assembly()) -> 
                      success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
 install_model(GearBox) ->
@@ -86,13 +68,13 @@ specs(GearBox, Specs) ->
 -spec parts(GearBox::assembly()) -> list(assembly()).
 parts(GearBox) ->
     %% Procs::list(map()),
-    Product = erlmachine_assembly:product(GearBox),
-    Product#gearbox.parts.
+    Parts = erlmachine_assembly:parts(GearBox),
+    Parts.
 
 -spec parts(GearBox::assembly(), Parts::list(assembly())) -> Release::assembly().
 parts(GearBox, Parts) ->
-    Product = erlmachine_assembly:product(GearBox),
-    erlmachine_assembly:product(GearBox, Product#gearbox{parts=Parts}).
+    Release = erlmachine_assembly:parts(GearBox, Parts),
+    Release.
 
 -spec body(GearBox::assembly()) -> Body::term().
 body(GearBox) ->
