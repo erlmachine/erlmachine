@@ -8,6 +8,7 @@
 -behaviour(gen_server).
 
 %% API.
+
 -export([start_link/0]).
 
 %% We assume that factory will also provide production of all components and their registration too;
@@ -22,7 +23,10 @@
 -export([terminate/2]).
 -export([code_change/3]).
 
--export([gear/2, gear/3]).
+-export([gear/3, gear/5]).
+-export([shaft/3, shaft/5]).
+-export([axle/3, axle/5]).
+-export([gearbox/4, gearbox/6]).
 
 -include("erlmachine_factory.hrl").
 -include("erlmachine_filesystem.hrl").
@@ -41,17 +45,54 @@
 %% We can utilize different pools for that purpouse;
 %% The all managment over thoose capabilities is a warehouse option;
 
--spec gear(Model::atom(), Parts::list(assembly()), ModelOptions::term(), PrototypeOptions::term()) -> Gear::gear().
-gear(Model, Parts, ModelOptions, PrototypeOptions) ->
-    Prototype = gear_base_prototype:name(),
-    gear(Model, Prototype,  Parts, ModelOptions, PrototypeOptions).
+-spec gear(Model::atom(), Parts::list(assembly()), ModelOptions::term()) -> Gear::gear().
+gear(Model, Parts, ModelOptions) ->
+    Prototype = gear_base_prototype:name(), 
+    PrototypeOptions = [],
+    gear(Model, Prototype, Parts, ModelOptions, PrototypeOptions).
 
--spec gear(Model::atom(), Prototype::atom(),  Parts::list(assembly()), ModelOptions::term(), PrototypeOptions::list()) -> Gear::gear().
+-spec gear(Model::atom(), Prototype::atom(), Parts::list(assembly()), ModelOptions::term(), PrototypeOptions::list()) -> Gear::gear().
 gear(Model, Prototype, Parts, ModelOptions, PrototypeOptions) ->
     Gear = erlmachine_assembly:gear(Model, Prototype, Parts, ModelOptions,  [{trap_exit, true}|PrototypeOptions]),
     Release = pass(Gear, [?MODULE]),
     Release.
-    
+
+-spec shaft(Model::atom(), Parts::list(assembly()), ModelOptions::term()) -> Shaft::shaft().
+shaft(Model, Parts, ModelOptions) ->
+    Prototype = shaft_base_prototype:name(), 
+    PrototypeOptions = [],
+    shaft(Model, Prototype, Parts, ModelOptions, PrototypeOptions).
+
+-spec shaft(Model::atom(), Prototype::atom(), Parts::list(assembly()), ModelOptions::term(), PrototypeOptions::list()) -> Shaft::shaft().
+shaft(Model, Prototype, Parts, ModelOptions, PrototypeOptions) ->
+    Shaft = erlmachine_assembly:shaft(Model, Prototype, Parts, ModelOptions,  [{trap_exit, true}|PrototypeOptions]),
+    Release = pass(Shaft, [?MODULE]),
+    Release.
+
+-spec axle(Model::atom(), Parts::list(assembly()), ModelOptions::term()) -> Axle::axle().
+axle(Model, Parts, ModelOptions) ->
+    Prototype = axle_base_prototype:name(), 
+    PrototypeOptions = [],
+    axle(Model, Prototype, Parts, ModelOptions, PrototypeOptions).
+
+-spec axle(Model::atom(), Prototype::atom(), Parts::list(assembly()), ModelOptions::term(), PrototypeOptions::list()) -> Axle::axle().
+axle(Model, Prototype, Parts, ModelOptions, PrototypeOptions) ->
+    Axle = erlmachine_assembly:axle(Model, Prototype, Parts, ModelOptions, [{intensity, 1}, {period, 5}|PrototypeOptions]),
+    Release = pass(Axle, [?MODULE]),
+    Release.
+
+-spec gearbox(Model::atom(), Parts::list(assembly()), ModelOptions::term(), Env::term()) -> GearBox::axle().
+gearbox(Model, Parts, ModelOptions, Env) ->
+    Prototype = gearbox_base_prototype:name(), 
+    PrototypeOptions = [],
+    gearbox(Model, Prototype, Parts, ModelOptions, PrototypeOptions, Env).
+
+-spec gearbox(Model::atom(), Prototype::atom(), Parts::list(assembly()), ModelOptions::term(), PrototypeOptions::list(), Env::term()) -> Axle::axle().
+axle(Model, Prototype, Parts, ModelOptions, PrototypeOptions, Env) ->
+    GearBox = erlmachine_assembly:gearbox(Model, Prototype, Parts, ModelOptions, [{intensity, 1}, {period, 5}|PrototypeOptions], Env),
+    Release = pass(GearBox, [?MODULE]),
+    Release.
+
 -spec pass(Conveyor::conveyor()) -> conveyor().
 pass(Assembly, Stations) ->
     Conveyor = #conveyor{assembly=Asssembly, stations=Stations},

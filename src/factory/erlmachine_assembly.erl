@@ -48,11 +48,6 @@
 
 -type serial_no() :: erlmachine_serial_number:serial_no().
 
--type gear() :: erlmachine_gear:gear().
--type shaft() :: erlmachine_shaft:shaft().
--type axle() :: erlmachine_axle:axle().
--type gearbox() :: erlmachine_gearbox:gearbox().
-
 -type datasheet() :: erlmachine_datasheet:datasheet().
 
 -type station() :: erlmachine_assembly_station:station().
