@@ -37,10 +37,10 @@ gear(Body) ->
 -spec install_model(GearBox::assembly(), Gear::assembly()) -> 
                      success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
 install_model(GearBox, Gear) ->
-    Mount = mount(Gear),
-    {ok, Body} = erlmachine_assembly:install_model(Gear),
+    Env = erlmachine_gearbox:env(GearBox),
+    {ok, Body} = erlmachine_assembly:install_model(Gear, body(Gear), Env),
     %% We are going to add error handling later; 
-    Release = body(Gear, Body),
+    Release = body(Gear, Body), Mount = mount(Gear),
     (Mount /= undefined) andalso erlmachine_assembly:installed(Mount, Release),
     (Mount == GearBox) orelse erlmachine_assembly:installed(GearBox, Release),
     {ok, Release}.

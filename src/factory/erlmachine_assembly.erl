@@ -139,16 +139,14 @@ gearbox(ModelName, PrototypeName, ModelOptions, PrototypeOptions, Env) ->
     GearBox = InitPrototype,
     GearBox.
 
--spec install_model(Assembly::assembly()) ->
+-spec install_model(Assembly::assembly(), Body::term(), Env::term()) ->
                            success(term()) | failure(E::term(), R::term(), Reject::term()).
-install_model(Assembly) ->
+install_model(Assembly, Body, Env) ->
     Module = model_name(Assembly),
     SN = serial_no(Assembly),
     Options = model_options(Assembly),
-    MN = model_no(Assembly),
-    PN = part_no(Assembly),
     %% We can check exported functions accordingly to this kind of behaviour; 
-    Module:install(SN, MN, PN, Options).
+    Module:install(SN, Body, Options, Env).
 
 -spec replace_model(Assembly::assembly(), Repair::assembly(), Body::term()) ->
                            success(term()) | failure(E::term(), R::term(), Reject::term()).

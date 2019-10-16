@@ -20,6 +20,7 @@
          parts/1, parts/2,
          specs/1, specs/2,
          body/1, body/2,
+         env/1, env/2,
          output/1, output/2
         ]).
 
@@ -131,6 +132,15 @@ output(GearBox) ->
 output(GearBox, Output) ->
     Product = erlmachine_assembly:product(GearBox),
     erlmachine_assembly:product(GearBox, Product#gearbox{output=Output}).
+
+-spec env(GearBox::assembly()) -> term().
+env(GearBox) ->
+    GearBox#gearbox.env.
+
+-spec env(GearBox::assembly(), Env::term()) -> Release::assembly().
+env(GearBox, Env) ->
+    Product = erlmachine_assembly:product(GearBox),
+    erlmachine_assembly:product(GearBox, Product#gearbox{env=Env}).
 
 %% processes need to be instantiated by builder before;
 
