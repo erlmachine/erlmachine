@@ -6,6 +6,7 @@
 
 -behaviour(supervisor).
 
+-export([name/0]).
 
 -export([
          install/3,
@@ -42,6 +43,10 @@
 tag(#{model := Model}) ->
     ID = atom_to_binary(Model, latin1),
     ID.
+
+-spec name() -> Name::atom().
+name() ->
+    ?MODULE.
 
 format_name(SerialNumber) ->
     ID = erlang:binary_to_atom(SerialNumber, latin1),

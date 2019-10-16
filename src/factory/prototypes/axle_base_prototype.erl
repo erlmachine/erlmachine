@@ -6,6 +6,8 @@
 
 -behaviour(supervisor).
 
+-export([name/0]).
+
 -export([
          install/4,
          attach/5, detach/5, 
@@ -21,6 +23,10 @@
 
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
+
+-spec name() -> Name::atom().
+name() ->
+    ?MODULE.
 
 format_name(SerialNumber) ->
     ID = erlang:binary_to_atom(SerialNumber, latin1),

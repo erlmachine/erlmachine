@@ -11,6 +11,8 @@
 
 %% API.
 
+-export([name/0]).
+
 %% gen_server.
 -export([
          init/1, 
@@ -33,6 +35,10 @@
 -include("erlmachine_system.hrl").
 
 %% API.
+
+-spec name() -> Name::atom().
+name() ->
+    ?MODULE.
 
 format_name(SerialNumber) ->
     ID = erlang:binary_to_atom(SerialNumber, latin1),

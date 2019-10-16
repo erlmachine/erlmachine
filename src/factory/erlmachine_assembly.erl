@@ -12,14 +12,15 @@
          code_change/3
         ]).
 
--export([gear/5]).
+-export([gear/4, shaft/4, axle/4, gearbox/5]).
 
 -export([attach/2, detach/2, switch/2]).
 
 -export([
          serial_no/1, serial_no/2,
          model/1, model/2, model_name/1, model_name/2, model_options/1, model_options/2,
-         prototype/1, prototype/2, prototype_name/1, prototype_name/2,
+         prototype/1, prototype/2, prototype_name/1, prototype_name/2, prototype_options/1, prototype_options/2,
+         spec/1, spec/2,
          model_no/1, model_no/2,
          part_no/1, part_no/2,
          product/1, product/2,
@@ -72,7 +73,8 @@
 
 -record(prototype, {
                     name::atom(),
-                    options::term()
+                    options::term(),
+                    spec::map()
                    }
        ).
 
@@ -101,14 +103,41 @@
 
 %% API.
 
--spec gear(ModelName::atom(), PrototypeName::atom(), Parts::list(assembly()), ModelOptions::term(), PrototypeOptions::term()) -> assembly().
-gear(ModelName, PrototypeName, Parts, ModelOptions, PrototypeOptions) ->
-    Body = #{},
-    Product = erlmachine_gear:gear(Body),
+-spec gear(ModelName::atom(), PrototypeName::atom(), ModelOptions::term(), PrototypeOptions::term()) -> assembly().
+gear(ModelName, PrototypeName, ModelOptions, PrototypeOptions) ->
+    Body = #{}, Product = erlmachine_gear:gear(Body),
     Model = #model{name=ModelName, product=Product, options=ModelOptions},
-    Prototype = #prototype{name=PrototypeName, options=PrototypeOptions},
-    Gear = #assembly{model=Model, prototype=Prototype, parts=Parts},
+    Prototype = #prototype{name=PrototypeName, options=PrototypeOptions, spec=#{type => worker}},
+    Assembly = #assembly{}, InitModel = model(Assembly, Model), InitPrototype = prototype(InitModel, Prototype),
+    Gear = InitPrototype,
     Gear.
+
+-spec shaft(ModelName::atom(), PrototypeName::atom(), ModelOptions::term(), PrototypeOptions::term()) -> assembly().
+shaft(ModelName, PrototypeName, ModelOptions, PrototypeOptions) ->
+    Body = [], Product = erlmachine_shaft:shaft(Body),
+    Model = #model{name=ModelName, product=Product, options=ModelOptions},
+    Prototype = #prototype{name=PrototypeName, options=PrototypeOptions, spec=#{type => worker}},
+    Assembly = #assembly{}, InitModel = model(Assembly, Model), InitPrototype = prototype(InitModel, Prototype),
+    Shaft = InitPrototype,
+    Shaft.
+
+-spec axle(ModelName::atom(), PrototypeName::atom(), ModelOptions::term(), PrototypeOptions::term()) -> assembly().
+axle(ModelName, PrototypeName, ModelOptions, PrototypeOptions) ->
+    Body = [], Product = erlmachine_axle:axle(Body),
+    Model = #model{name=ModelName, product=Product, options=ModelOptions},
+    Prototype = #prototype{name=PrototypeName, options=PrototypeOptions, spec=#{type => supervisor}},
+    Assembly = #assembly{}, InitModel = model(Assembly, Model), InitPrototype = prototype(InitModel, Prototype),
+    Axle = InitPrototype,
+    Axle.
+
+-spec gearbox(ModelName::atom(), PrototypeName::atom(), ModelOptions::term(), PrototypeOptions::term(), Env::term()) -> assembly().
+gearbox(ModelName, PrototypeName, ModelOptions, PrototypeOptions, Env) ->
+    Body = #{}, Product = erlmachine_gearbox:gearbox(Body, Env),
+    Model = #model{name=ModelName, product=Product, options=ModelOptions},
+    Prototype = #prototype{name=PrototypeName, options=PrototypeOptions, spec=#{type => supervisor}},
+    Assembly = #assembly{}, InitModel = model(Assembly, Model), InitPrototype = prototype(InitModel, Prototype),
+    GearBox = InitPrototype,
+    GearBox.
 
 -spec install_model(Assembly::assembly()) ->
                            success(term()) | failure(E::term(), R::term(), Reject::term()).
@@ -216,7 +245,7 @@ detach(Parts, ID) ->
 -spec switch(Parts::list(assembly()), Part::assembly()) -> assembly().
 switch(_Parts, Part) ->
     Part. 
- 
+
 -spec serial_no(Assembly::assembly()) -> SN::serial_no().
 serial_no(Assembly) ->
     SN = Assembly#assembly.serial_no,
@@ -295,6 +324,30 @@ model_options(Assembly, Options) ->
     Release = model(Assembly, Model#model{options=Options}),
     Release.
 
+-spec prototype_options(Assembly::assembly()) -> Options::list().
+prototype_options(Assembly) ->
+    Prototype = prototype(Assembly),
+    Options = Prototype#prototype.options,
+    Options.
+
+-spec prototype_options(Assembly::assembly(), Options::list()) -> Release::assembly().
+prototype_options(Assembly, Options) ->
+    Prototype = prototype(Assembly),
+    Release = prototype(Assembly, Prototype#prototype{options=Options}),
+    Release.
+
+-spec spec(Assembly::assembly()) -> Spec::map().
+spec(Assembly) ->
+    Prototype = prototype(Assembly),
+    Spec =Prototype#prototype.spec,
+    Spec.
+
+-spec spec(Assembly::assembly(), Spec::map()) -> Release::assembly().
+spec(Assembly, Spec) ->
+    Prototype = prototype(Assembly),
+    Release = prototype(Assembly, Prototype#prototype{spec=Spec}),
+    Release.
+
 -spec product(Assembly::assembly()) -> Product::product().
 product(Assembly) ->
     Model = model(Assembly),
@@ -332,4 +385,3 @@ part_no(Assembly) ->
 part_no(Assembly, PN) ->
     Release = Assembly#assembly{part_no=PN},
     Release.
-

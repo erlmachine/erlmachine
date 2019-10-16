@@ -24,10 +24,12 @@
 -export([terminate/2]).
 -export([code_change/3]).
 
--export([gear/3, gear/5]).
--export([shaft/3, shaft/5]).
--export([axle/3, axle/5]).
--export([gearbox/4, gearbox/6]).
+-export([gear/3, gear/4, gear/6]).
+-export([shaft/3, shaft/4, shaft/6]).
+-export([axle/3, axle/4, axle/6]).
+-export([gearbox/3, gearbox/5]).
+
+-export([parts/2, mount/2]).
 
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
@@ -49,51 +51,91 @@
 %% We can utilize different pools for that purpouse;
 %% The all managment over thoose capabilities is a warehouse option;
 
--spec gear(Model::atom(), Parts::list(assembly()), ModelOptions::term()) -> Gear::assembly().
-gear(Model, Parts, ModelOptions) ->
+-spec parts(Assembly::assembly(), Parts::list(assembly())) -> assembly().
+parts(Assembly, Parts) when is_list(Parts) ->
+    Release = erlmachine_assembly:parts(Assembly, Parts),
+    Release.
+
+-spec mount(Assembly::assembly(), Parts::list(assembly())) -> assembly().
+mount(Assembly, Parts) ->
+    MountParts = [erlmachine_assembly:mount(Part, Assembly) || Part <- Parts],
+    Release = parts(Assembly, MountParts),
+    Release.
+
+-spec spec(GearBox::assembly(), Part::assembly(), Options::list()) -> assembly().
+spec(GearBox, Part, Options) ->
+    SN = serial_no(Part), 
+    Module = erlmachine_assembly:prototype_name(Part),
+    Options = erlmachine_assembly:prototype_options(Part),
+    Start = {Module, install, [SN, GearBox, Part, Options]},
+    Restart = proplists:get_value(restart, Options, permanent),
+    Shutdown = proplists:get_value(shutdown, Options, 5000),
+    Modules = proplists:get_value(modules, Options, [Module]),
+    Spec = erlmachine_assembly:spec(Part),
+    InitSpec = Spec#{id => SN, start => Start, restart => Restart, shutdown => Shutdown, modules => Modules},
+    Release = erlmachine_assembly:spec(Part, InitSpec),
+    Release.
+
+-spec gear(GearBox::assembly(), Model::atom(), ModelOptions::term()) -> Gear::assembly().
+gear(GearBox, Model, ModelOptions) ->
+    InstallOptions = [],
+    gear(GearBox, Model, ModelOptions, InstallOptions).
+
+-spec gear(GearBox::assembly(), Model::atom(), ModelOptions::term(), InstallOptions::list()) -> Gear::assembly().
+gear(GearBox, Model, ModelOptions, InstallOptions) ->
     Prototype = gear_base_prototype:name(), 
     PrototypeOptions = [],
-    gear(Model, Prototype, Parts, ModelOptions, PrototypeOptions).
+    gear(GearBox, Model, Prototype, ModelOptions, PrototypeOptions, InstallOptions).
 
--spec gear(Model::atom(), Prototype::atom(), Parts::list(assembly()), ModelOptions::term(), PrototypeOptions::list()) -> Gear::assembly().
-gear(Model, Prototype, Parts, ModelOptions, PrototypeOptions) ->
-    Gear = erlmachine_assembly:gear(Model, Prototype, Parts, ModelOptions,  [{trap_exit, true}|PrototypeOptions]),
+-spec gear(GearBox::assembly(), Model::atom(), Prototype::atom(), ModelOptions::term(), PrototypeOptions::list(), InstallOptions::list()) -> Gear::assembly().
+gear(GearBox, Model, Prototype, ModelOptions, PrototypeOptions, InstallOptions) ->
+    Gear = erlmachine_assembly:gear(Model, Prototype, ModelOptions,  [{trap_exit, true}|PrototypeOptions]),
     Release = pass(Gear, [?MODULE]),
-    Release.
+    spec(GearBox, Release, InstallOptions).
 
--spec shaft(Model::atom(), Parts::list(assembly()), ModelOptions::term()) -> Shaft::assembly().
-shaft(Model, Parts, ModelOptions) ->
+-spec shaft(GearBox::assembly(), Model::atom(), ModelOptions::term()) -> Shaft::assembly().
+shaft(GearBox, Model, ModelOptions) ->
+    InstallOptions = [],
+    shaft(GearBox, Model, ModelOptions, InstallOptions).
+
+-spec shaft(GearBox::assembly(), Model::atom(), ModelOptions::term(), InstallOptions::list()) -> Shaft::assembly().
+shaft(GearBox, Model, ModelOptions, InstallOptions) ->
     Prototype = shaft_base_prototype:name(), 
     PrototypeOptions = [],
-    shaft(Model, Prototype, Parts, ModelOptions, PrototypeOptions).
+    shaft(GearBox, Model, Prototype, ModelOptions, PrototypeOptions, InstallOptions).
 
--spec shaft(Model::atom(), Prototype::atom(), Parts::list(assembly()), ModelOptions::term(), PrototypeOptions::list()) -> Shaft::assembly().
-shaft(Model, Prototype, Parts, ModelOptions, PrototypeOptions) ->
-    Shaft = erlmachine_assembly:shaft(Model, Prototype, Parts, ModelOptions,  [{trap_exit, true}|PrototypeOptions]),
+-spec shaft(GearBox::assembly(), Model::atom(), Prototype::atom(), ModelOptions::term(), PrototypeOptions::list(), InstallOptions::list()) -> Shaft::assembly().
+shaft(GearBox, Model, Prototype, ModelOptions, PrototypeOptions, InstallOptions) ->
+    Shaft = erlmachine_assembly:shaft(Model, Prototype, ModelOptions,  [{trap_exit, true}|PrototypeOptions]),
     Release = pass(Shaft, [?MODULE]),
-    Release.
+    spec(GearBox, Release, InstallOptions).
 
--spec axle(Model::atom(), Parts::list(assembly()), ModelOptions::term()) -> Axle::assembly().
-axle(Model, Parts, ModelOptions) ->
+-spec axle(GearBox::assembly(), Model::atom(), ModelOptions::term()) -> Axle::assembly().
+axle(GearBox, Model, ModelOptions) ->
+    InstallOptions = [],
+    axle(GearBox, Model, ModelOptions, InstallOptions).
+
+-spec axle(GearBox::assembly(), Model::atom(), ModelOptions::term(), InstallOptions::list()) -> Axle::assembly().
+axle(GearBox, Model, ModelOptions, InstallOptions) ->
     Prototype = axle_base_prototype:name(), 
     PrototypeOptions = [],
-    axle(Model, Prototype, Parts, ModelOptions, PrototypeOptions).
+    axle(GearBox, Model, Prototype, ModelOptions, PrototypeOptions, InstallOptions).
 
--spec axle(Model::atom(), Prototype::atom(), Parts::list(assembly()), ModelOptions::term(), PrototypeOptions::list()) -> Axle::assembly().
-axle(Model, Prototype, Parts, ModelOptions, PrototypeOptions) ->
-    Axle = erlmachine_assembly:axle(Model, Prototype, Parts, ModelOptions, [{intensity, 1}, {period, 5}|PrototypeOptions]),
+-spec axle(GearBox::assembly(), Model::atom(), Prototype::atom(), ModelOptions::term(), PrototypeOptions::list(), InstallOptions::list()) -> Axle::assembly().
+axle(GearBox, Model, Prototype, ModelOptions, PrototypeOptions, InstallOptions) ->
+    Axle = erlmachine_assembly:axle(Model, Prototype, ModelOptions, [{intensity, 1}, {period, 5}|PrototypeOptions]),
     Release = pass(Axle, [?MODULE]),
-    Release.
+    spec(GearBox, Release, InstallOptions).
 
--spec gearbox(Model::atom(), Parts::list(assembly()), ModelOptions::term(), Env::term()) -> GearBox::assembly().
-gearbox(Model, Parts, ModelOptions, Env) ->
+-spec gearbox(Model::atom(), ModelOptions::term(), Env::term()) -> GearBox::assembly().
+gearbox(Model, ModelOptions, Env) ->
     Prototype = gearbox_base_prototype:name(), 
     PrototypeOptions = [],
-    gearbox(Model, Prototype, Parts, ModelOptions, PrototypeOptions, Env).
+    gearbox(Model, Prototype, ModelOptions, PrototypeOptions, Env).
 
--spec gearbox(Model::atom(), Prototype::atom(), Parts::list(assembly()), ModelOptions::term(), PrototypeOptions::list(), Env::term()) -> GearBox::assembly().
-gearbox(Model, Prototype, Parts, ModelOptions, PrototypeOptions, Env) ->
-    GearBox = erlmachine_assembly:gearbox(Model, Prototype, Parts, ModelOptions, [{intensity, 1}, {period, 5}|PrototypeOptions], Env),
+-spec gearbox(Model::atom(), Prototype::atom(), ModelOptions::term(), PrototypeOptions::list(), Env::term()) -> GearBox::assembly().
+gearbox(Model, Prototype, ModelOptions, PrototypeOptions, Env) ->
+    GearBox = erlmachine_assembly:gearbox(Model, Prototype, ModelOptions, [{intensity, 1}, {period, 5}|PrototypeOptions], Env),
     Release = pass(GearBox, [?MODULE]),
     Release.
 

@@ -15,7 +15,7 @@
         ]).
 
 -export([
-         gearbox/1,
+         gearbox/1, gearbox/2,
          input/1, input/2,
          parts/1, parts/2,
          specs/1, specs/2,
@@ -29,6 +29,7 @@
 -record(gearbox, {
                   input::assembly(),
                   body::term(),
+                  env::term(),
                   placement::term(),
                   %% Placement can be implemented by various ways and then represented by different formats; 
                   %% Each implementation can do that over its own discretion;
@@ -45,6 +46,10 @@
 -spec gearbox(Body::term()) -> gearbox().
 gearbox(Body) ->
     #gearbox{body=Body}.
+
+-spec gearbox(Body::term(), Env::term()) -> gearbox().
+gearbox(Body, Env) ->
+    #gearbox{body=Body, env=Env}.
 
 -spec install_model(GearBox::assembly()) -> 
                      success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
