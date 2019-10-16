@@ -7,6 +7,9 @@
 start_link() ->
 	supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
-init([]) ->
-	Procs = [],
-	{ok, {{one_for_one, 1, 5}, Procs}}.
+init(Options) ->
+    Strategy = one_for_all,
+    ErlmachineFactorySpec = #{id => erlmachine_factory, start => {erlmachine_factory, start_link, []}},
+    ErlmachineTrackerSpec = #{id => erlmachine_tracker, start => {erlmachine_tracker, start_link, []}},
+    Specs = [ErlmachineFactorySpec, ErlmachineTrackerSpec],
+    {ok, {#{strategy => Strategy}, Specs}}.

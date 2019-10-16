@@ -28,7 +28,7 @@
          mount/1, mount/2
         ]).
 
--export([install_model/1, replace_model/3, uninstall_model/3, accept_model/3]).
+-export([install_model/3, replace_model/3, uninstall_model/3, accept_model/3]).
 
 -export([installed/2, replaced/3, uninstalled/3, accepted/4, rejected/4]).
 

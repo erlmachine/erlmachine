@@ -148,7 +148,7 @@ pass(Assembly, Stations) ->
 
 -spec pipe(Conveyor::conveyor()) -> Pipe::conveyor().
 pipe(#conveyor{stations=Stations}=Conveyor) ->
-    BuildStations = [erlnachine_assembly_station:station(Name) || Name <- Stations],
+    BuildStations = [erlmachine_assembly_station:station(Name) || Name <- Stations],
     Pipe =
         lists:foldl(
           fun(Station, #conveyor{assembly=Assembly, passed=Passed}=State) ->
@@ -176,7 +176,7 @@ serial_no(Assembly) ->
     Release.
 
 id() -> 
-    {local, ?MODULE}.
+    {local, name()}.
 
 -spec start_link() -> 
                         success(pid()) | ingnore | failure(E::term()).

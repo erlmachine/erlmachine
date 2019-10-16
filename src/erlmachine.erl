@@ -24,9 +24,9 @@
 attribute(Module, Tag, Default) ->
     Attributes = Module:module_info(attributes),
     Result = lists:keyfind(Tag, 1, Attributes),
-    if 
-        Result == false -> Default;
-        true -> Result 
+    case 
+        Result of false -> Default;
+        {Tag, Data} -> Data 
     end.
 
 -spec guid() -> GUID::guid().
