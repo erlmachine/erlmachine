@@ -93,7 +93,7 @@ terminate(_Reason, _State) ->
 code_change(_OldVsn, State, _Extra) ->
 	{ok, State}.
 
--spec overtime(Assembly::assembly(), Station::station(), Throughput::time()) -> 
+-spec overtime(Assembly::assembly(), Station::station(), Throughput::integer()) -> 
                       ok.
 overtime(_Assembly, _Station, _Throughput) ->
     ok.

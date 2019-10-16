@@ -16,33 +16,24 @@
 
 -export([read/1, write/2]).
 
--type path::binary()|atom().
+-include("erlmachine_system.hrl").
 
--record(file, {name::path()}).
--record(folder, {name::path()}).
+-type path()::binary()|atom().
 
--type file::#file{}.
--type folder::#folder{}.
-
--export_types([path/0, file/0, folder/0]).
+-export_types([path/0]).
 
 -spec folder(Module::atom()) -> binary().
 folder(Module) ->
     Folder = erlmachine:attribute(Module, folder),
     Folder.
 
--spec file(Module::atom()) -> binary().
-file(Module) ->
-    File = erlmachine:attribute(Module, file),
-    File.
-
 -spec read(Path::path()) -> success(Body::term()) | failure(E::term(), R::term()).
-read(Name) ->
+read(_Name) ->
     %% TODO implent this mock;
      {ok, []}.
 
--spec write(Name::file_name(), Body::term()) -> success() | failure(E::term(), R::term()).
-write(Name, Body) ->
+-spec write(Name::path(), Body::term()) -> success() | failure(E::term(), R::term()).
+write(_Name, _Body) ->
     %% TODO implent this mock;
     ok.
 

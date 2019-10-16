@@ -12,6 +12,7 @@
         ]).
 
 -export([
+         shaft/1,
          parts/1, parts/2, 
          body/1, body/2,
          mount/1, mount/2
@@ -21,6 +22,16 @@
 -include("erlmachine_system.hrl").
 
 %% Instead of gear the main puropse of shaft is to transmit power between parts;
+
+-record(shaft, {body::term()}).
+
+-type shaft() :: #shaft{}.
+
+-export_type([shaft/0]).
+
+-spec shaft(Body::term()) -> shaft().
+shaft(Body) ->
+    #shaft{body=Body}.
 
 -spec install_model(GearBox::assembly(), Shaft::assembly()) -> 
                      success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).

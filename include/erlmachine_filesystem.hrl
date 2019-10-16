@@ -1,5 +1,4 @@
--type file_name::erlmachine_filesystem:file_name().
--type folder_name::erlmachine_filesystem:folder_name().
+-type path() :: erlmachine_filesystem:path().
 
--type file::erlmachine_filesystem:file().
--type folder::erlmachine_filesystem:folder().
+-type file() :: erlmachine_filesystem:file().
+-type folder() :: erlmachine_filesystem:folder().

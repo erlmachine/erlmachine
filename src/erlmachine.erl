@@ -6,6 +6,9 @@
 
 -export([guid/0, guid/1, serial/0, serial/1, read_serial/1, write_serial/2]).
 
+-include("erlmachine_system.hrl").
+-include("erlmachine_filesystem.hrl").
+
 -type serial()::integer().
 
 -record(guid, {node::node(), reference::reference(), serial::serial()}).
@@ -41,12 +44,16 @@ guid(Serial) ->
 %% Until persistence layer exists we can be sureabout uniqueness of SN;
 %% When persistence layer is lost it's usually about both kind of data (seed and actually data itself);
 
--spec read_serial(Path::path()) -> Serial::integer().
+-spec read_serial(Path::path()) -> success(Serial::integer()) | failure(E::term(), R::term()).
 read_serial(Path) ->
-    Serial = 
-        if erlmachine_filesystem:read(Path) of
-           {ok, [Num]} -> Num;
-           true -> serial()
+    Serial =
+        case erlmachine_filesystem:read(Path) of
+           {ok, [Num]} ->
+                {ok, Num};
+            {ok, _} ->
+                {ok, serial()};
+            {error, _} = Error ->
+                Error
         end,
     Serial.
 

@@ -8,6 +8,7 @@
         ]).
 
 -export([
+         axle/1,
          parts/1, parts/2,
          specs/1, specs/2,
          body/1, body/2,
@@ -16,6 +17,16 @@
 
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
+
+-record(axle, {body::term(), specs=[]::list(map())}).
+
+-type axle() :: #axle{}.
+
+-export_type([axle/0]).
+
+-spec axle(Body::term()) -> axle().
+axle(Body) ->
+    #axle{body=Body}.
 
 -spec install_model(GearBox::assembly(), Axle::assembly()) -> 
                      success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
@@ -64,7 +75,8 @@ accept_model(GearBox, Axle, Criteria) ->
             {error, Result, Release} 
     end.
 
--spec specs(Axle::assembly()) -> list(assembly()).
+
+-spec specs(Axle::assembly()) -> list(map()).
 specs(Axle) ->
     %% Procs::list(map()),
     Product = erlmachine_assembly:product(Axle),
@@ -106,7 +118,6 @@ mount(Axle, Mount) ->
     Release = erlmachine_assembly:mount(Axle, Mount),
     Release.
   
-    
 %%#{id => child_id(),       % mandatory
 %%start => mfargs(),      % mandatory
 %%restart => restart(),   % optional

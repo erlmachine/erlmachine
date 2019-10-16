@@ -1,6 +1,6 @@
 -module(erlmachine_serial_no).
 
--export([base64url/1, no/1, no/2]).
+-export([serial_no/1, no/1, no/2]).
 
 -type serial_no()::binary().
 
@@ -19,19 +19,19 @@
 %% base64url encoding was provided; 
 %% This format is safer and more applicable by web (in comparison with base64);
 
--spec base64url(Hash::binary()) ->
+-spec base64url(Hash::binary()) -> Base64::binary().
 base64url(Hash) when is_binary(Hash) ->
     Base64 = base64:encode(Hash),
-    << fun($+) -> <<"-">>; ($/) -> <<"_">>; (C) -> <<C>> end(C)|| <<C>> <= Base64, C /= $= >>.
+    Base64.
 
--spec no(Serial::serial()) -> #no{}.
+-spec no(Serial::serial()) -> no().
 no(Serial) ->
     GUID = erlmachine:guid(Serial),
     <<B1:32, B2:32, B3:32, B4:32>> = GUID,
     #no{b1=B1, b2=B2, b3=B3, b4=B4}.
 
--spec no(Hash::hash(), Serial::serial()) -> #number{}.
-no(#number{b1=B1, b2=B2, b3=B3, b4=B4}, Serial) ->
+-spec no(No::no(), Serial::serial()) -> no().
+no(#no{b1=B1, b2=B2, b3=B3, b4=B4}, Serial) ->
     B5 = erlang:phash2({B1, Serial}, 4294967296),
     #no{b1=(B2 bxor B5), b2=(B3 bxor B5), b3=(B4 bxor B5), b4=B5}.
 

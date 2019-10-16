@@ -15,13 +15,36 @@
         ]).
 
 -export([
+         gearbox/1,
+         input/1, input/2,
          parts/1, parts/2,
          specs/1, specs/2,
-         body/1, body/2
+         body/1, body/2,
+         output/1, output/2
         ]).
 
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
+
+-record(gearbox, {
+                  input::assembly(),
+                  body::term(),
+                  placement::term(),
+                  %% Placement can be implemented by various ways and then represented by different formats; 
+                  %% Each implementation can do that over its own discretion;
+                  %% Erlmachine do that accordingly to YAML format;
+                  specs=[]::list(map()),
+                  output::assembly()
+                 }
+       ).
+
+-type gearbox() :: #gearbox{}.
+
+-export_type([gearbox/0]).
+
+-spec gearbox(Body::term()) -> gearbox().
+gearbox(Body) ->
+    #gearbox{body=Body}.
 
 -spec install_model(GearBox::assembly()) -> 
                      success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
@@ -54,7 +77,7 @@ accept_model(GearBox, Criteria) ->
     %% I guess at that place needs to be satisfied individual check over all contained in case parts; 
     Result.
 
--spec specs(GearBox::assembly()) -> list(assembly()).
+-spec specs(GearBox::assembly()) -> list(map()).
 specs(GearBox) ->
     %% Procs::list(map()),
     Product = erlmachine_assembly:product(GearBox),
@@ -85,6 +108,24 @@ body(GearBox) ->
 body(GearBox, Body) ->
     Product = erlmachine_assembly:product(GearBox),
     erlmachine_assembly:product(GearBox, Product#gearbox{body=Body}).
+
+-spec input(GearBox::assembly()) -> assembly().
+input(GearBox) ->
+    GearBox#gearbox.input.
+
+-spec input(GearBox::assembly(), Input::assembly()) -> Release::assembly().
+input(GearBox, Input) ->
+    Product = erlmachine_assembly:product(GearBox),
+    erlmachine_assembly:product(GearBox, Product#gearbox{input=Input}).
+
+-spec output(GearBox::assembly()) -> assembly().
+output(GearBox) ->
+    GearBox#gearbox.output.
+
+-spec output(GearBox::assembly(), Output::assembly()) -> Release::assembly().
+output(GearBox, Output) ->
+    Product = erlmachine_assembly:product(GearBox),
+    erlmachine_assembly:product(GearBox, Product#gearbox{output=Output}).
 
 %% processes need to be instantiated by builder before;
 

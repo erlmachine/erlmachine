@@ -14,7 +14,7 @@
 
 -export([steps/1]).
 
--export([station/1, station/2, pass/1]).
+-export([station/1, station/2, pass/1, pass/2]).
 
 -export([
          name/1, 
@@ -35,9 +35,11 @@
 -type station()::station().
 
 -type step()::atom().
+-type name()::atom().
+
 -type throughput()::integer().
 
--export_type([station/0, step/0, throughput/0]).
+-export_type([station/0, name/0, step/0, throughput/0]).
 
 -spec steps(Module::atom()) -> list(atom()).
 steps(Module) ->
@@ -55,21 +57,19 @@ pass(Station) ->
     %% How much time is spend for custom listed stations;
     %% How much time is spend for install;
     %% How much time is spend for SN allocation; etc.
-    #station{name=Name, steps=Steps, input=Input} = Station,
     Start = erlang:system_time(), Output = pipe(Station), Stop = erlang:system_time(),
     Station#station{throughput=Stop-Start, output=Output}.
 
 -spec pipe(Station::station()) -> Pipe::station().
-pipe(#station{name=Name, input=Input, steps=Steps}=Station) ->
-    BuildSteps = [{Name, Step}|| Step <- Steps],
+pipe(#station{name=Name, steps=Steps}=Station) ->
     Pipe = 
         lists:foldl(
-          fun({Name, Step}, #station{input=Input, passed=Passed}=Station) ->
+          fun(Step, #station{input=Input, passed=Passed}=State) ->
                   Output = Name:Step(Input),
-                  Station#station{output=Output, passed=[Step|Passed]}
+                  State#station{output=Output, passed=[Step|Passed]}
           end, 
           Station,
-          BuildSteps
+          Steps
          ),
     #station{passed=Passed} = Pipe,
     Pipe#station{passed=lists:reverse(Passed)}.
@@ -83,6 +83,10 @@ station(Name) ->
 station(Name, Load) ->  
     Station = station(Name),
     input(Station, Load).
+
+-spec name(Station::station()) -> name().
+name(Station) ->
+    Station#station.name.
 
 -spec input(Station::station()) -> term().
 input(Station) ->

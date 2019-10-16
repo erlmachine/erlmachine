@@ -12,6 +12,8 @@
          code_change/3
         ]).
 
+-export([gear/5]).
+
 -export([attach/2, detach/2, switch/2]).
 
 -export([
@@ -48,40 +50,17 @@
 
 -type serial_no() :: erlmachine_serial_number:serial_no().
 
--type datasheet() :: erlmachine_datasheet:datasheet().
-
--type station() :: erlmachine_assembly_station:station().
-
 -type model_no() :: term().
 -type part_no() :: term().
+
+-type gear() :: erlmachine_gear:gear().
+-type axle() :: erlmachine_axle:axle().
+-type shaft() :: erlmachine_shaft:shaft().
+-type gearbox() :: erlmachine_gearbox:gerbox().
 
 -type product() :: gear() | axle() | gearbox() | shaft().
 
 %% Abbreviations M/N and P/N will be represented on name;
-
--record(gear, {body::term()}).
-
--record(axle, {body::term(), specs=[]::list(map())}).
-
--record(shaft, {body::term()}).
-
--record(gearbox, {
-                  input::assembly(),
-                  body::term(),
-                  placement::term(),
-                  %% Placement can be implemented by various ways and then represented by different formats; 
-                  %% Each implementation can do that over its own discretion;
-                  %% Erlmachine do that accordingly to YAML format;
-                  specs=[]::list(map()),
-                  output::assembly()
-                 }
-       ).
-
--type gearbox() :: #gearbox{}.
--type gear() :: #gear{}.
--type axle() :: #axle{}.
--type shaft() :: #shaft{}.
-
 
 -record(model, {
                 name::atom(),
@@ -116,18 +95,19 @@
 -type accept() :: true.
 -type reject() :: list().
 
--export_type([gear/0, axle/0, shaft/0, gearbox/0]).
 -export_type([assembly/0, model/0, prototype/0, product/0]).
 -export_type([model_no/0, part_no/0]).
 -export_type([acceptance_criteria/0, accept/0, reject/0]).
+
 %% API.
 
 -spec gear(ModelName::atom(), PrototypeName::atom(), Parts::list(assembly()), ModelOptions::term(), PrototypeOptions::term()) -> assembly().
 gear(ModelName, PrototypeName, Parts, ModelOptions, PrototypeOptions) ->
-    Product = #gear{body=#{}, parts=Parts},
+    Body = #{},
+    Product = erlmachine_gear:gear(Body),
     Model = #model{name=ModelName, product=Product, options=ModelOptions},
     Prototype = #prototype{name=PrototypeName, options=PrototypeOptions},
-    Gear = #assembly{model=Model, prototype=Prototype},
+    Gear = #assembly{model=Model, prototype=Prototype, parts=Parts},
     Gear.
 
 -spec install_model(Assembly::assembly()) ->
@@ -279,18 +259,6 @@ model_no(Assembly, MN) ->
     Release = model(Assembly, Model#model{model_no=MN}),
     Release.
 
--spec part_no(Assembly::assembly()) -> PN::term().
-part_no(Assembly) ->
-    Model = model(Assembly),
-    PN = Model#model.part_no,
-    PN.
-
--spec part_no(Assembly::assembly(), PN::term()) -> Release::assembly().
-part_no(Assembly, PN) ->
-    Model = model(Assembly),
-    Release = model(Assembly, Model#model{part_no=PN}),
-    Release.
-
 -spec model_name(Assembly::assembly()) -> Name::atom().
 model_name(Assembly) ->
     Model = model(Assembly),
@@ -339,12 +307,12 @@ product(Assembly, Product) ->
     Release = model(Assembly, Model#model{product=Product}),
     Release.
 
--spec parts(Assembly::assembly()) -> lists(assembly()).
+-spec parts(Assembly::assembly()) -> list(assembly()).
 parts(Assembly) ->
     Assembly#assembly.parts.
 
 -spec parts(Assembly::assembly(), Parts::list(assembly())) -> assembly().
-parts(Assembly) ->
+parts(Assembly, Parts) ->
     Assembly#assembly{parts=Parts}.
 
 -spec mount(Assembly::assembly()) -> assembly().
@@ -354,3 +322,14 @@ mount(Assembly) ->
 -spec mount(Assembly::assembly(), Mount::assembly()) -> assembly().
 mount(Assembly, Mount) ->
     Assembly#assembly{mount=Mount}.
+
+-spec part_no(Assembly::assembly()) -> PN::term().
+part_no(Assembly) ->
+    PN = Assembly#assembly.part_no,
+    PN.
+
+-spec part_no(Assembly::assembly(), PN::term()) -> Release::assembly().
+part_no(Assembly, PN) ->
+    Release = Assembly#assembly{part_no=PN},
+    Release.
+

@@ -12,6 +12,7 @@
         ]).
 
 -export([
+         gear/1,
          parts/1, parts/2, 
          body/1, body/2,
          mount/1, mount/2
@@ -22,7 +23,17 @@
 
 %% The main difference between gear and shaft in the next:
 %% Gear as working element, shaft is transmitter instead; 
-   
+
+-record(gear, {body::term()}).
+
+-type gear() :: #gear{}.
+
+-export_type([gear/0]).
+
+-spec gear(Body::term()) -> gear().
+gear(Body) ->
+    #gear{body=Body}.
+
 -spec install_model(GearBox::assembly(), Gear::assembly()) -> 
                      success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
 install_model(GearBox, Gear) ->

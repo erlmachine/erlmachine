@@ -86,7 +86,7 @@ code_change(_OldVsn, State, _Extra) ->
 
 %% We consider Module as implementation point (like class) and serial number as instance - (like object); 
 %% We can support polymorphism by different ways - by overriding prototype or by changing topology itself;
-handle_continue(#accept{}, #state{gearbox=GearBox, file=File}=State) ->
+handle_continue(#accept{}, #state{gearbox=GearBox}=State) ->
     try
         true = erlmachine_factory:accept(GearBox),
         {noreply, State}
