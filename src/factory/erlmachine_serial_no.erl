@@ -1,6 +1,6 @@
 -module(erlmachine_serial_no).
 
--export([serial_no/1, no/1, no/2]).
+-export([serial_no/1, base64url/1, no/1, no/2]).
 
 -type serial_no()::binary().
 
@@ -22,7 +22,9 @@
 -spec base64url(Hash::binary()) -> Base64::binary().
 base64url(Hash) when is_binary(Hash) ->
     Base64 = base64:encode(Hash),
-    Base64.
+    Base64List = [fun($+) -> <<"-">>; ($/) -> <<"_">>; (C) -> <<C>> end(Char)|| <<Char>> <= Base64],
+    Base64Url = << <<X/binary>> || X <- Base64List >>,
+    Base64Url.
 
 -spec no(Serial::serial()) -> no().
 no(Serial) ->
