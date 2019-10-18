@@ -14,10 +14,11 @@
 
 -export([steps/1]).
 
--export([station/1, station/2, pass/1, pass/2]).
+-export([station/1, station/2, station/3, pass/1, pass/2]).
 
 -export([
          name/1, 
+         parts/1, parts/2,
          input/1, input/2, 
          output/1, output/2, 
          throughput/1, throughput/2
@@ -26,6 +27,7 @@
 -record(station, {
                   name::atom(),
                   input::term(),
+                  parts=[]::list(),
                   steps::list(step()),
                   passed::list(step()),
                   output::term(),
@@ -64,9 +66,9 @@ pass(Station) ->
 pipe(#station{name=Name, steps=Steps}=Station) ->
     Pipe = 
         lists:foldl(
-          fun(Step, #station{input=Input, passed=Passed}=State) ->
-                  Output = Name:Step(Input),
-                  State#station{output=Output, passed=[Step|Passed]}
+          fun(Step, #station{input=Input, passed=Passed, parts=[Part|T]}=State) ->
+                  Output = Name:Step(Input, Part),
+                  State#station{output=Output, passed=[Step|Passed], parts=T}
           end, 
           Station,
           Steps
@@ -83,6 +85,19 @@ station(Name) ->
 station(Name, Load) ->  
     Station = station(Name),
     input(Station, Load).
+
+-spec station(Name::atom(), Load::term(), Parts::list(term())) -> station().
+station(Name, Load, Parts) ->  
+    Station = station(Name),
+    parts(input(Station, Load), Parts).
+
+-spec parts(Station::station()) -> list(term()).
+parts(Station) ->
+    Station#station.parts.
+
+-spec parts(Station::station(), Parts::list(term())) -> station().
+parts(Station, Parts) ->
+    Station#station{parts=Parts}.
 
 -spec name(Station::station()) -> name().
 name(Station) ->

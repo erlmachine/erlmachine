@@ -2,9 +2,24 @@
 
 -folder(<<"erlmachine/factory">>).
 
--steps([serial_no]).
+-steps([
+        model_name,
+        model_options,
+        prototype_name,
+        prototype_options,
+        install_options,
+        serial_no,
+        install_args
+       ]).
 
--export([serial_no/1]).
+-export([
+         model_name/2,
+         model_options/2,
+         prototype_name/2, 
+         prototype_options/2,
+         serial_no/2,
+         install_args/2
+        ]).
 
 -behaviour(gen_server).
 
@@ -37,10 +52,6 @@
 
 -type no()::erlmachine_serial_no:no().
 
--record(conveyor, {assembly::assembly(), passed=[]::list(station()), stations=[]::list(atom())}).
-
--type conveyor()::#conveyor{}.
-
 -export_type([conveyor/0]).
 %% Here are different kind of builders can be provided;
 %% For example - YAML builder;
@@ -51,6 +62,56 @@
 %% We can utilize different pools for that purpouse;
 %% The all managment over thoose capabilities is a warehouse option;
 
+-spec model_name(Assembly::assembly(), Name::atom()) -> assembly().
+model_name(Assembly, Name) ->
+    Model = erlmachine_assembly:model(),
+    Release = erlmachine_assembly:model_name(Assembly#assembly{model=Model}, Name),
+    Release.
+
+-spec model_options(Assembly::assembly(), Options::list(term())) -> assembly().
+model_options(Assembly, Options) ->
+    Release = erlmachine_assembly:model_options(Assembly, Options),
+    Release.
+
+-spec prototype_name(Assembly::assembly(), Name::atom()) -> assembly().
+prototype_name(Assembly, Name) ->
+    Prototype = erlmachine_assembly:prototype(),
+    Release = erlmachine_assembly:prototype_name(Assembly#assembly{prototype=Prototype}, Name),
+    Release.
+
+-spec prototype_options(Assembly::assembly(), Options::list(term())) -> assembly().
+prototype_options(Assembly, Options) ->
+    Release = erlmachine_assembly:prototype_options(Assembly, Options),
+    Release.
+
+-spec install_options(Assembly::assembly(), Options::list(term())) -> assembly().
+install_options(Assembly, Options) ->
+    Spec = erlmachine_assembly:spec(Assembly),
+    Restart = proplists:get_value(restart, Options, permanent),
+    Shutdown = proplists:get_value(shutdown, Options, 5000),
+    Release =  erlmachine_assembly:spec(Assembly, Spec#{restart => Restart, shutdown => Shutdown}),
+    Release.
+
+-record(serial_no, {}).
+
+-spec serial_no(Assembly::assembly(), Prefix::binary()) -> assembly().
+serial_no(Assembly) ->
+    %% Just default timeout for the first time;
+    ID = id(),
+    SN = gen_server:call(ID, #serial_no{}),
+    Release = erlmachine_assembly:serial_no(Assembly, <<Prefix/binary, SN/binary>>),
+    Release.
+
+-spec install_args(Assembly::assembly(), GearBox::assembly() -> assembly().
+install_args() ->
+    SN = erlmachine_assembly:serial_no(Assembly), 
+    Module = erlmachine_assembly:prototype_name(Part),
+    Options = erlmachine_assembly:prototype_options(Part),
+    Start = {Module, install, [SN, GearBox, Assembly, Options]},
+    Spec = erlmachine_assembly:spec(Part),
+    Release = erlmachine_assembly:spec(Part, Spec#{id => SN, start => Start, modules => [Module]}),
+    Release.
+
 -spec parts(Assembly::assembly(), Parts::list(assembly())) -> assembly().
 parts(Assembly, Parts) when is_list(Parts) ->
     Release = erlmachine_assembly:parts(Assembly, Parts),
@@ -60,20 +121,6 @@ parts(Assembly, Parts) when is_list(Parts) ->
 mount(Assembly, Parts) ->
     MountParts = [erlmachine_assembly:mount(Part, Assembly) || Part <- Parts],
     Release = parts(Assembly, MountParts),
-    Release.
-
--spec spec(GearBox::assembly(), Part::assembly(), Options::list()) -> assembly().
-spec(GearBox, Part, Options) ->
-    SN = serial_no(Part), 
-    Module = erlmachine_assembly:prototype_name(Part),
-    Options = erlmachine_assembly:prototype_options(Part),
-    Start = {Module, install, [SN, GearBox, Part, Options]},
-    Restart = proplists:get_value(restart, Options, permanent),
-    Shutdown = proplists:get_value(shutdown, Options, 5000),
-    Modules = proplists:get_value(modules, Options, [Module]),
-    Spec = erlmachine_assembly:spec(Part),
-    InitSpec = Spec#{id => SN, start => Start, restart => Restart, shutdown => Shutdown, modules => Modules},
-    Release = erlmachine_assembly:spec(Part, InitSpec),
     Release.
 
 -spec gear(GearBox::assembly(), Model::atom(), ModelOptions::term()) -> Gear::assembly().
@@ -90,8 +137,9 @@ gear(GearBox, Model, ModelOptions, InstallOptions) ->
 -spec gear(GearBox::assembly(), Model::atom(), Prototype::atom(), ModelOptions::term(), PrototypeOptions::list(), InstallOptions::list()) -> Gear::assembly().
 gear(GearBox, Model, Prototype, ModelOptions, PrototypeOptions, InstallOptions) ->
     Gear = erlmachine_assembly:gear(Model, Prototype, ModelOptions,  [{trap_exit, true}|PrototypeOptions]),
-    Release = pass(Gear, [?MODULE]),
-    spec(GearBox, Release, InstallOptions).
+    Parts = [Model, ModelOptions, Prototype, PrototypeOptions, InstallOptions, <<"SN-G-">>, GearBox],
+    Release = pass(Gear, ?MODULE, Parts),
+    Release.
 
 -spec shaft(GearBox::assembly(), Model::atom(), ModelOptions::term()) -> Shaft::assembly().
 shaft(GearBox, Model, ModelOptions) ->
@@ -107,8 +155,9 @@ shaft(GearBox, Model, ModelOptions, InstallOptions) ->
 -spec shaft(GearBox::assembly(), Model::atom(), Prototype::atom(), ModelOptions::term(), PrototypeOptions::list(), InstallOptions::list()) -> Shaft::assembly().
 shaft(GearBox, Model, Prototype, ModelOptions, PrototypeOptions, InstallOptions) ->
     Shaft = erlmachine_assembly:shaft(Model, Prototype, ModelOptions,  [{trap_exit, true}|PrototypeOptions]),
-    Release = pass(Shaft, [?MODULE]),
-    spec(GearBox, Release, InstallOptions).
+    Parts = [Model, ModelOptions, Prototype, PrototypeOptions, InstallOptions, <<"SN-S-">>, GearBox],
+    Release = pass(Shaft, ?MODULE, Parts),
+    Release.
 
 -spec axle(GearBox::assembly(), Model::atom(), ModelOptions::term()) -> Axle::assembly().
 axle(GearBox, Model, ModelOptions) ->
@@ -124,8 +173,9 @@ axle(GearBox, Model, ModelOptions, InstallOptions) ->
 -spec axle(GearBox::assembly(), Model::atom(), Prototype::atom(), ModelOptions::term(), PrototypeOptions::list(), InstallOptions::list()) -> Axle::assembly().
 axle(GearBox, Model, Prototype, ModelOptions, PrototypeOptions, InstallOptions) ->
     Axle = erlmachine_assembly:axle(Model, Prototype, ModelOptions, [{intensity, 1}, {period, 5}|PrototypeOptions]),
-    Release = pass(Axle, [?MODULE]),
-    spec(GearBox, Release, InstallOptions).
+    Parts = [Model, ModelOptions, Prototype, PrototypeOptions, InstallOptions, <<"SN-S-">>, GearBox],
+    Release = pass(Axle, ?MODULE, Parts),
+    Release.
 
 -spec gearbox(Model::atom(), ModelOptions::term(), Env::term()) -> GearBox::assembly().
 gearbox(Model, ModelOptions, Env) ->
@@ -139,41 +189,15 @@ gearbox(Model, Prototype, ModelOptions, PrototypeOptions, Env) ->
     Release = pass(GearBox, [?MODULE]),
     Release.
 
--spec pass(Conveyor::conveyor(), Stations::list(atom())) -> conveyor().
-pass(Assembly, Stations) ->
-    Conveyor = #conveyor{assembly=Assembly, stations=Stations},
-    Pass = pipe(Conveyor),
-    %% At that point we can store Pass information and provide research over this data;
-    Pass#conveyor.assembly.
-
--spec pipe(Conveyor::conveyor()) -> Pipe::conveyor().
-pipe(#conveyor{stations=Stations}=Conveyor) ->
-    BuildStations = [erlmachine_assembly_station:station(Name) || Name <- Stations],
-    Pipe =
-        lists:foldl(
-          fun(Station, #conveyor{assembly=Assembly, passed=Passed}=State) ->
-                  PassStation = erlmachine_assembly_station:pass(Station, Assembly),
-                  Release = erlmachine_assembly_station:output(PassStation),
-                  State#conveyor{assembly=Release, passed=[PassStation|Passed]}
-          end,
-          Conveyor,
-          BuildStations
-         ),
-    #conveyor{passed=Passed} = Pipe,
-    Pipe#conveyor{passed=lists:reverse(Passed)}.
+-spec pass(Assembly::assembly(), Name::atom(), Parts::list(term())) -> conveyor().
+pass(Assembly, Name, Parts) ->
+    Station = erlmachine_assembly_station:station(Name, Assembly, Parts),
+    Pass = erlmachine_assembly_station:pass(Station),
+    %% At that point we can store Pass information and provide research over passed station;
+    Release = erlmachine_assembly_station:output(Pass),
+    Release.
 
 %% API.
-
--record(serial_no, {}).
-
--spec serial_no(Assembly::assembly()) -> assembly().
-serial_no(Assembly) ->
-    %% Just default timeout for the first time;
-    ID = id(),
-    SN = gen_server:call(ID, #serial_no{}),
-    PrefixSN = <<"S/N", "-", SN/binary>>,
-    Release = erlmachine_assembly:serial_no(Assembly, PrefixSN),
-    Release.
 
 id() -> 
     {local, name()}.

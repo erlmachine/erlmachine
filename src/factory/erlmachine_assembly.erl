@@ -14,6 +14,8 @@
 
 -export([gear/4, shaft/4, axle/4, gearbox/5]).
 
+-export([assembly/0, model/0, prototype/0]).
+
 -export([attach/2, detach/2, switch/2]).
 
 -export([
@@ -244,6 +246,10 @@ detach(Parts, ID) ->
 switch(_Parts, Part) ->
     Part. 
 
+-spec assembly() -> assembly().
+assembly() ->
+    #assembly{}.
+
 -spec serial_no(Assembly::assembly()) -> SN::serial_no().
 serial_no(Assembly) ->
     SN = Assembly#assembly.serial_no,
@@ -253,6 +259,10 @@ serial_no(Assembly) ->
 serial_no(Assembly, SN) ->
     Release = Assembly#assembly{serial_no=SN},
     Release.
+
+-spec model() -> model().
+model() ->
+    #model{}.
 
 -spec model(Assembly::assembly()) -> Model::model().
 model(Assembly) ->
@@ -297,6 +307,10 @@ model_name(Assembly, Name) ->
     Model = model(Assembly),
     Release = model(Assembly, Model#model{name=Name}),
     Release.
+
+-spec prototype() -> prototype().
+prototype() ->
+    #prototype{}.
 
 -spec prototype_name(Assembly::assembly()) -> Name::atom().
 prototype_name(Assembly) ->
