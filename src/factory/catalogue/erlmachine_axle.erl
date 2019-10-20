@@ -1,10 +1,10 @@
 -module(erlmachine_axle).
 
 -export([
-         install_model/2,
-         accept_model/3,
-         attach_model/3, detach_model/3,
-         uninstall_model/3
+         install/2,
+         accept/3,
+         attach/3, detach/3,
+         uninstall/3
         ]).
 
 -export([
@@ -28,9 +28,9 @@
 axle(Body) ->
     #axle{body=Body}.
 
--spec install_model(GearBox::assembly(), Axle::assembly()) -> 
+-spec install(GearBox::assembly(), Axle::assembly()) -> 
                      success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
-install_model(GearBox, Axle) ->
+install(GearBox, Axle) ->
     Mount = mount(Axle),
     {ok, Body} = erlmachine_assembly:install_model(Axle),
     %% We are going to add error handling later; 
@@ -39,19 +39,19 @@ install_model(GearBox, Axle) ->
     (Mount == GearBox) orelse erlmachine_assembly:installed(GearBox, Release),
     {ok, Release}.
 
--spec attach_model(GearBox::assembly(), Axle::assembly(), Part::assembly()) ->
+-spec attach(GearBox::assembly(), Axle::assembly(), Part::assembly()) ->
                     success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
-attach_model(_GearBox, Axle, _Part) ->
+attach(_GearBox, Axle, _Part) ->
     {ok, Axle}. %% TODO
 
--spec detach_model(GearBox::assembly(), Axle::assembly(), ID::serial_no()) ->
+-spec detach(GearBox::assembly(), Axle::assembly(), ID::serial_no()) ->
                     success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
-detach_model(_GearBox, Axle, _Part) ->
+detach(_GearBox, Axle, _Part) ->
     {ok, Axle}. %% TODO
 
--spec uninstall_model(GearBox::assembly(), Axle::assembly(), Reason::term()) -> 
+-spec uninstall(GearBox::assembly(), Axle::assembly(), Reason::term()) -> 
                        ok.
-uninstall_model(GearBox, Axle, Reason) ->
+uninstall(GearBox, Axle, Reason) ->
     Mount = mount(Axle),
     {ok, Body} = erlmachine_assembly:uninstall_model(Axle, Reason, body(Axle)),
     Release = body(Axle, Body),
@@ -59,9 +59,9 @@ uninstall_model(GearBox, Axle, Reason) ->
     (Mount == GearBox) orelse erlmachine_assembly:uninstalled(GearBox, Reason, Release),
     ok.
 
--spec accept_model(GearBox::assembly(), Axle::assembly(), Criteria::term()) ->
+-spec accept(GearBox::assembly(), Axle::assembly(), Criteria::term()) ->
                     success(Report::term(), Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
-accept_model(GearBox, Axle, Criteria) ->
+accept(GearBox, Axle, Criteria) ->
     {Tag, Result, Body} = erlmachine_assembly:accept_model(Axle, Criteria, body(Axle)),
     Release = body(Axle, Body),
     case Tag of 

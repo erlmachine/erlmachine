@@ -17,8 +17,8 @@
         ]).
 
 -export([
-         install/4, 
-         switch/3, 
+         install/4,
+         attach/3, detach/3,
          overload/2, block/3, 
          replace/3,
          rotate/2, transmit/3, %% transmit/4
@@ -48,12 +48,20 @@ install(Name, GearBox, Gear, Options) ->
     gen_server:start_link(ID, ?MODULE, #install{gearbox=GearBox, gear=Gear, options=Options}, []).
 
 %% I think about ability to reflect both kind of switching - manual and automated;
--record(switch, {part::assembly()}).
+-record(attach, {part::assembly()}).
 
--spec switch(Name::serial_no(), Part::assembly(), Timeout::timeout()) -> 
+-spec attach(Name::serial_no(), Part::assembly(), Timeout::timeout()) -> 
                     success(Release::assembly()) | failure(E::term(), R::term()).
-switch(Name, Part, Timeout) ->
-    gen_server:call(format_name(Name), #switch{part = Part}, Timeout).
+attach(Name, Part, Timeout) ->
+    gen_server:call(format_name(Name), #attach{part = Part}, Timeout).
+
+%% I think about ability to reflect both kind of switching - manual and automated;
+-record(detach, {id::serial_no()}).
+
+-spec detach(Name::serial_no(), ID::serial_no(), Timeout::timeout()) -> 
+                    success(Release::assembly()) | failure(E::term(), R::term()).
+detach(Name, ID, Timeout) ->
+    gen_server:call(format_name(Name), #detach{id=ID}, Timeout).
 
 -record(overload, {load::term()}).
 
@@ -115,9 +123,13 @@ init(#install{gearbox=GearBox, gear=Gear, options=Options}) ->
     {ok, Release} = erlmachine_gear:install_model(GearBox, Gear),
     {ok, #state{gearbox=GearBox, gear=Release}}.
 
-handle_call(#switch{part = Part}, _From, #state{gearbox=Gearbox, gear=Gear} = State) ->
-    Result = {ok, Release} = erlmachine_gear:switch_model(Gearbox, Gear, Part),
-    {reply, Result, State#state{gear=Release}};
+handle_call(#attach{part = Part}, _From, #state{gearbox=GearBox, gear=Gear} = State) ->
+    Result = {ok, Release} = erlmachine_gear:attach_model(GearBox, Gear, Part),
+    {reply, Result, State#state{gear=Gear}};
+
+handle_call(#detach{id = ID}, _From, #state{gearbox=GearBox, gear=Gear} = State) ->
+    Result = {ok, Release} = erlmachine_gear:detach_model(GearBox, Gear, ID),
+    {reply, Result, State#state{gear=Gear}};
 
 handle_call(#replace{repair=Repair}, _From, #state{gearbox=GearBox, gear=Gear} = State) ->
     Result = {ok, Release} = erlmachine_gear:replace_model(GearBox, Gear, Repair),

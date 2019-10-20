@@ -12,6 +12,12 @@
         install_args
        ]).
 
+-behaviour(gen_server).
+
+%% API.
+
+-export([start_link/0]).
+
 -export([
          model_name/2,
          model_options/2,
@@ -21,15 +27,9 @@
          install_args/2
         ]).
 
--behaviour(gen_server).
-
-%% API.
-
--export([start_link/0]).
-
 %% We assume that factory will also provide production of all components and their registration too;
-%% My assumption that is factory can be driven from production capacity perspective; 
-%% Measurements over manufactures production activity needs to be provided too;
+%% My assumption is that factory can be driven from production capacity perspective; 
+%% Measurements over manufactures production activity needs to be satisfied too;
 
 %% gen_server.
 -export([init/1]).
@@ -52,12 +52,11 @@
 
 -type no()::erlmachine_serial_no:no().
 
--export_type([conveyor/0]).
 %% Here are different kind of builders can be provided;
 %% For example - YAML builder;
 %% But from begining we are going to build directly from code;
 
-%% The main purpouse of the factory is to provide product planing abilities;
+%% The main purpouse of the factory is to provide product planing;
 %% We can control available capacity of all individual parts;
 %% We can utilize different pools for that purpouse;
 %% The all managment over thoose capabilities is a warehouse option;
@@ -112,11 +111,14 @@ install_args() ->
     Release = erlmachine_assembly:spec(Part, Spec#{id => SN, start => Start, modules => [Module]}),
     Release.
 
+%% Client doesn't need to know about mount method;
+%% I guess it's responsibility of transmission (attach call); 
 -spec parts(Assembly::assembly(), Parts::list(assembly())) -> assembly().
 parts(Assembly, Parts) when is_list(Parts) ->
     Release = erlmachine_assembly:parts(Assembly, Parts),
     Release.
 
+%% Mount action can be achived on the install stage;
 -spec mount(Assembly::assembly(), Parts::list(assembly())) -> assembly().
 mount(Assembly, Parts) ->
     MountParts = [erlmachine_assembly:mount(Part, Assembly) || Part <- Parts],

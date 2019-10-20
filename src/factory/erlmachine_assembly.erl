@@ -16,8 +16,6 @@
 
 -export([assembly/0, model/0, prototype/0]).
 
--export([attach/2, detach/2, switch/2]).
-
 -export([
          serial_no/1, serial_no/2,
          model/1, model/2, model_name/1, model_name/2, model_options/1, model_options/2,
@@ -30,23 +28,8 @@
          mount/1, mount/2
         ]).
 
--export([install_model/3, replace_model/3, uninstall_model/3, accept_model/3]).
-
--export([installed/2, replaced/3, uninstalled/3, accepted/4, rejected/4]).
-
 -include("erlmachine_system.hrl").
 
--callback install(SN::serial_no(), MN::model_no(), PN::part_no(), Options::list()) -> 
-    success(term()) | failure(term(), term(), term()) | failure(term()).
-
--callback replace(SN::serial_no(), ID::serial_no(), Body::term()) -> 
-    success(term()) | failure(term(), term(), term()) | failure(term()).
-
--callback uninstall(SN::serial_no(), Reason::term(), Body::term()) -> 
-    success(term()) | failure(term(), term(), term()) | failure(term()).
-
--callback accept(SN::serial_no(), Criteria::term(), Body::term()) -> 
-    success(term(), term()) | failure(term(), term(), term()) | failure(term()).
 
 %% The main purpose of this module is to instantiate proceses accordingly to design file;
 %% In this module will be provided incapsulation around building of independent parts and whole transmission as well;
@@ -141,72 +124,6 @@ gearbox(ModelName, PrototypeName, ModelOptions, PrototypeOptions, Env) ->
     GearBox = InitPrototype,
     GearBox.
 
--spec install_model(Assembly::assembly(), Body::term(), Env::term()) ->
-                           success(term()) | failure(E::term(), R::term(), Reject::term()).
-install_model(Assembly, Body, Env) ->
-    Module = model_name(Assembly),
-    SN = serial_no(Assembly),
-    Options = model_options(Assembly),
-    %% We can check exported functions accordingly to this kind of behaviour; 
-    Module:install(SN, Body, Options, Env).
-
--spec replace_model(Assembly::assembly(), Repair::assembly(), Body::term()) ->
-                           success(term()) | failure(E::term(), R::term(), Reject::term()).
-replace_model(Assembly, Repair, Body) ->
-    Module = model_name(Assembly),
-    SN = serial_no(Assembly),
-    ID = serial_no(Repair),
-    Module:replace(SN, ID, Body).
-
--spec accept_model(Assembly::assembly(), Criteria::term(), Body::term()) ->
-                          success(Report::term(), Release::term()) | failure(E::term(), R::term(), Reject::term()).
-accept_model(Assembly, Criteria, Body) ->
-    Module = model_name(Assembly),
-    SN = serial_no(Assembly),
-    Module:accept(SN, Criteria, Body).
-
--spec uninstall_model(Assembly::assembly(), Reason::term(), Body::term()) ->
-                       ok.
-uninstall_model(Assembly, Reason, Body) ->
-    Module = model_name(Assembly),
-    SN = serial_no(Assembly),
-    Module:uninstall(SN, Reason, Body).
-
--spec installed(Assembly::assembly(), Part::assembly()) ->
-                       ok.
-installed(Assembly, Part) ->
-    Module = prototype_name(Assembly),
-    SN = serial_no(Assembly),
-    Module:installed(SN, Assembly, Part).
-
--spec replaced(Assembly::assembly(), Part::assembly(), Extension::assembly()) ->
-                     ok.
-replaced(Assembly, Part, Extension) ->
-    Module = prototype_name(Assembly),
-    SN = serial_no(Assembly),
-    Module:replaced(SN, Assembly, Part, Extension).
-
--spec accepted(Assembly::assembly(), Part::assembly(), Criteria::term(), Report::term()) ->
-                      ok.
-accepted(Assembly, Part, Criteria, Report) ->
-    Module = prototype_name(Assembly),
-    SN = serial_no(Assembly),
-    Module:accepted(SN, Assembly, Part, Criteria, Report).
-
--spec rejected(Assembly::assembly(), Part::assembly(), Criteria::term(), Report::term()) ->
-                      ok.
-rejected(Assembly, Part, Criteria, Report) ->
-    Module = prototype_name(Assembly),
-    SN = serial_no(Assembly),
-    Module:rejected(SN, Assembly, Part, Criteria, Report).
-
--spec uninstalled(Assembly::assembly(), Reason::term(), Part::assembly()) ->
-                       ok.
-uninstalled(Assembly, Reason, Part) ->
-    Module = prototype_name(Assembly),
-    SN = serial_no(Assembly),
-    Module:uninstalled(SN, Assembly, Part, Reason).
-
 -spec start_link() -> {ok, pid()}.
 start_link() ->
 	gen_server:start_link(?MODULE, [], []).
@@ -232,19 +149,6 @@ terminate(_Reason, _State) ->
 
 code_change(_OldVsn, State, _Extra) ->
 	{ok, State}.
-
--spec attach(Parts::list(assembly()), Part::assembly()) -> list(assembly()).
-attach(Parts, Part) ->
-   lists:reverse([Part|Parts]).
-
--spec detach(Parts::list(assembly()), ID::serial_no()) -> {assembly(), list(assembly())}.
-detach(Parts, ID) ->
-    {value, Part, Filtered} = lists:keytake(ID, #assembly.serial_no, Parts),
-    {Part, Filtered}.
-
--spec switch(Parts::list(assembly()), Part::assembly()) -> assembly().
-switch(_Parts, Part) ->
-    Part. 
 
 -spec assembly() -> assembly().
 assembly() ->

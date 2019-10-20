@@ -3,17 +3,6 @@
 
 %% API.
 -export([start_link/0]).
-
-%% Transmission will be loaded directly by call where ID argument is provided. Transmission can have a lot of copies where each of them is marked by unique serial number
-%% I guess erlmachine_factory will be able to provide convenient way for elements registration (for example {via, syn, <<"your process name">>}) and motion method which is applicable to that registry
-%% I guess each module can determinate motion
-
-
-%% Gear trains with two gears[edit]
-%% The simplest example of a gear train has two gears. The "input gear" (also known as drive gear) transmits power to the "output gear" (also known as driven gear). The input gear will typically be connected to a power source, such as a motor or engine. In such an example, the output of torque and rotational speed from the output (driven) gear depend on the ratio of the dimensions of the two gears.
-%% Transmission doesn't take any obligations for synchronous calls, it is all about responsibility of caller (only API is provided);
-
-%% Callbacks
  
 %% gen_server.
 -export([
@@ -23,7 +12,10 @@
          code_change/3
         ]).
 
--export([rotate/2]).
+%% Transmission will be loaded directly by call where ID argument is provided; 
+%% Transmission can be represented by a lot of copies where each of them is marked by unique serial number;
+
+-export([attach/3, rotate/2]).
 
 -export([switch_model/3, attach_model/3, detach_model/3, rotate_model/3, transmit_model/4]).
 
@@ -32,8 +24,6 @@
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
 
--callback switch(SN::serial_no(), ID::serial_no(), Body::term()) -> 
-    success(term()) | failure(term(), term(), term()) | failure(term()).
 
 -callback attach(SN::serial_no(), ID::serial_no(), Body::term()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
@@ -47,15 +37,19 @@
 -callback transmit(SN::serial_no(), Motion::term(), Body::term()) -> 
     success(term(), term()) | failure(term(), term(), term()) | failure(term()).
 
--optional_callbacks([switch/3, attach/3, detach/3]).
-
--spec switch_model(Assembly::assembly(), Part::assembly(), Body::term()) ->
-                          success(term()) | failure(term(), term(), term()) | failure(term()).
-switch_model(Assembly, Part, Body) ->
-    Module = erlmachine_assembly:model_name(Assembly),
+-spec attach(Assembly::assembly(), Part::assembly()) -> 
+                    success(term()) | failure(term(), term(), term()) | failure(term()).
+attach(Assembly::assembly(), Part::assembly()) ->
+    Module = erlmachine_assembly:prototype_name(Assembly),
     SN = erlmachine_assembly:serial_no(Assembly),
-    ID = erlmachine_assembly:serial_no(Part),
-    Module:switch(SN, ID, Body).
+    
+
+-spec rotate(Assembly::assembly(), Motion::term()) ->
+                    Motion::term().
+rotate(Assembly, Motion) ->
+    Module = erlmachine_assembly:prototype_name(Assembly),
+    SN = erlmachine_assembly:serial_no(Assembly),
+    Module:rotate(SN, Motion).
 
 -spec attach_model(Assembly::assembly(), Part::assembly(), Body::term()) ->
                           success(term()) | failure(term(), term(), term()) | failure(term()).
@@ -79,13 +73,6 @@ rotate_model(Assembly, Motion, Body) ->
     Module = erlmachine_assembly:model_name(Assembly),
     SN = erlmachine_assembly:serial_no(Assembly),
     Module:rotate(SN, Motion, Body).
-
--spec rotate(Assembly::assembly(), Motion::term()) ->
-                         Motion::term().
-rotate(Assembly, Motion) ->
-    Module = erlmachine_assembly:prototype_name(Assembly),
-    SN = erlmachine_assembly:serial_no(Assembly),
-    Module:rotate(SN, Motion).
 
 -spec transmit_model(Assembly::assembly(), Part::assembly(), Motion::term(), Body::term()) ->
                           success(term(), term()) | failure(term(), term(), term()) | failure(term()).

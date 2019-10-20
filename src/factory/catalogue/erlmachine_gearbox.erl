@@ -8,10 +8,10 @@
 %% The gearbox is divided on so called stages (stage is a torgue between two independent gears);
 
 -export([
-         install_model/1,
-         accept_model/2,
-         attach_model/2, detach_model/2,
-         uninstall_model/2
+         install/1,
+         accept/2,
+         attach/2, detach/2,
+         uninstall/2
         ]).
 
 -export([
@@ -52,33 +52,33 @@ gearbox(Body) ->
 gearbox(Body, Env) ->
     #gearbox{body=Body, env=Env}.
 
--spec install_model(GearBox::assembly()) -> 
+-spec install(GearBox::assembly()) -> 
                      success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
-install_model(GearBox) ->
+install(GearBox) ->
     {ok, Body} = erlmachine_assembly:install_model(GearBox),
     %% We are going to add error handling later; 
     Release = body(GearBox, Body),
     {ok, Release}.
 
--spec attach_model(GearBox::assembly(), Part::assembly()) ->
+-spec attach(GearBox::assembly(), Part::assembly()) ->
                     success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
-attach_model(GearBox, _Part) ->
+attach(GearBox, _Part) ->
     {ok, GearBox}. %% TODO
 
--spec detach_model(GearBox::assembly(), ID::serial_no()) ->
+-spec detach(GearBox::assembly(), ID::serial_no()) ->
                     success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
-detach_model(GearBox, _ID) ->
+detach(GearBox, _ID) ->
     {ok, GearBox}. %% TODO
 
--spec uninstall_model(GearBox::assembly(), Reason::term()) -> 
+-spec uninstall(GearBox::assembly(), Reason::term()) -> 
                        ok.
-uninstall_model(GearBox, Reason) ->
+uninstall(GearBox, Reason) ->
     {ok, _Body} = erlmachine_assembly:uninstall_model(GearBox, Reason, body(GearBox)),
     ok.
 
--spec accept_model(GearBox::assembly(), Criteria::term()) ->
+-spec accept(GearBox::assembly(), Criteria::term()) ->
                     success(Report::term(), Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
-accept_model(GearBox, Criteria) ->
+accept(GearBox, Criteria) ->
     Result = erlmachine_assembly:accept_model(GearBox, Criteria, body(GearBox)),
     %% I guess at that place needs to be satisfied individual check over all contained in case parts; 
     Result.
