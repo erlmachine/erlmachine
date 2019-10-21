@@ -18,6 +18,21 @@
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
 
+-callback install(SN::serial_no(), Body::term(), Options::term(), Env::list()) -> 
+    success(term()) | failure(term(), term(), term()) | failure(term()).
+
+-callback uninstall(SN::serial_no(), Reason::term(), Body::term()) -> 
+    success(term()) | failure(term(), term(), term()) | failure(term()).
+
+-callback accept(SN::serial_no(), Criteria::term(), Body::term()) -> 
+    success(term(), term()) | failure(term(), term(), term()) | failure(term()).
+
+-callback attach(SN::serial_no(), ID::serial_no(), Body::term()) -> 
+    success(term()) | failure(term(), term(), term()) | failure(term()).
+
+-callback detach(SN::serial_no(), ID::serial_no(), Body::term()) -> 
+    success(term()) | failure(term(), term(), term()) | failure(term()).
+
 -record(axle, {body::term(), specs=[]::list(map())}).
 
 -type axle() :: #axle{}.
@@ -87,17 +102,6 @@ specs(Axle, Specs) ->
     Product = erlmachine_assembly:product(Axle),
     erlmachine_assembly:product(Axle, Product#axle{specs=Specs}).
 
--spec parts(Axle::assembly()) -> list(assembly()).
-parts(Axle) ->
-    %% Procs::list(map()),
-    Parts = erlmachine_assembly:parts(Axle),
-    Parts.
-
--spec parts(Axle::assembly(), Parts::list(assembly())) -> Release::assembly().
-parts(Axle, Parts) ->
-    Release = erlmachine_assembly:parts(Axle, Parts),
-    Release.
-
 -spec body(Axle::assembly()) -> Body::term().
 body(Axle) ->
     Product = erlmachine_assembly:product(Axle),
@@ -108,16 +112,6 @@ body(Axle, Body) ->
     Product = erlmachine_assembly:product(Axle),
     erlmachine_assembly:product(Axle, Product#axle{body=Body}).
 
--spec mount(Axle::assembly()) -> Mount::assembly().
-mount(Axle) ->
-    Mount = erlmachine_assembly:mount(Axle),
-    Mount.
-
--spec mount(Axle::assembly(), Mount::assembly()) -> Release::assembly().
-mount(Axle, Mount) ->
-    Release = erlmachine_assembly:mount(Axle, Mount),
-    Release.
-  
 %%#{id => child_id(),       % mandatory
 %%start => mfargs(),      % mandatory
 %%restart => restart(),   % optional

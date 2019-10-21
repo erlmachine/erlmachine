@@ -17,15 +17,8 @@
 
 -export([attach/3]).
 
--export([switch_model/3, rotate_model/3]).
-
--export([switched/3]).
-
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
-
--callback transmit(SN::serial_no(), Motion::term(), Body::term()) -> 
-    success(term(), term()) | failure(term(), term(), term()) | failure(term()).
 
 -spec attach(Assembly::assembly(), Part::assembly()) -> 
                     success(term()) | failure(term(), term(), term()) | failure(term()).
