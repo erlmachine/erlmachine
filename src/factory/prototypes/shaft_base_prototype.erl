@@ -26,7 +26,7 @@
          attach/3, detach/3,
          overload/2, block/3, 
          replace/3,
-         rotate/2, transmit/3, %% transmit/4
+         rotate/2,
          uninstall/3,
          accept/3
         ]).
@@ -99,13 +99,6 @@ rotate(Name, Motion) ->
     erlang:send(format_name(Name), #rotate{motion=Motion}), 
     Motion.
 
--record(transmit, {motion::term()}).
-
--spec transmit(Name::serial_no(), Motion::term(), Timeout::timeout()) ->
-                      Force::term().
-transmit(Name, Motion, Timeout) ->
-    gen_server:call(format_name(Name), #transmit{motion=Motion}, Timeout).
-
 -spec uninstall(Name::serial_no(), Reason::term(), Timeout::timeout()) ->
                        ok.
 uninstall(Name, Reason, Timeout) ->
@@ -140,10 +133,6 @@ handle_call(#replace{repair=Repair}, _From, #state{gearbox=GearBox, shaft=Shaft}
     Result = {ok, Release} = erlmachine_shaft:replace_model(GearBox, Shaft, Repair),
     {reply, Result, State#state{shaft=Release}};
 
-handle_call(#transmit{motion = Motion}, _From, #state{gearbox=GearBox, shaft=Shaft} = State) ->
-    {ok, Result, Release} = erlmachine_shaft:transmit_model(GearBox, Shaft, Shaft, Motion),
-    {reply, Result, State#state{shaft=Release}};
-
 handle_call(#accept{criteria = Criteria}, _From, #state{gearbox=GearBox, shaft=Shaft} = State) ->
     {ok, Report, Release} = erlmachine_shaft:accept_model(GearBox, Shaft, Criteria),
     {reply, Report, State#state{shaft=Release}};
@@ -157,12 +146,13 @@ handle_cast(Message, #state{gearbox=GearBox, shaft=Shaft} = State) ->
     {noreply, State}.
 
 handle_info(#rotate{motion = Motion}, #state{gearbox=GearBox, shaft=Shaft} = State) ->
-    Parts = erlmachine_shaft:parts(Shaft),
-    {ok, Release} = erlmachine_shaft:rotate_model(GearBox, Shaft, Motion),
+    %% At that place we can adress rotated part by SN; 
+    %% In that case all parts will be rotated by default;
+    %% If you need to provide measurements is's suitable place for that;
+    erlmachine_shaft:rotate(GearBox, Shaft, Motion),
     %% Potentially clients can provide sync delivery inside this call;
     %% It can work a very similar to job queue);
-    [erlmachine_shaft:rotate(GearBox, Part, Motion)|| Part <- Parts],
-    {noreply, State#state{shaft=Release}};
+    {noreply, State};
 
 handle_info(#overload{load = Load}, #state{gearbox=GearBox, shaft=Shaft} = State) ->
     {ok, Release} = erlmachine_shaft:overload_model(GearBox, Shaft, Load),
