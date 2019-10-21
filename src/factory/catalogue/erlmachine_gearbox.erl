@@ -9,16 +9,14 @@
 
 -export([
          install/1,
-         accept/2,
          attach/2, detach/2,
+         accept/2,
          uninstall/2
         ]).
 
 -export([
          gearbox/1, gearbox/2,
          input/1, input/2,
-         parts/1, parts/2,
-         specs/1, specs/2,
          body/1, body/2,
          env/1, env/2,
          output/1, output/2
@@ -26,6 +24,21 @@
 
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
+
+-callback install(SN::serial_no(), Body::term(), Options::term(), Env::list()) -> 
+    success(term()) | failure(term(), term(), term()) | failure(term()).
+
+-callback uninstall(SN::serial_no(), Reason::term(), Body::term()) -> 
+    success() | failure(term(), term()) | failure(term()).
+
+-callback accept(SN::serial_no(), Criteria::term(), Body::term()) -> 
+    success(term(), term()) | failure(term(), term(), term()) | failure(term()).
+
+-callback attach(SN::serial_no(), ID::serial_no(), Body::term()) -> 
+    success(term()) | failure(term(), term(), term()) | failure(term()).
+
+-callback detach(SN::serial_no(), ID::serial_no(), Body::term()) -> 
+    success(term()) | failure(term(), term(), term()) | failure(term()).
 
 -record(gearbox, {
                   input::assembly(),
@@ -35,7 +48,6 @@
                   %% Placement can be implemented by various ways and then represented by different formats; 
                   %% Each implementation can do that over its own discretion;
                   %% Erlmachine do that accordingly to YAML format;
-                  specs=[]::list(map()),
                   output::assembly()
                  }
        ).
@@ -55,7 +67,11 @@ gearbox(Body, Env) ->
 -spec install(GearBox::assembly()) -> 
                      success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
 install(GearBox) ->
-    {ok, Body} = erlmachine_assembly:install_model(GearBox),
+    ModelName = erlmachine_assembly:model_name(GearBox),
+    SN = erlmachine_assembly:serial_no(GearBox),
+    Env = erlmachine_gearbox:env(GearBox), 
+    Options = erlmachine_assembly:model_options(GearBox),
+    {ok, Body} = ModelName:install(SN, body(GearBox), Options, Env),
     %% We are going to add error handling later; 
     Release = body(GearBox, Body),
     {ok, Release}.
@@ -73,37 +89,26 @@ detach(GearBox, _ID) ->
 -spec uninstall(GearBox::assembly(), Reason::term()) -> 
                        ok.
 uninstall(GearBox, Reason) ->
-    {ok, _Body} = erlmachine_assembly:uninstall_model(GearBox, Reason, body(GearBox)),
+    ModelName = erlmachine_assembly:model_name(GearBox),
+    SN = erlmachine_assembly:serial_no(GearBox),
+    ok = ModelName:uninstall(SN, Reason, body(GearBox)),
     ok.
 
 -spec accept(GearBox::assembly(), Criteria::term()) ->
-                    success(Report::term(), Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
+                    success(Report::term(), Release::assembly())| failure(E::term(), R::term(), Rejected::assembly()).
 accept(GearBox, Criteria) ->
-    Result = erlmachine_assembly:accept_model(GearBox, Criteria, body(GearBox)),
-    %% I guess at that place needs to be satisfied individual check over all contained in case parts; 
-    Result.
-
--spec specs(GearBox::assembly()) -> list(map()).
-specs(GearBox) ->
-    %% Procs::list(map()),
-    Product = erlmachine_assembly:product(GearBox),
-    Product#gearbox.specs.
-
--spec specs(GearBox::assembly(), Specs::list(map())) -> Release::assembly().
-specs(GearBox, Specs) ->
-    Product = erlmachine_assembly:product(GearBox),
-    erlmachine_assembly:product(GearBox, Product#gearbox{specs=Specs}).
-
--spec parts(GearBox::assembly()) -> list(assembly()).
-parts(GearBox) ->
-    %% Procs::list(map()),
-    Parts = erlmachine_assembly:parts(GearBox),
-    Parts.
-
--spec parts(GearBox::assembly(), Parts::list(assembly())) -> Release::assembly().
-parts(GearBox, Parts) ->
-    Release = erlmachine_assembly:parts(GearBox, Parts),
-    Release.
+    ModelName = erlmachine_assembly:model_name(GearBox),
+    SN = erlmachine_assembly:serial_no(GearBox),
+    {Tag, Result, Body} = ModelName:accept(SN, Criteria, body(GearBox)),
+    Release = body(GearBox, Body),
+    case Tag of 
+        ok ->
+            Report = Result,
+            {ok, Result, Release};
+        error ->
+            {_, Report} = Result,
+            {error, Result, Release} 
+    end.
 
 -spec body(GearBox::assembly()) -> Body::term().
 body(GearBox) ->
