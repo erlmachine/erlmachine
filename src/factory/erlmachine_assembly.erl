@@ -12,8 +12,6 @@
          code_change/3
         ]).
 
--export([gear/4, shaft/4, axle/4, gearbox/5]).
-
 -export([assembly/0, model/0, prototype/0]).
 
 -export([
@@ -86,43 +84,10 @@
 -export_type([model_no/0, part_no/0]).
 -export_type([acceptance_criteria/0, accept/0, reject/0]).
 
+%% Client doesn't need to know about mount method;
+%% I guess it's responsibility of transmission (attach call); 
+
 %% API.
-
--spec gear(ModelName::atom(), PrototypeName::atom(), ModelOptions::term(), PrototypeOptions::term()) -> assembly().
-gear(ModelName, PrototypeName, ModelOptions, PrototypeOptions) ->
-    Body = #{}, Product = erlmachine_gear:gear(Body),
-    Model = #model{name=ModelName, product=Product, options=ModelOptions},
-    Prototype = #prototype{name=PrototypeName, options=PrototypeOptions, spec=#{type => worker}},
-    Assembly = #assembly{}, InitModel = model(Assembly, Model), InitPrototype = prototype(InitModel, Prototype),
-    Gear = InitPrototype,
-    Gear.
-
--spec shaft(ModelName::atom(), PrototypeName::atom(), ModelOptions::term(), PrototypeOptions::term()) -> assembly().
-shaft(ModelName, PrototypeName, ModelOptions, PrototypeOptions) ->
-    Body = [], Product = erlmachine_shaft:shaft(Body),
-    Model = #model{name=ModelName, product=Product, options=ModelOptions},
-    Prototype = #prototype{name=PrototypeName, options=PrototypeOptions, spec=#{type => worker}},
-    Assembly = #assembly{}, InitModel = model(Assembly, Model), InitPrototype = prototype(InitModel, Prototype),
-    Shaft = InitPrototype,
-    Shaft.
-
--spec axle(ModelName::atom(), PrototypeName::atom(), ModelOptions::term(), PrototypeOptions::term()) -> assembly().
-axle(ModelName, PrototypeName, ModelOptions, PrototypeOptions) ->
-    Body = [], Product = erlmachine_axle:axle(Body),
-    Model = #model{name=ModelName, product=Product, options=ModelOptions},
-    Prototype = #prototype{name=PrototypeName, options=PrototypeOptions, spec=#{type => supervisor}},
-    Assembly = #assembly{}, InitModel = model(Assembly, Model), InitPrototype = prototype(InitModel, Prototype),
-    Axle = InitPrototype,
-    Axle.
-
--spec gearbox(ModelName::atom(), PrototypeName::atom(), ModelOptions::term(), PrototypeOptions::term(), Env::term()) -> assembly().
-gearbox(ModelName, PrototypeName, ModelOptions, PrototypeOptions, Env) ->
-    Body = #{}, Product = erlmachine_gearbox:gearbox(Body, Env),
-    Model = #model{name=ModelName, product=Product, options=ModelOptions},
-    Prototype = #prototype{name=PrototypeName, options=PrototypeOptions, spec=#{type => supervisor}},
-    Assembly = #assembly{}, InitModel = model(Assembly, Model), InitPrototype = prototype(InitModel, Prototype),
-    GearBox = InitPrototype,
-    GearBox.
 
 -spec start_link() -> {ok, pid()}.
 start_link() ->
