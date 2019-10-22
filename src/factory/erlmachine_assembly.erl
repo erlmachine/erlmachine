@@ -14,6 +14,8 @@
 
 -export([assembly/0, model/0, prototype/0]).
 
+-export([install/1, install/2, uninstall/3]).
+
 -export([
          serial_no/1, serial_no/2,
          model/1, model/2, model_name/1, model_name/2, model_options/1, model_options/2,
@@ -25,6 +27,8 @@
          parts/1, parts/2,
          mount/1, mount/2
         ]).
+
+-export([attach/2, detach/2, part/2]).
 
 -include("erlmachine_system.hrl").
 
@@ -84,6 +88,26 @@
 -export_type([model_no/0, part_no/0]).
 -export_type([acceptance_criteria/0, accept/0, reject/0]).
 
+-spec install(Assembly::assembly()) ->
+                     success(pid()) | ingnore | failure(E::term()).
+install(Assembly) ->
+    SN = serial_no(Assembly),
+    Options = prototype_options(Assembly),
+    (erlmachine_assembly:prototype_name(Assembly)):install(SN, Assembly, Options).
+
+-spec install(GearBox::assembly(), Assembly::assembly()) ->
+                     success(pid()) | ingnore | failure(E::term()).
+install(GearBox, Assembly) ->
+    SN = serial_no(Assembly),
+    Options = prototype_options(Assembly),
+    (erlmachine_assembly:prototype_name(Assembly)):install(SN, GearBox, Assembly, Options).
+
+-spec uninstall(Assembly::assembly(), Reason::term(), TimeOut::integer()) ->
+                     ok.
+uninstall(Assembly, Reason, TimeOut) ->
+    SN = serial_no(Assembly),
+    (erlmachine_assembly:prototype_name(Assembly)):uninstall(SN, Reason, TimeOut).
+
 %% Client doesn't need to know about mount method;
 %% I guess it's responsibility of transmission (attach call); 
 
@@ -118,6 +142,7 @@ code_change(_OldVsn, State, _Extra) ->
 -spec assembly() -> assembly().
 assembly() ->
     #assembly{}.
+
 
 -spec serial_no(Assembly::assembly()) -> SN::serial_no().
 serial_no(Assembly) ->
@@ -262,7 +287,24 @@ part_no(Assembly) ->
     PN = Assembly#assembly.part_no,
     PN.
 
--spec part_no(Assembly::assembly(), PN::term()) -> Release::assembly().
+-spec part_no(Assembly::assembly(), PN::term()) -> assembly().
 part_no(Assembly, PN) ->
     Release = Assembly#assembly{part_no=PN},
+    Release.
+
+-spec part(Assembly::assembly(), ID::serial_no()) -> assembly().
+part(Assembly, ID) ->
+    Part = lists:keyfind(ID, #assembly.serial_no, parts(Assembly)),
+    Part.
+
+-spec attach(Assembly::assembly(), Part::assembly()) -> assembly().
+attach(Assembly, Part) ->
+    Parts = lists:reverse([Part|parts(Assembly)]),
+    Release = erlmachine_assembly:parts(Assembly, Parts),
+    Release.
+
+-spec detach(Assembly::assembly(), ID::serial_no()) -> assembly().
+detach(Assembly, ID) ->
+    Parts = lists:keydelete(ID, #assembly.serial_no, parts(Assembly)),
+    Release = erlmachine_assembly:parts(Assembly, Parts),
     Release.

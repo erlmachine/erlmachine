@@ -104,10 +104,10 @@ accept(GearBox, Criteria) ->
     case Tag of 
         ok ->
             Report = Result,
-            {ok, Result, Release};
+            {ok, Report, Release};
         error ->
             {_, Report} = Result,
-            {error, Result, Release} 
+            {error, Report, Release} 
     end.
 
 -spec body(GearBox::assembly()) -> Body::term().

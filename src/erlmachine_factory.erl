@@ -9,7 +9,8 @@
         prototype_options,
         install_options,
         serial_no,
-        install_args
+        install_args,
+        install_options
        ]).
 
 -behaviour(gen_server).
@@ -24,7 +25,8 @@
          prototype_name/2, 
          prototype_options/2,
          serial_no/2,
-         install_args/2
+         install_args/2,
+         install_options/2
         ]).
 
 %% We assume that factory will also provide production of all components and their registration too;
@@ -39,12 +41,10 @@
 -export([terminate/2]).
 -export([code_change/3]).
 
--export([gear/3, gear/4, gear/6]).
--export([shaft/3, shaft/4, shaft/6]).
--export([axle/3, axle/4, axle/6]).
--export([gearbox/3, gearbox/5]).
-
--export([parts/2, mount/2]).
+-export([gear/4, gear/5, gear/7]).
+-export([shaft/4, shaft/5, shaft/7]).
+-export([axle/4, axle/5, axle/7]).
+-export([gearbox/4, gearbox/5, gearbox/7]).
 
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
@@ -64,7 +64,7 @@
 -spec model_name(Assembly::assembly(), Name::atom()) -> assembly().
 model_name(Assembly, Name) ->
     Model = erlmachine_assembly:model(),
-    Release = erlmachine_assembly:model_name(Assembly#assembly{model=Model}, Name),
+    Release = erlmachine_assembly:model_name(erlmachine_assembly:model(Assembly, Model), Name),
     Release.
 
 -spec model_options(Assembly::assembly(), Options::list(term())) -> assembly().
@@ -75,7 +75,7 @@ model_options(Assembly, Options) ->
 -spec prototype_name(Assembly::assembly(), Name::atom()) -> assembly().
 prototype_name(Assembly, Name) ->
     Prototype = erlmachine_assembly:prototype(),
-    Release = erlmachine_assembly:prototype_name(Assembly#assembly{prototype=Prototype}, Name),
+    Release = erlmachine_assembly:prototype_name(erlmachine_assembly:prototype(Assembly, Prototype), Name),
     Release.
 
 -spec prototype_options(Assembly::assembly(), Options::list(term())) -> assembly().
@@ -94,21 +94,21 @@ install_options(Assembly, Options) ->
 -record(serial_no, {}).
 
 -spec serial_no(Assembly::assembly(), Prefix::binary()) -> assembly().
-serial_no(Assembly) ->
+serial_no(Assembly, Prefix) ->
     %% Just default timeout for the first time;
     ID = id(),
     SN = gen_server:call(ID, #serial_no{}),
     Release = erlmachine_assembly:serial_no(Assembly, <<Prefix/binary, SN/binary>>),
     Release.
 
--spec install_args(Assembly::assembly(), GearBox::assembly() -> assembly().
-install_args() ->
+-spec install_args(Assembly::assembly(), GearBox::assembly()) -> assembly().
+install_args(Assembly, GearBox) ->
     SN = erlmachine_assembly:serial_no(Assembly), 
-    Module = erlmachine_assembly:prototype_name(Part),
-    Options = erlmachine_assembly:prototype_options(Part),
+    Module = erlmachine_assembly:prototype_name(Assembly),
+    Options = erlmachine_assembly:prototype_options(Assembly),
     Start = {Module, install, [SN, GearBox, Assembly, Options]},
-    Spec = erlmachine_assembly:spec(Part),
-    Release = erlmachine_assembly:spec(Part, Spec#{id => SN, start => Start, modules => [Module]}),
+    Spec = erlmachine_assembly:spec(Assembly),
+    Release = erlmachine_assembly:spec(Assembly, Spec#{id => SN, start => Start, modules => [Module]}),
     Release.
 
 %% Mount action can be achived on the install stage;
@@ -130,7 +130,7 @@ gear(GearBox, Model, ModelOptions, InstallOptions, Parts) ->
     gear(GearBox, Model, Prototype, ModelOptions, PrototypeOptions, InstallOptions, Parts).
 
 -spec gear(GearBox::assembly(), Model::atom(), Prototype::atom(), ModelOptions::term(), PrototypeOptions::list(), InstallOptions::list(), Parts::list(assembly())) -> Gear::assembly().
-gear(GearBox, Model, Prototype, ModelOptions, PrototypeOptions, InstallOptions) ->
+gear(GearBox, Model, Prototype, ModelOptions, PrototypeOptions, InstallOptions, Parts) ->
     Gear = erlmachine_assembly:gear(Model, Prototype, ModelOptions,  [{trap_exit, true}|PrototypeOptions]),
     Input = [Model, ModelOptions, Prototype, PrototypeOptions, InstallOptions, <<"SN-G-">>, GearBox, #{type => worker}, Parts],
     Release = pass(Gear, ?MODULE, Input),
@@ -187,10 +187,10 @@ gearbox(Model, ModelOptions, InstallOptions, Env, Parts) ->
 gearbox(Model, Prototype, ModelOptions, PrototypeOptions, InstallOptions, Env, Parts) ->
     GearBox = erlmachine_assembly:gearbox(Model, Prototype, ModelOptions, [{intensity, 1}, {period, 5}|PrototypeOptions], Env),
     Input = [Model, ModelOptions, Prototype, PrototypeOptions, InstallOptions, <<"SN-GX-">>, #{type => supervisor}, Parts],
-    Release = pass(Axle, ?MODULE, Input),
+    Release = pass(GearBox, ?MODULE, Input),
     Release.
 
--spec pass(Assembly::assembly(), Name::atom(), Parts::list(term())) -> conveyor().
+-spec pass(Assembly::assembly(), Name::atom(), Parts::list(term())) -> assembly().
 pass(Assembly, Name, Parts) ->
     Station = erlmachine_assembly_station:station(Name, Assembly, Parts),
     Pass = erlmachine_assembly_station:pass(Station),
@@ -201,7 +201,7 @@ pass(Assembly, Name, Parts) ->
 %% API.
 
 id() -> 
-    {local, name()}.
+    {local, ?MODULE}.
 
 -spec start_link() -> 
                         success(pid()) | ingnore | failure(E::term()).

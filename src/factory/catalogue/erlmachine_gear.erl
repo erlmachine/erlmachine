@@ -2,9 +2,8 @@
 
 -export([
          install/2,
-         attach/3, detach/3,
          replace/3,
-         transmit/4, rotate/4, rotate/3,
+         transmit/3, rotate/3,
          call/3, cast/3, info/3,
          accept/3,
          overload/3, block/4,
@@ -118,8 +117,8 @@ rotate(_GearBox, Gear, Motion) ->
     SN = erlmachine_assembly:serial_no(Gear),
     [Part] =erlmachine_assembly:parts(Gear),
     {ok, Result, Body} = ModelName:rotate(SN, Motion, body(Gear)),
-    (erlmachine_assembly:prototype_name(Part)):rotate(ID, Result),
-    Release = body(Shaft, Body),
+    (erlmachine_assembly:prototype_name(Part)):rotate(SN, Result),
+    Release = body(Gear, Body),
     {ok, Release}.
 
 -spec transmit(GearBox::assembly(), Gear::assembly(), Motion::term()) ->
@@ -135,7 +134,7 @@ transmit(_GearBox, Gear, Motion) ->
                       success(Release::assembly()) | failure(E::term(), R::term(), Reject::assembly()).
 overload(GearBox, Gear, Load) ->
     ModelName = erlmachine_assembly:model_name(Gear),
-    SN = erlmachine_assembly:serial_no(Gear), ID = erlmachine_assembly:serial_no(Part),
+    SN = erlmachine_assembly:serial_no(Gear),
     {ok, Body} = ModelName:overload(SN, Load, body(Gear)),
     Release = body(Gear, Body),
     (erlmachine_assembly:prototype_name(GearBox)):overloaded(SN, GearBox, Release, Load),

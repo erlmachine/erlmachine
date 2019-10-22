@@ -71,7 +71,7 @@ detach(Name, ID, Timeout) ->
 -record(transmit, {motion::term()}).
 
 -spec transmit(Name::serial_no(), Motion::term(), Timeout::timeout()) ->
-                      Force::term().
+                      success(Result::term()) | failure(E::term(), R::term()).
 transmit(Name, Motion, Timeout) ->
     gen_server:call(format_name(Name), #transmit{motion=Motion}, Timeout).
 
@@ -136,9 +136,9 @@ handle_call(#detach{id = ID}, _From, #state{gearbox=GearBox, shaft=Shaft} = Stat
     Result = {ok, Release} = erlmachine_shaft:detach(GearBox, Shaft, ID),
     {reply, Result, State#state{shaft=Release}};
 
-handle_call(#transmit{motion = Motion}, _From, #state{gearbox=GearBox, gear=Gear} = State) ->
+handle_call(#transmit{motion = Motion}, _From, #state{gearbox=GearBox, shaft=Shaft} = State) ->
     {ok, Result, Release} = erlmachine_shaft:transmit(GearBox, Shaft, Motion),
-    {reply, Result, State#state{gear=Release}};
+    {reply, Result, State#state{shaft=Release}};
 
 handle_call(#replace{repair=Repair}, _From, #state{gearbox=GearBox, shaft=Shaft} = State) ->
     Result = {ok, Release} = erlmachine_shaft:replace(GearBox, Shaft, Repair),

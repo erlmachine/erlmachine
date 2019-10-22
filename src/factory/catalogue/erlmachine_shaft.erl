@@ -4,7 +4,7 @@
          install/2,
          attach/3, detach/3,
          replace/3,
-         tranmsit/3, rotate/4, rotate/3,
+         transmit/3, rotate/4, rotate/3,
          call/3, cast/3, info/3,
          accept/3,
          overload/3, block/4,
@@ -84,8 +84,7 @@ attach(GearBox, Shaft, Part) ->
     ModelName= erlmachine_assembly:model_name(Shaft),
     SN = erlmachine_assembly:serial_no(Shaft), ID = erlmachine_assembly:serial_no(Part),
     {ok, Body} = ModelName:attach(SN, ID, body(Shaft)),
-    Parts = lists:reverse([Part|parts(Shaft)]),
-    Release = erlmachine_assembly:parts(body(Shaft, Body), Parts),
+    Release = erlmachine_assembly:attach(body(Shaft, Body), Part),
     (erlmachine_assembly:prototype_name(GearBox)):attached(SN, GearBox, Release, Part),
     {ok, Release}.
 
@@ -93,11 +92,11 @@ attach(GearBox, Shaft, Part) ->
                     success(Release::assembly()) | failure(E::term(), R::term(),  Rejected::assembly()).
 detach(GearBox, Shaft, ID) ->
     ModelName= erlmachine_assembly:model_name(Shaft),
+    SN = erlmachine_assembly:serial_no(Shaft),
     %% At that place we need to find Part inside assembly by SN and transmit;
-    {value, Part, Parts} = lists:keytake(ID, #assembly.serial_no, erlmachine_assembly:parts(Shaft)),
     {ok, Body} = ModelName:detach(SN, ID, body(Shaft)),
-    Release = erlmachine_assembly:parts(body(Shaft, Body), Parts),
-    (erlmachine_assembly:prototype_name(GearBox)):detached(SN, GearBox, Release, Part),
+    Release = erlmachine_assembly:detach(body(Shaft, Body), ID),
+    (erlmachine_assembly:prototype_name(GearBox)):detached(SN, GearBox, Release, ID),
     {ok, Release}.
 
 -spec replace(GearBox::assembly(), Shaft::assembly(), Part::assembly()) ->
@@ -143,7 +142,7 @@ accept(GearBox, Shaft, Criteria) ->
 rotate(_GearBox, Shaft, ID, Motion) ->
     ModelName = erlmachine_assembly:model_name(Shaft),
     SN = erlmachine_assembly:serial_no(Shaft),
-    Part = lists:keyfind(ID, #assembly.serial_no, erlmachine_assembly:parts(Shaft)),
+    Part = erlmachine_assembly:part(Shaft, ID),
     {ok, Result, Body} = ModelName:rotate(SN, ID, Motion, body(Shaft)),
     (erlmachine_assembly:prototype_name(Part)):rotate(ID, Result),
     Release = body(Shaft, Body),
@@ -152,17 +151,15 @@ rotate(_GearBox, Shaft, ID, Motion) ->
 -spec rotate(GearBox::assembly(), Shaft::assembly(), Motion::term()) ->
                     success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
 rotate(GearBox, Shaft, Motion) ->
-    ModelName = erlmachine_assembly:model_name(Shaft),
-    SN = erlmachine_assembly:serial_no(Shaft),
     Parts = erlmachine_shaft:parts(Shaft),
     {ok, Release} = lists:foldl(
       fun (Part, {ok, ShaftState}) ->
               ID = erlmachine_assembly:serial_no(Part),
-              {ok, Release} = rotate(GearBox, ShaftState, ID, Motion)
+              rotate(GearBox, ShaftState, ID, Motion)
       end,
       {ok, Shaft},
-      Parts
-     ).
+      Parts),
+    {ok, Release}.
 
 -spec transmit(GearBox::assembly(), Shaft::assembly(), Motion::term()) ->
                     success(Result::term(), Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
@@ -177,7 +174,7 @@ transmit(_GearBox, Shaft, Motion) ->
                       success(Release::assembly()) | failure(E::term(), R::term(), Reject::assembly()).
 overload(GearBox, Shaft, Load) ->
     ModelName = erlmachine_assembly:model_name(Shaft),
-    SN = erlmachine_assembly:serial_no(Shaft), ID = erlmachine_assembly:serial_no(Part),
+    SN = erlmachine_assembly:serial_no(Shaft),
     {ok, Body} = ModelName:overload(SN, Load, body(Shaft)),
     Release = body(Shaft, Body),
     (erlmachine_assembly:prototype_name(GearBox)):overloaded(SN, GearBox, Release, Load),
