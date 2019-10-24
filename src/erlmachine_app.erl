@@ -4,7 +4,14 @@
 -export([start/2]).
 -export([stop/1]).
 
+-export([start_phase/3]).
+
 start(_Type, _Args) ->
 	erlmachine_sup:start_link().
 
 stop(_State) ->	ok.
+
+start_phase(erlmachine_filesystem, _Type, _PhaseArgs) ->
+    ok;
+start_phase(_, _Type, _PhaseArgs) ->
+    ok.

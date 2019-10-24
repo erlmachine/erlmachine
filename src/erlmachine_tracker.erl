@@ -59,7 +59,8 @@ trace(TrackingNumber, Package) ->
 -record(state, {gearbox::assembly(), file::term()}).
 
 init([]) ->
-    GearBox = erlmachine_factory:gearbox(?MODULE, []), 
+    %% GearBox = erlmachine_factory:gearbox(?MODULE, []), 
+    GearBox = null,
     %% We need to implement storing gearboxes and also individual part inside warehouse;
     %% After that we will be able to select needed parts by SN;
     File = <<"erlmachine_traker.serial">>,
@@ -86,9 +87,9 @@ code_change(_OldVsn, State, _Extra) ->
 
 %% We consider Module as implementation point (like class) and serial number as instance - (like object); 
 %% We can support polymorphism by different ways - by overriding prototype or by changing topology itself;
-handle_continue(#accept{}, #state{gearbox=GearBox}=State) ->
+handle_continue(#accept{}, #state{gearbox=_GearBox}=State) ->
     try
-        true = erlmachine_factory:accept(GearBox),
+        %% true = erlmachine_factory:accept(GearBox),
         {noreply, State}
     catch E:R ->
             {stop, {E, R}, State}

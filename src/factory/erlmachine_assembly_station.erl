@@ -28,8 +28,8 @@
                   name::atom(),
                   input::term(),
                   parts=[]::list(),
-                  steps::list(step()),
-                  passed::list(step()),
+                  steps=[]::list(step()),
+                  passed=[]::list(step()),
                   output::term(),
                   throughput::throughput()
                  }).
@@ -59,19 +59,19 @@ pass(Station) ->
     %% How much time is spend for custom listed stations;
     %% How much time is spend for install;
     %% How much time is spend for SN allocation; etc.
-    Start = erlang:system_time(), Output = pipe(Station), Stop = erlang:system_time(),
-    Station#station{throughput=Stop-Start, output=Output}.
+    Start = erlang:system_time(), Pass = pipe(Station), Stop = erlang:system_time(),
+    Pass#station{throughput=Stop-Start}.
 
 -spec pipe(Station::station()) -> Pipe::station().
-pipe(#station{name=Name, steps=Steps}=Station) ->
+pipe(#station{name=Name, parts=Parts, input=Input}=Station) ->
     Pipe = 
         lists:foldl(
-          fun(Step, #station{input=Input, passed=Passed, parts=[Part|T]}=State) ->
-                  Output = Name:Step(Input, Part),
-                  State#station{output=Output, passed=[Step|Passed], parts=T}
+          fun(Part, #station{output=In, passed=Passed, steps=[Step|T]}=State) ->
+                  Out = Name:Step(In, Part),
+                  State#station{output=Out, passed=[Step|Passed], steps=T}
           end, 
-          Station,
-          Steps
+          Station#station{output=Input},
+          Parts
          ),
     #station{passed=Passed} = Pipe,
     Pipe#station{passed=lists:reverse(Passed)}.
