@@ -140,46 +140,54 @@ install_args(Assembly, GearBox) ->
    %% Release = parts(Assembly, MountParts),
     %%Release.
 
--spec gear(GearBox::assembly(), Model::atom(), ModelOptions::term()) ->
+-spec gear(GearBox::assembly(), Model::atom(), ModelOpt::term()) ->
                   Gear::assembly().
-gear(GearBox, Model, ModelOptions) ->
-    InstallOptions = [],
-    gear(GearBox, Model, ModelOptions, InstallOptions).
+gear(GearBox, Model, ModelOpt) ->
+    InstOpt = [],
+    gear(GearBox, Model, ModelOpt, InstOpt).
 
--spec gear(GearBox::assembly(), Model::atom(), ModelOptions::term(), InstallOptions::list()) -> 
+-spec gear(GearBox::assembly(), Model::atom(), ModelOpt::term(), InstOpt::list()) -> 
                   Gear::assembly().
-gear(GearBox, Model, ModelOptions, InstallOptions) ->
-    Prototype = gear_base_prototype:name(), 
-    PrototypeOptions = [],
-    gear(GearBox, Model, Prototype, ModelOptions, PrototypeOptions, InstallOptions).
+gear(GearBox, Model, ModelOpt, InstOpt) ->
+    Prot = gear_base_prototype:name(), 
+    ProtOpt = [],
+    gear(GearBox, Model, Prot, ModelOpt, ProtOpt, InstOpt).
 
--spec gear(GearBox::assembly(), Model::atom(), Prototype::atom(), ModelOptions::term(), PrototypeOptions::list(), InstallOptions::list()) -> 
+-spec gear(GearBox::assembly(), Model::atom(), Prot::atom(), ModelOpt::term(), ProtOpt::list(), InstOpt::list()) -> 
                   Gear::assembly().
-gear(GearBox, Model, Prototype, ModelOptions, PrototypeOptions, InstallOptions) ->
-    Gear = erlmachine_assembly:gear(Model, Prototype, ModelOptions,  [{trap_exit, true}|PrototypeOptions]),
-    Input = [Model, ModelOptions, Prototype, PrototypeOptions, InstallOptions, <<"SN-G-">>, GearBox, #{type => worker}],
-    Release = pass(Gear, ?MODULE, Input),
+gear(_GearBox, Model, Prot, ModelOpt, ProtOpt, InstOpt) ->
+    Body = #{},
+    Gear = erlmachine_gear:gear(Body),
+    Prefix = <<"SN-G-">>,
+    Assembly = erlmachine_assembly:assembly(),
+    InstType = #{type => worker},
+    Input = [Model, ModelOpt, Prot, [{trap_exit, true}|ProtOpt], Gear, Prefix, InstType, InstOpt],
+    Release = pass(Assembly, ?MODULE, Input),
     Release.
 
--spec shaft(GearBox::assembly(), Model::atom(), ModelOptions::term()) ->
+-spec shaft(GearBox::assembly(), Model::atom(), ModelOpt::term()) ->
                    Shaft::assembly().
-shaft(GearBox, Model, ModelOptions) ->
-    InstallOptions = [],
-    shaft(GearBox, Model, ModelOptions, InstallOptions).
+shaft(GearBox, Model, ModelOpt) ->
+    InstOpt = [],
+    shaft(GearBox, Model, ModelOpt, InstOpt).
 
--spec shaft(GearBox::assembly(), Model::atom(), ModelOptions::term(), InstallOptions::list()) -> 
+-spec shaft(GearBox::assembly(), Model::atom(), ModelOpt::term(), InstOpt::list()) -> 
                    Shaft::assembly().
-shaft(GearBox, Model, ModelOptions, InstallOptions) ->
-    Prototype = shaft_base_prototype:name(), 
-    PrototypeOptions = [],
-    shaft(GearBox, Model, Prototype, ModelOptions, PrototypeOptions, InstallOptions).
+shaft(GearBox, Model, ModelOpt, InstOpt) ->
+    Prot = shaft_base_prototype:name(), 
+    ProtOpt = [],
+    shaft(GearBox, Model, Prot, ModelOpt, ProtOpt, InstOpt).
 
--spec shaft(GearBox::assembly(), Model::atom(), Prototype::atom(), ModelOptions::term(), PrototypeOptions::list(), InstallOptions::list()) -> 
+-spec shaft(GearBox::assembly(), Model::atom(), Prot::atom(), ModelOpt::term(), ProtOpt::list(), InstOpt::list()) -> 
                    Shaft::assembly().
-shaft(GearBox, Model, Prototype, ModelOptions, PrototypeOptions, InstallOptions) ->
-    Shaft = erlmachine_assembly:shaft(Model, Prototype, ModelOptions,  [{trap_exit, true}|PrototypeOptions]),
-    Input = [Model, ModelOptions, Prototype, PrototypeOptions, InstallOptions, <<"SN-S-">>, GearBox, #{type => worker}],
-    Release = pass(Shaft, ?MODULE, Input),
+shaft(_GearBox, Model, Prot, ModelOpt, ProtOpt, InstOpt) ->
+    Body = #{},
+    Shaft = erlmachine_shaft:shaft(Body),
+    Prefix = <<"SN-S-">>,
+    Assembly = erlmachine_assembly:assembly(),
+    InstType = #{type => worker},
+    Input = [Model, ModelOpt, Prot, [{trap_exit, true}|ProtOpt], Shaft, Prefix, InstType, InstOpt],
+    Release = pass(Assembly, ?MODULE, Input),
     Release.
 
 -spec axle(GearBox::assembly(), Model::atom(), ModelOptions::term()) -> 
