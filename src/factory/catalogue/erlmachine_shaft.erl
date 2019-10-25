@@ -38,7 +38,7 @@
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
 -callback rotate(SN::serial_no(), ID::serial_no(), Motion::term(), Body::term()) -> 
-    success(term(), term()) | failure(term(), term(), term()) | failure(term()).
+    success(term(), term()) | success(term()) | failure(term(), term(), term()) | failure(term()).
 
 -callback transmit(SN::serial_no(), Motion::term(), Body::term()) -> 
     success(term(), term()) | failure(term(), term(), term()) | failure(term()).
