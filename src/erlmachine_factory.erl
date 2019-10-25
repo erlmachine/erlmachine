@@ -181,7 +181,7 @@ shaft(GearBox, Model, ModelOpt, InstOpt) ->
 -spec shaft(GearBox::assembly(), Model::atom(), Prot::atom(), ModelOpt::term(), ProtOpt::list(), InstOpt::list()) -> 
                    Shaft::assembly().
 shaft(_GearBox, Model, Prot, ModelOpt, ProtOpt, InstOpt) ->
-    Body = #{},
+    Body = [],
     Shaft = erlmachine_shaft:shaft(Body),
     Prefix = <<"SN-S-">>,
     Assembly = erlmachine_assembly:assembly(),
