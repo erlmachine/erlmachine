@@ -106,9 +106,11 @@ install_type(Assembly, Spec) ->
                              assembly().
 install_options(Assembly, Options) ->
     Spec = erlmachine_assembly:spec(Assembly),
+    Module = erlmachine_assembly:prototype_name(Assembly),
     Restart = proplists:get_value(restart, Options, permanent),
     Shutdown = proplists:get_value(shutdown, Options, 5000),
-    Release =  erlmachine_assembly:spec(Assembly, Spec#{restart => Restart, shutdown => Shutdown}),
+    Modules = proplists:get_value(modules, Options, [Module]),
+    Release =  erlmachine_assembly:spec(Assembly, Spec#{restart => Restart, shutdown => Shutdown, modules => Modules}),
     Release.
 
 -record(serial_no, {}).
@@ -130,7 +132,7 @@ install_args(Assembly, GearBox) ->
     Options = erlmachine_assembly:prototype_options(Assembly),
     Start = {Module, install, [SN, GearBox, Assembly, Options]},
     Spec = erlmachine_assembly:spec(Assembly),
-    Release = erlmachine_assembly:spec(Assembly, Spec#{id => SN, start => Start, modules => [Module]}),
+    Release = erlmachine_assembly:spec(Assembly, Spec#{id => SN, start => Start}),
     Release.
 
 %% Mount action can be achived on the install stage;
