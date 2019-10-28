@@ -145,7 +145,7 @@ rotate(_GearBox, Shaft, ID, Motion) ->
     SN = erlmachine_assembly:serial_no(Shaft),
     Part = erlmachine_assembly:part(Shaft, ID),
     {ok, Result, Body} = ModelName:rotate(SN, ID, Motion, body(Shaft)),
-    (erlmachine_assembly:prototype_name(Part)):rotate(ID, Result),
+    erlmachine_transmission:rotate(Part, Result),
     Release = body(Shaft, Body),
     {ok, Release}.
 

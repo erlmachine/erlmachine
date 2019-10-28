@@ -42,6 +42,7 @@
 axle(Body) ->
     #axle{body=Body}.
 
+
 -spec install(GearBox::assembly(), Axle::assembly()) -> 
                      success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
 install(GearBox, Axle) ->

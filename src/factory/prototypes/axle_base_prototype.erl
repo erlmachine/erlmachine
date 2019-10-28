@@ -77,7 +77,6 @@ install(Name, GearBox, Axle, Options) ->
 
 init(#install{gearbox=GearBox, axle=Axle, options=Options}) ->
     Strategy = one_for_all,
-    trace(Axle, #{install => IDs}),
     {ok, Release} = erlmachine_axle:install(GearBox, Axle),
     Specs = erlmachine_axle:specs(GearBox, Release),
     Intensity = proplists:get_value(intensity, Options, 1),
