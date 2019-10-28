@@ -75,9 +75,11 @@ handle_call(_Request, _From, State) ->
 handle_cast(_Msg, State) ->
 	{noreply, State}.
 
-handle_info(#trace{} = Command, #state{gearbox = GearBox} = State) ->
+handle_info(#trace{} = Command, #state{gearbox = _GearBox} = State) ->
     #trace{tracking_no = TrackingNumber, package = Package} = Command,
-    erlmachine_transmission:rotate(GearBox, #{TrackingNumber => Package}), %% we need to find default input here
+    %% TODO trace needs to be implemented;
+    io:format("~ntrace: ~p~n",[#{TrackingNumber => Package}]),
+    %%erlmachine_transmission:rotate(GearBox, #{TrackingNumber => Package}),
     {noreply, State};
 handle_info(_Message, State) ->
     {noreply, State}.

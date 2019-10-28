@@ -3,8 +3,8 @@
 %% The main puprouse of a product module is to provide API between clients part and system; 
 
 %% Gearbox is a component which responsible for reliable spatial placement for all processes;
-%% Gearbox is the place where shafts, gears and axles are fixed. 
-%% Gearbox is the main container component
+%% Gearbox is the place where shafts, gears and axles are located. 
+%% Gearbox is the main container component over all topology;
 %% The gearbox is divided on so called stages (stage is a torgue between two independent gears);
 
 -export([
@@ -22,10 +22,12 @@
          output/1, output/2
         ]).
 
+-export([specs/1]).
+
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
 
--callback install(SN::serial_no(), Body::term(), Options::term(), Env::list()) -> 
+-callback install(SN::serial_no(), IDs::list(serial_no()), Body::term(), Options::term(), Env::list()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
 -callback uninstall(SN::serial_no(), Reason::term(), Body::term()) -> 
@@ -71,7 +73,8 @@ install(GearBox) ->
     SN = erlmachine_assembly:serial_no(GearBox),
     Env = erlmachine_gearbox:env(GearBox), 
     Options = erlmachine_assembly:model_options(GearBox),
-    {ok, Body} = ModelName:install(SN, body(GearBox), Options, Env),
+    IDs = [erlmachine_assembly:serial_no(Part)|| Part <- erlmachine_assembly:parts(GearBox)], 
+    {ok, Body} = ModelName:install(SN, IDs, body(GearBox), Options, Env),
     %% We are going to add error handling later; 
     Release = body(GearBox, Body),
     {ok, Release}.
@@ -140,12 +143,20 @@ output(GearBox, Output) ->
 
 -spec env(GearBox::assembly()) -> term().
 env(GearBox) ->
-    GearBox#gearbox.env.
+    Product = erlmachine_assembly:product(GearBox),
+    Env = Product#gearbox.env,
+    Env.
 
 -spec env(GearBox::assembly(), Env::term()) -> Release::assembly().
 env(GearBox, Env) ->
     Product = erlmachine_assembly:product(GearBox),
     erlmachine_assembly:product(GearBox, Product#gearbox{env=Env}).
+
+-spec specs(GearBox::assembly()) -> list(map()).
+specs(GearBox) ->
+    Parts = erlmachine_assembly:parts(GearBox),
+    Specs = [erlmachine_assembly:spec(GearBox, erlmachine_assembly:mount(Part, GearBox))|| Part <- Parts],
+    Specs.
 
 %% processes need to be instantiated by builder before;
 

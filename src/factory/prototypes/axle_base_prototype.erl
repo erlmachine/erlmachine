@@ -33,14 +33,15 @@ format_name(SerialNumber) ->
     ID.
 
 -spec tag(Package::map()) -> Tag::binary().
-tag(#{model := Model}) ->
+tag(#{model_name := Model}) ->
     ID = atom_to_binary(Model, latin1),
     ID.
 
 -spec installed(Name::serial_no(), Axle::assembly(), Part::assembly()) ->
                       ok.
 installed(_Name, Axle, Part) ->
-    trace(Axle, #{installed => Part}),
+    SN = erlmachine_assembly:serial_no(Part),
+    trace(Axle, #{installed => SN}),
     ok.
 
 -spec uninstalled(Name::serial_no(), Axle::assembly(), Part::assembly(), Reason::term()) -> 
@@ -106,5 +107,5 @@ trace(Assembly, Insight) ->
     Model = erlmachine_assembly:model_name(Assembly),
     SN = erlmachine_assembly:serial_no(Assembly),
     Package = #{prototype => ?MODULE, model_name => Model, serial_no => SN},
-    TN = erlmachine_traker:tracking_no(?MODULE, Package),
-    erlmachine_traker:trace(TN, Package#{insight => Insight}).
+    TN = erlmachine_tracker:tracking_no(?MODULE, Package),
+    erlmachine_tracker:trace(TN, Package#{insight => Insight}).

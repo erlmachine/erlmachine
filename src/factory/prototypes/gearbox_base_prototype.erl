@@ -40,9 +40,10 @@
 %% After that we will be able to build reflection of whole topology which was stored before;
 
 -spec tag(Package::map()) -> Tag::binary().
-tag(#{model := Model}) ->
+tag(#{model_name := Model}) ->
     ID = atom_to_binary(Model, latin1),
     ID.
+
 
 -spec name() -> Name::atom().
 name() ->
@@ -55,7 +56,8 @@ format_name(SerialNumber) ->
 -spec installed(Name::serial_no(), GearBox::assembly(), Part::assembly()) ->
                       ok.
 installed(_Name, GearBox, Part) ->
-    trace(GearBox, #{installed => Part}),
+    SN = erlmachine_assembly:serial_no(Part),
+    trace(GearBox, #{installed => SN}),
     ok.
 
 -spec uninstalled(Name::serial_no(), GearBox::assembly(), Part::assembly(), Reason::term()) ->
@@ -140,13 +142,11 @@ install(Name, GearBox, Options) ->
     supervisor:start_link({local, format_name(Name)}, ?MODULE, Args).
 
 init(#install{gearbox=GearBox, options=Options}) ->
-    Strategy = one_for_all,
+    Strategy = one_for_one,
+    {ok, Release} = erlmachine_gearbox:install(GearBox),
+    Specs = erlmachine_gearbox:specs(Release),
     Intensity = proplists:get_value(intensity, Options, 1),
     Period = proplists:get_value(period, Options, 5),
-    Parts = erlmachine_gearbox:parts(GearBox),
-    trace(GearBox, #{install => Parts}),
-    {ok, _} = erlmachine_gearbox:install_model(GearBox),
-    Specs = erlmachine_gearbox:specs(GearBox),
     {ok, {#{strategy => Strategy, intensity => Intensity, period => Period}, Specs}}.
 
 -spec uninstall(Name::serial_no(), GearBox::assembly(), Reason::term()) ->
@@ -168,6 +168,5 @@ trace(Assembly, Insight) ->
     Model = erlmachine_assembly:model_name(Assembly),
     SerialNumber = erlmachine_assembly:serial_no(Assembly),
     Package = #{prototype => ?MODULE, model_name => Model, serial_no => SerialNumber},
-    TrackingNumber = erlmachine_traker:tracking_no(?MODULE, Package),
-    erlmachine_traker:trace(TrackingNumber, Package#{insight => Insight}).
-
+    TrackingNumber = erlmachine_tracker:tracking_no(?MODULE, Package),
+    erlmachine_tracker:trace(TrackingNumber, Package#{insight => Insight}).

@@ -72,11 +72,12 @@
 -record (assembly, {
                     serial_no::serial_no(), %% We can get build info (ts, etc..) by serial number from db;
                     prototype::prototype(),
+
                     model::model(),
                     mount::assembly(),
-                    parts::list(assembly()),
+                    parts=[]::list(assembly()),
                     part_no::part_no(),
-                    options::list()
+                    options=[]::list()
                    }
         ).
 
@@ -309,7 +310,7 @@ detach(Assembly, ID) ->
     Release = erlmachine_assembly:parts(Assembly, Parts),
     Release.
 
--spec spec(GearBox::assembly(), Part::assembly()) -> map().
+-spec spec(GearBox::assembly(), Part::assembly()) -> Spec::map().
 spec(GearBox, Part) ->
     SN = erlmachine_assembly:serial_no(Part),
     Module = erlmachine_assembly:prototype_name(Part),
