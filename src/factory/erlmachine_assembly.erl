@@ -20,7 +20,7 @@
          serial_no/1, serial_no/2,
          model/1, model/2, model_name/1, model_name/2, model_options/1, model_options/2,
          prototype/1, prototype/2, prototype_name/1, prototype_name/2, prototype_options/1, prototype_options/2,
-         spec/1, spec/2,
+         assembly_options/1, assembly_options/2,
          model_no/1, model_no/2,
          part_no/1, part_no/2,
          product/1, product/2,
@@ -29,6 +29,8 @@
         ]).
 
 -export([attach/2, detach/2, part/2]).
+
+-export([spec/2]).
 
 -include("erlmachine_system.hrl").
 
@@ -60,8 +62,7 @@
 
 -record(prototype, {
                     name::atom(),
-                    options::term(),
-                    spec::map()
+                    options::term()
                    }
        ).
 
@@ -74,7 +75,8 @@
                     model::model(),
                     mount::assembly(),
                     parts::list(assembly()),
-                    part_no::part_no()
+                    part_no::part_no(),
+                    options::list()
                    }
         ).
 
@@ -242,16 +244,14 @@ prototype_options(Assembly, Options) ->
     Release = prototype(Assembly, Prototype#prototype{options=Options}),
     Release.
 
--spec spec(Assembly::assembly()) -> Spec::map().
-spec(Assembly) ->
-    Prototype = prototype(Assembly),
-    Spec =Prototype#prototype.spec,
-    Spec.
+-spec assembly_options(Assembly::assembly()) -> Options::list().
+assembly_options(Assembly) ->
+    Options = Assembly#assembly.options,
+    Options.
 
--spec spec(Assembly::assembly(), Spec::map()) -> Release::assembly().
-spec(Assembly, Spec) ->
-    Prototype = prototype(Assembly),
-    Release = prototype(Assembly, Prototype#prototype{spec=Spec}),
+-spec assembly_options(Assembly::assembly(), Options::list()) -> Release::assembly().
+assembly_options(Assembly, Options) ->
+    Release = Assembly#assembly{options=Options},
     Release.
 
 -spec product(Assembly::assembly()) -> Product::product().
@@ -308,3 +308,16 @@ detach(Assembly, ID) ->
     Parts = lists:keydelete(ID, #assembly.serial_no, parts(Assembly)),
     Release = erlmachine_assembly:parts(Assembly, Parts),
     Release.
+
+-spec spec(GearBox::assembly(), Part::assembly()) -> map().
+spec(GearBox, Part) ->
+    SN = erlmachine_assembly:serial_no(Part),
+    Module = erlmachine_assembly:prototype_name(Part),
+    Opt = erlmachine_assembly:prototype_options(Part),
+    Start = {Module, install, [SN, GearBox, Part, Opt]},
+    AssemblyOpt = erlmachine_assembly:assembly_options(Part),
+    Restart = proplists:get_value(restart, AssemblyOpt, permanent),
+    Shutdown = proplists:get_value(shutdown, AssemblyOpt, 5000),
+    Modules = proplists:get_value(modules, AssemblyOpt, [Module]),
+    Type = proplists:get_value(type, AssemblyOpt),
+    #{id => SN, start => Start, restart => Restart, shutdown => Shutdown, modules => Modules, type => Type}.

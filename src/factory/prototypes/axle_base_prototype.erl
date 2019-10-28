@@ -77,12 +77,11 @@ install(Name, GearBox, Axle, Options) ->
 
 init(#install{gearbox=GearBox, axle=Axle, options=Options}) ->
     Strategy = one_for_all,
+    trace(Axle, #{install => IDs}),
+    {ok, Release} = erlmachine_axle:install(GearBox, Axle),
+    Specs = erlmachine_axle:specs(GearBox, Release),
     Intensity = proplists:get_value(intensity, Options, 1),
     Period = proplists:get_value(period, Options, 5),
-    Parts = erlmachine_axle:parts(Axle),
-    trace(Axle, #{install => Parts}),
-    {ok, _} = erlmachine_axle:install_model(GearBox, Axle),
-    Specs = erlmachine_axle:specs(Axle),
     {ok, {#{strategy => Strategy, intensity => Intensity, period => Period}, Specs}}.
 
 %% I guess later we need some way to adress axle instance inside gearbox;

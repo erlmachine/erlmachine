@@ -19,7 +19,7 @@
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
 
--callback install(SN::serial_no(), Body::term(), Options::term(), Env::list()) -> 
+-callback install(SN::serial_no(), IDs::list(serial_no()), Body::term(), Options::term(), Env::list()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
 -callback replace(SN::serial_no(), ID::serial_no(), Body::term()) -> 
@@ -70,7 +70,8 @@ install(GearBox, Shaft) ->
     Options = erlmachine_assembly:model_options(Shaft),
     %% We can check exported functions accordingly to this kind of behaviour; 
     %% We are going to add error handling later; 
-    {ok, Body} = ModelName:install(SN, body(Shaft), Options, Env),
+    IDs = [erlmachine_assembly:serial_no(Part)|| Part <- erlmachine_assembly:parts(Shaft)], 
+    {ok, Body} = ModelName:install(SN, IDs, body(Shaft), Options, Env),
     %% We are going to add error handling later; 
     Release = body(Shaft, Body), 
     Mount = erlmachine_assembly:mount(Shaft),

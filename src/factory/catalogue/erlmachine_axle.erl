@@ -12,10 +12,12 @@
          body/1, body/2
         ]).
 
+-export([specs/2]).
+
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
 
--callback install(SN::serial_no(), Body::term(), Options::term(), Env::list()) -> 
+-callback install(SN::serial_no(), IDs::list(serial_no()), Body::term(), Options::term(), Env::list()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
 -callback uninstall(SN::serial_no(), Reason::term(), Body::term()) -> 
@@ -47,7 +49,8 @@ install(GearBox, Axle) ->
     SN = erlmachine_assembly:serial_no(Axle),
     Env = erlmachine_gearbox:env(GearBox), 
     Options = erlmachine_assembly:model_options(Axle),
-    {ok, Body} = ModelName:install(SN, body(Axle), Options, Env),
+    IDs = [erlmachine_assembly:serial_no(Part)|| Part <- erlmachine_assembly:parts(Axle)], 
+    {ok, Body} = ModelName:install(SN, IDs, body(Axle), Options, Env),
     %% We are going to add error handling later; 
     Release = body(Axle, Body),
     Mount = erlmachine_assembly:mount(Axle),
@@ -105,13 +108,8 @@ body(Axle, Body) ->
     Product = erlmachine_assembly:product(Axle),
     erlmachine_assembly:product(Axle, Product#axle{body=Body}).
 
-%%#{id => child_id(),       % mandatory
-%%start => mfargs(),      % mandatory
-%%restart => restart(),   % optional
-%%shutdown => shutdown(), % optional
-%%type => worker(),       % optional
-%%modules => modules()}   % optional
-
-%% processes need to be instantiated by builder before;
-
-%% process_flag(trap_exit, true), Needs to be passed by default;
+-spec specs(GearBox::assembly(), Axle::assembly()) -> list(map()).
+specs(GearBox, Axle) ->
+    Parts = erlmachine_assembly:parts(Axle),
+    Specs = [erlmachine_assembly:spec(GearBox, erlmachine_assembly:mount(Part, Axle))|| Part <- Parts],
+    Specs.
