@@ -206,10 +206,10 @@ gearbox(Model, Prot, ModelOpt, ProtOpt, AssemblyOpt, Env) ->
 -spec pass(Assembly::assembly(), Name::atom(), Parts::list(term())) ->
                   assembly().
 pass(Assembly, Name, Parts) ->
-    Station = erlmachine_assembly_station:station(Name, Assembly, Parts),
-    Pass = erlmachine_assembly_station:pass(Station),
+    Station = erlmachine_station:station(Name, Assembly, Parts),
+    Pass = erlmachine_station:pass(Station),
     %% At that point we can store Pass information and provide research over passed station;
-    Release = erlmachine_assembly_station:output(Pass),
+    Release = erlmachine_station:output(Pass),
     Release.
 
 %% API.
