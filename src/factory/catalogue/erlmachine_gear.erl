@@ -3,8 +3,7 @@
 -export([
          install/2,
          replace/3,
-         transmit/3, rotate/3,
-         call/3, cast/3, info/3,
+         transmit/3, load/3, rotate/3,
          accept/3,
          overload/3, block/4,
          uninstall/3
@@ -31,11 +30,13 @@
     success(term(), term()) | failure(term(), term(), term()) | failure(term()).
 
 -callback rotate(SN::serial_no(), Motion::term(), Body::term()) -> 
-    success(term(), term()) | failure(term(), term(), term()) | failure(term()).
+    success(term()) | success(term(), term()) | failure(term(), term(), term()) | failure(term()).
 
 -callback transmit(SN::serial_no(), Motion::term(), Body::term()) -> 
     success(term(), term()) | failure(term(), term(), term()) | failure(term()).
 
+-callback load(SN::serial_no(), Load::term(), Body::term()) ->
+    success(term()) |  success(term(), term()) | failure(term(), term(), term()) | failure(term()).
 
 -callback overload(SN::serial_no(), Load::term(), Body::term()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
@@ -83,16 +84,6 @@ replace(GearBox, Gear, Part) ->
     (erlmachine_assembly:prototype_name(GearBox)):replaced(SN, GearBox, Release, Part),
     {ok, Release}.
 
--spec call(GearBox::assembly(), Gear::assembly(), Req::term()) -> 
-                  ignore.
-call(_Gearbox, _Gear, _Req) -> 
-    ignore.
-
--spec cast(GearBox::assembly(), Gear::assembly(), Message::term()) -> 
-                  ignore.
-cast(_Gearbox, _Gear, _Message) -> 
-    ignore.
-
 -spec accept(GearBox::assembly(), Gear::assembly(), Criteria::term()) ->
                     success(Report::term(), Release::assembly())| failure(E::term(), R::term(), Rejected::assembly()).
 accept(GearBox, Gear, Criteria) ->
@@ -112,14 +103,20 @@ accept(GearBox, Gear, Criteria) ->
     end.
 
 -spec rotate(GearBox::assembly(), Gear::assembly(), Motion::term()) ->
-                    success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
+                  success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
 rotate(_GearBox, Gear, Motion) ->
     ModelName = erlmachine_assembly:model_name(Gear),
     SN = erlmachine_assembly:serial_no(Gear),
-    [Part] =erlmachine_assembly:parts(Gear),
-    {ok, Result, Body} = ModelName:rotate(SN, Motion, body(Gear)),
-    erlmachine_transmission:rotate(Part, Result),
-    Release = body(Gear, Body),
+    Parts =erlmachine_assembly:parts(Gear),
+    ReleaseBody = 
+        case ModelName:rotate(SN, Motion, body(Gear)) of 
+            {ok, Result, Body} -> 
+                [erlmachine_transmission:rotate(Part, Result) || Part <- Parts],
+                Body;
+            {ok, Body} -> 
+                Body 
+        end,
+    Release = body(Gear, ReleaseBody),
     {ok, Release}.
 
 -spec transmit(GearBox::assembly(), Gear::assembly(), Motion::term()) ->
@@ -151,10 +148,22 @@ block(GearBox, Gear, Part, Failure) ->
     (erlmachine_assembly:prototype_name(GearBox)):blocked(SN, GearBox, Release, Part, Failure),
     {ok, Release}.
 
--spec info(GearBox::assembly(), Gear::assembly(), Message::term()) -> 
-                  ignore.
-info(_Gearbox, _Gear, _Message) -> 
-    ignore.
+-spec load(GearBox::assembly(), Gear::assembly(), Load::term()) ->
+                    success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
+load(_GearBox, Gear, Load) ->
+    ModelName = erlmachine_assembly:model_name(Gear),
+    SN = erlmachine_assembly:serial_no(Gear),
+    [Part] =erlmachine_assembly:parts(Gear),
+    ReleaseBody = 
+        case ModelName:load(SN, Load, body(Gear)) of 
+            {ok, Result, Body} -> 
+                erlmachine_transmission:rotate(Part, Result),
+                Body;
+            {ok, Body} -> 
+                Body 
+        end,
+    Release = body(Gear, ReleaseBody),
+    {ok, Release}.
 
 -spec uninstall(GearBox::assembly(), Gear::assembly(), Reason::term()) -> 
                        ok.

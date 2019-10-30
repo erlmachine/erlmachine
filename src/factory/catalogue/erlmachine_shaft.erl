@@ -5,7 +5,6 @@
          attach/3, detach/3,
          replace/3,
          transmit/3, rotate/4, rotate/3,
-         call/3, cast/3, info/3,
          accept/3,
          overload/3, block/4,
          uninstall/3
@@ -110,16 +109,6 @@ replace(GearBox, Shaft, Part) ->
     (erlmachine_assembly:prototype_name(GearBox)):replaced(SN, GearBox, Release, Part),
     {ok, Release}.
 
--spec call(GearBox::assembly(), Shaft::assembly(), Req::term()) -> 
-                  ignore.
-call(_Gearbox, _Shaft, _Req) -> 
-    ignore.
-
--spec cast(GearBox::assembly(), Shaft::assembly(), Message::term()) -> 
-                  ignore.
-cast(_Gearbox, _Shaft, _Message) -> 
-    ignore.
-
 -spec accept(GearBox::assembly(), Shaft::assembly(), Criteria::term()) ->
                     success(Report::term(), Release::assembly())| failure(E::term(), R::term(), Rejected::assembly()).
 accept(GearBox, Shaft, Criteria) ->
@@ -144,15 +133,21 @@ rotate(_GearBox, Shaft, ID, Motion) ->
     ModelName = erlmachine_assembly:model_name(Shaft),
     SN = erlmachine_assembly:serial_no(Shaft),
     Part = erlmachine_assembly:part(Shaft, ID),
-    {ok, Result, Body} = ModelName:rotate(SN, ID, Motion, body(Shaft)),
-    erlmachine_transmission:rotate(Part, Result),
-    Release = body(Shaft, Body),
+    ReleaseBody = 
+        case ModelName:rotate(SN, ID, Motion, body(Shaft)) of 
+            {ok, Result, Body} -> 
+                erlmachine_transmission:rotate(Part, Result),
+                Body;
+            {ok, Body} -> 
+                Body 
+        end,
+    Release = body(Shaft, ReleaseBody),
     {ok, Release}.
 
 -spec rotate(GearBox::assembly(), Shaft::assembly(), Motion::term()) ->
                     success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
 rotate(GearBox, Shaft, Motion) ->
-    Parts = erlmachine_shaft:parts(Shaft),
+    Parts = erlmachine_assembly:parts(Shaft),
     {ok, Release} = lists:foldl(
       fun (Part, {ok, ShaftState}) ->
               ID = erlmachine_assembly:serial_no(Part),
@@ -190,11 +185,6 @@ block(GearBox, Shaft, Part, Failure) ->
     Release = body(Shaft, Body),
     (erlmachine_assembly:prototype_name(GearBox)):blocked(SN, GearBox, Release, Part, Failure),
     {ok, Release}.
-
--spec info(GearBox::assembly(), Shaft::assembly(), Message::term()) -> 
-                  ignore.
-info(_Gearbox, _Gear, _Message) -> 
-    ignore.
 
 -spec uninstall(GearBox::assembly(), Shaft::assembly(), Reason::term()) -> 
     ok.

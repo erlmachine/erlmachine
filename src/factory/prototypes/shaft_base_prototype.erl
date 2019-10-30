@@ -175,13 +175,13 @@ handle_info(#block{part=Part, failure = Failure}, #state{gearbox=GearBox, shaft=
     {ok, Release} = erlmachine_shaft:block(GearBox, Shaft, Part, Failure),
     {noreply, State#state{shaft=Release}};
 
-handle_info(Message, #state{gearbox=GearBox, shaft=Shaft} = State) ->
-    erlmachine_shaft:info(GearBox, Shaft, Message),
+handle_info(_Message, #state{gearbox=_GearBox, shaft=_Shaft} = State) ->
+    %% We need to provide logging at that place;
     {noreply, State}.
 
 %% When reason is different from normal, or stop - the broken part event is occured;
 terminate(Reason, #state{gearbox=GearBox, shaft=Shaft}) ->
-    erlmachine_gear:uninstall(GearBox, Shaft, Reason),
+    erlmachine_shaft:uninstall(GearBox, Shaft, Reason),
     ok.
 
 code_change(_OldVsn, State, _Extra) ->

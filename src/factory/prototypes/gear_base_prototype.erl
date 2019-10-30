@@ -142,9 +142,10 @@ handle_info(#block{part=Part, failure = Failure}, #state{gearbox=GearBox, gear=G
     {ok, Release} = erlmachine_gear:block(GearBox, Gear, Part, Failure),
     {noreply, State#state{gear=Release}};
 
-handle_info(Message, #state{gearbox=GearBox, gear=Gear}=State) ->
-    erlmachine_gear:info(GearBox, Gear, Message),
-    {noreply, State}.
+handle_info(Load, #state{gearbox=GearBox, gear=Gear}=State) ->
+    %% At that place load capacity control can be achived;
+    {ok, Release} = erlmachine_gear:load(GearBox, Gear, Load),
+    {noreply, State#state{gear=Release}}.
 
 %% When reason is different from normal, or stop - the broken part event is occured;
 terminate(Reason, #state{gearbox=GearBox, gear=Gear}) ->
