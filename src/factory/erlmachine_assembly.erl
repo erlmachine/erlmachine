@@ -281,7 +281,7 @@ mount(Assembly) ->
 
 -spec mount(Assembly::assembly(), Mount::assembly()) -> assembly().
 mount(Assembly, Mount) ->
-    Assembly#assembly{mount=Mount}.
+    Assembly#assembly{mount=parts(Mount, [])}.
 
 -spec part_no(Assembly::assembly()) -> PN::term().
 part_no(Assembly) ->
@@ -315,7 +315,7 @@ spec(GearBox, Part) ->
     SN = erlmachine_assembly:serial_no(Part),
     Module = erlmachine_assembly:prototype_name(Part),
     Opt = erlmachine_assembly:prototype_options(Part),
-    Start = {Module, install, [SN, GearBox, Part, Opt]},
+    Start = {Module, install, [SN, parts(GearBox,[]), Part, Opt]},
     AssemblyOpt = erlmachine_assembly:assembly_options(Part),
     Restart = proplists:get_value(restart, AssemblyOpt, permanent),
     Shutdown = proplists:get_value(shutdown, AssemblyOpt, 5000),

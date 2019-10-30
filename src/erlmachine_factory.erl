@@ -127,6 +127,7 @@ gear(_GearBox, Model, Prot, ModelOpt, ProtOpt, AssemblyOpt) ->
     Gear = erlmachine_gear:gear(Body),
     Prefix = <<"SN-G-">>,
     Assembly = erlmachine_assembly:assembly(),
+    %% Additional flags
     Input = [Model, ModelOpt, Prot, [{trap_exit, true}|ProtOpt], [{type, worker}|AssemblyOpt], Gear, Prefix],
     Release = pass(Assembly, ?MODULE, Input),
     Release.
