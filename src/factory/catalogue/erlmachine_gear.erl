@@ -153,11 +153,11 @@ block(GearBox, Gear, Part, Failure) ->
 load(_GearBox, Gear, Load) ->
     ModelName = erlmachine_assembly:model_name(Gear),
     SN = erlmachine_assembly:serial_no(Gear),
-    [Part] =erlmachine_assembly:parts(Gear),
+    Parts =erlmachine_assembly:parts(Gear),
     ReleaseBody = 
         case ModelName:load(SN, Load, body(Gear)) of 
             {ok, Result, Body} -> 
-                erlmachine_transmission:rotate(Part, Result),
+                [erlmachine_transmission:rotate(Part, Result) || Part <- Parts],
                 Body;
             {ok, Body} -> 
                 Body 
