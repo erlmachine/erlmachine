@@ -273,7 +273,7 @@ parts(Assembly) ->
 
 -spec parts(Assembly::assembly(), Parts::list(assembly())) -> assembly().
 parts(Assembly, Parts) ->
-    Assembly#assembly{parts=Parts}.
+    Assembly#assembly{parts=[parts(Part, []) || Part <- Parts]}.
 
 -spec mount(Assembly::assembly()) -> assembly().
 mount(Assembly) ->
