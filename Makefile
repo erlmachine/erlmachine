@@ -15,4 +15,6 @@ dep_rabbitmq-erlang-client = git https://github.com/rabbitmq/rabbitmq-erlang-cli
 dep_syn = git https://github.com/ostinelli/syn
 dep_lager = git https://github.com/erlang-lager/lager.git
 
+DEP_PLUGINS = cowboy
+
 include erlang.mk
