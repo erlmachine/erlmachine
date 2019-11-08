@@ -40,8 +40,8 @@ attach(Assembly, Part) ->
 
 -spec detach(Assembly::assembly(), ID::serial_no()) -> 
                      success(term()) | failure(term(), term()).
-detach(Assembly, Part) ->
-    SN = erlmachine_assembly:serial_no(Assembly), ID = erlmachine_assembly:serial_no(Part),
+detach(Assembly, ID) ->
+    SN = erlmachine_assembly:serial_no(Assembly),
     (erlmachine_assembly:prototype_name(Assembly)):detach(SN, ID).
 
 -record(state, {

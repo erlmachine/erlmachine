@@ -119,14 +119,14 @@ mount(GearBox, Assembly, Part) ->
 
 -spec unmount(Assembly::assembly(), ID::serial_no()) -> 
                     success(term()) | failure(term(), term()).
-unmount(Assembly, Part) ->
-    SN = erlmachine_assembly:serial_no(Assembly), ID = serial_no(Part),
+unmount(Assembly, ID) ->
+    SN = erlmachine_assembly:serial_no(Assembly),
     (erlmachine_assembly:prototype_name(Assembly)):unmount(SN, Assembly, ID).
 
 -spec unmount(GearBox::assembly(), Assembly::assembly(), ID::serial_no()) -> 
                      success(term()) | failure(term(), term()).
-unmount(GearBox, Assembly, Part) ->
-    SN = erlmachine_assembly:serial_no(Assembly), ID = serial_no(Part),
+unmount(GearBox, Assembly, ID) ->
+    SN = erlmachine_assembly:serial_no(Assembly),
     (erlmachine_assembly:prototype_name(Assembly)):unmount(SN, GearBox, Assembly, ID).
 
 -spec uninstall(Assembly::assembly(), Reason::term(), TimeOut::integer()) ->

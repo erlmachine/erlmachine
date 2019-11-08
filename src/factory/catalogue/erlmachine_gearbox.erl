@@ -91,8 +91,12 @@ mount(GearBox, Part) ->
 
 -spec unmount(GearBox::assembly(), ID::serial_no()) ->
                     success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
-unmount(GearBox, _ID) ->
-    {ok, GearBox}. %% TODO
+unmount(GearBox, ID) ->
+    ModelName = erlmachine_assembly:model_name(GearBox),
+    SN = erlmachine_assembly:serial_no(GearBox),
+    {ok, Body} = ModelName:unmount(SN, ID, body(GearBox)),
+    Release = erlmachine_assembly:detach(body(GearBox, Body), ID),
+    {ok, Release}. %% TODO
 
 -spec uninstall(GearBox::assembly(), Reason::term()) -> 
                        ok.

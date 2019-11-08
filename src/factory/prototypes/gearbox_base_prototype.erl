@@ -118,23 +118,24 @@ rejected(_Name, GearBox, Part, Criteria, Report) ->
 -spec mount(Name::serial_no(), GearBox::assembly(), Part::assembly()) ->
                     success(Release::assembly()) | failure(E::term(), R::term()).
 mount(Name, GearBox, Part) ->
+    SupRef = format_name(Name),
     trace(GearBox, #{mount => Part}),
     Result = {ok, Release} = erlmachine_gearbox:mount(GearBox, Part),
     %% TODO Conditional case for Result needs to be processed;
     Spec = erlmachine_gearbox:spec(Release, Part),
     %% Mount time will be determined by prototype;
-    {ok, _PID} = supervisor:start_child(format_name(Name), Spec),
+    {ok, _PID} = supervisor:start_child(SupRef, Spec),
     Result.
     
 -spec unmount(Name::serial_no(), GearBox::assembly(), ID::serial_no()) ->
                     success(Child::term()) | success(Child::term(), Info::term()) | failure(E::term()).
-unmount(_Name, GearBox, ID) ->
-    %SupRef = {local, format_name(Name)},
+unmount(Name, GearBox, ID) ->
+    SupRef = format_name(Name),
     trace(GearBox, #{unmount => ID}),
-    %%supervisor:terminate_child(SupRef, ChieldID),
-    %%Res = supervisor:delete_child(SupRef, ChieldID), %% ID the same for chield and SN
-    %%erlmachine_gearbox:unmount(GearBox, ID),
-    {ok, []}.
+    Result = {ok, _} = erlmachine_gearbox:unmount(GearBox, ID),
+    ok = supervisor:terminate_child(SupRef, ID),
+    ok = supervisor:delete_child(SupRef, ID), %% ID the same for chield and SN
+    Result.
 
 -record(install, {gearbox::assembly(), options::list(tuple)}).
 
