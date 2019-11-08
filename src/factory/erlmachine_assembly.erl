@@ -14,7 +14,7 @@
 
 -export([assembly/0, model/0, prototype/0]).
 
--export([install/1, install/2, uninstall/3]).
+-export([install/1, install/2, mount/2, mount/3, unmount/2, unmount/3, uninstall/3]).
 
 -export([
          serial_no/1, serial_no/2,
@@ -25,7 +25,7 @@
          part_no/1, part_no/2,
          product/1, product/2,
          parts/1, parts/2,
-         mount/1, mount/2
+         mounted/1, mounted/2
         ]).
 
 -export([attach/2, detach/2, part/2]).
@@ -74,7 +74,7 @@
                     prototype::prototype(),
 
                     model::model(),
-                    mount::assembly(),
+                    mounted::assembly(),
                     parts=[]::list(assembly()),
                     part_no::part_no(),
                     options=[]::list()
@@ -104,6 +104,30 @@ install(GearBox, Assembly) ->
     SN = serial_no(Assembly),
     Options = prototype_options(Assembly),
     (erlmachine_assembly:prototype_name(Assembly)):install(SN, GearBox, Assembly, Options).
+
+-spec mount(Assembly::assembly(), Part::assembly()) -> 
+                    success(term()) | failure(term(), term()).
+mount(Assembly, Part) ->
+    SN = erlmachine_assembly:serial_no(Assembly),
+    (erlmachine_assembly:prototype_name(Assembly)):mount(SN, Assembly, Part).
+
+-spec mount(GearBox::assembly(), Assembly::assembly(), Part::assembly()) -> 
+                   success(term()) | failure(term(), term()).
+mount(GearBox, Assembly, Part) ->
+    SN = erlmachine_assembly:serial_no(Assembly),
+    (erlmachine_assembly:prototype_name(Assembly)):mount(SN, GearBox, Assembly, Part).
+
+-spec unmount(Assembly::assembly(), ID::serial_no()) -> 
+                    success(term()) | failure(term(), term()).
+unmount(Assembly, Part) ->
+    SN = erlmachine_assembly:serial_no(Assembly), ID = serial_no(Part),
+    (erlmachine_assembly:prototype_name(Assembly)):unmount(SN, Assembly, ID).
+
+-spec unmount(GearBox::assembly(), Assembly::assembly(), ID::serial_no()) -> 
+                     success(term()) | failure(term(), term()).
+unmount(GearBox, Assembly, Part) ->
+    SN = erlmachine_assembly:serial_no(Assembly), ID = serial_no(Part),
+    (erlmachine_assembly:prototype_name(Assembly)):unmount(SN, GearBox, Assembly, ID).
 
 -spec uninstall(Assembly::assembly(), Reason::term(), TimeOut::integer()) ->
                      ok.
@@ -273,15 +297,15 @@ parts(Assembly) ->
 
 -spec parts(Assembly::assembly(), Parts::list(assembly())) -> assembly().
 parts(Assembly, Parts) ->
-    Assembly#assembly{parts=[parts(Part, []) || Part <- Parts]}.
+    Assembly#assembly{parts=Parts}.
 
--spec mount(Assembly::assembly()) -> assembly().
-mount(Assembly) ->
-    Assembly#assembly.mount.
+-spec mounted(Assembly::assembly()) -> assembly().
+mounted(Assembly) ->
+    Assembly#assembly.mounted.
 
--spec mount(Assembly::assembly(), Mount::assembly()) -> assembly().
-mount(Assembly, Mount) ->
-    Assembly#assembly{mount=parts(Mount, [])}.
+-spec mounted(Assembly::assembly(), Mount::assembly()) -> assembly().
+mounted(Assembly, Mount) ->
+    Assembly#assembly{mounted=parts(Mount, [])}.
 
 -spec part_no(Assembly::assembly()) -> PN::term().
 part_no(Assembly) ->

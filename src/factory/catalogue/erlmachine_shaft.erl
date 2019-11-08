@@ -73,9 +73,9 @@ install(GearBox, Shaft) ->
     {ok, Body} = ModelName:install(SN, IDs, body(Shaft), Options, Env),
     %% We are going to add error handling later; 
     Release = body(Shaft, Body), 
-    Mount = erlmachine_assembly:mount(Shaft),
-    (Mount /= undefined) andalso (erlmachine_assembly:prototype_name(Mount)):installed(SN, Mount, Release),
-    (Mount == GearBox) orelse (erlmachine_assembly:prototype_name(GearBox)):installed(SN, GearBox, Release),
+    Mounted = erlmachine_assembly:mounted(Shaft),
+    (Mounted /= undefined) andalso (erlmachine_assembly:prototype_name(Mounted)):installed(SN, Mounted, Release),
+    (Mounted == GearBox) orelse (erlmachine_assembly:prototype_name(GearBox)):installed(SN, GearBox, Release),
     {ok, Release}.
 
 -spec attach(GearBox::assembly(), Shaft::assembly(), Part::assembly()) ->
@@ -193,9 +193,9 @@ uninstall(GearBox, Shaft, Reason) ->
     SN = erlmachine_assembly:serial_no(Shaft),
     {ok, Body} = ModelName:uninstall(SN, Reason, body(Shaft)),
     Release = body(Shaft, Body),
-    Mount = erlmachine_assembly:mount(Shaft),
-    (Mount /= undefined) andalso (erlmachine_assembly:prototype_name(Mount)):uninstalled(SN, Mount, Release, Reason),
-    (Mount == GearBox) orelse (erlmachine_assembly:prototype_name(GearBox)):uninstalled(SN, GearBox, Release, Reason),
+    Mounted = erlmachine_assembly:mounted(Shaft),
+    (Mounted /= undefined) andalso (erlmachine_assembly:prototype_name(Mounted)):uninstalled(SN, Mounted, Release, Reason),
+    (Mounted == GearBox) orelse (erlmachine_assembly:prototype_name(GearBox)):uninstalled(SN, GearBox, Release, Reason),
     ok.
 
 -spec body(Shaft::assembly()) -> Body::term().

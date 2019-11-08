@@ -12,25 +12,13 @@
          code_change/3
         ]).
 
--export([attach/3, detach/3, rotate/2, transmit/3]).
+-export([rotate/2, transmit/3, attach/2, detach/2]).
 
 %% Transmission will be loaded directly by call where ID argument is provided; 
 %% Transmission can be represented by a lot of copies where each of them is marked by unique serial number;
 
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
-
--spec attach(Assembly::assembly(), Part::assembly(), TimeOut::integer()) -> 
-                    success(term()) | failure(term(), term()).
-attach(Assembly, Part, TimeOut) ->
-    SN = erlmachine_assembly:serial_no(Assembly),
-    (erlmachine_assembly:prototype_name(Assembly)):attach(SN, Part, TimeOut).
-
--spec detach(Assembly::assembly(), ID::serial_no(), TimeOut::integer()) -> 
-                    success(term()) | failure(term(), term()).
-detach(Assembly, Part, TimeOut) ->
-    SN = erlmachine_assembly:serial_no(Assembly),
-    (erlmachine_assembly:prototype_name(Assembly)):attach(SN, Part, TimeOut).
 
 -spec rotate(Assembly::assembly(), Motion::term()) ->
                     Motion::term().
@@ -44,6 +32,17 @@ transmit(Assembly, Motion, TimeOut) ->
     SN = erlmachine_assembly:serial_no(Assembly),
     (erlmachine_assembly:prototype_name(Assembly)):transmit(SN, Motion, TimeOut).
 
+-spec attach(Assembly::assembly(), Part::assembly()) -> 
+                   success(term()) | failure(term(), term()).
+attach(Assembly, Part) ->
+    SN = erlmachine_assembly:serial_no(Assembly),
+    (erlmachine_assembly:prototype_name(Assembly)):attach(SN, Part).
+
+-spec detach(Assembly::assembly(), ID::serial_no()) -> 
+                     success(term()) | failure(term(), term()).
+detach(Assembly, Part) ->
+    SN = erlmachine_assembly:serial_no(Assembly), ID = erlmachine_assembly:serial_no(Part),
+    (erlmachine_assembly:prototype_name(Assembly)):detach(SN, ID).
 
 -record(state, {
 }).

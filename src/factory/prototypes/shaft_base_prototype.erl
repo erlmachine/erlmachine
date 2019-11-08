@@ -23,7 +23,7 @@
 
 -export([
          install/4, 
-         attach/3, detach/3,
+         attach/2, detach/2,
          overload/2, block/3, 
          replace/3,
          transmit/3, rotate/2,
@@ -55,18 +55,18 @@ install(Name, GearBox, Shaft, Options) ->
 %% I think about ability to reflect both kind of switching - manual and automated;
 -record(attach, {part::assembly()}).
 
--spec attach(Name::serial_no(), Part::assembly(), Timeout::timeout()) -> 
+-spec attach(Name::serial_no(), Part::assembly()) -> 
                     success(Release::assembly()) | failure(E::term(), R::term()).
-attach(Name, Part, Timeout) ->
-    gen_server:call(format_name(Name), #attach{part = Part}, Timeout).
+attach(Name, Part) ->
+    gen_server:call(format_name(Name), #attach{part = Part}).
 
 %% I think about ability to reflect both kind of switching - manual and automated;
 -record(detach, {id::serial_no()}).
 
--spec detach(Name::serial_no(), ID::serial_no(), Timeout::timeout()) -> 
+-spec detach(Name::serial_no(), ID::serial_no()) -> 
                     success(Release::assembly()) | failure(E::term(), R::term()).
-detach(Name, ID, Timeout) ->
-    gen_server:call(format_name(Name), #detach{id=ID}, Timeout).
+detach(Name, ID) ->
+    gen_server:call(format_name(Name), #detach{id=ID}).
 
 -record(transmit, {motion::term()}).
 

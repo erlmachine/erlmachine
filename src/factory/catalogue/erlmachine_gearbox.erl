@@ -9,7 +9,7 @@
 
 -export([
          install/1,
-         attach/2, detach/2,
+         mount/2, unmount/2,
          accept/2,
          uninstall/2
         ]).
@@ -22,7 +22,7 @@
          output/1, output/2
         ]).
 
--export([specs/1]).
+-export([specs/1, spec/2]).
 
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
@@ -36,10 +36,10 @@
 -callback accept(SN::serial_no(), Criteria::term(), Body::term()) -> 
     success(term(), term()) | failure(term(), term(), term()) | failure(term()).
 
--callback attach(SN::serial_no(), ID::serial_no(), Body::term()) -> 
+-callback mount(SN::serial_no(), ID::serial_no(), Body::term()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
--callback detach(SN::serial_no(), ID::serial_no(), Body::term()) -> 
+-callback unmount(SN::serial_no(), ID::serial_no(), Body::term()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
 -record(gearbox, {
@@ -79,14 +79,19 @@ install(GearBox) ->
     Release = body(GearBox, Body),
     {ok, Release}.
 
--spec attach(GearBox::assembly(), Part::assembly()) ->
+-spec mount(GearBox::assembly(), Part::assembly()) ->
                     success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
-attach(GearBox, _Part) ->
-    {ok, GearBox}. %% TODO
+mount(GearBox, Part) ->
+    ModelName = erlmachine_assembly:model_name(GearBox),
+    SN = erlmachine_assembly:serial_no(GearBox), ID = erlmachine_assembly:serial_no(Part),
+    {ok, Body} = ModelName:mount(SN, ID, body(GearBox)),
+    Release = erlmachine_assembly:attach(body(GearBox, Body), Part),
+    %% At that place we don't issue any events (cause is gearbox issue level);
+    {ok, Release}. %% TODO
 
--spec detach(GearBox::assembly(), ID::serial_no()) ->
+-spec unmount(GearBox::assembly(), ID::serial_no()) ->
                     success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
-detach(GearBox, _ID) ->
+unmount(GearBox, _ID) ->
     {ok, GearBox}. %% TODO
 
 -spec uninstall(GearBox::assembly(), Reason::term()) -> 
@@ -152,10 +157,15 @@ env(GearBox, Env) ->
     Product = erlmachine_assembly:product(GearBox),
     erlmachine_assembly:product(GearBox, Product#gearbox{env=Env}).
 
+-spec spec(GearBox::assembly(), Part::assembly()) -> map().
+spec(GearBox, Part) ->
+    Spec = erlmachine_assembly:spec(GearBox, erlmachine_assembly:mounted(Part, GearBox)),
+    Spec.
+
 -spec specs(GearBox::assembly()) -> list(map()).
 specs(GearBox) ->
     Parts = erlmachine_assembly:parts(GearBox),
-    Specs = [erlmachine_assembly:spec(GearBox, erlmachine_assembly:mount(Part, GearBox))|| Part <- Parts],
+    Specs = [spec(GearBox, Part)|| Part <- Parts],
     Specs.
 
 %% processes need to be instantiated by builder before;

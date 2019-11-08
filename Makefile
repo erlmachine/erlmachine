@@ -17,4 +17,4 @@ dep_lager = git https://github.com/erlang-lager/lager.git
 
 DEP_PLUGINS = cowboy
 
-include erlang.mk
+include $(if $(ERLANG_MK_FILENAME),$(ERLANG_MK_FILENAME),erlang.mk)

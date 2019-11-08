@@ -10,7 +10,7 @@
 
 -export([
          install/3,
-         attach/4, detach/4, 
+         mount/3, unmount/3, 
          accept/3,
          uninstall/3
         ]).
@@ -115,23 +115,26 @@ rejected(_Name, GearBox, Part, Criteria, Report) ->
     trace(GearBox, #{rejected => Part, criteria => Criteria, report => Report}),
     ok.
 
--spec attach(Name::serial_no(), GearBox::assembly(), Part::assembly(), Spec::map()) ->
-                    success(Child::term()) | success(Child::term(), Info::term()) | failure(E::term()).
-attach(Name, GearBox, Part, Spec) ->
-    trace(GearBox, #{attach => Part}),
-    Res = supervisor:start_child({local, format_name(Name)}, Spec),
-    {ok, _} = erlmachine_gearbox:attach(GearBox, Part),
-    Res.
+-spec mount(Name::serial_no(), GearBox::assembly(), Part::assembly()) ->
+                    success(Release::assembly()) | failure(E::term(), R::term()).
+mount(Name, GearBox, Part) ->
+    trace(GearBox, #{mount => Part}),
+    Result = {ok, Release} = erlmachine_gearbox:mount(GearBox, Part),
+    %% TODO Conditional case for Result needs to be processed;
+    Spec = erlmachine_gearbox:spec(Release, Part),
+    %% Mount time will be determined by prototype;
+    {ok, _PID} = supervisor:start_child(format_name(Name), Spec),
+    Result.
     
--spec detach(Name::serial_no(), GearBox::assembly(), ID::serial_no(), ChieldID::term()) ->
+-spec unmount(Name::serial_no(), GearBox::assembly(), ID::serial_no()) ->
                     success(Child::term()) | success(Child::term(), Info::term()) | failure(E::term()).
-detach(Name, GearBox, ID, ChieldID) ->
-    SupRef = {local, format_name(Name)},
-    trace(GearBox, #{detach => ID}),
-    supervisor:terminate_child(SupRef, ChieldID),
-    Res = supervisor:delete_child(SupRef, ChieldID), %% ID the same for chield and SN
-    erlmachine_axle:detach(GearBox, ID),
-    Res.
+unmount(_Name, GearBox, ID) ->
+    %SupRef = {local, format_name(Name)},
+    trace(GearBox, #{unmount => ID}),
+    %%supervisor:terminate_child(SupRef, ChieldID),
+    %%Res = supervisor:delete_child(SupRef, ChieldID), %% ID the same for chield and SN
+    %%erlmachine_gearbox:unmount(GearBox, ID),
+    {ok, []}.
 
 -record(install, {gearbox::assembly(), options::list(tuple)}).
 
