@@ -108,6 +108,7 @@ rotate(_GearBox, Gear, Motion) ->
     ModelName = erlmachine_assembly:model_name(Gear),
     SN = erlmachine_assembly:serial_no(Gear),
     Parts =erlmachine_assembly:parts(Gear),
+    io:format("~nGear Parts rotate: ~p~n",[Parts]),
     ReleaseBody = 
         case ModelName:rotate(SN, Motion, body(Gear)) of 
             {ok, Result, Body} -> 

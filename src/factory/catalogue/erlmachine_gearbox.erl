@@ -2,15 +2,22 @@
 
 %% The main puprouse of a product module is to provide API between clients part and system; 
 
-%% Gearbox is a component which responsible for reliable spatial placement for all processes;
+%% Gearbox is a component which is responsible for reliable spatial placement for all processes (parts);
 %% Gearbox is the place where shafts, gears and axles are located. 
-%% Gearbox is the main container component over all topology;
+%% Gearbox is the main container within all system topology;
 %% The gearbox is divided on so called stages (stage is a torgue between two independent gears);
+%% Input is the special place which is recommended by design for to all input commands;
+%% Output is considered like a special place where measurements and monitoring abilitites need to be provided;
+%% The most convinient way to implement input and output like a shafts;
+%% This agreement allows to us attach gearboxes together and with other parts by attach call;
+%% This can evolve messaging systems reusage;
 
 -export([
          install/1,
+         rotate/2,
          mount/2, unmount/2,
          accept/2,
+         attach/2, detach/2,
          uninstall/2
         ]).
 
@@ -26,6 +33,7 @@
 
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
+
 
 -callback install(SN::serial_no(), IDs::list(serial_no()), Body::term(), Options::term(), Env::list()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
@@ -47,7 +55,7 @@
                   body::term(),
                   env::term(),
                   placement::term(),
-                  %% Placement can be implemented by various ways and then represented by different formats; 
+                  %% Placement can be implemented by various ways and then be represented by different formats; 
                   %% Each implementation can do that over its own discretion;
                   %% Erlmachine do that accordingly to YAML format;
                   output::assembly()
@@ -121,6 +129,27 @@ accept(GearBox, Criteria) ->
             {_, Report} = Result,
             {error, Report, Release} 
     end.
+
+-spec rotate(GearBox::assembly(), Motion::term()) ->
+                    Motion::term().
+rotate(GearBox, Motion) ->
+    Input = input(GearBox),
+    io:format("~nGearBox Input rotate: ~p~n",[Motion]),
+    erlmachine_transmission:rotate(Input, Motion).
+
+-spec attach(GearBox::assembly(), Part::assembly()) ->
+                    success(term()) | failure(term(), term()).
+attach(GearBox, Part) ->
+    Output = output(GearBox),
+    io:format("~nGearBox attach: ~p~n",[Part]),
+    erlmachine_transmission:attach(Output, Part).
+
+-spec detach(GearBox::assembly(), ID::serial_no()) -> 
+                    success(term()) | failure(term(), term()).
+detach(GearBox, ID) ->
+    Output = output(GearBox),
+    io:format("~nGearBox detach: ~p~n",[ID]),
+    erlmachine_transmission:detach(Output, ID).
 
 -spec body(GearBox::assembly()) -> Body::term().
 body(GearBox) ->
