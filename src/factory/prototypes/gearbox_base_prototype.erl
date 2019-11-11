@@ -146,7 +146,7 @@ install(Name, GearBox, Options) ->
     supervisor:start_link({local, format_name(Name)}, ?MODULE, Args).
 
 init(#install{gearbox=GearBox, options=Options}) ->
-    Strategy = one_for_one,
+    Strategy = proplists:get_value(strategy, Options, one_for_one),
     {ok, Release} = erlmachine_gearbox:install(GearBox),
     Specs = erlmachine_gearbox:specs(Release),
     Intensity = proplists:get_value(intensity, Options, 1),
