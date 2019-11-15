@@ -1,5 +1,12 @@
 -module(erlmachine_gearbox).
 
+-steps([
+        input,
+        output,
+        parts,
+        shift
+       ]).
+
 %% The main puprouse of a product module is to provide API between clients part and system; 
 
 %% Gearbox is a component which is responsible for reliable spatial placement for all processes (parts);
@@ -15,6 +22,7 @@
 -export([
          install/1,
          rotate/2,
+         parts/5,
          mount/2, unmount/2,
          accept/2,
          attach/2, detach/2,
@@ -25,6 +33,7 @@
          gearbox/1, gearbox/2,
          input/1, input/2,
          body/1, body/2,
+     
          env/1, env/2,
          output/1, output/2
         ]).
@@ -53,6 +62,7 @@
 -record(gearbox, {
                   input::assembly(),
                   body::term(),
+                  shift::assembly(), %% I think about shift pattern; 
                   env::term(),
                   placement::term(),
                   %% Placement can be implemented by various ways and then be represented by different formats; 
@@ -130,6 +140,12 @@ accept(GearBox, Criteria) ->
             {error, Report, Release} 
     end.
 
+-spec parts(GearBox::assembly(), Input::assembly(), Parts::list(assembly()), Output::assembly(), Shift::assembly()) ->
+                   Release::assembly().
+parts(GearBox, Input, Parts, Output, Shift) ->
+    Release = erlmachine_factory:pass(GearBox, ?MODULE, [Input, Parts, Output, Shift]),
+    Release.
+
 -spec rotate(GearBox::assembly(), Motion::term()) ->
                     Motion::term().
 rotate(GearBox, Motion) ->
@@ -169,6 +185,15 @@ input(GearBox) ->
 input(GearBox, Input) ->
     Product = erlmachine_assembly:product(GearBox),
     erlmachine_assembly:product(GearBox, Product#gearbox{input=Input}).
+
+-spec shift(GearBox::assembly()) -> assembly().
+shift(GearBox) ->
+    GearBox#gearbox.shift.
+
+-spec shift(GearBox::assembly(), Shift::assembly()) -> Release::assembly().
+shift(GearBox, Shift) ->
+    Product = erlmachine_assembly:product(GearBox),
+    erlmachine_assembly:product(GearBox, Product#gearbox{shift=Shift}).
 
 -spec output(GearBox::assembly()) -> assembly().
 output(GearBox) ->
