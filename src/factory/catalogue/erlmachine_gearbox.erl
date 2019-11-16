@@ -1,12 +1,5 @@
 -module(erlmachine_gearbox).
 
--steps([
-        input,
-        output,
-        parts,
-        shift
-       ]).
-
 %% The main puprouse of a product module is to provide API between clients part and system; 
 
 %% Gearbox is a component which is responsible for reliable spatial placement for all processes (parts);
@@ -22,7 +15,7 @@
 -export([
          install/1,
          rotate/2,
-         parts/5,
+         transmit/2, transmit/3,
          mount/2, unmount/2,
          accept/2,
          attach/2, detach/2,
@@ -33,7 +26,6 @@
          gearbox/1, gearbox/2,
          input/1, input/2,
          body/1, body/2,
-     
          env/1, env/2,
          output/1, output/2
         ]).
@@ -62,16 +54,15 @@
 -record(gearbox, {
                   input::assembly(),
                   body::term(),
-                  shift::assembly(), %% I think about shift pattern; 
-                  env::term(),
-                  placement::term(),
-                  %% Placement can be implemented by various ways and then be represented by different formats; 
+                  %% Body can be implemented by various ways and then be represented by different formats; 
                   %% Each implementation can do that over its own discretion;
                   %% Erlmachine do that accordingly to YAML format;
+                  env::term(),
                   output::assembly()
                  }
        ).
 
+%% I am thinking about graph ipmlementation of body;
 -type gearbox() :: #gearbox{}.
 
 -export_type([gearbox/0]).
@@ -140,31 +131,34 @@ accept(GearBox, Criteria) ->
             {error, Report, Release} 
     end.
 
--spec parts(GearBox::assembly(), Input::assembly(), Parts::list(assembly()), Output::assembly(), Shift::assembly()) ->
-                   Release::assembly().
-parts(GearBox, Input, Parts, Output, Shift) ->
-    Release = erlmachine_factory:pass(GearBox, ?MODULE, [Input, Parts, Output, Shift]),
-    Release.
-
 -spec rotate(GearBox::assembly(), Motion::term()) ->
                     Motion::term().
 rotate(GearBox, Motion) ->
     Input = input(GearBox),
-    io:format("~nGearBox Input rotate: ~p~n",[Motion]),
     erlmachine_transmission:rotate(Input, Motion).
+
+-spec transmit(GearBox::assembly(), Motion::term()) ->
+                      success(term()) | failure(term(), term()).
+transmit(GearBox, Motion) ->
+    Input = input(GearBox),
+    erlmachine_transmission:transmit(Input, Motion).
+
+-spec transmit(GearBox::assembly(), Motion::term(), TimeOut::integer()) ->
+                      success(term()) | failure(term(), term()).
+transmit(GearBox, Motion, TimeOut) ->
+    Input = input(GearBox),
+    erlmachine_transmission:transmit(Input, Motion, TimeOut).
 
 -spec attach(GearBox::assembly(), Part::assembly()) ->
                     success(term()) | failure(term(), term()).
 attach(GearBox, Part) ->
     Output = output(GearBox),
-    io:format("~nGearBox attach: ~p~n",[Part]),
     erlmachine_transmission:attach(Output, Part).
 
 -spec detach(GearBox::assembly(), ID::serial_no()) -> 
                     success(term()) | failure(term(), term()).
 detach(GearBox, ID) ->
     Output = output(GearBox),
-    io:format("~nGearBox detach: ~p~n",[ID]),
     erlmachine_transmission:detach(Output, ID).
 
 -spec body(GearBox::assembly()) -> Body::term().
@@ -185,15 +179,6 @@ input(GearBox) ->
 input(GearBox, Input) ->
     Product = erlmachine_assembly:product(GearBox),
     erlmachine_assembly:product(GearBox, Product#gearbox{input=Input}).
-
--spec shift(GearBox::assembly()) -> assembly().
-shift(GearBox) ->
-    GearBox#gearbox.shift.
-
--spec shift(GearBox::assembly(), Shift::assembly()) -> Release::assembly().
-shift(GearBox, Shift) ->
-    Product = erlmachine_assembly:product(GearBox),
-    erlmachine_assembly:product(GearBox, Product#gearbox{shift=Shift}).
 
 -spec output(GearBox::assembly()) -> assembly().
 output(GearBox) ->

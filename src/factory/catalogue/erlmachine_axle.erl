@@ -34,6 +34,7 @@
 
 -record(axle, {body::term()}).
 
+%% I am thinking about graph ipmlementation of body;
 -type axle() :: #axle{}.
 
 -export_type([axle/0]).

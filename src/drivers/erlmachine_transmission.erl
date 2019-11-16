@@ -12,7 +12,7 @@
          code_change/3
         ]).
 
--export([rotate/2, transmit/3, attach/2, detach/2]).
+-export([rotate/2, transmit/2, transmit/3, attach/2, detach/2]).
 
 %% Transmission will be loaded directly by call where ID argument is provided; 
 %% Transmission can be represented by a lot of copies where each of them is marked by unique serial number;
@@ -25,6 +25,11 @@
 rotate(Assembly, Motion) ->
     SN = erlmachine_assembly:serial_no(Assembly),
     (erlmachine_assembly:prototype_name(Assembly)):rotate(SN, Motion).
+
+-spec transmit(Assembly::assembly(), Motion::term()) ->
+                      success(term()) | failure(term(), term()).
+transmit(Assembly, Motion) ->
+    transmit(Assembly, Motion, infinity).
 
 -spec transmit(Assembly::assembly(), Motion::term(), TimeOut::integer()) ->
                       success(term()) | failure(term(), term()).
