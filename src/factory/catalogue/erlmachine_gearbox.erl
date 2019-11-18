@@ -54,6 +54,7 @@
 -record(gearbox, {
                   input::assembly(),
                   body::term(),
+                  mount::graph(),
                   %% Body can be implemented by various ways and then be represented by different formats; 
                   %% Each implementation can do that over its own discretion;
                   %% Erlmachine do that accordingly to YAML format;
@@ -131,6 +132,15 @@ accept(GearBox, Criteria) ->
             {error, Report, Release} 
     end.
 
+%% We need to consider mounted field like indicator for of building mount topology; 
+%%part()
+%%-spec parts(GearBox::assembly(), Parts::list(assembly())) -> 
+                   assembly().
+%%parts(GearBox, Parts) ->
+%%    Graph = digraph:new([acyclic, protected]),
+    
+    
+                                        
 -spec rotate(GearBox::assembly(), Motion::term()) ->
                     Motion::term().
 rotate(GearBox, Motion) ->
