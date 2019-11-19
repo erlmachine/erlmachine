@@ -16,6 +16,7 @@
          install/1,
          rotate/2,
          transmit/2, transmit/3,
+         parts/2,
          mount/2, unmount/2,
          accept/2,
          attach/2, detach/2,
@@ -27,6 +28,7 @@
          input/1, input/2,
          body/1, body/2,
          env/1, env/2,
+         schema/1, schema/2,
          output/1, output/2
         ]).
 
@@ -54,7 +56,7 @@
 -record(gearbox, {
                   input::assembly(),
                   body::term(),
-                  mount::graph(),
+                  schema::term(),
                   %% Body can be implemented by various ways and then be represented by different formats; 
                   %% Each implementation can do that over its own discretion;
                   %% Erlmachine do that accordingly to YAML format;
@@ -134,13 +136,28 @@ accept(GearBox, Criteria) ->
 
 %% We need to consider mounted field like indicator for of building mount topology; 
 %%part()
-%%-spec parts(GearBox::assembly(), Parts::list(assembly())) -> 
+-spec parts(GearBox::assembly(), Parts::list(assembly())) -> 
                    assembly().
-%%parts(GearBox, Parts) ->
-%%    Graph = digraph:new([acyclic, protected]),
-    
-    
-                                        
+parts(GearBox, Parts) ->
+    Schema = digraph:new([acyclic, protected]),
+    SN = erlmachine_assembly:serial_no(GearBox),
+    digraph:add_vertex(Schema, SN, GearBox),
+    parts(Schema, SN, Parts),
+    Release = schema(GearBox, Schema),
+    Release.
+
+-spec parts(GearBox::assembly(), Vertex::serial_no(), Parts::list(assembly())) -> 
+                   assembly().
+parts(Schema, _Vertex, []) ->
+    Schema;
+parts(Schema, Vertex, [Part|T]) ->
+    SN = erlmachine_assembly:serial_no(Part),
+    Label = [], %% TODO At this place we can represent kind of linking (mount/drive);
+    digraph:add_vertex(Schema, SN, Part),
+    parts(Schema, SN, erlmachine_assembly:parts(Part)),
+    digraph:add_edge(Schema, Vertex, SN, Label),
+    parts(Schema, Vertex, T).
+
 -spec rotate(GearBox::assembly(), Motion::term()) ->
                     Motion::term().
 rotate(GearBox, Motion) ->
@@ -189,6 +206,17 @@ input(GearBox) ->
 input(GearBox, Input) ->
     Product = erlmachine_assembly:product(GearBox),
     erlmachine_assembly:product(GearBox, Product#gearbox{input=Input}).
+
+-spec schema(GearBox::assembly()) -> term().
+schema(GearBox) ->
+    Product = erlmachine_assembly:product(GearBox),
+    Schema = Product#gearbox.schema,
+    Schema.
+
+-spec schema(GearBox::assembly(), Schema::term()) -> Release::assembly().
+schema(GearBox, Schema) ->
+    Product = erlmachine_assembly:product(GearBox),
+    erlmachine_assembly:product(GearBox, Product#gearbox{schema=Schema}).
 
 -spec output(GearBox::assembly()) -> assembly().
 output(GearBox) ->

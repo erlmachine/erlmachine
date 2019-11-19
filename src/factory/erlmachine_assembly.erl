@@ -25,7 +25,8 @@
          part_no/1, part_no/2,
          product/1, product/2,
          parts/1, parts/2,
-         mounted/1, mounted/2
+         mounted/1, mounted/2,
+         label/1, label/2
         ]).
 
 -export([attach/2, detach/2, part/2]).
@@ -77,7 +78,8 @@
                     mounted::assembly(),
                     parts=[]::list(assembly()),
                     part_no::part_no(),
-                    options=[]::list()
+                    options=[]::list(),
+                    label::term()
                    }
         ).
 
@@ -96,6 +98,7 @@
 install(Assembly) ->
     SN = serial_no(Assembly),
     Options = prototype_options(Assembly),
+    %% TODO at that place we can register information about scheme in persistence storage;
     (erlmachine_assembly:prototype_name(Assembly)):install(SN, Assembly, Options).
 
 -spec install(GearBox::assembly(), Assembly::assembly()) ->
@@ -109,6 +112,7 @@ install(GearBox, Assembly) ->
                     success(term()) | failure(term(), term()).
 mount(Assembly, Part) ->
     SN = erlmachine_assembly:serial_no(Assembly),
+    %% At that palce we need to update stored schema;
     (erlmachine_assembly:prototype_name(Assembly)):mount(SN, Assembly, Part).
 
 -spec mount(GearBox::assembly(), Assembly::assembly(), Part::assembly()) -> 
@@ -321,6 +325,16 @@ part_no(Assembly, PN) ->
 part(Assembly, ID) ->
     Part = lists:keyfind(ID, #assembly.serial_no, parts(Assembly)),
     Part.
+
+-spec label(Assembly::assembly()) -> Label::term().
+label(Assembly) ->
+    Label = Assembly#assembly.label,
+    Label.
+
+-spec label(Assembly::assembly(), Label::term()) -> assembly().
+label(Assembly, Label) ->
+    Release = Assembly#assembly{label=Label},
+    Release.
 
 -spec attach(Assembly::assembly(), Part::assembly()) -> assembly().
 attach(Assembly, Part) ->
