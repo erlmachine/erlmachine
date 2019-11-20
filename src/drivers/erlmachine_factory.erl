@@ -197,7 +197,8 @@ gearbox(Model, ModelOpt, AssemblyOpt, Env) ->
                      GearBox::assembly().
 gearbox(Model, Prot, ModelOpt, ProtOpt, AssemblyOpt, Env) ->
     Body = #{}, %% We can consider to store some meta info in body to pass through all building process;
-    GearBox = erlmachine_gearbox:gearbox(Body, Env),
+    Schema = digraph:new([acyclic, protected]),
+    GearBox = erlmachine_gearbox:gearbox(Body, Env, Schema),
     Prefix = <<"SN-GX-">>,
     Assembly = erlmachine_assembly:assembly(),
     Input = [Model, ModelOpt, Prot, ProtOpt, [{type, supervisor}|AssemblyOpt], GearBox, Prefix],

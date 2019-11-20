@@ -16,7 +16,6 @@
          install/1,
          rotate/2,
          transmit/2, transmit/3,
-         parts/2,
          mount/2, unmount/2,
          accept/2,
          attach/2, detach/2,
@@ -24,7 +23,7 @@
         ]).
 
 -export([
-         gearbox/1, gearbox/2,
+         gearbox/1, gearbox/2, gearbox/3,
          input/1, input/2,
          body/1, body/2,
          env/1, env/2,
@@ -78,6 +77,10 @@ gearbox(Body) ->
 gearbox(Body, Env) ->
     #gearbox{body=Body, env=Env}.
 
+-spec gearbox(Body::term(), Env::term(), Schema::term()) -> gearbox().
+gearbox(Body, Env, Schema) ->
+    #gearbox{body=Body, env=Env, schema=Schema}.
+
 -spec install(GearBox::assembly()) -> 
                      success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
 install(GearBox) ->
@@ -85,10 +88,12 @@ install(GearBox) ->
     SN = erlmachine_assembly:serial_no(GearBox),
     Env = erlmachine_gearbox:env(GearBox), 
     Options = erlmachine_assembly:model_options(GearBox),
-    IDs = [erlmachine_assembly:serial_no(Part)|| Part <- erlmachine_assembly:parts(GearBox)], 
+    Parts = erlmachine_assembly:parts(GearBox),
+    IDs = [erlmachine_assembly:serial_no(Part)|| Part <- Parts],
     {ok, Body} = ModelName:install(SN, IDs, body(GearBox), Options, Env),
     %% We are going to add error handling later; 
-    Release = body(GearBox, Body),
+    Schema = map(GearBox, Parts),
+    Release = schema(body(GearBox, Body), Schema),
     {ok, Release}.
 
 -spec mount(GearBox::assembly(), Part::assembly()) ->
@@ -136,27 +141,27 @@ accept(GearBox, Criteria) ->
 
 %% We need to consider mounted field like indicator for of building mount topology; 
 %%part()
--spec parts(GearBox::assembly(), Parts::list(assembly())) -> 
+-spec map(GearBox::assembly(), Parts::list(assembly())) -> 
                    assembly().
-parts(GearBox, Parts) ->
+map(GearBox, Parts) ->
     Schema = digraph:new([acyclic, protected]),
     SN = erlmachine_assembly:serial_no(GearBox),
     digraph:add_vertex(Schema, SN, GearBox),
-    parts(Schema, SN, Parts),
+    map(Schema, SN, Parts),
     Release = schema(GearBox, Schema),
     Release.
 
--spec parts(GearBox::assembly(), Vertex::serial_no(), Parts::list(assembly())) -> 
+-spec map(GearBox::assembly(), Vertex::serial_no(), Parts::list(assembly())) -> 
                    assembly().
-parts(Schema, _Vertex, []) ->
+map(Schema, _Vertex, []) ->
     Schema;
-parts(Schema, Vertex, [Part|T]) ->
+map(Schema, Vertex, [Part|T]) ->
     SN = erlmachine_assembly:serial_no(Part),
     Label = [], %% TODO At this place we can represent kind of linking (mount/drive);
     digraph:add_vertex(Schema, SN, Part),
-    parts(Schema, SN, erlmachine_assembly:parts(Part)),
+    map(Schema, SN, erlmachine_assembly:parts(Part)),
     digraph:add_edge(Schema, Vertex, SN, Label),
-    parts(Schema, Vertex, T).
+    map(Schema, Vertex, T).
 
 -spec rotate(GearBox::assembly(), Motion::term()) ->
                     Motion::term().
