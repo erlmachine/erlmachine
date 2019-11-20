@@ -159,7 +159,7 @@ uninstall(Name, GearBox, Reason) ->
     exit(whereis(format_name(Name)), Reason),
     Parts = erlmachine_gearbox:parts(GearBox),
     trace(GearBox, #{uninstall => Parts, reason => Reason}),
-    {ok, _} = erlmachine_gearbox:uninstall_model(GearBox, Reason),
+    {ok, _} = erlmachine_gearbox:uninstall(GearBox, Reason),
     ok.
 
 -spec accept(Name::serial_no(), GearBox::assembly(), Criteria::acceptance_criteria()) ->
