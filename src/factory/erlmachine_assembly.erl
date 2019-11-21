@@ -93,6 +93,9 @@
 -export_type([model_no/0, part_no/0]).
 -export_type([acceptance_criteria/0, accept/0, reject/0]).
 
+%% TODO we need to relocate installed, unistalled, etc., callbacks here;
+%% This ability allows to us to monitor tree condition;
+
 -spec install(GearBox::assembly()) ->
                      success(pid()) | ingnore | failure(E::term()).
 install(GearBox) ->
@@ -100,7 +103,7 @@ install(GearBox) ->
     Options = prototype_options(GearBox),
     %% TODO at that place we can register information about scheme in persistence storage;
     Result = (erlmachine_assembly:prototype_name(GearBox)):install(SN, GearBox, Options),
-    ok = map_install(GearBox),
+    ok = erlmachine_gearbox:map_install(GearBox),
     Result.
 
 -spec install(GearBox::assembly(), Assembly::assembly()) ->
@@ -108,46 +111,61 @@ install(GearBox) ->
 install(GearBox, Assembly) ->
     SN = serial_no(Assembly),
     Options = prototype_options(Assembly),
-    (erlmachine_assembly:prototype_name(Assembly)):install(SN, GearBox, Assembly, Options).
+    Result = (erlmachine_assembly:prototype_name(Assembly)):install(SN, GearBox, Assembly, Options),
+    ok = erlmachine_gearbox:map_install(GearBox, Assembly),
+    Result.
 
--spec mount(Assembly::assembly(), Part::assembly()) -> 
+-spec mount(GearBox::assembly(), Part::assembly()) -> 
                     success(term()) | failure(term(), term()).
 mount(GearBox, Part) ->
-    SN = erlmachine_assembly:serial_no(Assembly),
+    SN = erlmachine_assembly:serial_no(GearBox),
     %% At that palce we need to update stored schema;
-    (erlmachine_assembly:prototype_name(Assembly)):mount(SN, Assembly, Part).
+    Result = (erlmachine_assembly:prototype_name(GearBox)):mount(SN, GearBox, Part),
+    ok = erlmachine_gearbox:map_mount(GearBox, Part),
+    Result.
 
 -spec mount(GearBox::assembly(), Assembly::assembly(), Part::assembly()) -> 
                    success(term()) | failure(term(), term()).
 mount(GearBox, Assembly, Part) ->
     SN = erlmachine_assembly:serial_no(Assembly),
-    (erlmachine_assembly:prototype_name(Assembly)):mount(SN, GearBox, Assembly, Part).
+    Result = (erlmachine_assembly:prototype_name(Assembly)):mount(SN, GearBox, Assembly, Part),
+    ok = erlmachine_gearbox:map_mount(GearBox, Assembly, Part),
+    Result.
+
+%% The main difference between unmount and uninstall:
+%% is that second one can be able to stop chield and mark it with stopped label without removing of edge;
+%% Currently it's not supported;
 
 -spec unmount(GearBox::assembly(), ID::serial_no()) -> 
                     success(term()) | failure(term(), term()).
 unmount(GearBox, ID) ->
-    SN = erlmachine_assembly:serial_no(Assembly),
-    (erlmachine_assembly:prototype_name(Assembly)):unmount(SN, Assembly, ID).
+    SN = erlmachine_assembly:serial_no(GearBox),
+    Result = (erlmachine_assembly:prototype_name(GearBox)):unmount(SN, GearBox, ID),
+    ok = erlmachine_gearbox:map_unmount(GearBox, ID),
+    Result.
 
 -spec unmount(GearBox::assembly(), Assembly::assembly(), ID::serial_no()) -> 
                      success(term()) | failure(term(), term()).
 unmount(GearBox, Assembly, ID) ->
     SN = erlmachine_assembly:serial_no(Assembly),
-    (erlmachine_assembly:prototype_name(Assembly)):unmount(SN, GearBox, Assembly, ID).
+    Result = (erlmachine_assembly:prototype_name(Assembly)):unmount(SN, GearBox, Assembly, ID),
+    ok = erlmachine_gearbox:map_unmount(GearBox, ID),
+    Result.
 
 -spec uninstall(GearBox::assembly(), Reason::term(), TimeOut::integer()) ->
                      ok.
 uninstall(GearBox, Reason, TimeOut) ->
     SN = serial_no(GearBox),
     Result = (erlmachine_assembly:prototype_name(GearBox)):uninstall(SN, Reason, TimeOut),
-    map_uninstall(GearBox),
+    ok = erlmachine_gearbox:map_uninstall(GearBox),
     Result.
 
 -spec uninstall(GearBox::assembly(), Assembly::assembly(), Reason::term(), TimeOut::integer()) ->
                        ok.
-uninstall(_GearBox, Assembly, Reason, TimeOut) ->
+uninstall(GearBox, Assembly, Reason, TimeOut) ->
     SN = serial_no(Assembly),
     Result = (erlmachine_assembly:prototype_name(Assembly)):uninstall(SN, Reason, TimeOut),
+    ok = erlmachine_gearbox:map_uninstall(GearBox, Assembly),
     Result.
 
 %% Client doesn't need to know about mount method;
@@ -359,33 +377,6 @@ detach(Assembly, ID) ->
     Release = erlmachine_assembly:parts(Assembly, Parts),
     Release.
 
-%% We need to consider mounted field like indicator for of building mount topology; 
--spec map_install(GearBox::assembly()) -> ok.
-map_install(GearBox) ->
-    Schema = erlmachine_gearbox:schema(GearBox),
-    SN = serial_no(GearBox),
-    digraph:add_vertex(Schema, SN, GearBox),
-    map_install(Schema, SN, parts(GearBox)), 
-    ok.
-
--spec map_install(GearBox::assembly(), Vertex::serial_no(), Parts::list(assembly())) -> ok.
-map_install(_Schema, _Vertex, []) ->
-    ok;
-map_install(Schema, Vertex, [Part|T]) ->
-    SN = serial_no(Part),
-    digraph:add_vertex(Schema, SN, Part),
-    map_install(Schema, SN, parts(Part)),
-    %% TODO At this place we can represent kind of linking (mount/drive);
-    Label = [],
-    digraph:add_edge(Schema, Vertex, SN, Label),
-    map_install(Schema, Vertex, T).
-
--spec map_uninstall(GearBox::assembly()) -> ok.
-map_uninstall(GearBox) ->
-    Schema = erlmachine_gearbox:schema(GearBox),
-    SN = serial_no(GearBox),
-    digraph:del_vertex(Schema, SN),
-    ok.
 
 -spec spec(GearBox::assembly(), Part::assembly()) -> Spec::map().
 spec(GearBox, Part) ->
