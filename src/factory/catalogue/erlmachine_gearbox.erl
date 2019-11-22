@@ -145,32 +145,32 @@ accept(GearBox, Criteria) ->
 -spec rotate(GearBox::assembly(), Motion::term()) ->
                     Motion::term().
 rotate(GearBox, Motion) ->
-    Input = input(GearBox),
-    erlmachine_transmission:rotate(Input, Motion).
+    Input = input(GearBox), Assembly = find(GearBox, Input),
+    erlmachine_transmission:rotate(Assembly, Motion).
 
 -spec transmit(GearBox::assembly(), Motion::term()) ->
                       success(term()) | failure(term(), term()).
 transmit(GearBox, Motion) ->
-    Input = input(GearBox),
-    erlmachine_transmission:transmit(Input, Motion).
+    Input = input(GearBox), Assembly = find(GearBox, Input),
+    erlmachine_transmission:transmit(Assembly, Motion).
 
 -spec transmit(GearBox::assembly(), Motion::term(), TimeOut::integer()) ->
                       success(term()) | failure(term(), term()).
 transmit(GearBox, Motion, TimeOut) ->
-    Input = input(GearBox),
-    erlmachine_transmission:transmit(Input, Motion, TimeOut).
+    Input = input(GearBox), Assembly = find(GearBox, Input),
+    erlmachine_transmission:transmit(Assembly, Motion, TimeOut).
 
 -spec attach(GearBox::assembly(), Part::assembly()) ->
                     success(term()) | failure(term(), term()).
 attach(GearBox, Part) ->
-    Output = output(GearBox),
-    erlmachine_transmission:attach(Output, Part).
+    Output = output(GearBox), Assembly = find(GearBox, Output),
+    erlmachine_transmission:attach(Assembly, Part).
 
 -spec detach(GearBox::assembly(), ID::serial_no()) -> 
                     success(term()) | failure(term(), term()).
 detach(GearBox, ID) ->
-    Output = output(GearBox),
-    erlmachine_transmission:detach(Output, ID).
+    Output = output(GearBox), Assembly = find(GearBox, Output),
+    erlmachine_transmission:detach(Assembly, ID).
 
 -spec body(GearBox::assembly()) -> Body::term().
 body(GearBox) ->
@@ -189,7 +189,8 @@ input(GearBox) ->
 -spec input(GearBox::assembly(), Input::assembly()) -> Release::assembly().
 input(GearBox, Input) ->
     Product = erlmachine_assembly:product(GearBox),
-    erlmachine_assembly:product(GearBox, Product#gearbox{input=Input}).
+    SN = erlmachine_assembly:serial_no(Input),
+    erlmachine_assembly:product(GearBox, Product#gearbox{input=SN}).
 
 -spec schema(GearBox::assembly()) -> term().
 schema(GearBox) ->
@@ -209,7 +210,8 @@ output(GearBox) ->
 -spec output(GearBox::assembly(), Output::assembly()) -> Release::assembly().
 output(GearBox, Output) ->
     Product = erlmachine_assembly:product(GearBox),
-    erlmachine_assembly:product(GearBox, Product#gearbox{output=Output}).
+    SN = erlmachine_assembly:serial_no(Output),
+    erlmachine_assembly:product(GearBox, Product#gearbox{output=SN}).
 
 -spec env(GearBox::assembly()) -> term().
 env(GearBox) ->

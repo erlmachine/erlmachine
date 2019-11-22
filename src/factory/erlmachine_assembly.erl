@@ -26,7 +26,7 @@
          product/1, product/2,
          parts/1, parts/2,
          mounted/1, mounted/2,
-         label/1, label/2
+         tags/1, tags/2
         ]).
 
 -export([attach/2, detach/2, part/2]).
@@ -79,7 +79,7 @@
                     parts=[]::list(assembly()),
                     part_no::part_no(),
                     options=[]::list(),
-                    label::term()
+                    tags=[]::list(term())
                    }
         ).
 
@@ -355,14 +355,14 @@ part(Assembly, ID) ->
     Part = lists:keyfind(ID, #assembly.serial_no, parts(Assembly)),
     Part.
 
--spec label(Assembly::assembly()) -> Label::term().
-label(Assembly) ->
-    Label = Assembly#assembly.label,
-    Label.
+-spec tags(Assembly::assembly()) -> Tags::term().
+tags(Assembly) ->
+    Tags = Assembly#assembly.tags,
+    Tags.
 
--spec label(Assembly::assembly(), Label::term()) -> assembly().
-label(Assembly, Label) ->
-    Release = Assembly#assembly{label=Label},
+-spec tags(Assembly::assembly(), Tags::term()) -> assembly().
+tags(Assembly, Tags) ->
+    Release = Assembly#assembly{tags=Tags},
     Release.
 
 -spec attach(Assembly::assembly(), Part::assembly()) -> assembly().
