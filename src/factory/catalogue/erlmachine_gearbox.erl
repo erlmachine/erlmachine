@@ -307,7 +307,7 @@ find(GearBox, SN) ->
         _ ->
             false
     end.
-    
+
 %% processes need to be instantiated by builder before;
 
 %% detached;

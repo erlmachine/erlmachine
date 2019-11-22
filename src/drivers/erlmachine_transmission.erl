@@ -13,10 +13,10 @@
         ]).
 
 -export([
-         rotate/2, rotate_by_serial_no/3,
-         transmit/2, transmit/3, transmit_by_serial_no/3,
-         attach/2, attach_by_serial_no/3,
-         detach/2, detach_by_serial_no/3
+         rotate/2,
+         transmit/2, transmit/3,
+         attach/2,
+         detach/2
         ]).
 
 %% Transmission will be loaded directly by call where ID argument is provided; 
@@ -31,16 +31,6 @@ rotate(Assembly, Motion) ->
     SN = erlmachine_assembly:serial_no(Assembly),
     (erlmachine_assembly:prototype_name(Assembly)):rotate(SN, Motion).
 
--spec rotate_by_serial_no(GearBox::assembly(), SN::serial_no(), Motion::term()) ->
-                    Motion::term().
-rotate_by_serial_no(GearBox, SN, Motion) ->
-    Assembly = erlmachine_gearbox:find(GearBox, SN),
-    SN = erlmachine_assembly:serial_no(Assembly),
-    (erlmachine_assembly:prototype_name(Assembly)):rotate(SN, Motion).
-
-%% TODO rotate_by_path
-%%
-
 -spec transmit(Assembly::assembly(), Motion::term()) ->
                       success(term()) | failure(term(), term()).
 transmit(Assembly, Motion) ->
@@ -52,35 +42,15 @@ transmit(Assembly, Motion, TimeOut) ->
     SN = erlmachine_assembly:serial_no(Assembly),
     (erlmachine_assembly:prototype_name(Assembly)):transmit(SN, Motion, TimeOut).
 
--spec transmit_by_serial_no(GearBox::assembly(), SN::serial_no(), Motion::term()) ->
-                      success(term()) | failure(term(), term()).
-transmit_by_serial_no(GearBox, SN, Motion) ->
-    Assembly = erlmachine_gearbox:find(GearBox, SN),
-    transmit(Assembly, Motion, infinity).
-
 -spec attach(Assembly::assembly(), Part::assembly()) -> 
                    success(term()) | failure(term(), term()).
 attach(Assembly, Part) ->
     SN = erlmachine_assembly:serial_no(Assembly),
     (erlmachine_assembly:prototype_name(Assembly)):attach(SN, Part).
 
--spec attach_by_serial_no(GearBox::assembly(), SN::serial_no(), Part::assembly()) -> 
-                    success(term()) | failure(term(), term()).
-attach_by_serial_no(GearBox, SN, Part) ->
-    Assembly = erlmachine_gearbox:find(GearBox, SN),
-    SN = erlmachine_assembly:serial_no(Assembly),
-    (erlmachine_assembly:prototype_name(Assembly)):attach(SN, Part).
-
 -spec detach(Assembly::assembly(), ID::serial_no()) -> 
                      success(term()) | failure(term(), term()).
 detach(Assembly, ID) ->
-    SN = erlmachine_assembly:serial_no(Assembly),
-    (erlmachine_assembly:prototype_name(Assembly)):detach(SN, ID).
-
--spec detach_by_serial_no(GearBox::assembly(), SN::serial_no(), ID::serial_no()) -> 
-                    success(term()) | failure(term(), term()).
-detach_by_serial_no(GearBox, SN, ID) ->
-    Assembly = erlmachine_gearbox:find(GearBox, SN),
     SN = erlmachine_assembly:serial_no(Assembly),
     (erlmachine_assembly:prototype_name(Assembly)):detach(SN, ID).
 
