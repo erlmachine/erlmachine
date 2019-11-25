@@ -14,9 +14,7 @@
 
 -export([
          rotate/2,
-         transmit/2, transmit/3,
-         attach/2,
-         detach/2
+         transmit/2, transmit/3
         ]).
 
 %% Transmission will be loaded directly by call where ID argument is provided; 
@@ -41,18 +39,6 @@ transmit(Assembly, Motion) ->
 transmit(Assembly, Motion, TimeOut) ->
     SN = erlmachine_assembly:serial_no(Assembly),
     (erlmachine_assembly:prototype_name(Assembly)):transmit(SN, Motion, TimeOut).
-
--spec attach(Assembly::assembly(), Part::assembly()) -> 
-                   success(term()) | failure(term(), term()).
-attach(Assembly, Part) ->
-    SN = erlmachine_assembly:serial_no(Assembly),
-    (erlmachine_assembly:prototype_name(Assembly)):attach(SN, Part).
-
--spec detach(Assembly::assembly(), ID::serial_no()) -> 
-                     success(term()) | failure(term(), term()).
-detach(Assembly, ID) ->
-    SN = erlmachine_assembly:serial_no(Assembly),
-    (erlmachine_assembly:prototype_name(Assembly)):detach(SN, ID).
 
 -record(state, {
 }).
