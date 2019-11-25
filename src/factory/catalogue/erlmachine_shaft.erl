@@ -74,8 +74,13 @@ install(GearBox, Shaft) ->
     %% We are going to add error handling later; 
     Release = body(Shaft, Body), 
     Mounted = erlmachine_assembly:mounted(Shaft),
-    (Mounted /= undefined) andalso erlmachine_assembly:installed(GearBox, Mounted, Release),
-    (Mounted == GearBox) orelse erlmachine_assembly:installed(GearBox, Release),
+    if 
+        Mounted == GearBox -> 
+            erlmachine_assembly:installed(GearBox, Release);
+        true ->
+            erlmachine_assembly:installed(GearBox, Mounted, Release),
+            erlmachine_assembly:installed(GearBox, Release) 
+    end,
     {ok, Release}.
 
 -spec attach(GearBox::assembly(), Shaft::assembly(), Part::assembly()) ->
@@ -84,7 +89,7 @@ attach(GearBox, Shaft, Part) ->
     ModelName= erlmachine_assembly:model_name(Shaft),
     SN = erlmachine_assembly:serial_no(Shaft), ID = erlmachine_assembly:serial_no(Part),
     {ok, Body} = ModelName:attach(SN, ID, body(Shaft)),
-    Release = erlmachine_assembly:attach(body(Shaft, Body), Part),
+    Release = erlmachine_assembly:add_part(body(Shaft, Body), Part),
     erlmachine_assembly:attached(GearBox, Release, Part),
     {ok, Release}.
 
@@ -95,7 +100,7 @@ detach(GearBox, Shaft, ID) ->
     SN = erlmachine_assembly:serial_no(Shaft),
     %% At that place we need to find Part inside assembly by SN and transmit;
     {ok, Body} = ModelName:detach(SN, ID, body(Shaft)),
-    Release = erlmachine_assembly:detach(body(Shaft, Body), ID),
+    Release = erlmachine_assembly:remove_part(body(Shaft, Body), ID),
     erlmachine_assembly:detached(GearBox, Release, ID),
     {ok, Release}.
 
@@ -129,14 +134,14 @@ accept(GearBox, Shaft, Criteria) ->
 
 -spec rotate(GearBox::assembly(), Shaft::assembly(), ID::serial_no(), Motion::term()) ->
                     success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
-rotate(_GearBox, Shaft, ID, Motion) ->
+rotate(GearBox, Shaft, ID, Motion) ->
     ModelName = erlmachine_assembly:model_name(Shaft),
     SN = erlmachine_assembly:serial_no(Shaft),
-    Part = erlmachine_assembly:part(Shaft, ID),
+    Part = erlmachine_assembly:get_part(Shaft, ID),
     ReleaseBody = 
         case ModelName:rotate(SN, ID, Motion, body(Shaft)) of 
             {ok, Result, Body} -> 
-                erlmachine_transmission:rotate(Part, Result),
+                erlmachine_transmission:rotate(GearBox, Part, Result),
                 Body;
             {ok, Body} -> 
                 Body 

@@ -18,11 +18,11 @@
 
 -export([
          install/4,
-         overload/2, block/3, 
-         replace/3,
-         rotate/2, transmit/3,
-         uninstall/3,
-         accept/3
+         overload/4, block/5, 
+         replace/4,
+         rotate/4, transmit/4,
+         uninstall/4,
+         accept/4
         ]).
 
 -include("erlmachine_factory.hrl").
@@ -48,53 +48,53 @@ install(Name, GearBox, Gear, Options) ->
 
 -record(overload, {load::term()}).
 
--spec overload(Name::serial_no(), Load::term()) ->
+-spec overload(Name::serial_no(), GearBox::assembly(), Gear::assembly(), Load::term()) ->
                       Load::term().
-overload(Name, Load) ->
+overload(Name, _GearBox, _Gear, Load) ->
     erlang:send(format_name(Name), #overload{load=Load}), 
     Load.
 
 -record(block, {part::assembly(), failure::term()}).
 
--spec block(Name::serial_no(), Part::assembly(), Failure::term()) -> 
+-spec block(Name::serial_no(), GearBox::assembly(), Gear::assembly(), Part::assembly(), Failure::term()) -> 
                    Failure::term().
-block(Name, Part, Failure) ->
+block(Name, _GearBox, _Gear, Part, Failure) ->
     erlang:send(format_name(Name), #block{part=Part, failure=Failure}), 
     Failure.
 
 -record(replace, {repair::assembly()}).
 
--spec replace(Name::serial_no(), Repair::assembly(), Timeout::timeout()) -> 
+-spec replace(Name::serial_no(), GearBox::assembly(), Gear::assembly(), Repair::assembly()) -> 
                      success(Release::assembly()) | failure(E::term(), R::term()).
-replace(Name, Repair, Timeout) ->
-    gen_server:call(format_name(Name), #replace{repair=Repair}, Timeout).
+replace(Name, _GearBox, _Gear, Repair) ->
+    gen_server:call(format_name(Name), #replace{repair=Repair}).
 
 -record(rotate, {motion::term()}).
 
--spec rotate(Name::serial_no(), Motion::term()) -> 
+-spec rotate(Name::serial_no(), GearBox::assembly(), Gear::assembly(), Motion::term()) -> 
                     Motion::term().
-rotate(Name, Motion) ->
+rotate(Name, _GearBox, _Gear, Motion) ->
     erlang:send(format_name(Name), #rotate{motion=Motion}), 
     Motion.
 
 -record(transmit, {motion::term()}).
 
--spec transmit(Name::serial_no(), Motion::term(), Timeout::timeout()) ->
+-spec transmit(Name::serial_no(), GearBox::assembly(), Gear::assembly(), Motion::term()) ->
                       Force::term().
-transmit(Name, Motion, Timeout) ->
-    gen_server:call(format_name(Name), #transmit{motion=Motion}, Timeout).
+transmit(Name, _GearBox, _Gear, Motion) ->
+    gen_server:call(format_name(Name), #transmit{motion=Motion}).
 
--spec uninstall(Name::serial_no(), Reason::term(), Timeout::timeout()) ->
+-spec uninstall(Name::serial_no(), GearBox::assembly(), Gear::assembly(), Reason::term()) ->
                        ok.
-uninstall(Name, Reason, Timeout) ->
-    gen_server:stop({local, format_name(Name)}, Reason, Timeout).
+uninstall(Name, _GearBox, _Gear, Reason) ->
+    gen_server:stop({local, format_name(Name)}, Reason).
 
 -record(accept, {criteria::acceptance_criteria()}).
 
--spec accept(Name::serial_no(), Criteria::acceptance_criteria(), Timeout::timeout()) ->
+-spec accept(Name::serial_no(), GearBox::assembly(), Gear::assembly(), Criteria::acceptance_criteria()) ->
                     accept() | reject().
-accept(Name, Criteria, Timeout) -> 
-    gen_server:call(Name, #accept{criteria=Criteria}, Timeout).
+accept(Name, _GearBox, _Gear, Criteria) -> 
+    gen_server:call(Name, #accept{criteria=Criteria}).
 
 %% gen_server.
 -record(state, {gearbox::assembly(), gear::assembly()}).

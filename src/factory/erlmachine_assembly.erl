@@ -19,10 +19,20 @@
          attach/3, detach/3,
          mount/2, mount/3, 
          unmount/2, unmount/3, 
-         uninstall/3, uninstall/4
+         uninstall/2, uninstall/3
         ]).
 
 -export([
+         installed/2, installed/3, 
+         attached/3, detached/3,
+         replaced/3,
+         accepted/4, rejected/4,
+         overloaded/3, blocked/4,
+         uninstalled/3, uninstalled/4
+        ]).
+
+-export([
+         is_mounted/1,
          serial_no/1, serial_no/2,
          model/1, model/2, 
          model_name/1, model_name/2,
@@ -39,7 +49,7 @@
          tags/1, tags/2
         ]).
 
--export([add/2, remove/2, get/2]).
+-export([add_part/2, remove_part/2, get_part/2]).
 
 -export([spec/2]).
 
@@ -128,15 +138,15 @@ install(GearBox, Assembly) ->
                     success(term()) | failure(term(), term()).
 attach(GearBox, Assembly, Part) ->
     SN = serial_no(Assembly),
-    Result = (prototype_name(Assembly)):attach(SN, Part),
-    ok = erlmachine_gearbox:map_add(GearBox, Assembly, Part, 'attach'),
+    Result = (prototype_name(Assembly)):attach(SN, GearBox, Assembly, Part),
+    ok = erlmachine_gearbox:map_add(GearBox, Assembly, Part),
     Result.
 
 -spec detach(GearBox::assembly(), Assembly::assembly(), ID::serial_no()) -> 
                     success(term()) | failure(term(), term()).
 detach(GearBox, Assembly, ID) ->
     SN = serial_no(Assembly),
-    Result = (prototype_name(Assembly)):detach(SN, ID),
+    Result = (prototype_name(Assembly)):detach(SN, GearBox, Assembly, ID),
     ok = erlmachine_gearbox:map_remove(GearBox, ID),
     Result.
 
@@ -146,7 +156,7 @@ mount(GearBox, Part) ->
     SN = serial_no(GearBox),
     %% At that palce we need to update stored schema;
     Result = (prototype_name(GearBox)):mount(SN, GearBox, Part),
-    ok = erlmachine_gearbox:map_add(GearBox, Part, 'mount'),
+    ok = erlmachine_gearbox:map_add(GearBox, Part),
     Result.
 
 -spec mount(GearBox::assembly(), Assembly::assembly(), Part::assembly()) -> 
@@ -154,12 +164,11 @@ mount(GearBox, Part) ->
 mount(GearBox, Assembly, Part) ->
     SN = serial_no(Assembly),
     Result = (prototype_name(Assembly)):mount(SN, GearBox, Assembly, Part),
-    ok = erlmachine_gearbox:map_add(GearBox, Assembly, Part, 'mount'),
+    ok = erlmachine_gearbox:map_add(GearBox, Assembly, Part),
     Result.
 
 %% The main difference between unmount and uninstall:
 %% is that second one can be able to stop chield and mark it with stopped label without removing of edge;
-%% Currently it's not supported;
 
 -spec unmount(GearBox::assembly(), ID::serial_no()) -> 
                     success(term()) | failure(term(), term()).
@@ -177,45 +186,48 @@ unmount(GearBox, Assembly, ID) ->
     ok = erlmachine_gearbox:map_remove(GearBox, ID),
     Result.
 
--spec uninstall(GearBox::assembly(), Reason::term(), TimeOut::integer()) ->
+-spec uninstall(GearBox::assembly(), Reason::term()) ->
                      ok.
-uninstall(GearBox, Reason, TimeOut) ->
+uninstall(GearBox, Reason) ->
     SN = serial_no(GearBox),
-    Result = (prototype_name(GearBox)):uninstall(SN, Reason, TimeOut),
+    Result = (prototype_name(GearBox)):uninstall(SN, GearBox, Reason),
     ok = erlmachine_gearbox:map_remove(GearBox, SN),
     Result.
 
--spec uninstall(GearBox::assembly(), Assembly::assembly(), Reason::term(), TimeOut::integer()) ->
+-spec uninstall(GearBox::assembly(), Assembly::assembly(), Reason::term()) ->
                        ok.
-uninstall(GearBox, ID, Reason, TimeOut) ->
+uninstall(GearBox, Assembly, Reason) ->
     SN = serial_no(Assembly),
-    Result = (prototype_name(Assembly)):uninstall(SN, Reason, TimeOut),
-    ok = erlmachine_gearbox:map_remove(GearBox, ID),
+    Result = (prototype_name(GearBox)):uninstall(SN, GearBox, Assembly, Reason),
     Result.
 
 -spec installed(GearBox::assembly(), Part::assembly()) -> 
                        ok.
 installed(GearBox, Part) ->
-    installed(GearBox, GearBox, Part).
+    SN = serial_no(GearBox),
+    Result = (prototype_name(GearBox)):installed(SN, GearBox, Part),
+    %%
+    Result.
 
 -spec installed(GearBox::assembly(), Assembly::assembly(), Part::assembly()) -> 
                        ok.
 installed(GearBox, Assembly, Part) ->
     SN = serial_no(Assembly),
-    Result = (prototype_name(Assembly)):installed(SN, Assembly, Part),
-    ok = erlmachine_gearbox:map_update(GearBox, tags(Part, ['installed'])),
+    Result = (prototype_name(Assembly)):installed(SN, GearBox, Assembly, Part),
+    %% NOTE Instead of access from external process we are going to provide
+    %% notification and update monitoring copy with suitable tags, etc.;
     Result.
 
 -spec attached(GearBox::assembly(), Assembly::assembly(), Part::assembly()) -> 
                        ok.
-attached(GearBox, Assembly, Part) ->
+attached(_GearBox, Assembly, Part) ->
     SN = serial_no(Assembly),
     Result = (prototype_name(Assembly)):attached(SN, Assembly, Part),
     Result.
 
 -spec detached(GearBox::assembly(), Assembly::assembly(), ID::serial_no()) -> 
                       ok.
-detached(GearBox, Assembly, ID) ->
+detached(_GearBox, Assembly, ID) ->
     SN = serial_no(Assembly),
     Result = (prototype_name(Assembly)):detached(SN, Assembly, ID),
     Result.
@@ -258,18 +270,16 @@ blocked(GearBox, Assembly, Part, Failure) ->
 -spec uninstalled(GearBox::assembly(), Part::assembly(), Reason::term()) -> 
                        ok.
 uninstalled(GearBox, Part, Reason) ->
-    uninstalled(GearBox, GearBox, Part, Reason).
+    SN = serial_no(GearBox),
+    Result = (prototype_name(GearBox)):uninstalled(SN, GearBox, Part, Reason),
+    Result.
 
 -spec uninstalled(GearBox::assembly(), Assembly::assembly(), Part::assembly(), Reason::term()) -> 
                        ok.
-uninstalled(GearBox, Assembly, Part) ->
+uninstalled(GearBox, Assembly, Part, Reason) ->
     SN = serial_no(Assembly),
-    Result = (prototype_name(Assembly)):uninstalled(SN, Assembly, Part, Reason),
-    ok = erlmachine_gearbox:map_update(GearBox, tags(Part, ['uninstalled'])),
+    Result = (prototype_name(Assembly)):uninstalled(SN, GearBox, Assembly, Part, Reason),
     Result.
-
-%% Client doesn't need to know about mount method;
-%% I guess it's responsibility of transmission (attach call); 
 
 %% API.
 
@@ -303,6 +313,9 @@ code_change(_OldVsn, State, _Extra) ->
 assembly() ->
     #assembly{}.
 
+-spec is_mounted(Assembly::assembly()) -> boolean().
+is_mounted(Assembly) -> 
+    mounted(Assembly) /= undefined.
 
 -spec serial_no(Assembly::assembly()) -> SN::serial_no().
 serial_no(Assembly) ->
@@ -450,20 +463,20 @@ part_no(Assembly, PN) ->
     Release = Assembly#assembly{part_no=PN},
     Release.
 
--spec add(Assembly::assembly(), Part::assembly()) -> assembly().
-add(Assembly, Part) ->
+-spec add_part(Assembly::assembly(), Part::assembly()) -> assembly().
+add_part(Assembly, Part) ->
     Parts = lists:reverse([Part|parts(Assembly)]),
     Release = parts(Assembly, Parts),
     Release.
 
--spec remove(Assembly::assembly(), ID::serial_no()) -> assembly().
-remove(Assembly, ID) ->
+-spec remove_part(Assembly::assembly(), ID::serial_no()) -> assembly().
+remove_part(Assembly, ID) ->
     Parts = lists:keydelete(ID, #assembly.serial_no, parts(Assembly)),
     Release = parts(Assembly, Parts),
     Release.
 
--spec get(Assembly::assembly(), ID::serial_no()) -> assembly().
-get(Assembly, ID) ->
+-spec get_part(Assembly::assembly(), ID::serial_no()) -> assembly().
+get_part(Assembly, ID) ->
     Part = lists:keyfind(ID, #assembly.serial_no, parts(Assembly)),
     Part.
 

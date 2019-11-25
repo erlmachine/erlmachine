@@ -70,8 +70,13 @@ install(GearBox, Gear) ->
     %% We are going to add error handling later; 
     Release = body(Gear, Body), 
     Mounted = erlmachine_assembly:mounted(Gear),
-    (Mounted /= undefined) andalso (erlmachine_assembly:prototype_name(Mounted)):installed(SN, Mounted, Release),
-    (Mounted == GearBox) orelse (erlmachine_assembly:prototype_name(GearBox)):installed(SN, GearBox, Release),
+    if 
+        Mounted == GearBox -> 
+            erlmachine_assembly:installed(GearBox, Release);
+        true ->
+            erlmachine_assembly:installed(GearBox, Mounted, Release),
+            erlmachine_assembly:installed(GearBox, Release) 
+    end,
     {ok, Release}.
 
 -spec replace(GearBox::assembly(), Gear::assembly(), Part::assembly()) ->
@@ -104,7 +109,7 @@ accept(GearBox, Gear, Criteria) ->
 
 -spec rotate(GearBox::assembly(), Gear::assembly(), Motion::term()) ->
                   success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
-rotate(_GearBox, Gear, Motion) ->
+rotate(GearBox, Gear, Motion) ->
     ModelName = erlmachine_assembly:model_name(Gear),
     SN = erlmachine_assembly:serial_no(Gear),
     Parts =erlmachine_assembly:parts(Gear),
@@ -112,7 +117,7 @@ rotate(_GearBox, Gear, Motion) ->
     ReleaseBody = 
         case ModelName:rotate(SN, Motion, body(Gear)) of 
             {ok, Result, Body} -> 
-                [erlmachine_transmission:rotate(Part, Result) || Part <- Parts],
+                [erlmachine_transmission:rotate(GearBox, Part, Result) || Part <- Parts],
                 Body;
             {ok, Body} -> 
                 Body 

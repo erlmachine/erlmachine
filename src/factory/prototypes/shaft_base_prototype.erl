@@ -23,12 +23,12 @@
 
 -export([
          install/4, 
-         attach/2, detach/2,
-         overload/2, block/3, 
-         replace/3,
-         transmit/3, rotate/2,
-         uninstall/3,
-         accept/3
+         attach/4, detach/4,
+         overload/4, block/5, 
+         replace/4,
+         transmit/4, rotate/4,
+         uninstall/4,
+         accept/4
         ]).
 
 -include("erlmachine_factory.hrl").
@@ -55,68 +55,68 @@ install(Name, GearBox, Shaft, Options) ->
 %% I think about ability to reflect both kind of switching - manual and automated;
 -record(attach, {part::assembly()}).
 
--spec attach(Name::serial_no(), Part::assembly()) -> 
+-spec attach(Name::serial_no(), GearBox::assembly(), Shaft::assembly(), Part::assembly()) -> 
                     success(Release::assembly()) | failure(E::term(), R::term()).
-attach(Name, Part) ->
+attach(Name, _GearBox, _Shaft, Part) ->
     gen_server:call(format_name(Name), #attach{part = Part}).
 
 %% I think about ability to reflect both kind of switching - manual and automated;
 -record(detach, {id::serial_no()}).
 
--spec detach(Name::serial_no(), ID::serial_no()) -> 
+-spec detach(Name::serial_no(), GearBox::assembly(), Shaft::assembly(), ID::serial_no()) -> 
                     success(Release::assembly()) | failure(E::term(), R::term()).
-detach(Name, ID) ->
+detach(Name, _GearBox, _Shaft, ID) ->
     gen_server:call(format_name(Name), #detach{id=ID}).
 
 -record(transmit, {motion::term()}).
 
--spec transmit(Name::serial_no(), Motion::term(), Timeout::timeout()) ->
+-spec transmit(Name::serial_no(), GearBox::assembly(), Shaft::assembly(), Motion::term()) ->
                       success(Result::term()) | failure(E::term(), R::term()).
-transmit(Name, Motion, Timeout) ->
-    gen_server:call(format_name(Name), #transmit{motion=Motion}, Timeout).
+transmit(Name, _GearBox, _Shaft, Motion) ->
+    gen_server:call(format_name(Name), #transmit{motion=Motion}).
 
 -record(overload, {load::term()}).
 
--spec overload(Name::serial_no(), Load::term()) ->
+-spec overload(Name::serial_no(), GearBox::assembly(), Shaft::assembly(), Load::term()) ->
                       Load::term().
-overload(Name, Load) ->
+overload(Name, _GearBox, _Shaft, Load) ->
     erlang:send(format_name(Name), #overload{load=Load}), 
     Load.
 
 -record(block, {part::assembly(), failure::term()}).
 
--spec block(Name::serial_no(), Part::assembly(), Failure::term()) -> 
+-spec block(Name::serial_no(), GearBox::assembly(), Shaft::assembly(), Part::assembly(), Failure::term()) -> 
                    Failure::term().
-block(Name, Part, Failure) ->
+block(Name, _GearBox, _Shaft, Part, Failure) ->
     erlang:send(format_name(Name), #block{part=Part, failure=Failure}), 
     Failure.
 
 -record(replace, {repair::assembly()}).
 
--spec replace(Name::serial_no(), Repair::assembly(), Timeout::timeout()) -> 
+-spec replace(Name::serial_no(), GearBox::assembly(), Shaft::assembly(), Repair::assembly()) -> 
                      success(Release::assembly()) | failure(E::term(), R::term()).
-replace(Name, Repair, Timeout) ->
-    gen_server:call(format_name(Name), #replace{repair=Repair}, Timeout).
+replace(Name, _GearBox, _Shaft, Repair) ->
+    gen_server:call(format_name(Name), #replace{repair=Repair}).
 
 -record(rotate, {motion::term()}).
 
--spec rotate(Name::serial_no(), Motion::term()) -> 
+-spec rotate(Name::serial_no(), GearBox::assembly(), Shaft::assembly(), Motion::term()) -> 
                     Motion::term().
-rotate(Name, Motion) ->
+rotate(Name, _GearBox, _Shaft, Motion) ->
     erlang:send(format_name(Name), #rotate{motion=Motion}), 
     Motion.
 
--spec uninstall(Name::serial_no(), Reason::term(), Timeout::timeout()) ->
+-spec uninstall(Name::serial_no(), GearBox::assembly(), Shaft::assembly(), Reason::term()) ->
                        ok.
-uninstall(Name, Reason, Timeout) ->
-    gen_server:stop({local, format_name(Name)}, Reason, Timeout).
+uninstall(Name, _GearBox, _Shaft, Reason) ->
+    gen_server:stop({local, format_name(Name)}, Reason).
 
 -record(accept, {criteria::acceptance_criteria()}).
 
--spec accept(Name::serial_no(), Criteria::acceptance_criteria(), Timeout::timeout()) ->
+-spec accept(Name::serial_no(), GearBox::assembly(), Shaft::assembly(), Criteria::acceptance_criteria()) ->
                     accept() | reject().
-accept(Name, Criteria, Timeout) -> 
-    gen_server:call(Name, #accept{criteria=Criteria}, Timeout).
+accept(Name, _GearBox, _Shaft, Criteria) -> 
+    gen_server:call(Name, #accept{criteria=Criteria}).
 
 %% gen_server.
 -record(state, {gearbox::assembly(), shaft::assembly()}).

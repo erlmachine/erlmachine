@@ -12,10 +12,7 @@
          code_change/3
         ]).
 
--export([
-         rotate/2,
-         transmit/2, transmit/3
-        ]).
+-export([rotate/3, transmit/3]).
 
 %% Transmission will be loaded directly by call where ID argument is provided; 
 %% Transmission can be represented by a lot of copies where each of them is marked by unique serial number;
@@ -23,22 +20,17 @@
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
 
--spec rotate(Assembly::assembly(), Motion::term()) ->
+-spec rotate(GearBox::assembly(), Assembly::assembly(), Motion::term()) ->
                     Motion::term().
-rotate(Assembly, Motion) ->
+rotate(GearBox, Assembly, Motion) ->
     SN = erlmachine_assembly:serial_no(Assembly),
-    (erlmachine_assembly:prototype_name(Assembly)):rotate(SN, Motion).
+    (erlmachine_assembly:prototype_name(Assembly)):rotate(SN, GearBox, Assembly, Motion).
 
--spec transmit(Assembly::assembly(), Motion::term()) ->
+-spec transmit(GearBox::assembly(), Assembly::assembly(), Motion::term()) ->
                       success(term()) | failure(term(), term()).
-transmit(Assembly, Motion) ->
-    transmit(Assembly, Motion, infinity).
-
--spec transmit(Assembly::assembly(), Motion::term(), TimeOut::integer()) ->
-                      success(term()) | failure(term(), term()).
-transmit(Assembly, Motion, TimeOut) ->
+transmit(GearBox, Assembly, Motion) ->
     SN = erlmachine_assembly:serial_no(Assembly),
-    (erlmachine_assembly:prototype_name(Assembly)):transmit(SN, Motion, TimeOut).
+    (erlmachine_assembly:prototype_name(Assembly)):transmit(SN, GearBox, Assembly, Motion).
 
 -record(state, {
 }).
