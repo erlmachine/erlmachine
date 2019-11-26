@@ -12,7 +12,7 @@
          body/1, body/2
         ]).
 
--export([mounted/2]).
+-export([parts/2]).
 
 -export([specs/2, spec/3]).
 
@@ -58,13 +58,7 @@ install(GearBox, Axle) ->
     %% We are going to add error handling later; 
     Release = body(Axle, Body),
     Mounted = erlmachine_assembly:mounted(Axle),
-    if 
-        Mounted == GearBox -> 
-            erlmachine_assembly:installed(GearBox, Release);
-        true ->
-            erlmachine_assembly:installed(GearBox, Mounted, Release),
-            erlmachine_assembly:installed(GearBox, Release) 
-    end,
+    erlmachine_assembly:installed(GearBox, Mounted, Release),
     {ok, Release}.
 
 -spec mount(GearBox::assembly(), Axle::assembly(), Part::assembly()) ->
@@ -103,13 +97,7 @@ uninstall(GearBox, Axle, Reason) ->
     {ok, Body} = ModelName:uninstall(SN, Reason, body(Axle)),
     Release = body(Axle, Body),
     Mounted = erlmachine_assembly:mounted(Axle),
-    if 
-        Mounted == GearBox -> 
-            erlmachine_assembly:uninstalled(GearBox, Release, Reason);
-        true ->
-            erlmachine_assembly:uninstalled(GearBox, Mounted, Release, Reason),
-            erlmachine_assembly:uninstalled(GearBox, Release, Reason) 
-    end,
+    erlmachine_assembly:uninstalled(GearBox, Mounted, Release, Reason),
     ok.
 
 -spec body(Axle::assembly()) -> Body::term().
@@ -127,15 +115,15 @@ spec(GearBox, _Axle, Part) ->
     Spec = erlmachine_assembly:spec(GearBox, Part),
     Spec.
 
+-spec parts(Axle::assembly(), Parts::list(assembly())) -> Release::assembly().
+parts(Axle, Parts) ->
+    Mounted = [erlmachine_assembly:mounted(Part, Axle)|| Part <- Parts],
+    Release = erlmachine_assembly:parts(Axle, Mounted),
+    Release.
+
 -spec specs(GearBox::assembly(), Axle::assembly()) -> list(map()).
 specs(GearBox, Axle) ->
     Parts = erlmachine_assembly:parts(Axle),
     Specs = [spec(GearBox, Axle, Part)|| Part <- Parts],
     Specs.
 
--spec mounted(Axle::assembly(), Parts::list(assembly())) -> Release::assembly().
-mounted(Axle, Parts) ->
-    Mounted = [erlmachine_assembly:mounted(Part, Axle)|| Part <- Parts],
-    Release = erlmachine_assembly:parts(Axle, Mounted),
-    Release.
-    

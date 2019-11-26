@@ -35,6 +35,8 @@
 
 -export([mounted/2]).
 
+-export([parts/2]).
+
 -export([specs/1, spec/2]).
 
 -export([find/2]).
@@ -107,8 +109,7 @@ map_schema(_Schema, _Assembly, []) ->
 map_schema(Schema, Assembly, [Part|T]) ->
     SN = erlmachine_assembly:serial_no(Part),
     digraph:add_vertex(Schema, SN, Part),
-    Label = label(Part),
-    digraph:add_edge(Schema, erlmachine_assembly:serial_no(Assembly), SN, Label),
+    digraph:add_edge(Schema, erlmachine_assembly:serial_no(Assembly), SN, []),
     map_schema(Schema, Assembly, erlmachine_assembly:parts(Part)),
     map_schema(Schema, Assembly, T).
 
@@ -128,17 +129,7 @@ map_add(GearBox, Part) ->
 map_schema_add(Schema, Assembly, Part) ->
     SN = erlmachine_assembly:serial_no(Part),
     digraph:add_vertex(Schema, SN, Part), 
-    Label = label(Part),
-    digraph:add_edge(Schema, erlmachine_assembly:serial_no(Assembly), SN, Label).
-
--spec label(Part::assembly()) -> 'mounted' | [].
-label(Part) ->
-    Mounted = erlmachine_assembly:is_mounted(Part),
-    io:format("~n Mounted: ~p Part: ~p~n",[Mounted, Part]),
-    Label = if Mounted  -> 'mounted'; 
-               true -> []
-            end,
-    Label.
+    digraph:add_edge(Schema, erlmachine_assembly:serial_no(Assembly), SN, []).
 
 -spec map_remove(GearBox::assembly(), ID::serial_no()) -> ok.
 map_remove(GearBox, ID) ->
@@ -311,6 +302,12 @@ env(GearBox, Env) ->
 spec(GearBox, Part) ->
     Spec = erlmachine_assembly:spec(GearBox, Part),
     Spec.
+
+-spec parts(GearBox::assembly(), Parts::list(assembly())) -> Release::assembly().
+parts(GearBox, Parts) ->
+    Mounted = [erlmachine_assembly:mounted(Part, GearBox)|| Part <- Parts],
+    Release = erlmachine_assembly:parts(GearBox, Mounted),
+    Release.
 
 -spec specs(GearBox::assembly()) -> list(map()).
 specs(GearBox) ->

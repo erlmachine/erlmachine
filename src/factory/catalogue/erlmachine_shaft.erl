@@ -15,6 +15,8 @@
          body/1, body/2
         ]).
 
+-export([parts/2]).
+
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
 
@@ -74,13 +76,7 @@ install(GearBox, Shaft) ->
     %% We are going to add error handling later; 
     Release = body(Shaft, Body), 
     Mounted = erlmachine_assembly:mounted(Shaft),
-    if 
-        Mounted == GearBox -> 
-            erlmachine_assembly:installed(GearBox, Release);
-        true ->
-            erlmachine_assembly:installed(GearBox, Mounted, Release),
-            erlmachine_assembly:installed(GearBox, Release) 
-    end,
+    erlmachine_assembly:installed(GearBox, Mounted, Release),
     {ok, Release}.
 
 -spec attach(GearBox::assembly(), Shaft::assembly(), Part::assembly()) ->
@@ -200,8 +196,7 @@ uninstall(GearBox, Shaft, Reason) ->
     {ok, Body} = ModelName:uninstall(SN, Reason, body(Shaft)),
     Release = body(Shaft, Body),
     Mounted = erlmachine_assembly:mounted(Shaft),
-    (Mounted /= undefined) andalso erlmachine_assembly:uninstalled(GearBox, Mounted, Release, Reason),
-    (Mounted == GearBox) orelse erlmachine_assembly:uninstalled(GearBox, Release, Reason),
+    erlmachine_assembly:uninstalled(GearBox, Mounted, Release, Reason),
     ok.
 
 -spec body(Shaft::assembly()) -> Body::term().
@@ -213,3 +208,8 @@ body(Shaft) ->
 body(Shaft, Body) ->
     Product = erlmachine_assembly:product(Shaft),
     erlmachine_assembly:product(Shaft, Product#shaft{body=Body}).
+
+-spec parts(Shaft::assembly(), Parts::list(assembly())) -> Release::assembly().
+parts(Shaft, Parts) ->
+    Release = erlmachine_assembly:parts(Shaft, Parts),
+    Release.
