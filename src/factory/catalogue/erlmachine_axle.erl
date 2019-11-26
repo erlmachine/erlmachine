@@ -12,6 +12,8 @@
          body/1, body/2
         ]).
 
+-export([parts/2]).
+
 -export([specs/2, spec/3]).
 
 -include("erlmachine_factory.hrl").
@@ -56,8 +58,7 @@ install(GearBox, Axle) ->
     %% We are going to add error handling later; 
     Release = body(Axle, Body),
     Mounted = erlmachine_assembly:mounted(Axle),
-    (Mounted /= undefined) andalso (erlmachine_assembly:prototype_name(Mounted)):installed(SN, Mounted, Release),
-    (Mounted == GearBox) orelse (erlmachine_assembly:prototype_name(GearBox)):installed(SN, GearBox, Release),
+    erlmachine_assembly:installed(GearBox, Mounted, Release),
     {ok, Release}.
 
 -spec mount(GearBox::assembly(), Axle::assembly(), Part::assembly()) ->
@@ -80,11 +81,11 @@ accept(GearBox, Axle, Criteria) ->
     case Tag of 
         ok ->
             Report = Result,
-            (erlmachine_assembly:prototype_name(GearBox)):accepted(SN, GearBox, Release, Criteria, Report),
+            erlmachine_assembly:accepted(GearBox, Release, Criteria, Report),
             {ok, Result, Release};
         error ->
             {_, Report} = Result,
-            (erlmachine_assembly:prototype_name(GearBox)):rejected(SN, GearBox, Release, Criteria, Report),
+            erlmachine_assembly:rejected(GearBox, Release, Criteria, Report),
             {error, Result, Release} 
     end.
 
@@ -96,8 +97,7 @@ uninstall(GearBox, Axle, Reason) ->
     {ok, Body} = ModelName:uninstall(SN, Reason, body(Axle)),
     Release = body(Axle, Body),
     Mounted = erlmachine_assembly:mounted(Axle),
-    (Mounted /= undefined) andalso (erlmachine_assembly:prototype_name(Mounted)):uninstalled(SN, Mounted, Release, Reason),
-    (Mounted == GearBox) orelse (erlmachine_assembly:prototype_name(GearBox)):uninstalled(SN, GearBox, Release, Reason),
+    erlmachine_assembly:uninstalled(GearBox, Mounted, Release, Reason),
     ok.
 
 -spec body(Axle::assembly()) -> Body::term().
@@ -111,12 +111,19 @@ body(Axle, Body) ->
     erlmachine_assembly:product(Axle, Product#axle{body=Body}).
 
 -spec spec(GearBox::assembly(), Axle::assembly(), Part::assembly()) -> map().
-spec(GearBox, Axle, Part) ->
-    Spec = erlmachine_assembly:spec(GearBox, erlmachine_assembly:mounted(Part, Axle)),
+spec(GearBox, _Axle, Part) ->
+    Spec = erlmachine_assembly:spec(GearBox, Part),
     Spec.
+
+-spec parts(Axle::assembly(), Parts::list(assembly())) -> Release::assembly().
+parts(Axle, Parts) ->
+    Mounted = [erlmachine_assembly:mounted(Part, Axle)|| Part <- Parts],
+    Release = erlmachine_assembly:parts(Axle, Mounted),
+    Release.
 
 -spec specs(GearBox::assembly(), Axle::assembly()) -> list(map()).
 specs(GearBox, Axle) ->
     Parts = erlmachine_assembly:parts(Axle),
     Specs = [spec(GearBox, Axle, Part)|| Part <- Parts],
     Specs.
+

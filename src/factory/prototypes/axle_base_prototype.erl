@@ -15,7 +15,7 @@
          uninstall/4
         ]).
 
--export([installed/3, uninstalled/4]).
+-export([installed/4, uninstalled/5]).
 
 -export([init/1]).
 
@@ -37,16 +37,16 @@ tag(#{model_name := Model}) ->
     ID = atom_to_binary(Model, latin1),
     ID.
 
--spec installed(Name::serial_no(), Axle::assembly(), Part::assembly()) ->
+-spec installed(Name::serial_no(), GearBox::assembly(), Axle::assembly(), Part::assembly()) ->
                       ok.
-installed(_Name, Axle, Part) ->
+installed(_Name, _GearBox, Axle, Part) ->
     SN = erlmachine_assembly:serial_no(Part),
     trace(Axle, #{installed => SN}),
     ok.
 
--spec uninstalled(Name::serial_no(), Axle::assembly(), Part::assembly(), Reason::term()) -> 
+-spec uninstalled(Name::serial_no(), GearBox::assembly(), Axle::assembly(), Part::assembly(), Reason::term()) -> 
                          ok.
-uninstalled(_Name, Axle, Part, Reason) ->
+uninstalled(_Name, _GearBox, Axle, Part, Reason) ->
     trace(Axle, #{uninstalled => Part, reason => Reason}),
     ok.
 

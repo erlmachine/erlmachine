@@ -14,6 +14,8 @@
          body/1, body/2
         ]).
 
+-export([parts/2]).
+
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
 
@@ -70,8 +72,7 @@ install(GearBox, Gear) ->
     %% We are going to add error handling later; 
     Release = body(Gear, Body), 
     Mounted = erlmachine_assembly:mounted(Gear),
-    (Mounted /= undefined) andalso (erlmachine_assembly:prototype_name(Mounted)):installed(SN, Mounted, Release),
-    (Mounted == GearBox) orelse (erlmachine_assembly:prototype_name(GearBox)):installed(SN, GearBox, Release),
+    erlmachine_assembly:installed(GearBox, Mounted, Release),
     {ok, Release}.
 
 -spec replace(GearBox::assembly(), Gear::assembly(), Part::assembly()) ->
@@ -81,7 +82,7 @@ replace(GearBox, Gear, Part) ->
     SN = erlmachine_assembly:serial_no(Gear), ID = erlmachine_assembly:serial_no(Part),
     {ok, Body} = ModelName:replace(SN, ID, body(Gear)),
     Release = body(Gear, Body),
-    (erlmachine_assembly:prototype_name(GearBox)):replaced(SN, GearBox, Release, Part),
+    erlmachine_assembly:replaced(GearBox, Release, Part),
     {ok, Release}.
 
 -spec accept(GearBox::assembly(), Gear::assembly(), Criteria::term()) ->
@@ -94,17 +95,17 @@ accept(GearBox, Gear, Criteria) ->
     case Tag of 
         ok ->
             Report = Result,
-            (erlmachine_assembly:prototype_name(GearBox)):accepted(SN, GearBox, Release, Criteria, Report),
+            erlmachine_assembly:accepted(GearBox, Release, Criteria, Report),
             {ok, Result, Release};
         error ->
             {_, Report} = Result,
-            (erlmachine_assembly:prototype_name(GearBox)):rejected(SN, GearBox, Release, Criteria, Report),
+            erlmachine_assembly:rejected(GearBox, Release, Criteria, Report),
             {error, Result, Release} 
     end.
 
 -spec rotate(GearBox::assembly(), Gear::assembly(), Motion::term()) ->
                   success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
-rotate(_GearBox, Gear, Motion) ->
+rotate(GearBox, Gear, Motion) ->
     ModelName = erlmachine_assembly:model_name(Gear),
     SN = erlmachine_assembly:serial_no(Gear),
     Parts =erlmachine_assembly:parts(Gear),
@@ -112,7 +113,7 @@ rotate(_GearBox, Gear, Motion) ->
     ReleaseBody = 
         case ModelName:rotate(SN, Motion, body(Gear)) of 
             {ok, Result, Body} -> 
-                [erlmachine_transmission:rotate(Part, Result) || Part <- Parts],
+                [erlmachine_transmission:rotate(GearBox, Part, Result) || Part <- Parts],
                 Body;
             {ok, Body} -> 
                 Body 
@@ -136,7 +137,7 @@ overload(GearBox, Gear, Load) ->
     SN = erlmachine_assembly:serial_no(Gear),
     {ok, Body} = ModelName:overload(SN, Load, body(Gear)),
     Release = body(Gear, Body),
-    (erlmachine_assembly:prototype_name(GearBox)):overloaded(SN, GearBox, Release, Load),
+    erlmachine_assembly:overloaded(GearBox, Release, Load),
     {ok, Release}.
 
 -spec block(GearBox::assembly(), Gear::assembly(), Part::assembly(), Failure::term()) ->
@@ -146,7 +147,7 @@ block(GearBox, Gear, Part, Failure) ->
     SN = erlmachine_assembly:serial_no(Gear), ID = erlmachine_assembly:serial_no(Part),
     {ok, Body} = ModelName:block(SN, ID, Failure, body(Gear)),
     Release = body(Gear, Body),
-    (erlmachine_assembly:prototype_name(GearBox)):blocked(SN, GearBox, Release, Part, Failure),
+    erlmachine_assembly:blocked(GearBox, Release, Part, Failure),
     {ok, Release}.
 
 -spec load(GearBox::assembly(), Gear::assembly(), Load::term()) ->
@@ -174,8 +175,7 @@ uninstall(GearBox, Gear, Reason) ->
     {ok, Body} = ModelName:uninstall(SN, Reason, body(Gear)),
     Release = body(Gear, Body),
     Mounted = erlmachine_assembly:mounted(Gear),
-    (Mounted /= undefined) andalso (erlmachine_assembly:prototype_name(Mounted)):uninstalled(SN, Mounted, Release, Reason),
-    (Mounted == GearBox) orelse (erlmachine_assembly:prototype_name(GearBox)):uninstalled(SN, GearBox, Release, Reason),
+    erlmachine_assembly:uninstalled(GearBox, Mounted, Release, Reason),
     ok.
 
 -spec body(Gear::assembly()) -> Body::term().
@@ -187,3 +187,8 @@ body(Gear) ->
 body(Gear, Body) ->
     Product = erlmachine_assembly:product(Gear),
     erlmachine_assembly:product(Gear, Product#gear{body=Body}).
+
+-spec parts(Gear::assembly(), Parts::list(assembly())) -> Release::assembly().
+parts(Gear, [_]=Parts) ->
+    Release = erlmachine_assembly:parts(Gear, Parts),
+    Release.

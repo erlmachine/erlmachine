@@ -1,12 +1,12 @@
 -module(erlmachine_gearbox).
 
-%% The main puprouse of a product module is to provide API between clients part and system; 
+%% The main puprouse of a product module is to provide API between client's part and system; 
 
 %% Gearbox is a component which is responsible for reliable spatial placement for all processes (parts);
 %% Gearbox is the place where shafts, gears and axles are located. 
 %% Gearbox is the main container within all system topology;
 %% The gearbox is divided on so called stages (stage is a torgue between two independent gears);
-%% Input is the special place which is recommended by design for to all input commands;
+%% Input is the special place which is recommended by design for all input commands;
 %% Output is considered like a special place where measurements and monitoring abilitites need to be provided;
 %% The most convinient way to implement input and output like a shafts;
 %% This agreement allows to us attach gearboxes together and with other parts by attach call;
@@ -31,7 +31,11 @@
          output/1, output/2
         ]).
 
--export([map_install/1, map_install/2, map_mount/2, map_mount/3, map_unmount/2, map_uninstall/2, map_uninstall/1]).
+-export([map/1, map_add/2, map_add/3, map_remove/2, map_update/2]).
+
+-export([mounted/2]).
+
+-export([parts/2]).
 
 -export([specs/1, spec/2]).
 
@@ -68,7 +72,6 @@
                  }
        ).
 
-%% I am thinking about graph ipmlementation of body;
 -type gearbox() :: #gearbox{}.
 
 -export_type([gearbox/0]).
@@ -84,6 +87,77 @@ gearbox(Body, Env) ->
 -spec gearbox(Body::term(), Env::term(), Schema::term()) -> gearbox().
 gearbox(Body, Env, Schema) ->
     #gearbox{body=Body, env=Env, schema=Schema}.
+
+-spec mounted(GearBox::assembly(), Parts::list(assembly())) -> Release::assembly().
+mounted(GearBox, Parts) ->
+    Mounted = [erlmachine_assembly:mounted(Part, GearBox)|| Part <- Parts],
+    Release = erlmachine_assembly:parts(GearBox, Mounted),
+    Release.
+
+%% We need to consider mounted field like indicator for of building mount topology; 
+-spec map(GearBox::assembly()) -> ok.
+map(GearBox) ->
+    Schema = schema(GearBox),
+    SN = erlmachine_assembly:serial_no(GearBox),
+    digraph:add_vertex(Schema, SN, GearBox),
+    map_schema(Schema, GearBox, erlmachine_assembly:parts(GearBox)), 
+    ok.
+
+-spec map_schema(Schema::term(), Assembly::assembly(), Parts::list(assembly())) -> ok.
+map_schema(_Schema, _Assembly, []) ->
+    ok;
+map_schema(Schema, Assembly, [Part|T]) ->
+    SN = erlmachine_assembly:serial_no(Part),
+    digraph:add_vertex(Schema, SN, Part),
+    digraph:add_edge(Schema, erlmachine_assembly:serial_no(Assembly), SN, []),
+    map_schema(Schema, Assembly, erlmachine_assembly:parts(Part)),
+    map_schema(Schema, Assembly, T).
+
+-spec map_add(GearBox::assembly(), Assembly::assembly(), Part::assembly()) -> ok.
+map_add(GearBox, Assembly, Part) ->
+    Schema = schema(GearBox),
+    map_schema_add(Schema, Assembly, Part),
+    ok.
+
+-spec map_add(GearBox::assembly(), Part::assembly()) -> ok.
+map_add(GearBox, Part) ->
+    Schema = schema(GearBox),
+    map_schema_add(Schema, GearBox, Part),
+    ok.
+
+-spec map_schema_add(Schema::term(), Assembly::assembly(), Part::assembly()) -> ok.
+map_schema_add(Schema, Assembly, Part) ->
+    SN = erlmachine_assembly:serial_no(Part),
+    digraph:add_vertex(Schema, SN, Part), 
+    digraph:add_edge(Schema, erlmachine_assembly:serial_no(Assembly), SN, []).
+
+-spec map_remove(GearBox::assembly(), ID::serial_no()) -> ok.
+map_remove(GearBox, ID) ->
+    Schema = schema(GearBox),
+    map_schema_remove(Schema, ID),
+    ok.
+
+-spec map_schema_remove(Schema::term(), ID::serial_no()) -> ok.
+map_schema_remove(Schema, ID) ->
+    digraph:del_vertex(Schema, ID).
+
+-spec map_update(GearBox::assembly(), Assembly::assembly()) -> ok.
+map_update(GearBox, Assembly) ->
+    Schema = schema(GearBox),
+    digraph:add_vertex(Schema, erlmachine_assembly:serial_no(Assembly), Assembly),
+    ok.
+%% We are going to provide access by path gearbox.shaft.# (like rabbitmq notation) too;
+
+-spec find(GearBox::assembly(), SN::serial_no()) -> 
+                  assembly() | false.
+find(GearBox, SN) ->
+    Schema = schema(GearBox),
+    case digraph:vertex(Schema, SN) of 
+        {_V, Part} ->
+            Part;
+        _ ->
+            false
+    end.
 
 -spec install(GearBox::assembly()) -> 
                      success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
@@ -226,89 +300,20 @@ env(GearBox, Env) ->
 
 -spec spec(GearBox::assembly(), Part::assembly()) -> map().
 spec(GearBox, Part) ->
-    Spec = erlmachine_assembly:spec(GearBox, erlmachine_assembly:mounted(Part, GearBox)),
+    Spec = erlmachine_assembly:spec(GearBox, Part),
     Spec.
+
+-spec parts(GearBox::assembly(), Parts::list(assembly())) -> Release::assembly().
+parts(GearBox, Parts) ->
+    Mounted = [erlmachine_assembly:mounted(Part, GearBox)|| Part <- Parts],
+    Release = erlmachine_assembly:parts(GearBox, Mounted),
+    Release.
 
 -spec specs(GearBox::assembly()) -> list(map()).
 specs(GearBox) ->
     Parts = erlmachine_assembly:parts(GearBox),
     Specs = [spec(GearBox, Part)|| Part <- Parts],
     Specs.
-
-%% We need to consider mounted field like indicator for of building mount topology; 
--spec map_install(GearBox::assembly()) -> ok.
-map_install(GearBox) ->
-    Schema = schema(GearBox),
-    SN = erlmachine_assembly:serial_no(GearBox),
-    digraph:add_vertex(Schema, SN, GearBox),
-    map_install_schema(Schema, SN, erlmachine_assembly:parts(GearBox)), 
-    ok.
-
--spec map_install_schema(GearBox::assembly(), Vertex::serial_no(), Parts::list(assembly())) -> ok.
-map_install_schema(_Schema, _Vertex, []) ->
-    ok;
-map_install_schema(Schema, Vertex, [Part|T]) ->
-    SN = erlmachine_assembly:serial_no(Part),
-    digraph:add_vertex(Schema, SN, Part),
-    map_install_schema(Schema, SN, erlmachine_assembly:parts(Part)),
-    %% TODO At this place we can represent kind of linking (mount/drive);
-    Label = [],
-    digraph:add_edge(Schema, Vertex, SN, Label),
-    map_install_schema(Schema, Vertex, T).
-
--spec map_install(GearBox::assembly(), Assembly::assembly()) -> ok.
-map_install(_GearBox, _Assembly) ->
-    %% TODO implement install label over part's edge;
-    ok.
-
--spec map_mount(GearBox::assembly(), Part::assembly()) -> ok.
-map_mount(GearBox, Part) ->
-    Schema = schema(GearBox),
-    SN = erlmachine_assembly:serial_no(Part),
-    digraph:add_vertex(Schema, SN, Part),
-    Label = [],
-    digraph:add_edge(Schema, erlmachine_assembly:serial_no(GearBox), SN, Label), 
-    ok.
-
--spec map_mount(GearBox::assembly(), Assembly::assembly(), Part::assembly()) -> ok.
-map_mount(GearBox, Assembly, Part) ->
-    Schema = schema(GearBox),
-    SN = erlmachine_assembly:serial_no(Part),
-    digraph:add_vertex(Schema, SN, Part),
-    Label = [],
-    digraph:add_edge(Schema, erlmachine_assembly:serial_no(Assembly), SN, Label), 
-    ok.
-
--spec map_unmount(GearBox::assembly(), ID::serial_no()) -> ok.
-map_unmount(GearBox, ID) ->
-    Schema = schema(GearBox),
-    digraph:del_vertex(Schema, ID),
-    ok.
-
--spec map_uninstall(GearBox::assembly()) -> ok.
-map_uninstall(GearBox) ->
-    Schema = schema(GearBox),
-    SN = erlmachine_assembly:serial_no(GearBox),
-    digraph:del_vertex(Schema, SN),
-    ok.
-
--spec map_uninstall(GearBox::assembly(), Assembly::assembly()) -> ok.
-map_uninstall(_GearBox, _Assembly) ->
-    %% TODO implement uninstall label over part's edge;
-    ok.
-
-%% We are going to provide access by path gearbox.shaft.# (like rabbitmq notation) too;
-
--spec find(GearBox::assembly(), SN::serial_no()) -> 
-                  assembly() | false.
-find(GearBox, SN) ->
-    Schema = schema(GearBox),
-    case digraph:vertex(Schema, SN) of 
-        {_V, Part} ->
-            Part;
-        _ ->
-            false
-    end.
 
 %% processes need to be instantiated by builder before;
 
