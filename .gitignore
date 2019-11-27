@@ -1,0 +1,8 @@
+./beam
+.erlang.mk/
+botcw.d
+src/erlmachine_leex_js.erl
+erl_crash.dump
+deps/
+ebin/
+log/
