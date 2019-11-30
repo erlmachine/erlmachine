@@ -46,18 +46,21 @@
          product/1, product/2,
          parts/1, parts/2,
          mounted/1, mounted/2,
-         tags/1, tags/2
+         tags/1, tags/2,
+         label/1, label/2
         ]).
 
 -export([add_part/2, remove_part/2, get_part/2]).
 
 -export([spec/2]).
 
+-export([labels/1]).
+
 -include("erlmachine_system.hrl").
 
 
 %% The main purpose of this module is to instantiate proceses accordingly to design file;
-%% In this module will be provided incapsulation around building of independent parts and whole transmission as well;
+%% In this module will be provided incapsulation around building of independent parts and whole transmission too;
 
 -type serial_no() :: erlmachine_serial_number:serial_no().
 
@@ -99,11 +102,14 @@
                     parts=[]::list(assembly()),
                     part_no::part_no(),
                     options=[]::list(),
-                    tags=[]::list(term())
+                    tags=[]::list(term()),
+                    label::label()
                    }
         ).
 
 -type assembly() :: #assembly{}.
+
+-type label() :: atom().
 
 -type acceptance_criteria() :: list().
 -type accept() :: true.
@@ -112,9 +118,6 @@
 -export_type([assembly/0, model/0, prototype/0, product/0]).
 -export_type([model_no/0, part_no/0]).
 -export_type([acceptance_criteria/0, accept/0, reject/0]).
-
-%% TODO we need to relocate installed, unistalled, etc., callbacks here;
-%% This ability allows to us to monitor tree condition;
 
 -spec install(GearBox::assembly()) ->
                      success(pid()) | ingnore | failure(E::term()).
@@ -134,18 +137,18 @@ install(GearBox, Assembly) ->
     Result = (prototype_name(Assembly)):install(SN, GearBox, Assembly, Options),
     Result.
 
--spec attach(GearBox::assembly(), Assembly::assembly(), Part::assembly()) -> 
+-spec attach(GearBox::assembly(), SN::serial_no(), Part::assembly()) -> 
                     success(term()) | failure(term(), term()).
-attach(GearBox, Assembly, Part) ->
-    SN = serial_no(Assembly),
+attach(GearBox, SN, Part) ->
+    Assembly = erlmachine_gearbox:find(GearBox, SN),
     Result = (prototype_name(Assembly)):attach(SN, GearBox, Assembly, Part),
     ok = erlmachine_gearbox:map_add(GearBox, Assembly, Part),
     Result.
 
--spec detach(GearBox::assembly(), Assembly::assembly(), ID::serial_no()) -> 
+-spec detach(GearBox::assembly(), SN::serial_no(), ID::serial_no()) -> 
                     success(term()) | failure(term(), term()).
-detach(GearBox, Assembly, ID) ->
-    SN = serial_no(Assembly),
+detach(GearBox, SN, ID) ->
+    Assembly = erlmachine_gearbox:find(GearBox, SN),
     Result = (prototype_name(Assembly)):detach(SN, GearBox, Assembly, ID),
     ok = erlmachine_gearbox:map_remove(GearBox, ID),
     Result.
@@ -159,10 +162,10 @@ mount(GearBox, Part) ->
     ok = erlmachine_gearbox:map_add(GearBox, Part),
     Result.
 
--spec mount(GearBox::assembly(), Assembly::assembly(), Part::assembly()) -> 
+-spec mount(GearBox::assembly(), SN::serial_no(), Part::assembly()) -> 
                    success(term()) | failure(term(), term()).
-mount(GearBox, Assembly, Part) ->
-    SN = serial_no(Assembly),
+mount(GearBox, SN, Part) ->
+    Assembly = erlmachine_gearbox:find(GearBox, SN),
     Result = (prototype_name(Assembly)):mount(SN, GearBox, Assembly, Part),
     ok = erlmachine_gearbox:map_add(GearBox, Assembly, Part),
     Result.
@@ -178,10 +181,10 @@ unmount(GearBox, ID) ->
     ok = erlmachine_gearbox:map_remove(GearBox, ID),
     Result.
 
--spec unmount(GearBox::assembly(), Assembly::assembly(), ID::serial_no()) -> 
+-spec unmount(GearBox::assembly(), SN::serial_no(), ID::serial_no()) -> 
                      success(term()) | failure(term(), term()).
-unmount(GearBox, Assembly, ID) ->
-    SN = serial_no(Assembly),
+unmount(GearBox, SN, ID) ->
+    Assembly = erlmachine_gearbox:find(GearBox, SN),
     Result = (prototype_name(Assembly)):unmount(SN, GearBox, Assembly, ID),
     ok = erlmachine_gearbox:map_remove(GearBox, ID),
     Result.
@@ -194,10 +197,10 @@ uninstall(GearBox, Reason) ->
     ok = erlmachine_gearbox:map_remove(GearBox, SN),
     Result.
 
--spec uninstall(GearBox::assembly(), Assembly::assembly(), Reason::term()) ->
+-spec uninstall(GearBox::assembly(), SN::serial_no(), Reason::term()) ->
                        ok.
-uninstall(GearBox, Assembly, Reason) ->
-    SN = serial_no(Assembly),
+uninstall(GearBox, SN, Reason) ->
+    Assembly = erlmachine_gearbox:find(GearBox, SN),
     Result = (prototype_name(GearBox)):uninstall(SN, GearBox, Assembly, Reason),
     Result.
 
@@ -480,6 +483,43 @@ tags(Assembly) ->
 tags(Assembly, Tags) ->
     Release = Assembly#assembly{tags=Tags},
     Release.
+
+-spec label(Assembly::assembly()) -> label().
+label(Assembly) ->
+    Label = Assembly#assembly.label,
+    Label.
+
+-spec label(Assembly::assembly(), Label::label()) -> assembly().
+label(Assembly, Label) ->
+    Release = Assembly#assembly{label = Label},
+    Release.
+
+-spec labeled(Assembly::assembly()) -> list().
+labeled(Assembly) ->
+    Label = label(Assembly),
+    if Label == indefined ->
+            #{};
+       true  ->
+            #{Label => serial_no(Assembly)}
+    end.
+
+-spec labels(Assembly::assembly()) -> map().
+labels(Assembly) ->
+    labels(Assembly, #{}).
+
+-spec labels(Assembly::assembly(), Acc::map()) -> map().
+labels(Assembly, Acc) ->
+    Parts = parts(Assembly),
+    Labeled = labeled(Assembly),
+    if Parts == [] ->
+            maps:merge(Labeled, Acc);
+       true ->
+            maps:merge(Labeled, lists:foldl(fun labels/2, Acc, Parts))
+    end.
+
+%% TODO
+%% I am going to provide mnesia gears, mongodb , etc..
+%% Process manager will be responsible for persistance storage management
 
 -spec spec(GearBox::assembly(), Part::assembly()) -> Spec::map().
 spec(GearBox, Part) ->
