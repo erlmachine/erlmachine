@@ -23,7 +23,7 @@
 
 -export([
          install/4, 
-         attach/4, detach/4,
+         attach/5, detach/4,
          overload/4, block/5, 
          replace/4,
          transmit/4, rotate/4,
@@ -53,12 +53,12 @@ install(Name, GearBox, Shaft, Options) ->
     gen_server:start_link(ID, ?MODULE, #install{gearbox=GearBox, shaft=Shaft, options=Options}, []).
 
 %% I think about ability to reflect both kind of switching - manual and automated;
--record(attach, {part::assembly()}).
+-record(attach, {part::assembly(), register::term()}).
 
--spec attach(Name::serial_no(), GearBox::assembly(), Shaft::assembly(), Part::assembly()) -> 
+-spec attach(Name::serial_no(), GearBox::assembly(), Shaft::assembly(), Register::term(), Part::assembly()) -> 
                     success(Release::assembly()) | failure(E::term(), R::term()).
-attach(Name, _GearBox, _Shaft, Part) ->
-    gen_server:call(format_name(Name), #attach{part = Part}).
+attach(Name, _GearBox, _Shaft, Register, Part) ->
+    gen_server:call(format_name(Name), #attach{part=Part, register=Register}).
 
 %% I think about ability to reflect both kind of switching - manual and automated;
 -record(detach, {id::serial_no()}).
@@ -128,8 +128,8 @@ init(#install{gearbox=GearBox, shaft=Shaft, options=Options}) ->
     {ok, Release} = erlmachine_shaft:install(GearBox, Shaft),
     {ok, #state{gearbox=GearBox, shaft=Release}}.
 
-handle_call(#attach{part = Part}, _From, #state{gearbox=GearBox, shaft=Shaft} = State) ->
-    Result = {ok, Release} = erlmachine_shaft:attach(GearBox, Shaft, Part),
+handle_call(#attach{part = Part, register = Register}, _From, #state{gearbox=GearBox, shaft=Shaft} = State) ->
+    Result = {ok, Release} = erlmachine_shaft:attach(GearBox, Shaft, Register, Part),
     {reply, Result, State#state{shaft=Release}};
 
 handle_call(#detach{id = ID}, _From, #state{gearbox=GearBox, shaft=Shaft} = State) ->

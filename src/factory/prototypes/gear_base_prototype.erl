@@ -18,7 +18,7 @@
 
 -export([
          install/4,
-         attach/4, detach/4,
+         attach/5, detach/4,
          overload/4, block/5, 
          replace/4,
          rotate/4, transmit/4,
@@ -47,12 +47,12 @@ install(Name, GearBox, Gear, Options) ->
     ID = {local, format_name(Name)},
     gen_server:start_link(ID, ?MODULE, #install{gearbox=GearBox, gear=Gear, options=Options}, []).
 
--record(attach, {part::assembly()}).
+-record(attach, {part::assembly(), register::term()}).
 
--spec attach(Name::serial_no(), GearBox::assembly(), Gear::assembly(), Part::assembly()) -> 
+-spec attach(Name::serial_no(), GearBox::assembly(), Gear::assembly(), Register::term(), Part::assembly()) -> 
                     success(Release::assembly()) | failure(E::term(), R::term()).
-attach(Name, _GearBox, _Gear, Part) ->
-    gen_server:call(format_name(Name), #attach{part = Part}).
+attach(Name, _GearBox, _Gear, Register, Part) ->
+    gen_server:call(format_name(Name), #attach{part=Part, register=Register}).
 
 -record(detach, {id::serial_no()}).
 
@@ -121,8 +121,8 @@ init(#install{gearbox=GearBox, gear=Gear, options=Options}) ->
     {ok, Release} = erlmachine_gear:install(GearBox, Gear),
     {ok, #state{gearbox=GearBox, gear=Release}}.
 
-handle_call(#attach{part = Part}, _From, #state{gearbox=GearBox, gear=Gear} = State) ->
-    Result = {ok, Release} = erlmachine_gear:attach(GearBox, Gear, Part),
+handle_call(#attach{part = Part, register = Register}, _From, #state{gearbox=GearBox, gear=Gear} = State) ->
+    Result = {ok, Release} = erlmachine_gear:attach(GearBox, Gear, Register, Part),
     {reply, Result, State#state{gear=Release}};
 
 handle_call(#detach{id = ID}, _From, #state{gearbox=GearBox, gear=Gear} = State) ->

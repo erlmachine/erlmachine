@@ -2,7 +2,7 @@
 
 -export([
          install/2,
-         attach/3, detach/3,
+         attach/4, detach/3,
          replace/3,
          transmit/3, load/3, rotate/3,
          accept/3,
@@ -32,7 +32,7 @@
 -callback accept(SN::serial_no(), Criteria::term(), Body::term()) -> 
     success(term(), term()) | failure(term(), term(), term()) | failure(term()).
 
--callback attach(SN::serial_no(), ID::serial_no(), Body::term()) -> 
+-callback attach(SN::serial_no(), Register::term(), ID::serial_no(), Body::term()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
 -callback detach(SN::serial_no(), ID::serial_no(), Body::term()) -> 
@@ -89,12 +89,12 @@ install(GearBox, Gear) ->
     erlmachine_assembly:installed(GearBox, Mounted, Release),
     {ok, Release}.
 
--spec attach(GearBox::assembly(), Gear::assembly(), Part::assembly()) ->
+-spec attach(GearBox::assembly(), Gear::assembly(), Register::term(), Part::assembly()) ->
                     success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
-attach(GearBox, Gear, Part) ->
+attach(GearBox, Gear, Register, Part) ->
     ModelName= erlmachine_assembly:model_name(Gear),
     SN = erlmachine_assembly:serial_no(Gear), ID = erlmachine_assembly:serial_no(Part),
-    {ok, Body} = ModelName:attach(SN, ID, body(Gear)),
+    {ok, Body} = ModelName:attach(SN, Register, ID, body(Gear)),
     Release = erlmachine_assembly:parts(body(Gear, Body), [Part]),
     erlmachine_assembly:attached(GearBox, Release, Part),
     {ok, Release}.

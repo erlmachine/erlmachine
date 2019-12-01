@@ -16,7 +16,7 @@
 
 -export([
          install/1, install/2,
-         attach/3, detach/3,
+         attach/4, detach/3,
          mount/2, mount/3, 
          unmount/2, unmount/3, 
          uninstall/2, uninstall/3
@@ -137,11 +137,11 @@ install(GearBox, Assembly) ->
     Result = (prototype_name(Assembly)):install(SN, GearBox, Assembly, Options),
     Result.
 
--spec attach(GearBox::assembly(), SN::serial_no(), Part::assembly()) -> 
+-spec attach(GearBox::assembly(), SN::serial_no(), Register::term(), Part::assembly()) -> 
                     success(term()) | failure(term(), term()).
-attach(GearBox, SN, Part) ->
+attach(GearBox, SN, Register, Part) ->
     Assembly = erlmachine_gearbox:find(GearBox, SN),
-    Result = (prototype_name(Assembly)):attach(SN, GearBox, Assembly, Part),
+    Result = (prototype_name(Assembly)):attach(SN, GearBox, Assembly, Register, Part),
     ok = erlmachine_gearbox:map_add(GearBox, Assembly, Part),
     Result.
 
