@@ -137,10 +137,11 @@ install(GearBox, Assembly) ->
     Result = (prototype_name(Assembly)):install(SN, GearBox, Assembly, Options),
     Result.
 
--spec attach(GearBox::assembly(), SN::serial_no(), Register::term(), Part::assembly()) -> 
+-spec attach(GearBox::assembly(), SN::serial_no(), Register::term(), ID::serial_no()) -> 
                     success(term()) | failure(term(), term()).
-attach(GearBox, SN, Register, Part) ->
+attach(GearBox, SN, Register, ID) ->
     Assembly = erlmachine_gearbox:find(GearBox, SN),
+    Part = erlmachine_gearbox:find(GearBox, ID),
     Result = (prototype_name(Assembly)):attach(SN, GearBox, Assembly, Register, Part),
     ok = erlmachine_gearbox:map_add(GearBox, Assembly, Part),
     Result.
