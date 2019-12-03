@@ -64,6 +64,8 @@
 
 -type serial_no() :: erlmachine_serial_number:serial_no().
 
+-type type() :: gear | axle | gearbox | shaft.
+
 -type model_no() :: term().
 -type part_no() :: term().
 
@@ -72,19 +74,17 @@
 -type shaft() :: erlmachine_shaft:shaft().
 -type gearbox() :: erlmachine_gearbox:gerbox().
 
--type product() :: gear() | axle() | gearbox() | shaft().
-
 %% Abbreviations M/N and P/N will be represented on name;
 
 -record(model, {
-                name::atom(),
                 model_no::model_no(),
-                product::product(),
+                name::atom(),
                 options::term()
                }
        ).
 
 -record(prototype, {
+                    model_no::model_no(),
                     name::atom(),
                     options::term()
                    }
@@ -92,14 +92,20 @@
 
 -type model() :: #model{}.
 -type prototype() :: #prototype{}.
+-type product() :: gear() | axle() | gearbox() | shaft().
+
+%% I am thinking about two kinds of assembly manual and automated;
+%% The main difference between them is manual needs to be stored with body, and any changes need to be persisted;
+%% Automated exists in code but manual doesn't;
 
 -record (assembly, {
                     serial_no::serial_no(), %% We can get build info (ts, etc..) by serial number from db;
-                    prototype::prototype(),
-
-                    model::model(),
-                    mounted::assembly(),
-                    parts=[]::list(assembly()),
+                    type::type(),
+                    prototype::prototype() | model_no(),
+                    model::model() | model_no(),
+                    product::product(),
+                    mounted::assembly() | serial_no(),
+                    parts=[]::list(assembly() | serial_no()),
                     part_no::part_no(),
                     options=[]::list(),
                     tags=[]::list(term()),
@@ -422,14 +428,12 @@ assembly_options(Assembly, Options) ->
 
 -spec product(Assembly::assembly()) -> Product::product().
 product(Assembly) ->
-    Model = model(Assembly),
-    Product = Model#model.product,
+    Product = Assembly#assembly.product,
     Product.
 
 -spec product(Assembly::assembly(), Product::product()) -> Release::assembly().
 product(Assembly, Product) ->
-    Model = model(Assembly),
-    Release = model(Assembly, Model#model{product=Product}),
+    Release = Assembly#assembly{product=Product},
     Release.
 
 -spec parts(Assembly::assembly()) -> list(assembly()).
