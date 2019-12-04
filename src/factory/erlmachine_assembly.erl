@@ -131,7 +131,8 @@ install(GearBox) ->
     Options = prototype_options(GearBox),
     %% TODO at that place we can register information about scheme in persistence storage;
     Result = (prototype_name(GearBox)):install(SN, GearBox, Options),
-    ok = erlmachine_gearbox:map(GearBox),
+    Schema = erlmachine_gearbox:schema(GearBox),
+    erlmachine_schema:add_edges(Schema, GearBox),
     Result.
 
 -spec install(GearBox::assembly(), Assembly::assembly()) ->
@@ -148,7 +149,8 @@ attach(GearBox, SN, Register, ID) ->
     Assembly = erlmachine_gearbox:find(GearBox, SN),
     Part = erlmachine_gearbox:find(GearBox, ID),
     Result = (prototype_name(Assembly)):attach(SN, GearBox, Assembly, Register, Part),
-    ok = erlmachine_gearbox:map_add(GearBox, Assembly, Part),
+    Schema = erlmachine_gearbox:schema(GearBox), 
+    erlmachine_schema:add_edge(Schema, SN, Part),
     Result.
 
 -spec detach(GearBox::assembly(), SN::serial_no(), ID::serial_no()) -> 
@@ -156,7 +158,8 @@ attach(GearBox, SN, Register, ID) ->
 detach(GearBox, SN, ID) ->
     Assembly = erlmachine_gearbox:find(GearBox, SN),
     Result = (prototype_name(Assembly)):detach(SN, GearBox, Assembly, ID),
-    ok = erlmachine_gearbox:map_remove(GearBox, ID),
+    Schema = erlmachine_gearbox:schema(GearBox),
+    ok = erlmachine_schema:del_vertex(Schema, ID),
     Result.
 
 -spec mount(GearBox::assembly(), Part::assembly()) -> 
@@ -165,7 +168,8 @@ mount(GearBox, Part) ->
     SN = serial_no(GearBox),
     %% At that palce we need to update stored schema;
     Result = (prototype_name(GearBox)):mount(SN, GearBox, Part),
-    ok = erlmachine_gearbox:map_add(GearBox, Part),
+    Schema = erlmachine_gearbox:schema(GearBox),
+    erlmachine_schema:add_edge(Schema, SN, Part),
     Result.
 
 -spec mount(GearBox::assembly(), SN::serial_no(), Part::assembly()) -> 
@@ -173,7 +177,8 @@ mount(GearBox, Part) ->
 mount(GearBox, SN, Part) ->
     Assembly = erlmachine_gearbox:find(GearBox, SN),
     Result = (prototype_name(Assembly)):mount(SN, GearBox, Assembly, Part),
-    ok = erlmachine_gearbox:map_add(GearBox, Assembly, Part),
+    Schema = erlmachine_gearbox:schema(GearBox),
+    erlmachine_schema:add_edge(Schema, SN, Part),
     Result.
 
 %% The main difference between unmount and uninstall:
@@ -184,7 +189,8 @@ mount(GearBox, SN, Part) ->
 unmount(GearBox, ID) ->
     SN = serial_no(GearBox),
     Result = (prototype_name(GearBox)):unmount(SN, GearBox, ID),
-    ok = erlmachine_gearbox:map_remove(GearBox, ID),
+    Schema = erlmachine_gearbox:schema(GearBox),
+    ok = erlmachine_schema:del_vertex(Schema, ID),
     Result.
 
 -spec unmount(GearBox::assembly(), SN::serial_no(), ID::serial_no()) -> 
@@ -192,7 +198,8 @@ unmount(GearBox, ID) ->
 unmount(GearBox, SN, ID) ->
     Assembly = erlmachine_gearbox:find(GearBox, SN),
     Result = (prototype_name(Assembly)):unmount(SN, GearBox, Assembly, ID),
-    ok = erlmachine_gearbox:map_remove(GearBox, ID),
+    Schema = erlmachine_gearbox:schema(GearBox),
+    ok = erlmachine_schema:del_vertex(Schema, ID),
     Result.
 
 -spec uninstall(GearBox::assembly(), Reason::term()) ->
@@ -200,7 +207,8 @@ unmount(GearBox, SN, ID) ->
 uninstall(GearBox, Reason) ->
     SN = serial_no(GearBox),
     Result = (prototype_name(GearBox)):uninstall(SN, GearBox, Reason),
-    ok = erlmachine_gearbox:map_remove(GearBox, SN),
+    Schema = erlmachine_gearbox:schema(GearBox),
+    ok = erlmachine_schema:del_vertex(Schema, SN),
     Result.
 
 -spec uninstall(GearBox::assembly(), SN::serial_no(), Reason::term()) ->

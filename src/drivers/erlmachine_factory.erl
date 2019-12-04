@@ -220,16 +220,14 @@ pass(Assembly, Name, Parts) ->
 id() -> 
     ?MODULE.
 
--spec start_link() -> 
-                        success(pid()) | ingnore | failure(E::term()).
+-spec start_link() -> success(pid()) | ingnore | failure(E::term()).
 start_link() ->
     ID = id(),
     gen_server:start_link({local, ID}, ?MODULE, [], []).
 
 -record (serial_no, {}).
 
--spec serial_no() -> 
-                       serial_no().
+-spec serial_no() -> serial_no().
 serial_no() ->
     %% Just default timeout for the first time;
     ID = id(),

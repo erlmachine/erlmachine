@@ -34,7 +34,7 @@
 -callback unmount(SN::serial_no(), ID::serial_no(), Body::term()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
--record(axle, {serial_no::serial_no(), body::term()}).
+-record(axle, {body::term()}).
 
 %% I am thinking about graph ipmlementation of body;
 -type axle() :: #axle{}.

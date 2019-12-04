@@ -31,8 +31,6 @@
          output/1, output/2
         ]).
 
--export([map/1, map_add/2, map_add/3, map_remove/2, map_update/2]).
-
 -export([mounted/2]).
 
 -export([parts/2]).
@@ -61,14 +59,14 @@
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
 -record(gearbox, {
-                  input::assembly(),
+                  input::serial_no(),
                   body::term(),
                   schema::term(),
                   %% Body can be implemented by various ways and then be represented by different formats; 
                   %% Each implementation can do that over its own discretion;
                   %% Erlmachine do that accordingly to YAML format;
                   env::term(),
-                  output::assembly()
+                  output::serial_no()
                  }
        ).
 
@@ -94,70 +92,13 @@ mounted(GearBox, Parts) ->
     Release = erlmachine_assembly:parts(GearBox, Mounted),
     Release.
 
-%% We need to consider mounted field like indicator for of building mount topology; 
--spec map(GearBox::assembly()) -> ok.
-map(GearBox) ->
-    Schema = schema(GearBox),
-    SN = erlmachine_assembly:serial_no(GearBox),
-    digraph:add_vertex(Schema, SN, GearBox),
-    map_schema(Schema, GearBox, erlmachine_assembly:parts(GearBox)), 
-    ok.
-
--spec map_schema(Schema::term(), Assembly::assembly(), Parts::list(assembly())) -> ok.
-map_schema(_Schema, _Assembly, []) ->
-    ok;
-map_schema(Schema, Assembly, [Part|T]) ->
-    SN = erlmachine_assembly:serial_no(Part),
-    digraph:add_vertex(Schema, SN, Part),
-    digraph:add_edge(Schema, erlmachine_assembly:serial_no(Assembly), SN, []),
-    map_schema(Schema, Assembly, erlmachine_assembly:parts(Part)),
-    map_schema(Schema, Assembly, T).
-
--spec map_add(GearBox::assembly(), Assembly::assembly(), Part::assembly()) -> ok.
-map_add(GearBox, Assembly, Part) ->
-    Schema = schema(GearBox),
-    map_schema_add(Schema, Assembly, Part),
-    ok.
-
--spec map_add(GearBox::assembly(), Part::assembly()) -> ok.
-map_add(GearBox, Part) ->
-    Schema = schema(GearBox),
-    map_schema_add(Schema, GearBox, Part),
-    ok.
-
--spec map_schema_add(Schema::term(), Assembly::assembly(), Part::assembly()) -> ok.
-map_schema_add(Schema, Assembly, Part) ->
-    SN = erlmachine_assembly:serial_no(Part),
-    digraph:add_vertex(Schema, SN, Part), 
-    digraph:add_edge(Schema, erlmachine_assembly:serial_no(Assembly), SN, []).
-
--spec map_remove(GearBox::assembly(), ID::serial_no()) -> ok.
-map_remove(GearBox, ID) ->
-    Schema = schema(GearBox),
-    map_schema_remove(Schema, ID),
-    ok.
-
--spec map_schema_remove(Schema::term(), ID::serial_no()) -> ok.
-map_schema_remove(Schema, ID) ->
-    digraph:del_vertex(Schema, ID).
-
--spec map_update(GearBox::assembly(), Assembly::assembly()) -> ok.
-map_update(GearBox, Assembly) ->
-    Schema = schema(GearBox),
-    digraph:add_vertex(Schema, erlmachine_assembly:serial_no(Assembly), Assembly),
-    ok.
 %% We are going to provide access by path gearbox.shaft.# (like rabbitmq notation) too;
 
 -spec find(GearBox::assembly(), SN::serial_no()) -> 
                   assembly() | false.
 find(GearBox, SN) ->
     Schema = schema(GearBox),
-    case digraph:vertex(Schema, SN) of 
-        {_V, Part} ->
-            Part;
-        _ ->
-            false
-    end.
+    erlmachine_schema:vertex(Schema, SN).
 
 -spec install(GearBox::assembly()) -> 
                      success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
@@ -260,10 +201,9 @@ body(GearBox, Body) ->
 input(GearBox) ->
     GearBox#gearbox.input.
 
--spec input(GearBox::assembly(), Input::assembly()) -> Release::assembly().
-input(GearBox, Input) ->
+-spec input(GearBox::assembly(), SN::serial_no()) -> Release::assembly().
+input(GearBox, SN) ->
     Product = erlmachine_assembly:product(GearBox),
-    SN = erlmachine_assembly:serial_no(Input),
     erlmachine_assembly:product(GearBox, Product#gearbox{input=SN}).
 
 -spec schema(GearBox::assembly()) -> term().
@@ -281,10 +221,9 @@ schema(GearBox, Schema) ->
 output(GearBox) ->
     GearBox#gearbox.output.
 
--spec output(GearBox::assembly(), Output::assembly()) -> Release::assembly().
-output(GearBox, Output) ->
+-spec output(GearBox::assembly(), SN::assembly()) -> Release::assembly().
+output(GearBox, SN) ->
     Product = erlmachine_assembly:product(GearBox),
-    SN = erlmachine_assembly:serial_no(Output),
     erlmachine_assembly:product(GearBox, Product#gearbox{output=SN}).
 
 -spec env(GearBox::assembly()) -> term().

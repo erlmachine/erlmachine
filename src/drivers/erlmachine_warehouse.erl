@@ -1,8 +1,15 @@
 -module(erlmachine_warehouse).
+
+-folder(<<"erlmachine/warehouse">>).
+
+-steps([]).
+
 -behaviour(gen_server).
 
 %% API.
 -export([start_link/0]).
+
+-export([]).
 
 %% gen_server.
 -export([init/1]).
@@ -12,6 +19,16 @@
 -export([terminate/2]).
 -export([code_change/3]).
 
+-export([store/1]).
+-export([retrieve/1]).
+
+-include("erlmachine_factory.hrl").
+-include("erlmachine_system.hrl").
+-include("erlmachine_filesystem.hrl").
+
+%% I guess warehouse is only responsible for storing and retrieving assembly accordingly to predefined capactiy;
+%% The responsibility of assembly process needs to be passed to factory;
+
 %% We need to provide broken part issue callback for reason which is oposite to normal;
 %% Correct processing of issue will be provided by factory;
 %% It's need to be sent to warehouse;
@@ -19,17 +36,37 @@
 %% The specialized "crash" callback from factory will be provided;
 %% From warehouse perspective are two key's message exist - produced and broken;
 %% I am going to store rejected parts on warehouse;
-%% We need to provide the specialized callback for that;
+%% We need to provide the specialized callback for this;
 
+ 
 -record(state, {
 }).
 
 %% API.
 
--spec start_link() -> {ok, pid()}.
-start_link() ->
-	gen_server:start_link(?MODULE, [], []).
+id() -> 
+    ?MODULE.
 
+-spec start_link() -> success(pid()) | ingnore | failure(E::term()).
+start_link() ->
+    ID = id(),
+    gen_server:start_link({local, ID}, ?MODULE, [], []).
+
+-record(store, {load::assembly()}).
+
+-spec store(Load::assembly()) -> ok.
+store(Load) ->
+    %% Just default timeout for the first time;
+    ID = id(),
+    erlang:send(ID, #store{load=Load}),
+    ok.
+
+-record(retrieve, {cell::serial_no()}).
+
+-spec retrieve(Cell::serial_no()) -> assembly().
+retrieve(Cell) ->
+    <<"">>.
+ 
 %% gen_server.
 
 init([]) ->

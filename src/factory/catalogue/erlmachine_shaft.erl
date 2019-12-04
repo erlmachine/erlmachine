@@ -52,7 +52,7 @@
 
 %% Instead of gear the main puropse of shaft is to transmit power between parts;
 
--record(shaft, {serial_no::serial_no(), body::term()}).
+-record(shaft, {body::term()}).
 
 -type shaft() :: #shaft{}.
 
