@@ -64,8 +64,6 @@
 
 -type serial_no() :: erlmachine_serial_number:serial_no().
 
--type type() :: gear | axle | gearbox | shaft.
-
 -type model_no() :: term().
 -type part_no() :: term().
 
@@ -74,38 +72,39 @@
 -type shaft() :: erlmachine_shaft:shaft().
 -type gearbox() :: erlmachine_gearbox:gerbox().
 
-%% Abbreviations M/N and P/N will be represented on name;
-
--record(model, {
-                model_no::model_no(),
-                name::atom(),
-                options::term()
-               }
-       ).
+-type product() :: gear() | axle() | gearbox() | shaft().
 
 -record(prototype, {
-                    model_no::model_no(),
                     name::atom(),
                     options::term()
                    }
        ).
 
--type model() :: #model{}.
 -type prototype() :: #prototype{}.
--type product() :: gear() | axle() | gearbox() | shaft().
+
+-record(model, {
+                %% A modle_no can act as product configurator to generate a master production schedule;
+                model_no::model_no(),
+                name::atom(),
+                product::product(),
+                prototype::prototype(),
+                options::term()
+               }
+       ).
+
+-type model() :: #model{}.
 
 %% I am thinking about two kinds of assembly manual and automated;
 %% The main difference between them is manual needs to be stored with body, and any changes need to be persisted;
 %% Automated exists in code but manual doesn't;
 
 -record (assembly, {
-                    serial_no::serial_no(), %% We can get build info (ts, etc..) by serial number from db;
-                    type::type(),
-                    prototype::prototype() | model_no(),
+                    %% We can get build info (ts, etc..) by serial number from db;
+                    serial_no::serial_no(),
                     model::model() | model_no(),
-                    product::product(),
                     mounted::assembly() | serial_no(),
                     parts=[]::list(assembly() | serial_no()),
+                    %% By part_no we can be able to track quality of component through release period;
                     part_no::part_no(),
                     options=[]::list(),
                     tags=[]::list(term()),
@@ -344,12 +343,14 @@ model(Assembly, Model) ->
 
 -spec prototype(Assembly::assembly()) -> Prototype::prototype().
 prototype(Assembly) ->
-    Prototype = Assembly#assembly.prototype,
+    Model = model(Assembly),
+    Prototype = Model#model.prototype,
     Prototype.
 
 -spec prototype(Assembly::assembly(), Prototype::prototype()) -> Release::assembly().
 prototype(Assembly, Prototype) ->
-    Release = Assembly#assembly{prototype = Prototype},
+    Model = model(Assembly),
+    Release = model(Assembly, Model#model{prototype = Prototype}),
     Release.
 
 -spec model_no(Assembly::assembly()) -> MN::term().
@@ -428,12 +429,14 @@ assembly_options(Assembly, Options) ->
 
 -spec product(Assembly::assembly()) -> Product::product().
 product(Assembly) ->
-    Product = Assembly#assembly.product,
+    Model = model(Assembly),
+    Product = Model#model.product,
     Product.
 
 -spec product(Assembly::assembly(), Product::product()) -> Release::assembly().
 product(Assembly, Product) ->
-    Release = Assembly#assembly{product=Product},
+    Model = model(Assembly),
+    Release = model(Assembly, Model#model{product=Product}),
     Release.
 
 -spec parts(Assembly::assembly()) -> list(assembly()).
@@ -462,23 +465,6 @@ part_no(Assembly, PN) ->
     Release = Assembly#assembly{part_no=PN},
     Release.
 
--spec add_part(Assembly::assembly(), Part::assembly()) -> assembly().
-add_part(Assembly, Part) ->
-    Parts = lists:reverse([Part|parts(Assembly)]),
-    Release = parts(Assembly, Parts),
-    Release.
-
--spec remove_part(Assembly::assembly(), ID::serial_no()) -> assembly().
-remove_part(Assembly, ID) ->
-    Parts = lists:keydelete(ID, #assembly.serial_no, parts(Assembly)),
-    Release = parts(Assembly, Parts),
-    Release.
-
--spec get_part(Assembly::assembly(), ID::serial_no()) -> assembly().
-get_part(Assembly, ID) ->
-    Part = lists:keyfind(ID, #assembly.serial_no, parts(Assembly)),
-    Part.
-
 -spec tags(Assembly::assembly()) -> Tags::term().
 tags(Assembly) ->
     Tags = Assembly#assembly.tags,
@@ -498,6 +484,23 @@ label(Assembly) ->
 label(Assembly, Label) ->
     Release = Assembly#assembly{label = Label},
     Release.
+
+-spec add_part(Assembly::assembly(), Part::assembly()) -> assembly().
+add_part(Assembly, Part) ->
+    Parts = lists:reverse([Part|parts(Assembly)]),
+    Release = parts(Assembly, Parts),
+    Release.
+
+-spec remove_part(Assembly::assembly(), ID::serial_no()) -> assembly().
+remove_part(Assembly, ID) ->
+    Parts = lists:keydelete(ID, #assembly.serial_no, parts(Assembly)),
+    Release = parts(Assembly, Parts),
+    Release.
+
+-spec get_part(Assembly::assembly(), ID::serial_no()) -> assembly().
+get_part(Assembly, ID) ->
+    Part = lists:keyfind(ID, #assembly.serial_no, parts(Assembly)),
+    Part.
 
 -spec labeled(Assembly::assembly()) -> list().
 labeled(Assembly) ->
