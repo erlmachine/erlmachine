@@ -64,7 +64,7 @@ load(Assembly) ->
 -record(unload, {serial_no::serial_no()}).
 
 -spec unload(SN::serial_no()) -> assembly().
-unload(SN) ->
+unload(_SN) ->
     <<"">>.
  
 %% gen_server.
@@ -77,10 +77,10 @@ init([]) ->
 
     GearTranslatorModel = gear_assembly_translator,
     GearTranslatorOpt = [],
-    GearTranslator = erlmachine_factory:gear(GearBox, GearTranslatorModel, GearTranslatorOpt),
+    _GearTranslator = erlmachine_factory:gear(GearBox, GearTranslatorModel, GearTranslatorOpt),
 
     GearMnesiaModel = gear_mnesia,
-    Table = assembly, Attributes = record_info(fields, assembly), Nodes = [node()],
+    Table = assembly, Attributes = erlmachine_assembly:fields(), Nodes = [node()],
     GearMnesiaOpt = [{table, Table}, {options, [{attributes, Attributes}, {disc_copies, Nodes}]}],
     GearMnesia = erlmachine_factory:gear(GearBox, GearMnesiaModel, GearMnesiaOpt),
     
@@ -88,13 +88,19 @@ init([]) ->
     ShaftMnesiaOpt = [],
     ShaftMnesia = erlmachine_factory:shaft(GearBox, ShaftMnesiaModel, ShaftMnesiaOpt),
     
-    BuildShaftMnesia = erlmachine_shaft:parts(ShaftMnesia, [GearMnesia]),
+    _BuildShaftMnesia = erlmachine_shaft:parts(ShaftMnesia, [GearMnesia]),
 
     AxleModel = axle_tracker,
 
-    AxleHttp = erlmachine_factory:axle(GearBox, AxleModel, []),
+    _AxleHttp = erlmachine_factory:axle(GearBox, AxleModel, []),
     
     {ok, #state{}}.
+
+handle_call(#load{}, _From, State) ->
+    {reply, ignored, State};
+
+handle_call(#unload{}, _From, State) ->
+    {reply, ignored, State};
 
 handle_call(_Request, _From, State) ->
 	{reply, ignored, State}.

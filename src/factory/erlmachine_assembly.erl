@@ -2,6 +2,9 @@
 -behaviour(gen_server).
 
 %% API.
+
+-export([fields/0]).
+
 -export([start_link/0]).
 
 %% gen_server.
@@ -320,6 +323,10 @@ code_change(_OldVsn, State, _Extra) ->
 -spec assembly() -> assembly().
 assembly() ->
     #assembly{}.
+
+-spec fields() -> list(atom()).
+fields() ->
+    record_info(fields, assembly).
 
 -spec is_mounted(Assembly::assembly()) -> boolean().
 is_mounted(Assembly) -> 

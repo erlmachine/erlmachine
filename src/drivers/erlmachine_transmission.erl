@@ -26,6 +26,14 @@
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
 
+-type motion() :: map().
+
+-type header() :: map().
+
+-type body() :: term().
+
+-export_type([motion/0, header/0, body/0]).
+
 -spec rotate(GearBox::assembly(), Assembly::assembly(), Motion::term()) ->
                     Motion::term().
 rotate(GearBox, Assembly, Motion) ->
@@ -45,14 +53,6 @@ transmit(GearBox, Assembly, Motion) ->
 %% 1. Header – Information used by the messaging system that describes the data being transmitted, its origin, its destination, and so on.
 %% 2. Body – The data being transmitted; generally ignored by the messaging system and simply transmitted as-is.
 
--type motion() :: map().
-
--type header() :: map().
-
--type body() :: term().
-
--export_type([motion/0, header/0, body/0]).
-
 -spec motion(Body::term()) -> motion().
 motion(Body) ->
     motion(#{}, Body).
@@ -69,7 +69,7 @@ command(Body) ->
 command(Header, Body) ->
     motion(Header#{type => command}, Body).
 
--spec document(Body::body()) -> message(). 
+-spec document(Body::body()) -> motion(). 
 document(Body) ->
     document(#{}, Body).
 
