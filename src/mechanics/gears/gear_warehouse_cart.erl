@@ -1,2 +1,0 @@
--module(gear_warehouse_cart).
--export([]).

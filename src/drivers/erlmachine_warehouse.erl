@@ -19,8 +19,8 @@
 -export([terminate/2]).
 -export([code_change/3]).
 
--export([store/1]).
--export([retrieve/1]).
+-export([load/1]).
+-export([unload/1]).
 
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
@@ -52,25 +52,49 @@ start_link() ->
     ID = id(),
     gen_server:start_link({local, ID}, ?MODULE, [], []).
 
--record(store, {load::assembly()}).
+-record(load, {assembly::assembly()}).
 
--spec store(Load::assembly()) -> ok.
-store(Load) ->
+-spec load(Assembly::assembly()) -> ok.
+load(Assembly) ->
     %% Just default timeout for the first time;
     ID = id(),
-    erlang:send(ID, #store{load=Load}),
+    erlang:send(ID, #load{assembly=Assembly}),
     ok.
 
--record(retrieve, {cell::serial_no()}).
+-record(unload, {serial_no::serial_no()}).
 
--spec retrieve(Cell::serial_no()) -> assembly().
-retrieve(Cell) ->
+-spec unload(SN::serial_no()) -> assembly().
+unload(SN) ->
     <<"">>.
  
 %% gen_server.
 
 init([]) ->
-	{ok, #state{}}.
+    GearBoxModel = gearbox_warehouse,
+    GearBoxModelOpt = [],
+    Env = [], %% That is suitable place for taple configuration;
+    GearBox = erlmachine_factory:gearbox(GearBoxModel, GearBoxModelOpt, Env),
+
+    GearTranslatorModel = gear_assembly_translator,
+    GearTranslatorOpt = [],
+    GearTranslator = erlmachine_factory:gear(GearBox, GearTranslatorModel, GearTranslatorOpt),
+
+    GearMnesiaModel = gear_mnesia,
+    Table = assembly, Attributes = record_info(fields, assembly), Nodes = [node()],
+    GearMnesiaOpt = [{table, Table}, {options, [{attributes, Attributes}, {disc_copies, Nodes}]}],
+    GearMnesia = erlmachine_factory:gear(GearBox, GearMnesiaModel, GearMnesiaOpt),
+    
+    ShaftMnesiaModel = shaft_mnesia,
+    ShaftMnesiaOpt = [],
+    ShaftMnesia = erlmachine_factory:shaft(GearBox, ShaftMnesiaModel, ShaftMnesiaOpt),
+    
+    BuildShaftMnesia = erlmachine_shaft:parts(ShaftMnesia, [GearMnesia]),
+
+    AxleModel = axle_tracker,
+
+    AxleHttp = erlmachine_factory:axle(GearBox, AxleModel, []),
+    
+    {ok, #state{}}.
 
 handle_call(_Request, _From, State) ->
 	{reply, ignored, State}.
