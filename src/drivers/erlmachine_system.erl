@@ -12,6 +12,9 @@
          code_change/3
         ]).
 
+-export([failure/1, failure/2, failure/3]).
+-export([success/0, success/1, success/2]).
+
 -export([overtime/3]).
 
 -include("erlmachine_factory.hrl").
@@ -24,6 +27,30 @@
 -type success() :: ok.
 
 -export_type([failure/1, failure/2, failure/3, success/0, success/1, success/2]).
+
+-spec failure(E::term(), R::term()) -> failure(E::term(), R::term()).
+failure(E, R) -> 
+    {error, {E, R}}.
+
+-spec failure(E::term()) -> failure(E::term()).
+failure(E) ->
+    {error, E}.
+
+-spec failure(E::term(), R::term(), State::term()) -> failure(E::term(), R::term(), State::term()).
+failure(E, R, State) -> 
+    {error, {E, R}, State}.
+
+-spec success(Result::term()) -> success(Result::term()).
+success(Result) ->
+    {ok, Result}.
+
+-spec success(Result::term(), State::term()) -> success(Result::term(), State::term()).
+success(Result, State) -> 
+    {ok, Result, State}.
+
+-spec success() -> success().
+success() ->
+    ok.
 
 -record(state, {
 }).
