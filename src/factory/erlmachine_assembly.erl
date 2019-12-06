@@ -520,7 +520,7 @@ get_part(Assembly, ID) ->
 -spec labeled(Assembly::assembly()) -> list().
 labeled(Assembly) ->
     Label = label(Assembly),
-    if Label == indefined ->
+    if Label == undefined ->
             #{};
        true  ->
             #{Label => serial_no(Assembly)}
