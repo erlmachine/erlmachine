@@ -2,6 +2,12 @@
 
 -folder(<<"erlmachine">>).
 
+-export([motion/1, motion/2, envelope/1, header/1, body/1]).
+-export([command/1, command/2]).
+-export([document/1, document/2]).
+-export([event/1, event/2]).
+-export([request_reply/2, request_reply/3]).
+
 -export([attribute/3]).
 
 -export([guid/0, guid/1, serial/0, serial/1, read_serial/1, write_serial/2]).
@@ -11,6 +17,14 @@
 
 -type serial()::integer().
 
+-type motion() :: erlmachine_transmission:motion().
+
+-type envelope() :: erlmachine_transmission:envelope().
+
+-type header() :: erlmachine_transmission:header().
+
+-type body() :: erlmachine_transmission:body().
+
 -record(guid, {node::node(), reference::reference(), serial::serial()}).
 
 -type guid()::#guid{}.
@@ -19,6 +33,58 @@
 
 %% The main purpouse of erlmachine project is providing a set of well designed behaviours which are accompanied with visualization tools as well.
 %%  Erlmachine doesn't restrict your workflow by the one possible way but instead provide to you ability to implement your own components. This ability is available under flexible mechanism of prototypes and overloading.  
+
+-spec motion(Body::term()) -> motion().
+motion(Body) ->
+    erlmachine_transmission:motion(Body).
+
+-spec motion(Header::header(), Body::body()) -> motion().
+motion(Header, Body) ->
+    erlmachine_transmission:motion(Header, Body).
+
+-spec envelope(Motion::motion()) -> envelope().
+envelope(Motion) ->
+    erlmachine_transmission:envelope(Motion).
+
+-spec header(Motion::motion()) -> header().
+header(Motion) ->
+    erlmachine_transmission:header(Motion).
+
+-spec body(Motion::motion()) -> body().
+body(Motion) ->
+    erlmachine_transmission:body(Motion).
+
+-spec command(Body::body()) -> motion(). 
+command(Body) ->
+    erlmachine_transmission:command(Body).
+
+-spec command(Header::header(), Body::body()) -> motion().
+command(Header, Body) ->
+    erlmachine_transmission:command(Header, Body).
+
+-spec document(Body::body()) -> motion(). 
+document(Body) ->
+    erlmachine_transmission:document(Body).
+
+-spec document(Header::header(), Body::body()) -> motion().
+document(Header, Body) ->
+    erlmachine_transmission:document(Header, Body).
+
+-spec event(Body::body()) -> motion(). 
+event(Body) ->
+    erlmachine_transmission:event(Body).
+
+-spec event(Header::header(), Body::body()) -> motion().
+event(Header, Body) ->
+    erlmachine_transmission:event(Header, Body).
+
+-spec request_reply(Body::body(), Address::term()) -> motion().
+request_reply(Body, Address) ->
+    erlmachine_transmission:request_reply(Body, Address).
+
+-spec request_reply(Header::header(), Body::body(), Address::term()) -> motion().
+request_reply(Header, Body, Address) ->
+    erlmachine_transmission:request_reply(Header, Body, Address).
 
 -spec attribute(Module::atom(), Tag::atom(), Default::term()) -> false | {Tag::atom(), Value::term()}.
 attribute(Module, Tag, Default) ->
