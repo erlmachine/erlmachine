@@ -14,7 +14,7 @@
 
 -export([rotate/3, transmit/3]).
 
--export([motion/1, motion/2]).
+-export([motion/1, motion/2, envelope/1, header/1, body/1]).
 -export([command/1, command/2]).
 -export([document/1, document/2]).
 -export([event/1, event/2]).
@@ -28,11 +28,13 @@
 
 -type motion() :: map().
 
+-type envelope() :: map().
+
 -type header() :: map().
 
 -type body() :: term().
 
--export_type([motion/0, header/0, body/0]).
+-export_type([motion/0, envelope/0, header/0, body/0]).
 
 -spec rotate(GearBox::assembly(), Assembly::assembly(), Motion::term()) ->
                     Motion::term().
@@ -57,9 +59,26 @@ transmit(GearBox, Assembly, Motion) ->
 motion(Body) ->
     motion(#{}, Body).
 
--spec motion(Header::header(), Body::body()) -> map().
+-spec motion(Header::header(), Body::body()) -> motion().
 motion(Header, Body) when is_map(Header) ->
     #{envelope => #{header => Header, body => Body}}.
+
+-spec envelope(Motion::motion()) -> envelope().
+envelope(Motion) ->
+    #{envelope := Envelope} = Motion,
+    Envelope.
+
+-spec header(Motion::motion()) -> header().
+header(Motion) ->
+    Envelope = envelope(Motion),
+    #{header := Header} = Envelope,
+    Header.
+
+-spec body(Motion::motion()) -> body().
+body(Motion) ->
+    Envelope = envelope(Motion),
+    #{body := Body} = Envelope,
+    Body.
 
 -spec command(Body::body()) -> motion(). 
 command(Body) ->
