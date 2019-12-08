@@ -12,13 +12,14 @@
 %% This agreement allows to us attach gearboxes together and with other parts by attach call;
 %% This can evolve messaging systems reusage;
 
+-export([load/2]).
+-export([drive/3]).
+-export([connect/2, disconnect/2]).
+
 -export([
          install/1,
-         rotate/2,
-         transmit/2, transmit/3,
-         mount/2, unmount/2,
+         attach/3, detach/2,
          accept/2,
-         attach/2, detach/2,
          uninstall/2
         ]).
 
@@ -52,10 +53,10 @@
 -callback accept(SN::serial_no(), Criteria::term(), Body::term()) -> 
     success(term(), term()) | failure(term(), term(), term()) | failure(term()).
 
--callback mount(SN::serial_no(), ID::serial_no(), Body::term()) -> 
+-callback attach(SN::serial_no(), Register::term(), ID::serial_no(), Body::term()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
--callback unmount(SN::serial_no(), ID::serial_no(), Body::term()) -> 
+-callback detach(SN::serial_no(), ID::serial_no(), Body::term()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
 -record(gearbox, {
@@ -114,23 +115,23 @@ install(GearBox) ->
     Release = body(GearBox, Body),
     {ok, Release}.
 
--spec mount(GearBox::assembly(), Part::assembly()) ->
+-spec attach(GearBox::assembly(), Register::term(), Part::assembly()) ->
                     success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
-mount(GearBox, Part) ->
+attach(GearBox, Register, Part) ->
     ModelName = erlmachine_assembly:model_name(GearBox),
     SN = erlmachine_assembly:serial_no(GearBox), ID = erlmachine_assembly:serial_no(Part),
-    {ok, Body} = ModelName:mount(SN, ID, body(GearBox)),
-    Release = erlmachine_assembly:attach(body(GearBox, Body), Part),
+    {ok, Body} = ModelName:attach(SN, Register, ID, body(GearBox)),
+    Release = erlmachine_assembly:add_part(body(GearBox, Body), Part),
     %% At that place we don't issue any events (cause is gearbox issue level);
     {ok, Release}. %% TODO
 
--spec unmount(GearBox::assembly(), ID::serial_no()) ->
+-spec detach(GearBox::assembly(), ID::serial_no()) ->
                     success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
-unmount(GearBox, ID) ->
+detach(GearBox, ID) ->
     ModelName = erlmachine_assembly:model_name(GearBox),
     SN = erlmachine_assembly:serial_no(GearBox),
-    {ok, Body} = ModelName:unmount(SN, ID, body(GearBox)),
-    Release = erlmachine_assembly:detach(body(GearBox, Body), ID),
+    {ok, Body} = ModelName:detach(SN, ID, body(GearBox)),
+    Release = erlmachine_assembly:remove_part(body(GearBox, Body), ID),
     {ok, Release}. %% TODO
 
 -spec uninstall(GearBox::assembly(), Reason::term()) -> 
@@ -157,33 +158,27 @@ accept(GearBox, Criteria) ->
             {error, Report, Release} 
     end.
 
--spec rotate(GearBox::assembly(), Motion::term()) ->
+-spec load(GearBox::assembly(), Motion::term()) ->
                     Motion::term().
-rotate(GearBox, Motion) ->
+load(GearBox, Motion) ->
     Input = input(GearBox), Assembly = find(GearBox, Input),
     erlmachine_transmission:rotate(Assembly, Motion).
 
--spec transmit(GearBox::assembly(), Motion::term()) ->
+-spec drive(GearBox::assembly(), Motion::term(), TimeOut::integer()) ->
                       success(term()) | failure(term(), term()).
-transmit(GearBox, Motion) ->
-    Input = input(GearBox), Assembly = find(GearBox, Input),
-    erlmachine_transmission:transmit(Assembly, Motion).
-
--spec transmit(GearBox::assembly(), Motion::term(), TimeOut::integer()) ->
-                      success(term()) | failure(term(), term()).
-transmit(GearBox, Motion, TimeOut) ->
+drive(GearBox, Motion, TimeOut) ->
     Input = input(GearBox), Assembly = find(GearBox, Input),
     erlmachine_transmission:transmit(Assembly, Motion, TimeOut).
 
--spec attach(GearBox::assembly(), Part::assembly()) ->
+-spec connect(GearBox::assembly(), Part::assembly()) ->
                     success(term()) | failure(term(), term()).
-attach(GearBox, Part) ->
+connect(GearBox, Part) ->
     Output = output(GearBox), Assembly = find(GearBox, Output),
     erlmachine_transmission:attach(Assembly, Part).
 
--spec detach(GearBox::assembly(), ID::serial_no()) -> 
+-spec disconnect(GearBox::assembly(), ID::serial_no()) -> 
                     success(term()) | failure(term(), term()).
-detach(GearBox, ID) ->
+disconnect(GearBox, ID) ->
     Output = output(GearBox), Assembly = find(GearBox, Output),
     erlmachine_transmission:detach(Assembly, ID).
 

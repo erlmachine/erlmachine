@@ -10,7 +10,7 @@
 
 -export([
          install/4,
-         mount/4, unmount/4, 
+         attach/5, detach/4, 
          accept/4,
          uninstall/4
         ]).
@@ -47,38 +47,38 @@ installed(_Name, _GearBox, Axle, Part) ->
 -spec uninstalled(Name::serial_no(), GearBox::assembly(), Axle::assembly(), Part::assembly(), Reason::term()) -> 
                          ok.
 uninstalled(_Name, _GearBox, Axle, Part, Reason) ->
-    trace(Axle, #{uninstalled => Part, reason => Reason}),
+    SN = erlmachine_assembly:serial_no(Part),
+    trace(Axle, #{uninstalled => SN, reason => Reason}),
     ok.
 
--spec mount(Name::serial_no(), GearBox::assembly(), Axle::assembly(), Part::assembly()) ->
+-spec attach(Name::serial_no(), GearBox::assembly(), Axle::assembly(), Register::term(), Part::assembly()) ->
                     success(Release::assembly()) | failure(E::term(), R::term()).
-mount(Name, GearBox, Axle, Part) ->
-    trace(Axle, #{mount => Part}),
-    Result = {ok, Release} = erlmachine_axle:mount(GearBox, Axle, Part),
+attach(Name, GearBox, Axle, Register, Part) ->
+    SupRef = format_name(Name),
+    Result = {ok, Release} = erlmachine_axle:attach(GearBox, Axle, Register, Part),
     %% TODO Conditional case for Result needs to be processed;
     Spec = erlmachine_axle:spec(GearBox, Release, Part),
     %% Mount time will be determined by prototype;
-    R = supervisor:start_child({local, format_name(Name)}, Spec),
-    io:format("~nChield start: ~p~n",[R]),
+    {ok, _PID} = supervisor:start_child(SupRef, Spec),
     Result.
     
--spec unmount(Name::serial_no(), GearBox::assembly(), Axle::assembly(), ID::serial_no()) ->
+-spec detach(Name::serial_no(), GearBox::assembly(), Axle::assembly(), ID::serial_no()) ->
                     success(Child::term()) | success(Child::term(), Info::term()) | failure(E::term()).
-unmount(_Name, _GearBox, Axle, ID) ->
-    %SupRef = {local, format_name(Name)},
-    trace(Axle, #{unmount => ID}),
-    %%supervisor:terminate_child(SupRef, ChieldID),
-    %%Res = supervisor:delete_child(SupRef, ChieldID), %% ID the same for chield and SN
-    %%erlmachine_gearbox:unmount(GearBox, ID),
-    {ok, []}.
+detach(Name, GearBox, Axle, ID) ->
+    SupRef = format_name(Name),
+    Result = {ok, _} = erlmachine_axle:detach(GearBox, Axle, ID),
+    ok = supervisor:terminate_child(SupRef, ID),
+    ok = supervisor:delete_child(SupRef, ID), %% ID the same for chield and SN
+    Result.
 
 -record(install, {gearbox::assembly(), axle::assembly(), options::list(tuple)}).
 
 -spec install(Name::serial_no(), GearBox::assembly(), Axle::assembly(), Options::list(tuple())) -> 
                      success(pid()) | ingnore | failure(E::term()).
 install(Name, GearBox, Axle, Options) ->
+    ID = {local, format_name(Name)},
     Args = #install{gearbox=GearBox, axle=Axle, options=Options},
-    supervisor:start_link({local, format_name(Name)}, ?MODULE, Args).
+    supervisor:start_link(ID, ?MODULE, Args).
 
 init(#install{gearbox=GearBox, axle=Axle, options=Options}) ->
     Strategy = proplists:get_value(strategy, Options, one_for_all),
@@ -96,20 +96,18 @@ init(#install{gearbox=GearBox, axle=Axle, options=Options}) ->
                        ok.
 uninstall(Name, GearBox, Axle, Reason) ->
     exit(whereis(format_name(Name)), Reason),
-    Parts = erlmachine_axle:parts(Axle),
-    trace(Axle, #{uninstall => Parts, reason => Reason}),
-    {ok, _} = erlmachine_axle:uninstall_model(GearBox, Axle, Reason),
+    {ok, _} = erlmachine_axle:uninstall(GearBox, Axle, Reason),
     ok.
 
 -spec accept(Name::serial_no(), GearBox::assembly(), Axle::assembly(), Criteria::acceptance_criteria()) ->
                     accept() | reject().
 accept(_Name, GearBox, Axle, Criteria) ->
-    {ok, Report, _Release} = erlmachine_axle:accept_model(GearBox, Axle, Criteria),
+    {ok, Report, _Release} = erlmachine_axle:accept(GearBox, Axle, Criteria),
     Report.
 
 trace(Assembly, Insight) ->
     Model = erlmachine_assembly:model_name(Assembly),
     SN = erlmachine_assembly:serial_no(Assembly),
-    Package = #{prototype => ?MODULE, model_name => Model, serial_no => SN},
+    Package = #{prototype => ?MODULE, model => Model, serial_no => SN},
     TN = erlmachine_tracker:tracking_no(?MODULE, Package),
     erlmachine_tracker:trace(TN, Package#{insight => Insight}).

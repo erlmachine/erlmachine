@@ -26,12 +26,12 @@
         ]).
 
 -export([
-         installed/3, 
+         installed/2, 
          attached/3, detached/3,
          replaced/3,
          accepted/4, rejected/4,
          overloaded/3, blocked/4,
-         uninstalled/4
+         uninstalled/3
         ]).
 
 -export([
@@ -221,13 +221,14 @@ uninstall(GearBox, SN, Reason) ->
     Result = (prototype_name(GearBox)):uninstall(SN, GearBox, Assembly, Reason),
     Result.
 
--spec installed(GearBox::assembly(), Mounted::assembly(), Part::assembly()) -> 
+-spec installed(GearBox::assembly(), Assembly::assembly()) -> 
                          ok.
-installed(GearBox, Mounted, Part) ->
-    MountedSN = serial_no(Mounted), GearBoxSN = serial_no(GearBox),
-    (prototype_name(GearBox)):installed(GearBoxSN, GearBox, Part),
-    (GearBoxSN == MountedSN) orelse 
-                               (prototype_name(Mounted)):installed(MountedSN, GearBox, Mounted, Part),
+installed(GearBox, Assembly) ->
+    Mounted = mounted(Assembly),
+    SN0 = serial_no(Mounted), SN1 = serial_no(GearBox),
+    (prototype_name(GearBox)):installed(SN1, GearBox, Assembly),
+    (SN1 == SN0) orelse 
+                   (prototype_name(Mounted)):installed(SN0, GearBox, Mounted, Assembly),
     %% NOTE Instead of access from external process we are going to provide
     %% notification and update monitoring copy with suitable tags, etc.;
     ok.
@@ -281,13 +282,14 @@ blocked(GearBox, Assembly, Part, Failure) ->
     Result =  (prototype_name(GearBox)):blocked(SN, GearBox, Assembly, Part, Failure),
     Result.
 
--spec uninstalled(GearBox::assembly(), Mounted::assembly(), Part::assembly(), Reason::term()) -> 
+-spec uninstalled(GearBox::assembly(), Assembly::assembly(), Reason::term()) -> 
                        ok.
-uninstalled(GearBox, Mounted, Part, Reason) ->
-    MountedSN = serial_no(Mounted), GearBoxSN = serial_no(GearBox),
-    (prototype_name(GearBox)):uninstalled(GearBoxSN, GearBox, Part, Reason),
-    (GearBoxSN == MountedSN) orelse 
-                               (prototype_name(Mounted)):uninstalled(MountedSN, GearBox, Mounted, Part, Reason),
+uninstalled(GearBox, Assembly, Reason) ->
+    Mounted = mounted(Assembly),
+    SN0 = serial_no(Mounted), SN1 = serial_no(GearBox),
+    (prototype_name(GearBox)):uninstalled(SN1, GearBox, Assembly, Reason),
+    (SN1 == SN0) orelse 
+                   (prototype_name(Mounted)):uninstalled(SN0, GearBox, Mounted, Assembly, Reason),
     %% NOTE Instead of access from external process we are going to provide
     %% notification and update monitoring copy with suitable tags, etc.;
     ok.

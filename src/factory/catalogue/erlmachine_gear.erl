@@ -85,8 +85,7 @@ install(GearBox, Gear) ->
     {ok, Body} = ModelName:install(SN, ID, body(Gear), Options, Env),
     %% We are going to add error handling later; 
     Release = body(Gear, Body), 
-    Mounted = erlmachine_assembly:mounted(Gear),
-    erlmachine_assembly:installed(GearBox, Mounted, Release),
+    erlmachine_assembly:installed(GearBox, Release),
     {ok, Release}.
 
 -spec attach(GearBox::assembly(), Gear::assembly(), Register::term(), Part::assembly()) ->
@@ -209,8 +208,7 @@ uninstall(GearBox, Gear, Reason) ->
     SN = erlmachine_assembly:serial_no(Gear),
     {ok, Body} = ModelName:uninstall(SN, Reason, body(Gear)),
     Release = body(Gear, Body),
-    Mounted = erlmachine_assembly:mounted(Gear),
-    erlmachine_assembly:uninstalled(GearBox, Mounted, Release, Reason),
+    erlmachine_assembly:uninstalled(GearBox, Release, Reason),
     ok.
 
 -spec body(Gear::assembly()) -> Body::term().
