@@ -14,8 +14,6 @@
 
 -export([parts/2]).
 
--export([specs/2, spec/3]).
-
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
 
@@ -53,28 +51,35 @@ install(GearBox, Axle) ->
     Env = erlmachine_gearbox:env(GearBox), 
     Options = erlmachine_assembly:model_options(Axle),
     IDs = [erlmachine_assembly:serial_no(Part)|| Part <- erlmachine_assembly:parts(Axle)], 
+
     {ok, Body} = ModelName:install(SN, IDs, body(Axle), Options, Env),
+    
     %% We are going to add error handling later; 
     Release = body(Axle, Body),
     erlmachine_assembly:installed(GearBox, Release),
     {ok, Release}.
 
--spec attach(GearBox::assembly(), Axle::assembly(), Register::term(), Part::assembly()) ->
-                    success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
-attach(GearBox, Axle, Register, Part) ->
+-spec attach(GearBox::assembly(), Axle::assembly(), Register::term(), Extension::assembly()) ->
+                    success(Part::assembly(), Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
+attach(GearBox, Axle, Register, Extension) ->
     ModelName = erlmachine_assembly:model_name(Axle),
-    SN = erlmachine_assembly:serial_no(Axle), ID = erlmachine_assembly:serial_no(Part),
+    SN = erlmachine_assembly:serial_no(Axle), ID = erlmachine_assembly:serial_no(Extension),
+    
     {ok, Body} = ModelName:attach(SN, Register, ID, body(Axle)),
+    
+    Part = erlmachine_assembly:mounted(Extension, Axle),
     Release = erlmachine_assembly:add_part(body(Axle, Body), Part),
     erlmachine_assembly:attached(GearBox, Release, Part),
-    {ok, Release}. %% TODO
+    {ok, Part, Release}. %% TODO
 
 -spec detach(GearBox::assembly(), Axle::assembly(), ID::serial_no()) ->
                     success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
 detach(GearBox, Axle, ID) ->
     ModelName = erlmachine_assembly:model_name(Axle),
     SN = erlmachine_assembly:serial_no(Axle),
+
     {ok, Body} = ModelName:detach(SN, ID, body(Axle)),
+    
     Release = erlmachine_assembly:remove_part(body(Axle, Body), ID),
     erlmachine_assembly:detached(GearBox, Release, ID),
     {ok, Release}. %% TODO
@@ -84,7 +89,9 @@ detach(GearBox, Axle, ID) ->
 accept(GearBox, Axle, Criteria) ->
     ModelName = erlmachine_assembly:model_name(Axle),
     SN = erlmachine_assembly:serial_no(Axle),
+  
     {Tag, Result, Body} = ModelName:accept(SN, Criteria, body(Axle)),
+    
     Release = body(Axle, Body),
     case Tag of 
         ok ->
@@ -102,7 +109,9 @@ accept(GearBox, Axle, Criteria) ->
 uninstall(GearBox, Axle, Reason) ->
     ModelName = erlmachine_assembly:model_name(Axle),
     SN = erlmachine_assembly:serial_no(Axle),
+    
     {ok, Body} = ModelName:uninstall(SN, Reason, body(Axle)),
+    
     Release = body(Axle, Body),
     erlmachine_assembly:uninstalled(GearBox, Release, Reason),
     ok.
@@ -117,20 +126,8 @@ body(Axle, Body) ->
     Product = erlmachine_assembly:product(Axle),
     erlmachine_assembly:product(Axle, Product#axle{body=Body}).
 
--spec spec(GearBox::assembly(), Axle::assembly(), Part::assembly()) -> map().
-spec(GearBox, _Axle, Part) ->
-    Spec = erlmachine_assembly:spec(GearBox, Part),
-    Spec.
-
 -spec parts(Axle::assembly(), Parts::list(assembly())) -> Release::assembly().
 parts(Axle, Parts) ->
     Mounted = [erlmachine_assembly:mounted(Part, Axle)|| Part <- Parts],
     Release = erlmachine_assembly:parts(Axle, Mounted),
     Release.
-
--spec specs(GearBox::assembly(), Axle::assembly()) -> list(map()).
-specs(GearBox, Axle) ->
-    Parts = erlmachine_assembly:parts(Axle),
-    Specs = [spec(GearBox, Axle, Part)|| Part <- Parts],
-    Specs.
-

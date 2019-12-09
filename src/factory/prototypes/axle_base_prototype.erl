@@ -33,7 +33,7 @@ format_name(SerialNumber) ->
     ID.
 
 -spec tag(Package::map()) -> Tag::binary().
-tag(#{model_name := Model}) ->
+tag(#{model := Model}) ->
     ID = atom_to_binary(Model, latin1),
     ID.
 
@@ -51,14 +51,14 @@ uninstalled(_Name, _GearBox, Axle, Part, Reason) ->
     trace(Axle, #{uninstalled => SN, reason => Reason}),
     ok.
 
--spec attach(Name::serial_no(), GearBox::assembly(), Axle::assembly(), Register::term(), Part::assembly()) ->
+-spec attach(Name::serial_no(), GearBox::assembly(), Axle::assembly(), Register::term(), Extension::assembly()) ->
                     success(Release::assembly()) | failure(E::term(), R::term()).
-attach(Name, GearBox, Axle, Register, Part) ->
-    SupRef = format_name(Name),
-    Result = {ok, Release} = erlmachine_axle:attach(GearBox, Axle, Register, Part),
+attach(Name, GearBox, Axle, Register, Extension) ->
+    Result = {ok, Part, Release} = erlmachine_axle:attach(GearBox, Axle, Register, Extension),
     %% TODO Conditional case for Result needs to be processed;
-    Spec = erlmachine_axle:spec(GearBox, Release, Part),
+    Spec = spec(GearBox, Release, Part),
     %% Mount time will be determined by prototype;
+    SupRef = format_name(Name),
     {ok, _PID} = supervisor:start_child(SupRef, Spec),
     Result.
     
@@ -83,7 +83,7 @@ install(Name, GearBox, Axle, Options) ->
 init(#install{gearbox=GearBox, axle=Axle, options=Options}) ->
     Strategy = proplists:get_value(strategy, Options, one_for_all),
     {ok, Release} = erlmachine_axle:install(GearBox, Axle),
-    Specs = erlmachine_axle:specs(GearBox, Release),
+    Specs = specs(GearBox, Release),
     Intensity = proplists:get_value(intensity, Options, 1),
     Period = proplists:get_value(period, Options, 5),
     {ok, {#{strategy => Strategy, intensity => Intensity, period => Period}, Specs}}.
@@ -104,6 +104,31 @@ uninstall(Name, GearBox, Axle, Reason) ->
 accept(_Name, GearBox, Axle, Criteria) ->
     {ok, Report, _Release} = erlmachine_axle:accept(GearBox, Axle, Criteria),
     Report.
+
+%% TODO
+%% I am going to provide mnesia gears, mongodb , etc..
+%% Process manager will be responsible for persistance storage management
+
+-spec spec(GearBox::assembly(), Axle::assembly(), Part::assembly()) -> Spec::map().
+spec(GearBox, _Axle, Part) ->
+    SN = erlmachine_assembly:serial_no(Part),
+    Module = erlmachine_assembly:prototype_name(Part),
+    Opt = erlmachine_assembly:prototype_options(Part),
+  
+    Start = {Module, install, [SN, erlmachine_assembly:parts(GearBox,[]), Part, Opt]},
+ 
+    Restart = proplists:get_value(restart, Opt, permanent),
+    Shutdown = proplists:get_value(shutdown, Opt, 5000),
+    Modules = proplists:get_value(modules, Opt, [Module]),
+
+    Type = proplists:get_value(type, erlmachine_assembly:assembly_options(Part)),
+    #{id => SN, start => Start, restart => Restart, shutdown => Shutdown, modules => Modules, type => Type}.
+
+-spec specs(GearBox::assembly(), Axle::assembly()) -> list(map()).
+specs(GearBox, Axle) ->
+    Parts = erlmachine_assembly:parts(Axle),
+    Specs = [spec(GearBox, Axle, Part)|| Part <- Parts],
+    Specs.
 
 trace(Assembly, Insight) ->
     Model = erlmachine_assembly:model_name(Assembly),

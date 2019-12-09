@@ -19,9 +19,8 @@
 
 -export([
          install/1, install/2,
-         attach/4, detach/3,
-         mount/2, mount/3, 
-         unmount/2, unmount/3, 
+         attach/4, attach_to_label/4, attach_label/4, attach/3,
+         detach/3, detach_from_label/3, detach_label/3, detach/2,
          uninstall/2, uninstall/3
         ]).
 
@@ -54,8 +53,6 @@
         ]).
 
 -export([add_part/2, remove_part/2, get_part/2]).
-
--export([spec/2]).
 
 -export([labels/1]).
 
@@ -134,8 +131,7 @@ install(GearBox) ->
     Options = prototype_options(GearBox),
     %% TODO at that place we can register information about scheme in persistence storage;
     Result = (prototype_name(GearBox)):install(SN, GearBox, Options),
-    Schema = erlmachine_gearbox:schema(GearBox),
-    erlmachine_schema:add_edges(Schema, GearBox),
+    erlmachine_schema:add_edges(erlmachine_gearbox:schema(GearBox), GearBox),
     Result.
 
 -spec install(GearBox::assembly(), Assembly::assembly()) ->
@@ -146,63 +142,66 @@ install(GearBox, Assembly) ->
     Result = (prototype_name(Assembly)):install(SN, GearBox, Assembly, Options),
     Result.
 
--spec attach(GearBox::assembly(), SN::serial_no(), Register::term(), ID::serial_no()) -> 
+-spec attach(GearBox::assembly(), Register::term(), Part::assembly()) -> 
                     success(term()) | failure(term(), term()).
-attach(GearBox, SN, Register, ID) ->
-    Assembly = erlmachine_gearbox:find(GearBox, SN),
-    Part = erlmachine_gearbox:find(GearBox, ID),
-    Result = (prototype_name(Assembly)):attach(SN, GearBox, Assembly, Register, Part),
-    Schema = erlmachine_gearbox:schema(GearBox), 
-    erlmachine_schema:add_edge(Schema, SN, Part),
+attach(GearBox, Register, Part) ->
+    SN = serial_no(GearBox),
+    Result = (prototype_name(GearBox)):attach(SN, GearBox, Register, Part), 
+    erlmachine_schema:add_edge(erlmachine_gearbox:schema(GearBox), SN, Part),
     Result.
+
+-spec attach_to_label(GearBox::assembly(), Label::term(), Register::term(), Part::assembly()) -> 
+                             success(term()) | failure(term(), term()).
+attach_to_label(GearBox, Label, Register, Part) ->
+    Labels = labels(GearBox),
+    SN = maps:get(Label, Labels), %% TODO Label's access can be incapsulated in separated function;
+    io:format("~nLabels: ~p SN: ~p~n", [Labels, SN]),
+    attach(GearBox, SN, Register, Part).
+
+-spec attach_label(GearBox::assembly(), SN::serial_no(), Register::term(), Label::term()) -> 
+                             success(term()) | failure(term(), term()).
+attach_label(GearBox, SN, Register, Label) ->
+    Labels = labels(GearBox),
+    Part =  erlmachine_gearbox:find(GearBox, maps:get(Label, Labels)),
+    io:format("~nLabels: ~p SN: ~p~n", [Labels, Part]),
+    attach(GearBox, SN, Register, Part).
+
+-spec attach(GearBox::assembly(), SN::serial_no(), Register::term(), Part::assembly()) -> 
+                    success(term()) | failure(term(), term()).
+attach(GearBox, SN, Register, Part) ->
+    Assembly = erlmachine_gearbox:find(GearBox, SN),
+    Result = (prototype_name(Assembly)):attach(SN, GearBox, Assembly, Register, Part), 
+    erlmachine_schema:add_edge(erlmachine_gearbox:schema(GearBox), SN, Part),
+    Result.
+
+-spec detach(GearBox::assembly(), ID::serial_no()) -> 
+                    success(term()) | failure(term(), term()).
+detach(GearBox, ID) ->
+    SN = serial_no(GearBox),
+    Result = (prototype_name(GearBox)):detach(SN, GearBox, ID),
+    ok = erlmachine_schema:del_vertex(erlmachine_gearbox:schema(GearBox), ID),
+    Result.
+
+-spec detach_from_label(GearBox::assembly(), Label::term(), ID::serial_no()) -> 
+                    success(term()) | failure(term(), term()).
+detach_from_label(GearBox, Label, ID) ->
+    Labels = labels(GearBox),
+    SN = maps:get(Label, Labels),
+    detach(GearBox, SN, ID). 
+
+-spec detach_label(GearBox::assembly(), SN::serial_no(), Label::term()) -> 
+                               success(term()) | failure(term(), term()).
+detach_label(GearBox, SN, Label) ->
+    Labels = labels(GearBox),
+    ID = maps:get(Label, Labels),
+    detach(GearBox, SN, ID). 
 
 -spec detach(GearBox::assembly(), SN::serial_no(), ID::serial_no()) -> 
                     success(term()) | failure(term(), term()).
 detach(GearBox, SN, ID) ->
     Assembly = erlmachine_gearbox:find(GearBox, SN),
     Result = (prototype_name(Assembly)):detach(SN, GearBox, Assembly, ID),
-    Schema = erlmachine_gearbox:schema(GearBox),
-    ok = erlmachine_schema:del_vertex(Schema, ID),
-    Result.
-
--spec mount(GearBox::assembly(), Part::assembly()) -> 
-                    success(term()) | failure(term(), term()).
-mount(GearBox, Part) ->
-    SN = serial_no(GearBox),
-    %% At that palce we need to update stored schema;
-    Result = (prototype_name(GearBox)):mount(SN, GearBox, Part),
-    Schema = erlmachine_gearbox:schema(GearBox),
-    erlmachine_schema:add_edge(Schema, SN, Part),
-    Result.
-
--spec mount(GearBox::assembly(), SN::serial_no(), Part::assembly()) -> 
-                   success(term()) | failure(term(), term()).
-mount(GearBox, SN, Part) ->
-    Assembly = erlmachine_gearbox:find(GearBox, SN),
-    Result = (prototype_name(Assembly)):mount(SN, GearBox, Assembly, Part),
-    Schema = erlmachine_gearbox:schema(GearBox),
-    erlmachine_schema:add_edge(Schema, SN, Part),
-    Result.
-
-%% The main difference between unmount and uninstall:
-%% is that second one can be able to stop chield and mark it with stopped label without removing of edge;
-
--spec unmount(GearBox::assembly(), ID::serial_no()) -> 
-                    success(term()) | failure(term(), term()).
-unmount(GearBox, ID) ->
-    SN = serial_no(GearBox),
-    Result = (prototype_name(GearBox)):unmount(SN, GearBox, ID),
-    Schema = erlmachine_gearbox:schema(GearBox),
-    ok = erlmachine_schema:del_vertex(Schema, ID),
-    Result.
-
--spec unmount(GearBox::assembly(), SN::serial_no(), ID::serial_no()) -> 
-                     success(term()) | failure(term(), term()).
-unmount(GearBox, SN, ID) ->
-    Assembly = erlmachine_gearbox:find(GearBox, SN),
-    Result = (prototype_name(Assembly)):unmount(SN, GearBox, Assembly, ID),
-    Schema = erlmachine_gearbox:schema(GearBox),
-    ok = erlmachine_schema:del_vertex(Schema, ID),
+    ok = erlmachine_schema:del_vertex(erlmachine_gearbox:schema(GearBox), ID),
     Result.
 
 -spec uninstall(GearBox::assembly(), Reason::term()) ->
@@ -210,8 +209,7 @@ unmount(GearBox, SN, ID) ->
 uninstall(GearBox, Reason) ->
     SN = serial_no(GearBox),
     Result = (prototype_name(GearBox)):uninstall(SN, GearBox, Reason),
-    Schema = erlmachine_gearbox:schema(GearBox),
-    ok = erlmachine_schema:del_vertex(Schema, SN),
+    ok = erlmachine_schema:del_vertex(erlmachine_gearbox:schema(GearBox), SN),
     Result.
 
 -spec uninstall(GearBox::assembly(), SN::serial_no(), Reason::term()) ->
@@ -233,52 +231,52 @@ installed(GearBox, Assembly) ->
     %% notification and update monitoring copy with suitable tags, etc.;
     ok.
 
--spec attached(GearBox::assembly(), Assembly::assembly(), Part::assembly()) -> 
+-spec attached(GearBox::assembly(), Part::assembly(), Extension::assembly()) -> 
                        ok.
-attached(_GearBox, Assembly, Part) ->
-    SN = serial_no(Assembly),
-    Result = (prototype_name(Assembly)):attached(SN, Assembly, Part),
+attached(GearBox, Part, Extension) ->
+    SN = serial_no(GearBox),
+    Result = (prototype_name(GearBox)):attached(SN, GearBox, Part, Extension),
     Result.
 
--spec detached(GearBox::assembly(), Assembly::assembly(), ID::serial_no()) -> 
+-spec detached(GearBox::assembly(), Part::assembly(), ID::serial_no()) -> 
                       ok.
-detached(_GearBox, Assembly, ID) ->
-    SN = serial_no(Assembly),
-    Result = (prototype_name(Assembly)):detached(SN, Assembly, ID),
+detached(GearBox, Part, ID) ->
+    SN = serial_no(GearBox),
+    Result = (prototype_name(GearBox)):detached(SN, GearBox, Part, ID),
     Result.
 
 -spec replaced(GearBox::assembly(), Assembly::assembly(), Part::assembly()) -> 
                       ok.
 replaced(GearBox, Assembly, Part) ->
-    SN = serial_no(Assembly),
+    SN = serial_no(GearBox),
     Result = (prototype_name(GearBox)):replaced(SN, GearBox, Assembly, Part),
     Result.
 
 -spec accepted(GearBox::assembly(), Assembly::assembly(), Criteria::term(), Report::term()) -> 
                       ok.
 accepted(GearBox, Assembly, Criteria, Report) ->
-    SN = serial_no(Assembly),
+    SN = serial_no(GearBox),
     Result = (prototype_name(GearBox)):accepted(SN, GearBox, Assembly, Criteria, Report),
     Result.
 
 -spec rejected(GearBox::assembly(), Assembly::assembly(), Criteria::term(), Report::term()) -> 
                       ok.
 rejected(GearBox, Assembly, Criteria, Report) ->
-    SN = serial_no(Assembly),
+    SN = serial_no(GearBox),
     Result = (prototype_name(GearBox)):rejected(SN, GearBox, Assembly, Criteria, Report),
     Result.
 
 -spec overloaded(GearBox::assembly(), Assembly::assembly(), Load::term()) -> 
                       ok.
 overloaded(GearBox, Assembly, Load) ->
-    SN = serial_no(Assembly),
+    SN = serial_no(GearBox),
     Result = (prototype_name(GearBox)):overloaded(SN, GearBox, Assembly, Load),
     Result.
 
 -spec blocked(GearBox::assembly(), Assembly::assembly(), Part::assembly(), Failure::term()) -> 
                         ok.
 blocked(GearBox, Assembly, Part, Failure) ->
-    SN = serial_no(Assembly),
+    SN = serial_no(GearBox),
     Result =  (prototype_name(GearBox)):blocked(SN, GearBox, Assembly, Part, Failure),
     Result.
 
@@ -541,20 +539,3 @@ labels(Assembly, Acc) ->
        true ->
             maps:merge(Labeled, lists:foldl(fun labels/2, Acc, Parts))
     end.
-
-%% TODO
-%% I am going to provide mnesia gears, mongodb , etc..
-%% Process manager will be responsible for persistance storage management
-
--spec spec(GearBox::assembly(), Part::assembly()) -> Spec::map().
-spec(GearBox, Part) ->
-    SN = erlmachine_assembly:serial_no(Part),
-    Module = erlmachine_assembly:prototype_name(Part),
-    Opt = erlmachine_assembly:prototype_options(Part),
-    Start = {Module, install, [SN, parts(GearBox,[]), Part, Opt]},
-    AssemblyOpt = erlmachine_assembly:assembly_options(Part),
-    Restart = proplists:get_value(restart, AssemblyOpt, permanent),
-    Shutdown = proplists:get_value(shutdown, AssemblyOpt, 5000),
-    Modules = proplists:get_value(modules, AssemblyOpt, [Module]),
-    Type = proplists:get_value(type, AssemblyOpt),
-    #{id => SN, start => Start, restart => Restart, shutdown => Shutdown, modules => Modules, type => Type}.

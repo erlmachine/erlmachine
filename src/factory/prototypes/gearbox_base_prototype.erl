@@ -10,7 +10,7 @@
 
 -export([
          install/3,
-         mount/3, unmount/3, 
+         attach/4, detach/3, 
          accept/3,
          uninstall/3
         ]).
@@ -19,7 +19,6 @@
          installed/3,
          attached/4, detached/4,
          replaced/4,
-         switched/4,
          overloaded/4, blocked/5,
          uninstalled/4,
          accepted/5, rejected/5
@@ -40,7 +39,7 @@
 %% After that we will be able to build reflection of whole topology which was stored before;
 
 -spec tag(Package::map()) -> Tag::binary().
-tag(#{model_name := Model}) ->
+tag(#{model := Model}) ->
     ID = atom_to_binary(Model, latin1),
     ID.
 
@@ -63,76 +62,78 @@ installed(_Name, GearBox, Part) ->
 -spec uninstalled(Name::serial_no(), GearBox::assembly(), Part::assembly(), Reason::term()) ->
                          ok.
 uninstalled(_Name, GearBox, Part, Reason) ->
-    trace(GearBox, #{uninstalled => Part, reason => Reason}),
+    SN = erlmachine_assembly:serial_no(Part),
+    trace(GearBox, #{uninstalled => SN, reason => Reason}),
     ok.
 
 -spec overloaded(Name::serial_no(), GearBox::assembly(), Part::assembly(), Load::term()) ->
                         ok.
 overloaded(_Name, GearBox, Part, Load) ->
+    SN = erlmachine_assembly:serial_no(Part),
     %% I guess the tracking time can be filled by tracker itself;
-    trace(GearBox, #{overloaded => Part, load => Load}),
+    trace(GearBox, #{overloaded => SN, load => Load}),
     ok.
 
 -spec blocked(Name::serial_no(), GearBox::assembly(), Part::assembly(), Extension::assembly(), Failure::term()) ->
                      ok.
 blocked(_Name, GearBox, Part, Extension, Failure) ->
-    trace(GearBox, #{blocked => Part, extension => Extension, damage => Failure}),
+    SN = erlmachine_assembly:serial_no(Part),
+    trace(GearBox, #{blocked => SN, extension => Extension, damage => Failure}),
     ok.
 
 -spec attached(Name::serial_no(), GearBox::assembly(), Part::assembly(), Extension::assembly()) ->
                       ok.
 attached(_Name, GearBox, Part, Extension) ->
-    trace(GearBox, #{attached => Part, extension => Extension}), 
+    SN = erlmachine_assembly:serial_no(Part),
+    trace(GearBox, #{attached => SN, extension => Extension}), 
     ok.
 
 -spec detached(Name::serial_no(), GearBox::assembly(), Part::assembly(), Extension::assembly()) ->
                       ok.
 detached(_Name, GearBox, Part, Extension) ->
-    trace(GearBox, #{detached => Part, extension => Extension}),
+    SN = erlmachine_assembly:serial_no(Part),
+    trace(GearBox, #{detached => SN, extension => Extension}),
     ok.
 
 -spec replaced(Name::serial_no(), GearBox::assembly(), Part::assembly(), Extension::assembly()) ->
                       ok.
 replaced(_Name, GearBox, Part, Extension) ->
-    trace(GearBox, #{replaced => Part, extension => Extension}),
-    ok.
-
--spec switched(Name::serial_no(), GearBox::assembly(), Part::assembly(), Extension::assembly()) ->
-                      ok.
-switched(_Name, GearBox, Part, Extension) ->
-    trace(GearBox, #{switched => Part, extension => Extension}),
+    SN = erlmachine_assembly:serial_no(Part),
+    trace(GearBox, #{replaced => SN, extension => Extension}),
     ok.
 
 -spec accepted(Name::serial_no(), GearBox::assembly(), Part::assembly(), Criteria::acceptance_criteria(), Report::term()) -> 
                       ok.
 accepted(_Name, GearBox, Part, Criteria, Report) ->
-    trace(GearBox, #{accepted => Part, criteria => Criteria, report => Report}),
+    SN = erlmachine_assembly:serial_no(Part),
+    trace(GearBox, #{accepted => SN, criteria => Criteria, report => Report}),
     ok.
 
 -spec rejected(Name::serial_no(),  GearBox::assembly(), Part::assembly(), Criteria::acceptance_criteria(), Report::term()) -> 
                       ok.
 rejected(_Name, GearBox, Part, Criteria, Report) ->
-    trace(GearBox, #{rejected => Part, criteria => Criteria, report => Report}),
+    SN = erlmachine_assembly:serial_no(Part),
+    trace(GearBox, #{rejected => SN, criteria => Criteria, report => Report}),
     ok.
 
--spec mount(Name::serial_no(), GearBox::assembly(), Part::assembly()) ->
+-spec attach(Name::serial_no(), GearBox::assembly(), Register::term(), Extension::assembly()) ->
                     success(Release::assembly()) | failure(E::term(), R::term()).
-mount(Name, GearBox, Part) ->
-    SupRef = format_name(Name),
-    trace(GearBox, #{mount => Part}),
-    Result = {ok, Release} = erlmachine_gearbox:mount(GearBox, Part),
+attach(Name, GearBox, Register, Extension) ->
+    Result = {ok, Part, Release} = erlmachine_gearbox:attach(GearBox, Register, Extension),
     %% TODO Conditional case for Result needs to be processed;
-    Spec = erlmachine_gearbox:spec(Release, Part),
+    Spec = spec(Release, Part),
     %% Mount time will be determined by prototype;
+    SupRef = format_name(Name),
     {ok, _PID} = supervisor:start_child(SupRef, Spec),
+    trace(GearBox, #{attach => erlmachine_assembly:serial_no(Part)}),
     Result.
     
--spec unmount(Name::serial_no(), GearBox::assembly(), ID::serial_no()) ->
+-spec detach(Name::serial_no(), GearBox::assembly(), ID::serial_no()) ->
                     success(Child::term()) | success(Child::term(), Info::term()) | failure(E::term()).
-unmount(Name, GearBox, ID) ->
+detach(Name, GearBox, ID) ->
+    trace(GearBox, #{detach => ID}),
+    Result = {ok, _} = erlmachine_gearbox:detach(GearBox, ID),
     SupRef = format_name(Name),
-    trace(GearBox, #{unmount => ID}),
-    Result = {ok, _} = erlmachine_gearbox:unmount(GearBox, ID),
     ok = supervisor:terminate_child(SupRef, ID),
     ok = supervisor:delete_child(SupRef, ID), %% ID the same for chield and SN
     Result.
@@ -148,7 +149,7 @@ install(Name, GearBox, Options) ->
 init(#install{gearbox=GearBox, options=Options}) ->
     Strategy = proplists:get_value(strategy, Options, one_for_one),
     {ok, Release} = erlmachine_gearbox:install(GearBox),
-    Specs = erlmachine_gearbox:specs(Release),
+    Specs = specs(Release),
     Intensity = proplists:get_value(intensity, Options, 1),
     Period = proplists:get_value(period, Options, 5),
     {ok, {#{strategy => Strategy, intensity => Intensity, period => Period}, Specs}}.
@@ -157,8 +158,8 @@ init(#install{gearbox=GearBox, options=Options}) ->
                        ok.
 uninstall(Name, GearBox, Reason) ->
     exit(whereis(format_name(Name)), Reason),
-    Parts = erlmachine_gearbox:parts(GearBox),
-    trace(GearBox, #{uninstall => Parts, reason => Reason}),
+    IDs = [erlmachine_assembly:serial_no(Part) || Part <- erlmachine_gearbox:parts(GearBox)],
+    trace(GearBox, #{uninstall => IDs, reason => Reason}),
     {ok, _} = erlmachine_gearbox:uninstall(GearBox, Reason),
     ok.
 
@@ -168,9 +169,31 @@ accept(_Name, GearBox, Criteria) ->
     {ok, Report, _Release} = erlmachine_gearbox:accept_model(GearBox, Criteria),
     Report.
 
+
+-spec spec(GearBox::assembly(), Part::assembly()) -> Spec::map().
+spec(GearBox, Part) ->
+    SN = erlmachine_assembly:serial_no(Part),
+    Module = erlmachine_assembly:prototype_name(Part),
+    Opt = erlmachine_assembly:prototype_options(Part),
+ 
+    Start = {Module, install, [SN, erlmachine_assembly:parts(GearBox,[]), Part, Opt]},
+ 
+    Restart = proplists:get_value(restart, Opt, permanent),
+    Shutdown = proplists:get_value(shutdown, Opt, 5000),
+    Modules = proplists:get_value(modules, Opt, [Module]),
+
+    Type = proplists:get_value(type, erlmachine_assembly:assembly_options(Part)),
+    #{id => SN, start => Start, restart => Restart, shutdown => Shutdown, modules => Modules, type => Type}.
+
+-spec specs(GearBox::assembly()) -> list(map()).
+specs(GearBox) ->
+    Parts = erlmachine_assembly:parts(GearBox),
+    Specs = [spec(GearBox, Part)|| Part <- Parts],
+    Specs.
+
 trace(Assembly, Insight) ->
     Model = erlmachine_assembly:model_name(Assembly),
-    SerialNumber = erlmachine_assembly:serial_no(Assembly),
-    Package = #{prototype => ?MODULE, model_name => Model, serial_no => SerialNumber},
-    TrackingNumber = erlmachine_tracker:tracking_no(?MODULE, Package),
-    erlmachine_tracker:trace(TrackingNumber, Package#{insight => Insight}).
+    SN = erlmachine_assembly:serial_no(Assembly),
+    Package = #{prototype => ?MODULE, model => Model, serial_no => SN},
+    TN = erlmachine_tracker:tracking_no(?MODULE, Package),
+    erlmachine_tracker:trace(TN, Package#{insight => Insight}).

@@ -36,8 +36,6 @@
 
 -export([parts/2]).
 
--export([specs/1, spec/2]).
-
 -export([find/2]).
 
 -include("erlmachine_factory.hrl").
@@ -115,15 +113,18 @@ install(GearBox) ->
     Release = body(GearBox, Body),
     {ok, Release}.
 
--spec attach(GearBox::assembly(), Register::term(), Part::assembly()) ->
+-spec attach(GearBox::assembly(), Register::term(), Extension::assembly()) ->
                     success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
-attach(GearBox, Register, Part) ->
+attach(GearBox, Register, Extension) ->
     ModelName = erlmachine_assembly:model_name(GearBox),
-    SN = erlmachine_assembly:serial_no(GearBox), ID = erlmachine_assembly:serial_no(Part),
+    SN = erlmachine_assembly:serial_no(GearBox), ID = erlmachine_assembly:serial_no(Extension),
+ 
     {ok, Body} = ModelName:attach(SN, Register, ID, body(GearBox)),
+    
+    Part = erlmachine_assembly:mounted(Extension, GearBox),
     Release = erlmachine_assembly:add_part(body(GearBox, Body), Part),
     %% At that place we don't issue any events (cause is gearbox issue level);
-    {ok, Release}. %% TODO
+    {ok, Part, Release}. %% TODO
 
 -spec detach(GearBox::assembly(), ID::serial_no()) ->
                     success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
@@ -232,22 +233,11 @@ env(GearBox, Env) ->
     Product = erlmachine_assembly:product(GearBox),
     erlmachine_assembly:product(GearBox, Product#gearbox{env=Env}).
 
--spec spec(GearBox::assembly(), Part::assembly()) -> map().
-spec(GearBox, Part) ->
-    Spec = erlmachine_assembly:spec(GearBox, Part),
-    Spec.
-
 -spec parts(GearBox::assembly(), Parts::list(assembly())) -> Release::assembly().
 parts(GearBox, Parts) ->
     Mounted = [erlmachine_assembly:mounted(Part, GearBox)|| Part <- Parts],
     Release = erlmachine_assembly:parts(GearBox, Mounted),
     Release.
-
--spec specs(GearBox::assembly()) -> list(map()).
-specs(GearBox) ->
-    Parts = erlmachine_assembly:parts(GearBox),
-    Specs = [spec(GearBox, Part)|| Part <- Parts],
-    Specs.
 
 %% processes need to be instantiated by builder before;
 

@@ -72,21 +72,27 @@ install(GearBox, Shaft) ->
     %% We can check exported functions accordingly to this kind of behaviour; 
     %% We are going to add error handling later; 
     IDs = [erlmachine_assembly:serial_no(Part)|| Part <- erlmachine_assembly:parts(Shaft)], 
+
     {ok, Body} = ModelName:install(SN, IDs, body(Shaft), Options, Env),
+    
     %% We are going to add error handling later; 
     Release = body(Shaft, Body), 
     erlmachine_assembly:installed(GearBox, Release),
     {ok, Release}.
 
--spec attach(GearBox::assembly(), Shaft::assembly(), Register::term(), Part::assembly()) ->
-                    success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
-attach(GearBox, Shaft, Register, Part) ->
+-spec attach(GearBox::assembly(), Shaft::assembly(), Register::term(), Extension::assembly()) ->
+                    success(Part::assembly(), Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
+attach(GearBox, Shaft, Register, Extension) ->
     ModelName= erlmachine_assembly:model_name(Shaft),
-    SN = erlmachine_assembly:serial_no(Shaft), ID = erlmachine_assembly:serial_no(Part),
+    SN = erlmachine_assembly:serial_no(Shaft), ID = erlmachine_assembly:serial_no(Extension),
+
     {ok, Body} = ModelName:attach(SN, Register, ID, body(Shaft)),
+    
+    Part = Extension,
+    %% TODO At this place we can provide modification layer over attach;
     Release = erlmachine_assembly:add_part(body(Shaft, Body), Part),
     erlmachine_assembly:attached(GearBox, Release, Part),
-    {ok, Release}.
+    {ok, Part, Release}.
 
 -spec detach(GearBox::assembly(), Shaft::assembly(), ID::serial_no()) ->
                     success(Release::assembly()) | failure(E::term(), R::term(),  Rejected::assembly()).
@@ -94,7 +100,9 @@ detach(GearBox, Shaft, ID) ->
     ModelName= erlmachine_assembly:model_name(Shaft),
     SN = erlmachine_assembly:serial_no(Shaft),
     %% At that place we need to find Part inside assembly by SN and transmit;
+  
     {ok, Body} = ModelName:detach(SN, ID, body(Shaft)),
+    
     Release = erlmachine_assembly:remove_part(body(Shaft, Body), ID),
     erlmachine_assembly:detached(GearBox, Release, ID),
     {ok, Release}.
@@ -104,7 +112,9 @@ detach(GearBox, Shaft, ID) ->
 replace(GearBox, Shaft, Part) ->
     ModelName = erlmachine_assembly:model_name(Shaft),
     SN = erlmachine_assembly:serial_no(Shaft), ID = erlmachine_assembly:serial_no(Part),
+  
     {ok, Body} = ModelName:replace(SN, ID, body(Shaft)),
+    
     Release = body(Shaft, Body),
     erlmachine_assembly:replaced(GearBox, Release, Part),
     {ok, Release}.
@@ -114,7 +124,9 @@ replace(GearBox, Shaft, Part) ->
 accept(GearBox, Shaft, Criteria) ->
     ModelName = erlmachine_assembly:model_name(Shaft),
     SN = erlmachine_assembly:serial_no(Shaft),
+   
     {Tag, Result, Body} = ModelName:accept(SN, Criteria, body(Shaft)),
+    
     Release = body(Shaft, Body),
     case Tag of 
         ok ->
@@ -133,6 +145,7 @@ rotate(GearBox, Shaft, ID, Motion) ->
     ModelName = erlmachine_assembly:model_name(Shaft),
     SN = erlmachine_assembly:serial_no(Shaft),
     Part = erlmachine_assembly:get_part(Shaft, ID),
+  
     ReleaseBody = 
         case ModelName:rotate(SN, ID, Motion, body(Shaft)) of 
             {ok, Result, Body} -> 
@@ -141,6 +154,7 @@ rotate(GearBox, Shaft, ID, Motion) ->
             {ok, Body} -> 
                 Body 
         end,
+    
     Release = body(Shaft, ReleaseBody),
     {ok, Release}.
 
@@ -163,7 +177,9 @@ rotate(GearBox, Shaft, Motion) ->
 transmit(_GearBox, Shaft, Motion) ->
     ModelName = erlmachine_assembly:model_name(Shaft),
     SN = erlmachine_assembly:serial_no(Shaft),
+ 
     {ok, Result, Body} = ModelName:tranmsit(SN, Motion, body(Shaft)),
+    
     Release = body(Shaft, Body),
     {ok, Result, Release}.
 
@@ -172,7 +188,9 @@ transmit(_GearBox, Shaft, Motion) ->
 overload(GearBox, Shaft, Load) ->
     ModelName = erlmachine_assembly:model_name(Shaft),
     SN = erlmachine_assembly:serial_no(Shaft),
+  
     {ok, Body} = ModelName:overload(SN, Load, body(Shaft)),
+    
     Release = body(Shaft, Body),
     erlmachine_assembly:overloaded(GearBox, Release, Load),
     {ok, Release}.
@@ -182,7 +200,9 @@ overload(GearBox, Shaft, Load) ->
 block(GearBox, Shaft, Part, Failure) ->
     ModelName = erlmachine_assembly:model_name(Shaft),
     SN = erlmachine_assembly:serial_no(Shaft), ID = erlmachine_assembly:serial_no(Part),
+  
     {ok, Body} = ModelName:block(SN, ID, Failure, body(Shaft)),
+    
     Release = body(Shaft, Body),
     erlmachine_assembly:blocked(GearBox, Release, Part, Failure),
     {ok, Release}.
@@ -192,7 +212,9 @@ block(GearBox, Shaft, Part, Failure) ->
 uninstall(GearBox, Shaft, Reason) ->
     ModelName = erlmachine_assembly:model_name(Shaft),
     SN = erlmachine_assembly:serial_no(Shaft),
+  
     {ok, Body} = ModelName:uninstall(SN, Reason, body(Shaft)),
+    
     Release = body(Shaft, Body),
     erlmachine_assembly:uninstalled(GearBox, Release, Reason),
     ok.

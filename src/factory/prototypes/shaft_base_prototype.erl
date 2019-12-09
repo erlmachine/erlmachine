@@ -129,7 +129,7 @@ init(#install{gearbox=GearBox, shaft=Shaft, options=Options}) ->
     {ok, #state{gearbox=GearBox, shaft=Release}}.
 
 handle_call(#attach{part = Part, register = Register}, _From, #state{gearbox=GearBox, shaft=Shaft} = State) ->
-    Result = {ok, Release} = erlmachine_shaft:attach(GearBox, Shaft, Register, Part),
+    Result = {ok, _, Release} = erlmachine_shaft:attach(GearBox, Shaft, Register, Part),
     {reply, Result, State#state{shaft=Release}};
 
 handle_call(#detach{id = ID}, _From, #state{gearbox=GearBox, shaft=Shaft} = State) ->
