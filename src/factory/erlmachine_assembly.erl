@@ -35,7 +35,7 @@
 
 -export([
          is_mounted/1,
-         serial_no/1, serial_no/2,
+         serial_no/0, serial_no/1, serial_no/2,
          model/1, model/2, 
          model_name/1, model_name/2,
          model_options/1, model_options/2,
@@ -332,6 +332,10 @@ fields() ->
 is_mounted(Assembly) -> 
     mounted(Assembly) /= undefined.
 
+-spec serial_no() -> integer().
+serial_no() ->
+    #assembly.serial_no.
+
 -spec serial_no(Assembly::assembly()) -> SN::serial_no().
 serial_no(Assembly) ->
     SN = Assembly#assembly.serial_no,
@@ -502,7 +506,7 @@ label(Assembly, Label) ->
 
 -spec add_part(Assembly::assembly(), Part::assembly()) -> assembly().
 add_part(Assembly, Part) ->
-    Parts = lists:reverse([Part|parts(Assembly)]),
+    Parts = lists:keystore(serial_no(Part), serial_no(), parts(Assembly), Part),
     Release = parts(Assembly, Parts),
     Release.
 
