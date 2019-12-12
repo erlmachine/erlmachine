@@ -48,9 +48,9 @@ format_name(SerialNumber) ->
 
 -spec install(Name::serial_no(), GearBox::assembly(), Shaft::assembly(), Options::list(tuple())) -> 
                      success(pid()) | ingnore | failure(E::term()).
-install(Name, GearBox, Shaft, Options) ->
+install(Name, GearBox, Shaft, Opt) ->
     ID = {local, format_name(Name)},
-    gen_server:start_link(ID, ?MODULE, #install{gearbox=GearBox, shaft=Shaft, options=Options}, []).
+    gen_server:start_link(ID, ?MODULE, #install{gearbox=GearBox, shaft=Shaft, options=Opt}, []).
 
 %% I think about ability to reflect both kind of switching - manual and automated;
 -record(attach, {part::assembly(), register::term()}).
@@ -121,8 +121,9 @@ accept(Name, _GearBox, _Shaft, Criteria) ->
 %% gen_server.
 -record(state, {gearbox::assembly(), shaft::assembly()}).
 
-init(#install{gearbox=GearBox, shaft=Shaft, options=Options}) ->
-    [process_flag(ID, Param)|| {ID, Param} <- Options],
+init(#install{gearbox=GearBox, shaft=Shaft, options=Opt}) ->
+    Flags = proplists:get_value(process_flags, Opt, []),
+    [process_flag(ID, Param)|| {ID, Param} <- [{trap_exit, true}|Flags]],
     %% process_flag(trap_exit, true), Needs to be passed by default;
     %% Gearbox is intended to use like specification of destination point (it's not about persistence);
     {ok, Release} = erlmachine_shaft:install(GearBox, Shaft),

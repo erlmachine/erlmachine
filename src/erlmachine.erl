@@ -2,7 +2,7 @@
 
 -folder(<<"erlmachine">>).
 
--export([attribute/3]).
+-export([start/0, stop/0]).
 
 -export([motion/1, motion/2, envelope/1, header/1, body/1]).
 -export([command/1, command/2]).
@@ -17,6 +17,7 @@
 -export([serial/0, serial/1]).
 -export([read_serial/1, write_serial/2]).
 
+-export([attribute/3]).
 
 -include("erlmachine_system.hrl").
 -include("erlmachine_filesystem.hrl").
@@ -39,6 +40,15 @@
 
 %% The main purpouse of erlmachine project is providing a set of well designed behaviours which are accompanied with visualization tools as well.
 %%  Erlmachine doesn't restrict your workflow by the one possible way but instead provide to you ability to implement your own components. This ability is available under flexible mechanism of prototypes and overloading.  
+
+-spec start() -> success().
+start() ->
+    {ok, _} = application:ensure_all_started(erlmachine),
+    success().
+
+-spec stop() -> success() | failure(Reason :: any()).
+stop() ->
+    application:stop(erlmachine).
 
 -spec attribute(Module::atom(), Tag::atom(), Default::term()) -> false | {Tag::atom(), Value::term()}.
 attribute(Module, Tag, Default) ->

@@ -142,16 +142,16 @@ detach(Name, GearBox, ID) ->
 
 -spec install(Name::serial_no(), GearBox::assembly(), Options::list(tuple())) -> 
                      success(pid()) | ingnore | failure(E::term()).
-install(Name, GearBox, Options) ->
-    Args = #install{gearbox=GearBox, options=Options},
+install(Name, GearBox, Opt) ->
+    Args = #install{gearbox=GearBox, options=Opt},
     supervisor:start_link({local, format_name(Name)}, ?MODULE, Args).
 
-init(#install{gearbox=GearBox, options=Options}) ->
-    Strategy = proplists:get_value(strategy, Options, one_for_one),
+init(#install{gearbox=GearBox, options=Opt}) ->
+    Strategy = proplists:get_value(strategy, Opt, one_for_one),
     {ok, Release} = erlmachine_gearbox:install(GearBox),
     Specs = specs(Release),
-    Intensity = proplists:get_value(intensity, Options, 1),
-    Period = proplists:get_value(period, Options, 5),
+    Intensity = proplists:get_value(intensity, Opt, 1),
+    Period = proplists:get_value(period, Opt, 5),
     {ok, {#{strategy => Strategy, intensity => Intensity, period => Period}, Specs}}.
 
 -spec uninstall(Name::serial_no(), GearBox::assembly(), Reason::term()) ->

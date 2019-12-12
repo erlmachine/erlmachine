@@ -128,7 +128,7 @@ gear(_GearBox, Model, Prot, ModelOpt, ProtOpt, AssemblyOpt) ->
     Prefix = <<"SN-G-">>,
     Assembly = erlmachine_assembly:assembly(),
     %% Additional flags
-    Input = [Model, ModelOpt, Prot, [{trap_exit, true}|ProtOpt], [{type, worker}|AssemblyOpt], Gear, Prefix],
+    Input = [Model, ModelOpt, Prot, ProtOpt, [{type, worker}|AssemblyOpt], Gear, Prefix],
     Release = pass(Assembly, ?MODULE, Input),
     Release.
 
@@ -152,7 +152,7 @@ shaft(_GearBox, Model, Prot, ModelOpt, ProtOpt, AssemblyOpt) ->
     Shaft = erlmachine_shaft:shaft(Body),
     Prefix = <<"SN-S-">>,
     Assembly = erlmachine_assembly:assembly(),
-    Input = [Model, ModelOpt, Prot, [{trap_exit, true}|ProtOpt], [{type, worker}|AssemblyOpt], Shaft, Prefix],
+    Input = [Model, ModelOpt, Prot, ProtOpt, [{type, worker}|AssemblyOpt], Shaft, Prefix],
     Release = pass(Assembly, ?MODULE, Input),
     Release.
 

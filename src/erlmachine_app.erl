@@ -7,9 +7,10 @@
 -export([start_phase/3]).
 
 start(_Type, _Args) ->
-	erlmachine_sup:start_link().
+    erlmachine_sup:start_link().
 
-stop(_State) ->	ok.
+
+stop(_State) ->	erlmachine:success().
 
 start_phase(erlmachine_filesystem, _Type, _PhaseArgs) ->
     ok;

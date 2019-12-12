@@ -75,17 +75,17 @@ detach(Name, GearBox, Axle, ID) ->
 
 -spec install(Name::serial_no(), GearBox::assembly(), Axle::assembly(), Options::list(tuple())) -> 
                      success(pid()) | ingnore | failure(E::term()).
-install(Name, GearBox, Axle, Options) ->
+install(Name, GearBox, Axle, Opt) ->
     ID = {local, format_name(Name)},
-    Args = #install{gearbox=GearBox, axle=Axle, options=Options},
+    Args = #install{gearbox=GearBox, axle=Axle, options=Opt},
     supervisor:start_link(ID, ?MODULE, Args).
 
-init(#install{gearbox=GearBox, axle=Axle, options=Options}) ->
-    Strategy = proplists:get_value(strategy, Options, one_for_all),
+init(#install{gearbox=GearBox, axle=Axle, options=Opt}) ->
+    Strategy = proplists:get_value(strategy, Opt, one_for_all),
     {ok, Release} = erlmachine_axle:install(GearBox, Axle),
     Specs = specs(GearBox, Release),
-    Intensity = proplists:get_value(intensity, Options, 1),
-    Period = proplists:get_value(period, Options, 5),
+    Intensity = proplists:get_value(intensity, Opt, 1),
+    Period = proplists:get_value(period, Opt, 5),
     {ok, {#{strategy => Strategy, intensity => Intensity, period => Period}, Specs}}.
 
 %% I guess later we need some way to adress axle instance inside gearbox;

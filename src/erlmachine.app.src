@@ -8,7 +8,7 @@
      {maxT,infinity},
      {registered,[]},
      {included_applications,[]},
-     {applications,[]},
+     {applications,[kernel, stdlib, sasl, syn]},
      {env,
          [{engineers,
               [[{title,<<"Erlmachine">>},

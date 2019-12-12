@@ -1,6 +1,6 @@
--module(gear_base_prototype).
+-module(gear_syn_prototype).
 
--folder(<<"erlmachine/factory/prototypes/gear_base_prototype">>).
+-folder(<<"erlmachine/factory/prototypes/gear_syn_prototype">>).
 
 -behaviour(gen_server).
 
@@ -35,17 +35,15 @@
 name() ->
     ?MODULE.
 
-format_name(SerialNumber) ->
-    ID = erlang:binary_to_atom(SerialNumber, latin1),
-    ID.
+format_name(Name) ->
+    {via, syn, Name}.
 
 -record(install, {gearbox::assembly(), gear::assembly(), options::list(tuple())}).
 
--spec install(Name::serial_no(), GearBox::assembly(), Gear::assembly(), Options::list(tuple())) -> 
+-spec install(Name::serial_no(), GearBox::assembly(), Gear::assembly(), Opt::list(tuple())) -> 
                      success(pid()) | ingnore | failure(E::term()).
 install(Name, GearBox, Gear, Opt) ->
-    ID = {local, format_name(Name)},
-    gen_server:start_link(ID, ?MODULE, #install{gearbox=GearBox, gear=Gear, options=Opt}, []).
+    gen_server:start_link(format_name(Name), ?MODULE, #install{gearbox=GearBox, gear=Gear, options=Opt}, []).
 
 -record(attach, {part::assembly(), register::term()}).
 
@@ -66,7 +64,8 @@ detach(Name, _GearBox, _Gear, ID) ->
 -spec overload(Name::serial_no(), GearBox::assembly(), Gear::assembly(), Load::term()) ->
                       Load::term().
 overload(Name, _GearBox, _Gear, Load) ->
-    erlang:send(format_name(Name), #overload{load=Load}), 
+    Pid = syn:whereis(Name),
+    erlang:send(Pid, #overload{load=Load}), 
     Load.
 
 -record(block, {part::assembly(), failure::term()}).
@@ -74,7 +73,8 @@ overload(Name, _GearBox, _Gear, Load) ->
 -spec block(Name::serial_no(), GearBox::assembly(), Gear::assembly(), Part::assembly(), Failure::term()) -> 
                    Failure::term().
 block(Name, _GearBox, _Gear, Part, Failure) ->
-    erlang:send(format_name(Name), #block{part=Part, failure=Failure}), 
+    Pid = syn:whereis(Name),
+    erlang:send(Pid, #block{part=Part, failure=Failure}), 
     Failure.
 
 -record(replace, {repair::assembly()}).
@@ -89,7 +89,8 @@ replace(Name, _GearBox, _Gear, Repair) ->
 -spec rotate(Name::serial_no(), GearBox::assembly(), Gear::assembly(), Motion::term()) -> 
                     Motion::term().
 rotate(Name, _GearBox, _Gear, Motion) ->
-    erlang:send(format_name(Name), #rotate{motion=Motion}), 
+    Pid = syn:whereis(Name),
+    erlang:send(Pid, #rotate{motion=Motion}), 
     Motion.
 
 -record(transmit, {motion::term()}).
@@ -102,7 +103,7 @@ transmit(Name, _GearBox, _Gear, Motion) ->
 -spec uninstall(Name::serial_no(), GearBox::assembly(), Gear::assembly(), Reason::term()) ->
                        ok.
 uninstall(Name, _GearBox, _Gear, Reason) ->
-    gen_server:stop({local, format_name(Name)}, Reason).
+    gen_server:stop(format_name(Name), Reason).
 
 -record(accept, {criteria::acceptance_criteria()}).
 
@@ -117,8 +118,6 @@ accept(Name, _GearBox, _Gear, Criteria) ->
 init(#install{gearbox=GearBox, gear=Gear, options=Opt}) ->
     Flags = proplists:get_value(process_flags, Opt, []),
     [process_flag(ID, Param)|| {ID, Param} <- [{trap_exit, true}|Flags]],
-    %% process_flag(trap_exit, true), Needs to be passed by default;
-    %% Gearbox is intended to use like specification of destination point (it's not about persistence);
     {ok, Release} = erlmachine_gear:install(GearBox, Gear),
     {ok, #state{gearbox=GearBox, gear=Release}}.
 
@@ -152,8 +151,6 @@ handle_cast(Message, #state{gearbox=GearBox, gear=Gear}=State) ->
 
 handle_info(#rotate{motion = Motion}, #state{gearbox=GearBox, gear=Gear}=State) ->
     {ok, Release} = erlmachine_gear:rotate(GearBox, Gear, Motion),
-    %% Potentially clients can provide sync delivery inside this call;
-    %% It can work a very similar to job queue);
     {noreply, State#state{gear=Release}};
 
 handle_info(#overload{load = Load}, #state{gearbox=GearBox, gear=Gear}=State) ->
@@ -161,17 +158,13 @@ handle_info(#overload{load = Load}, #state{gearbox=GearBox, gear=Gear}=State) ->
     {noreply, State#state{gear=Release}};
 
 handle_info(#block{part=Part, failure = Failure}, #state{gearbox=GearBox, gear=Gear}=State) ->
-    %% Damage, Crash and Failure will be translated to specialized system gears;
-    %% This produced stream can be consumed by custom components which can be able to provide repair;
     {ok, Release} = erlmachine_gear:block(GearBox, Gear, Part, Failure),
     {noreply, State#state{gear=Release}};
 
 handle_info(Load, #state{gearbox=GearBox, gear=Gear}=State) ->
-    %% At that place load capacity control can be achived;
     {ok, Release} = erlmachine_gear:load(GearBox, Gear, Load),
     {noreply, State#state{gear=Release}}.
 
-%% When reason is different from normal, or stop - the broken part event is occured;
 terminate(Reason, #state{gearbox=GearBox, gear=Gear}) ->
     erlmachine_gear:uninstall(GearBox, Gear, Reason),
     ok.
