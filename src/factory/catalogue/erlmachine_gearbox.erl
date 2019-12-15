@@ -12,8 +12,8 @@
 %% This agreement allows to us attach gearboxes together and with other parts by attach call;
 %% This can evolve messaging systems reusage;
 
--export([load/2]).
--export([drive/3]).
+-export([rotate/2]).
+-export([transmit/3]).
 -export([connect/2, disconnect/2]).
 
 -export([
@@ -159,15 +159,15 @@ accept(GearBox, Criteria) ->
             {error, Report, Release} 
     end.
 
--spec load(GearBox::assembly(), Motion::term()) ->
+-spec rotate(GearBox::assembly(), Motion::term()) ->
                     Motion::term().
-load(GearBox, Motion) ->
+rotate(GearBox, Motion) ->
     Input = input(GearBox), Assembly = find(GearBox, Input),
     erlmachine_transmission:rotate(Assembly, Motion).
 
--spec drive(GearBox::assembly(), Motion::term(), TimeOut::integer()) ->
+-spec transmit(GearBox::assembly(), Motion::term(), TimeOut::integer()) ->
                       success(term()) | failure(term(), term()).
-drive(GearBox, Motion, TimeOut) ->
+transmit(GearBox, Motion, TimeOut) ->
     Input = input(GearBox), Assembly = find(GearBox, Input),
     erlmachine_transmission:transmit(Assembly, Motion, TimeOut).
 
