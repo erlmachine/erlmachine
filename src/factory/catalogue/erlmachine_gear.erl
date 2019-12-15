@@ -205,7 +205,7 @@ block(GearBox, Gear, Part, Failure) ->
 
 -spec load(GearBox::assembly(), Gear::assembly(), Load::term()) ->
                     success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
-load(_GearBox, Gear, Load) ->
+load(GearBox, Gear, Load) ->
     ModelName = erlmachine_assembly:model_name(Gear),
     SN = erlmachine_assembly:serial_no(Gear),
     Parts =erlmachine_assembly:parts(Gear),
@@ -213,7 +213,7 @@ load(_GearBox, Gear, Load) ->
     ReleaseBody = 
         case ModelName:load(SN, Load, body(Gear)) of 
             {ok, Result, Body} -> 
-                [erlmachine_transmission:rotate(Part, Result) || Part <- Parts],
+                [erlmachine_transmission:rotate(GearBox, Part, Result) || Part <- Parts],
                 Body;
             {ok, Body} -> 
                 Body 
