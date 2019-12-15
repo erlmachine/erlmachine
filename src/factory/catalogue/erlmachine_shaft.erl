@@ -162,7 +162,6 @@ rotate(GearBox, Shaft, ID, Motion) ->
                     success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
 rotate(GearBox, Shaft, Motion) ->
     Parts = erlmachine_assembly:parts(Shaft),
-    io:format("~nShaft Parts rotate: ~p~n",[Parts]),
     {ok, Release} = lists:foldl(
       fun (Part, {ok, ShaftState}) ->
               ID = erlmachine_assembly:serial_no(Part),

@@ -174,7 +174,7 @@ transmit(_GearBox, Gear, Motion) ->
     ModelName = erlmachine_assembly:model_name(Gear),
     SN = erlmachine_assembly:serial_no(Gear),
  
-    {ok, Result, Body} = ModelName:tranmsit(SN, Motion, body(Gear)),
+    {ok, Result, Body} = ModelName:transmit(SN, Motion, body(Gear)),
     
     Release = body(Gear, Body),
     {ok, Result, Release}.
