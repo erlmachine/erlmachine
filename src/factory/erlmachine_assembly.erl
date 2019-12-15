@@ -155,7 +155,6 @@ attach(GearBox, Register, Part) ->
 attach_to_label(GearBox, Label, Register, Part) ->
     Labels = labels(GearBox),
     SN = maps:get(Label, Labels), %% TODO Label's access can be incapsulated in separated function;
-    io:format("~nLabels: ~p SN: ~p~n", [Labels, SN]),
     attach(GearBox, SN, Register, Part).
 
 -spec attach_by_label(GearBox::assembly(), SN::serial_no(), Register::term(), Label::term()) -> 
@@ -163,7 +162,6 @@ attach_to_label(GearBox, Label, Register, Part) ->
 attach_by_label(GearBox, SN, Register, Label) ->
     Labels = labels(GearBox),
     Part =  erlmachine_gearbox:find(GearBox, maps:get(Label, Labels)),
-    io:format("~nLabels: ~p SN: ~p~n", [Labels, Part]),
     attach(GearBox, SN, Register, Part).
 
 -spec attach(GearBox::assembly(), SN::serial_no(), Register::term(), Part::assembly()) -> 

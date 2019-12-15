@@ -12,7 +12,10 @@
          code_change/3
         ]).
 
--export([rotate/3, transmit/3]).
+-export([
+         rotate/3, rotate_by_label/3,
+         transmit/3, transmit_by_label/3
+        ]).
 
 -export([motion/1, motion/2, envelope/1, header/1, body/1]).
 -export([command/1, command/2]).
@@ -36,11 +39,27 @@
 
 -export_type([motion/0, envelope/0, header/0, body/0]).
 
+-spec rotate_by_label(GearBox::assembly(), Label::term(), Motion::term()) -> 
+                             Motion::term().
+rotate_by_label(GearBox, Label, Motion) ->
+    Labels = erlmachine_assembly:labels(GearBox),
+    SN = maps:get(Label, Labels),
+    Assembly = erlmachine_gearbox:find(GearBox, SN),
+    rotate(GearBox, Assembly, Motion).
+
 -spec rotate(GearBox::assembly(), Assembly::assembly(), Motion::term()) ->
                     Motion::term().
 rotate(GearBox, Assembly, Motion) ->
     SN = erlmachine_assembly:serial_no(Assembly),
     (erlmachine_assembly:prototype_name(Assembly)):rotate(SN, GearBox, Assembly, Motion).
+
+-spec transmit_by_label(GearBox::assembly(), Label::term(), Motion::term()) ->
+                      success(term()) | failure(term(), term()).
+transmit_by_label(GearBox, Label, Motion) ->
+    Labels = erlmachine_assembly:labels(GearBox),
+    SN = maps:get(Label, Labels),
+    Assembly = erlmachine_gearbox:find(GearBox, SN),
+    transmit(GearBox, Assembly, Motion).
 
 -spec transmit(GearBox::assembly(), Assembly::assembly(), Motion::term()) ->
                       success(term()) | failure(term(), term()).

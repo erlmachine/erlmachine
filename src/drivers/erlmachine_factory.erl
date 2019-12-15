@@ -203,7 +203,6 @@ gearbox(Model, Prot, ModelOpt, ProtOpt, AssemblyOpt, Env) ->
     Assembly = erlmachine_assembly:assembly(),
     Input = [Model, ModelOpt, Prot, ProtOpt, [{type, supervisor}|AssemblyOpt], GearBox, Prefix],
     Release = pass(Assembly, ?MODULE, Input),
-    io:format("~n~p ~p ~p~n",[?MODULE, Schema, self()]),
     Release.
 
 -spec pass(Assembly::assembly(), Name::atom(), Parts::list(term())) ->
