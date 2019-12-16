@@ -13,7 +13,7 @@
 %% This can evolve messaging systems reusage;
 
 -export([rotate/2]).
--export([transmit/3]).
+-export([transmit/2]).
 -export([connect/2, disconnect/2]).
 
 -export([
@@ -163,13 +163,13 @@ accept(GearBox, Criteria) ->
                     Motion::term().
 rotate(GearBox, Motion) ->
     Input = input(GearBox), Assembly = find(GearBox, Input),
-    erlmachine_transmission:rotate(Assembly, Motion).
+    erlmachine_transmission:rotate(GearBox, Assembly, Motion).
 
--spec transmit(GearBox::assembly(), Motion::term(), TimeOut::integer()) ->
+-spec transmit(GearBox::assembly(), Motion::term()) ->
                       success(term()) | failure(term(), term()).
-transmit(GearBox, Motion, TimeOut) ->
+transmit(GearBox, Motion) ->
     Input = input(GearBox), Assembly = find(GearBox, Input),
-    erlmachine_transmission:transmit(Assembly, Motion, TimeOut).
+    erlmachine_transmission:transmit(GearBox, Assembly, Motion).
 
 -spec connect(GearBox::assembly(), Part::assembly()) ->
                     success(term()) | failure(term(), term()).
