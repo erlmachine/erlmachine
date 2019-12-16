@@ -19,8 +19,8 @@
 
 -export([
          install/1, install/2,
-         attach/4, attach_to_label/4, attach_by_label/4, attach/3,
-         detach/3, detach_from_label/3, detach_by_label/3, detach/2,
+         attach/4, attach_to_label/4, attach_by_label/4, attach_by_serial_no/4, attach/3,
+         detach/3, detach_from_label/3, detach_by_label/3, detach_by_serial_no/3, detach/2,
          uninstall/2, uninstall/3
         ]).
 
@@ -164,6 +164,12 @@ attach_by_label(GearBox, SN, Register, Label) ->
     Part =  erlmachine_gearbox:find(GearBox, maps:get(Label, Labels)),
     attach(GearBox, SN, Register, Part).
 
+-spec attach_by_serial_no(GearBox::assembly(), SN::serial_no(), Register::term(), ID::serial_no()) -> 
+                             success(term()) | failure(term(), term()).
+attach_by_serial_no(GearBox, SN, Register, ID) ->
+    Part =  erlmachine_gearbox:find(GearBox, ID),
+    attach(GearBox, SN, Register, Part).
+
 -spec attach(GearBox::assembly(), SN::serial_no(), Register::term(), Part::assembly()) -> 
                     success(term()) | failure(term(), term()).
 attach(GearBox, SN, Register, Part) ->
@@ -192,6 +198,11 @@ detach_from_label(GearBox, Label, ID) ->
 detach_by_label(GearBox, SN, Label) ->
     Labels = labels(GearBox),
     ID = maps:get(Label, Labels),
+    detach(GearBox, SN, ID). 
+
+-spec detach_by_serial_no(GearBox::assembly(), SN::serial_no(), ID::serial_no()) -> 
+                             success(term()) | failure(term(), term()).
+detach_by_serial_no(GearBox, SN, ID) ->
     detach(GearBox, SN, ID). 
 
 -spec detach(GearBox::assembly(), SN::serial_no(), ID::serial_no()) -> 
