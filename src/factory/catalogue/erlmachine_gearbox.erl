@@ -195,7 +195,8 @@ body(GearBox, Body) ->
 
 -spec input(GearBox::assembly()) -> assembly().
 input(GearBox) ->
-    GearBox#gearbox.input.
+    Product = erlmachine_assembly:product(GearBox),
+    Product#gearbox.input.
 
 -spec input(GearBox::assembly(), SN::serial_no()) -> Release::assembly().
 input(GearBox, SN) ->
