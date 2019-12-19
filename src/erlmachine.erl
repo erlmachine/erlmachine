@@ -92,7 +92,8 @@ body(Motion) ->
 
 -spec body(Motion::motion(), Body::body()) -> motion().
 body(Motion, Body) ->
-    maps:put(body, Body, Motion).
+    Envelope = envelope(Motion),
+    maps:put(envelope, Envelope#{body => Body}, Motion).
 
 -spec command(Body::body()) -> motion(). 
 command(Body) ->
