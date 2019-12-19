@@ -17,7 +17,7 @@
          transmit/3, transmit_by_label/3
         ]).
 
--export([motion/1, motion/2, envelope/1, header/1, body/1]).
+-export([motion/1, motion/2, envelope/1, header/1, property/1, property/2, body/1, body/2]).
 -export([command/1, command/2]).
 -export([document/1, document/2]).
 -export([event/1, event/2]).
@@ -93,11 +93,25 @@ header(Motion) ->
     #{header := Header} = Envelope,
     Header.
 
+-spec property(Id::term(), Motion::motion()) -> term().
+property(Id, Motion) ->
+    property(Id, Motion, undefined).
+
+-spec property(Id::term(), Motion::motion(), Default::term()) -> term().
+property(Id, Motion, Default) ->
+    Header = header(Motion),
+    maps:get(Id, Header, Default).
+
 -spec body(Motion::motion()) -> body().
 body(Motion) ->
     Envelope = envelope(Motion),
     #{body := Body} = Envelope,
     Body.
+
+-spec body(Motion::motion(), Body::body()) -> body().
+body(Motion, Body) ->
+    Envelope = envelope(Motion),
+    maps:put(envelope, Envelope#{body => Body}, Motion).
 
 -spec command(Body::body()) -> motion(). 
 command(Body) ->

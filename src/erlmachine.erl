@@ -79,12 +79,11 @@ header(Motion) ->
 
 -spec property(Id::term(), Motion::motion()) -> term().
 property(Id, Motion) ->
-    property(Id, Motion, undefined).
+    erlmachine_transmission:property(Id, Motion).
 
 -spec property(Id::term(), Motion::motion(), Default::term()) -> term().
 property(Id, Motion, Default) ->
-    Header = erlmachine_transmission:header(Motion),
-    maps:get(Id, Header, Default).
+    erlmachine_transmission:property(Id, Motion, Default).
 
 -spec body(Motion::motion()) -> body().
 body(Motion) ->
@@ -92,8 +91,7 @@ body(Motion) ->
 
 -spec body(Motion::motion(), Body::body()) -> motion().
 body(Motion, Body) ->
-    Envelope = envelope(Motion),
-    maps:put(envelope, Envelope#{body => Body}, Motion).
+    erlmachine_transmission:body(Motion, Body).
 
 -spec command(Body::body()) -> motion(). 
 command(Body) ->
