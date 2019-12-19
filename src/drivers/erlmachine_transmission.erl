@@ -17,7 +17,7 @@
          transmit/3, transmit_by_label/3
         ]).
 
--export([motion/1, motion/2, envelope/1, header/1, property/1, property/2, body/1, body/2]).
+-export([motion/1, motion/2, envelope/1, header/1, property/2, property/3, body/1, body/2]).
 -export([command/1, command/2]).
 -export([document/1, document/2]).
 -export([event/1, event/2]).
