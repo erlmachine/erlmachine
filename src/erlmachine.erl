@@ -5,7 +5,7 @@
 -export([start/0, stop/0]).
 
 -export([motion/1, motion/2]).
--export([envelope/1, header/1, body/1, body/2, property/2, property/3]).
+-export([envelope/1, header/1, body/1]).
 
 -export([command/1, command/2]).
 -export([document/1, document/2]).
@@ -77,21 +77,9 @@ envelope(Motion) ->
 header(Motion) ->
     erlmachine_transmission:header(Motion).
 
--spec property(Id::term(), Motion::motion()) -> term().
-property(Id, Motion) ->
-    erlmachine_transmission:property(Id, Motion).
-
--spec property(Id::term(), Motion::motion(), Default::term()) -> term().
-property(Id, Motion, Default) ->
-    erlmachine_transmission:property(Id, Motion, Default).
-
 -spec body(Motion::motion()) -> body().
 body(Motion) ->
     erlmachine_transmission:body(Motion).
-
--spec body(Motion::motion(), Body::body()) -> motion().
-body(Motion, Body) ->
-    erlmachine_transmission:body(Motion, Body).
 
 -spec command(Body::body()) -> motion(). 
 command(Body) ->
