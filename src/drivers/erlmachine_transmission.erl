@@ -13,7 +13,7 @@
         ]).
 
 -export([
-         rotate/3, rotate_by_label/3,
+         rotate/3, rotate_by_serial_no/3, rotate_by_label/3,
          transmit/3, transmit_by_label/3
         ]).
 
@@ -44,6 +44,11 @@
 rotate_by_label(GearBox, Label, Motion) ->
     Labels = erlmachine_assembly:labels(GearBox),
     SN = maps:get(Label, Labels),
+    rotate_by_serial_no(GearBox, SN, Motion).
+
+-spec rotate_by_serial_no(GearBox::assembly(), SN::serial_no(), Motion::term()) -> 
+                             Motion::term().
+rotate_by_serial_no(GearBox, SN, Motion) ->
     Assembly = erlmachine_gearbox:find(GearBox, SN),
     rotate(GearBox, Assembly, Motion).
 
