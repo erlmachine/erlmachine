@@ -113,8 +113,8 @@ uninstall(Name, _GearBox, _Shaft, Reason) ->
 
 -record(accept, {criteria::acceptance_criteria()}).
 
--spec accept(Name::serial_no(), GearBox::assembly(), Shaft::assembly(), Criteria::acceptance_criteria()) ->
-                    accept() | reject().
+-spec accept(Name::serial_no(), GearBox::assembly(), Shaft::assembly(), Criteria::criteria()) ->
+                    success() | failure(E::term(), R::term(), S::term()).
 accept(Name, _GearBox, _Shaft, Criteria) -> 
     gen_server:call(Name, #accept{criteria=Criteria}).
 
@@ -139,15 +139,15 @@ handle_call(#detach{id = ID}, _From, #state{gearbox=GearBox, shaft=Shaft} = Stat
 
 handle_call(#transmit{motion = Motion}, _From, #state{gearbox=GearBox, shaft=Shaft} = State) ->
     {ok, Result, Release} = erlmachine_shaft:transmit(GearBox, Shaft, Motion),
-    {reply, Result, State#state{shaft=Release}};
+    {reply, {ok, Result}, State#state{shaft=Release}};
 
 handle_call(#replace{repair=Repair}, _From, #state{gearbox=GearBox, shaft=Shaft} = State) ->
     Result = {ok, Release} = erlmachine_shaft:replace(GearBox, Shaft, Repair),
     {reply, Result, State#state{shaft=Release}};
 
 handle_call(#accept{criteria = Criteria}, _From, #state{gearbox=GearBox, shaft=Shaft} = State) ->
-    {ok, Report, Release} = erlmachine_shaft:accept(GearBox, Shaft, Criteria),
-    {reply, Report, State#state{shaft=Release}};
+    Status = erlmachine_shaft:accept(GearBox, Shaft, Criteria),
+    {reply, Status, State};
 
 handle_call(Req, _From, #state{gearbox=GearBox, shaft=Shaft} = State) ->
     erlmachine_shaft:call(GearBox, Shaft, Req),

@@ -46,10 +46,10 @@
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
 -callback uninstall(SN::serial_no(), Reason::term(), Body::term()) -> 
-    success() | failure(term(), term()) | failure(term()).
+    success() | failure(term(), term(), term()).
 
--callback accept(SN::serial_no(), Criteria::term(), Body::term()) -> 
-    success(term(), term()) | failure(term(), term(), term()) | failure(term()).
+-callback accept(SN::serial_no(), Criteria::criteria(), Body::term()) -> 
+    success() | failure(term(), term(), term()).
 
 -callback attach(SN::serial_no(), Register::term(), ID::serial_no(), Body::term()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
@@ -140,24 +140,14 @@ detach(GearBox, ID) ->
 uninstall(GearBox, Reason) ->
     ModelName = erlmachine_assembly:model_name(GearBox),
     SN = erlmachine_assembly:serial_no(GearBox),
-    ok = ModelName:uninstall(SN, Reason, body(GearBox)),
-    ok.
+    ModelName:uninstall(SN, Reason, body(GearBox)).
 
 -spec accept(GearBox::assembly(), Criteria::term()) ->
-                    success(Report::term(), Release::assembly())| failure(E::term(), R::term(), Rejected::assembly()).
+                    success()| failure(E::term(), R::term(), S::term()).
 accept(GearBox, Criteria) ->
     ModelName = erlmachine_assembly:model_name(GearBox),
     SN = erlmachine_assembly:serial_no(GearBox),
-    {Tag, Result, Body} = ModelName:accept(SN, Criteria, body(GearBox)),
-    Release = body(GearBox, Body),
-    case Tag of 
-        ok ->
-            Report = Result,
-            {ok, Report, Release};
-        error ->
-            {_, Report} = Result,
-            {error, Report, Release} 
-    end.
+    ModelName:accept(SN, Criteria, body(GearBox)).
 
 -spec rotate(GearBox::assembly(), Motion::term()) ->
                     Motion::term().

@@ -93,17 +93,15 @@ init(#install{gearbox=GearBox, axle=Axle, options=Opt}) ->
 %% This approach can also be used to walk through topology;
 
 -spec uninstall(Name::serial_no(), GearBox::assembly(), Axle::assembly(), Reason::term()) ->
-                       ok.
+                       success().
 uninstall(Name, GearBox, Axle, Reason) ->
     exit(whereis(format_name(Name)), Reason),
-    {ok, _} = erlmachine_axle:uninstall(GearBox, Axle, Reason),
-    ok.
+    erlmachine_axle:uninstall(GearBox, Axle, Reason).
 
--spec accept(Name::serial_no(), GearBox::assembly(), Axle::assembly(), Criteria::acceptance_criteria()) ->
-                    accept() | reject().
+-spec accept(Name::serial_no(), GearBox::assembly(), Axle::assembly(), Criteria::criteria()) ->
+                    success() | failure(E::term(), R::term(), S::term()).
 accept(_Name, GearBox, Axle, Criteria) ->
-    {ok, Report, _Release} = erlmachine_axle:accept(GearBox, Axle, Criteria),
-    Report.
+    erlmachine_axle:accept(GearBox, Axle, Criteria).
 
 %% TODO
 %% I am going to provide mnesia gears, mongodb , etc..

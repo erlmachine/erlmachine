@@ -1,0 +1,2 @@
+-module(shaft_accept).
+-export([]).

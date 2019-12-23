@@ -23,8 +23,8 @@
 -callback uninstall(SN::serial_no(), Reason::term(), Body::term()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
--callback accept(SN::serial_no(), Criteria::term(), Body::term()) -> 
-    success(term(), term()) | failure(term(), term(), term()) | failure(term()).
+-callback accept(SN::serial_no(), Criteria::criteria(), Body::term()) -> 
+    success() | failure(term(), term(), term()).
 
 -callback attach(SN::serial_no(), Register::term(), ID::serial_no(), Body::term()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
@@ -84,25 +84,20 @@ detach(GearBox, Axle, ID) ->
     erlmachine_assembly:detached(GearBox, Release, ID),
     {ok, Release}. %% TODO
 
--spec accept(GearBox::assembly(), Axle::assembly(), Criteria::term()) ->
-                    success(Report::term(), Release::assembly())| failure(E::term(), R::term(), Rejected::assembly()).
+-spec accept(GearBox::assembly(), Axle::assembly(), Criteria::criteria()) ->
+                    success() | failure(E::term(), R::term(), S::term()).
 accept(GearBox, Axle, Criteria) ->
     ModelName = erlmachine_assembly:model_name(Axle),
     SN = erlmachine_assembly:serial_no(Axle),
-  
-    {Tag, Result, Body} = ModelName:accept(SN, Criteria, body(Axle)),
     
-    Release = body(Axle, Body),
-    case Tag of 
+    Result = ModelName:accept(SN, Criteria, body(Axle)),
+    case Result of 
         ok ->
-            Report = Result,
-            erlmachine_assembly:accepted(GearBox, Release, Criteria, Report),
-            {ok, Result, Release};
-        error ->
-            {_, Report} = Result,
-            erlmachine_assembly:rejected(GearBox, Release, Criteria, Report),
-            {error, Result, Release} 
-    end.
+            erlmachine_factory:accepted(GearBox, Axle, Criteria);
+        _ ->
+            erlmachine_factory:rejected(GearBox, Axle, Criteria, Result)
+    end,
+    Result.
 
 -spec uninstall(GearBox::assembly(), Axle::assembly(), Reason::term()) -> 
                        ok.

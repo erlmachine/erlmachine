@@ -1,0 +1,2 @@
+-module(gear_accept).
+-export([]).

@@ -21,7 +21,7 @@
          replaced/4,
          overloaded/4, blocked/5,
          uninstalled/4,
-         accepted/5, rejected/5
+         accepted/4, rejected/5
         ]).
 
 -export([init/1]).
@@ -102,18 +102,18 @@ replaced(_Name, GearBox, Part, Extension) ->
     trace(GearBox, #{replaced => SN, extension => Extension}),
     ok.
 
--spec accepted(Name::serial_no(), GearBox::assembly(), Part::assembly(), Criteria::acceptance_criteria(), Report::term()) -> 
+-spec accepted(Name::serial_no(), GearBox::assembly(), Extension::assembly(), Criteria::criteria()) -> 
                       ok.
-accepted(_Name, GearBox, Part, Criteria, Report) ->
-    SN = erlmachine_assembly:serial_no(Part),
-    trace(GearBox, #{accepted => SN, criteria => Criteria, report => Report}),
+accepted(_Name, GearBox, Extension, Criteria) ->
+    SN = erlmachine_assembly:serial_no(Extension),
+    trace(GearBox, #{accepted => SN, criteria => Criteria}),
     ok.
 
--spec rejected(Name::serial_no(),  GearBox::assembly(), Part::assembly(), Criteria::acceptance_criteria(), Report::term()) -> 
+-spec rejected(Name::serial_no(), GearBox::assembly(), Extension::assembly(), Criteria::criteria(), Result::term()) -> 
                       ok.
-rejected(_Name, GearBox, Part, Criteria, Report) ->
-    SN = erlmachine_assembly:serial_no(Part),
-    trace(GearBox, #{rejected => SN, criteria => Criteria, report => Report}),
+rejected(_Name, GearBox, Extension, Criteria, Result) ->
+    SN = erlmachine_assembly:serial_no(Extension),
+    trace(GearBox, #{rejected => SN, criteria => Criteria, result => Result}),
     ok.
 
 -spec attach(Name::serial_no(), GearBox::assembly(), Register::term(), Extension::assembly()) ->
@@ -155,7 +155,7 @@ init(#install{gearbox=GearBox, options=Opt}) ->
     {ok, {#{strategy => Strategy, intensity => Intensity, period => Period}, Specs}}.
 
 -spec uninstall(Name::serial_no(), GearBox::assembly(), Reason::term()) ->
-                       ok.
+                       success().
 uninstall(Name, GearBox, Reason) ->
     exit(whereis(format_name(Name)), Reason),
     IDs = [erlmachine_assembly:serial_no(Part) || Part <- erlmachine_gearbox:parts(GearBox)],
@@ -164,10 +164,9 @@ uninstall(Name, GearBox, Reason) ->
     ok.
 
 -spec accept(Name::serial_no(), GearBox::assembly(), Criteria::acceptance_criteria()) ->
-                    accept() | reject().
+                    success() | failure(E::term(), R::term(), S::term()).
 accept(_Name, GearBox, Criteria) ->
-    {ok, Report, _Release} = erlmachine_gearbox:accept_model(GearBox, Criteria),
-    Report.
+    erlmachine_gearbox:accept(GearBox, Criteria).
 
 
 -spec spec(GearBox::assembly(), Part::assembly()) -> Spec::map().

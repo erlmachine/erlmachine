@@ -45,13 +45,17 @@
 -export([axle/3, axle/4, axle/6]).
 -export([gearbox/3, gearbox/4, gearbox/6]).
 
+-export([accept/2, accept/3]).
+
+-export([accepted/3, rejected/4]).
+
 -export([serial_no/0]).
 
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
 -include("erlmachine_filesystem.hrl").
 
--type no()::erlmachine_serial_no:no().
+-type seed() :: erlmachine:seed().
 
 %% Here are different kind of builders can be provided;
 %% For example - YAML builder;
@@ -66,46 +70,51 @@
                         assembly().
 model_name(Assembly, Name) ->
     Model = erlmachine_assembly:model(),
-    Release = erlmachine_assembly:model_name(erlmachine_assembly:model(Assembly, Model), Name),
-    Release.
+    erlmachine_assembly:model_name(erlmachine_assembly:model(Assembly, Model), Name).
 
--spec model_options(Assembly::assembly(), Options::list(term())) ->
+-spec model_options(Assembly::assembly(), Opt::list(term())) ->
                            assembly().
-model_options(Assembly, Options) ->
-    Release = erlmachine_assembly:model_options(Assembly, Options),
-    Release.
+model_options(Assembly, Opt) ->
+    erlmachine_assembly:model_options(Assembly, Opt).
 
 -spec prototype_name(Assembly::assembly(), Name::atom()) -> 
                             assembly().
 prototype_name(Assembly, Name) ->
     Prototype = erlmachine_assembly:prototype(),
-    Release = erlmachine_assembly:prototype_name(erlmachine_assembly:prototype(Assembly, Prototype), Name),
-    Release.
+    erlmachine_assembly:prototype_name(erlmachine_assembly:prototype(Assembly, Prototype), Name).
 
--spec prototype_options(Assembly::assembly(), Options::list(term())) -> 
+-spec prototype_options(Assembly::assembly(), Opt::list(term())) -> 
                                assembly().
-prototype_options(Assembly, Options) ->
-    Release = erlmachine_assembly:prototype_options(Assembly, Options),
-    Release.
+prototype_options(Assembly, Opt) ->
+    erlmachine_assembly:prototype_options(Assembly, Opt).
 
--spec assembly_options(Assembly::assembly(), Options::list()) -> 
+-spec assembly_options(Assembly::assembly(), Opt::list()) -> 
                               assembly().
-assembly_options(Assembly, Options) ->
-    Release = erlmachine_assembly:assembly_options(Assembly, Options),
-    Release.
+assembly_options(Assembly, Opt) ->
+    erlmachine_assembly:assembly_options(Assembly, Opt).
 
 -spec product(Assembly::assembly(), Product::product()) -> 
                      assembly().
 product(Assembly, Product) ->
-    Release = erlmachine_assembly:product(Assembly, Product),
-    Release.
+    erlmachine_assembly:product(Assembly, Product).
 
 -spec serial_no(Assembly::assembly(), Prefix::binary()) ->
                        assembly().
 serial_no(Assembly, Prefix) ->
-    SN = erlmachine_factory:serial_no(),
-    Release = erlmachine_assembly:serial_no(Assembly, <<Prefix/binary, SN/binary>>),
-    Release.
+    SN = serial_no(),
+    erlmachine_assembly:serial_no(Assembly, <<Prefix/binary, SN/binary>>).
+
+%% I am thinking about two kind of acceptance test;
+%% The first one is ability to check prototype with default test models;
+%% The second one is acceptance test accordingly to a specific model
+%% which can be accomplished by specific implementation;
+
+%% I am thinking about two kind of methods: 
+%% SN = warhouse:store(Assembly), warhouse:load(SN) and MN = factory:register(Model), factory:build(MN); 
+%% All system elements will be stored by default;
+%% We can check the whole list of registered models to provide accept call to each of them;
+
+%% I think about catalog concept for models storage;
 
 -spec gear(GearBox::assembly(), Model::atom(), ModelOpt::term()) ->
                   Gear::assembly().
@@ -126,11 +135,10 @@ gear(_GearBox, Model, Prot, ModelOpt, ProtOpt, AssemblyOpt) ->
     Body = #{},
     Gear = erlmachine_gear:gear(Body),
     Prefix = <<"SN-G-">>,
-    Assembly = erlmachine_assembly:assembly(),
     %% Additional flags
     Input = [Model, ModelOpt, Prot, ProtOpt, [{type, worker}|AssemblyOpt], Gear, Prefix],
-    Release = pass(Assembly, ?MODULE, Input),
-    Release.
+    Assembly = erlmachine_assembly:assembly(),
+    pass(Assembly, ?MODULE, Input).
 
 -spec shaft(GearBox::assembly(), Model::atom(), ModelOpt::term()) ->
                    Shaft::assembly().
@@ -151,10 +159,9 @@ shaft(_GearBox, Model, Prot, ModelOpt, ProtOpt, AssemblyOpt) ->
     Body = [],
     Shaft = erlmachine_shaft:shaft(Body),
     Prefix = <<"SN-S-">>,
-    Assembly = erlmachine_assembly:assembly(),
     Input = [Model, ModelOpt, Prot, ProtOpt, [{type, worker}|AssemblyOpt], Shaft, Prefix],
-    Release = pass(Assembly, ?MODULE, Input),
-    Release.
+    Assembly = erlmachine_assembly:assembly(),
+    pass(Assembly, ?MODULE, Input).
 
 -spec axle(GearBox::assembly(), Model::atom(), ModelOpt::term()) -> 
                   Axle::assembly().
@@ -175,10 +182,9 @@ axle(_GearBox, Model, Prot, ModelOpt, ProtOpt, AssemblyOpt) ->
     Body = [],
     Axle = erlmachine_axle:axle(Body),
     Prefix = <<"SN-A-">>,
-    Assembly = erlmachine_assembly:assembly(),
     Input = [Model, ModelOpt, Prot, ProtOpt, [{type, supervisor}|AssemblyOpt], Axle, Prefix],
-    Release = pass(Assembly, ?MODULE, Input),
-    Release.
+    Assembly = erlmachine_assembly:assembly(),
+    pass(Assembly, ?MODULE, Input).
 
 -spec gearbox(Model::atom(), ModelOpt::term(), Env::term()) ->
                      Axle::assembly().
@@ -200,10 +206,9 @@ gearbox(Model, Prot, ModelOpt, ProtOpt, AssemblyOpt, Env) ->
     Schema = digraph:new([acyclic, protected]),
     GearBox = erlmachine_gearbox:gearbox(Body, Env, Schema),
     Prefix = <<"SN-GX-">>,
-    Assembly = erlmachine_assembly:assembly(),
     Input = [Model, ModelOpt, Prot, ProtOpt, [{type, supervisor}|AssemblyOpt], GearBox, Prefix],
-    Release = pass(Assembly, ?MODULE, Input),
-    Release.
+    Assembly = erlmachine_assembly:assembly(),
+    pass(Assembly, ?MODULE, Input).
 
 -spec pass(Assembly::assembly(), Name::atom(), Parts::list(term())) ->
                   assembly().
@@ -231,23 +236,27 @@ serial_no() ->
     %% Just default timeout for the first time;
     ID = id(),
     SN = gen_server:call(ID, #serial_no{}),
-    SN.
+    erlmachine:base64url(SN).
 
 %% gen_server.
 
--record(state, {serial::integer(), no::no(), file::binary()}).
+-record(state, {seed::seed(), serial_no::serial_no()}).
 
 init([]) ->
     %% A folder will be appended, cause attribute is listed above in the module declaration;
-    File = <<"erlmachine_factory.serial">>, {ok, Serial} = erlmachine:read_serial(File),
-    No = erlmachine_serial_no:no(Serial),
-    {ok, #state{serial=Serial, no=No, file=File}}.
+    
+    {ok, Seed} = erlmachine:read_seed(),
+    
+    SN = erlmachine_serial_no:serial_no(Seed),
+    io:format("~nS: ~p~n",[SN]),
+    {ok, #state{seed=Seed, serial_no=SN}}.
 
-handle_call(#serial_no{}, _From, #state{serial=Serial, no=No}=State) ->
-    SN = erlmachine_serial_no:serial_no(No),
-    IncSerial = erlmachine:serial(Serial),
-    RotateNo = erlmachine_serial_no:no(No, IncSerial),
-    {reply, SN, State#state{serial=IncSerial, no=RotateNo}};
+handle_call(#serial_no{}, _From, #state{seed=Seed, serial_no=SN}=State) ->
+ 
+    Inc = erlmachine:seed(Seed),
+    
+    Rotate = erlmachine_serial_no:serial_no(Inc, SN),
+    {reply, SN, State#state{seed=Inc, serial_no=Rotate}};
 
 handle_call(_Request, _From, State) ->
     {reply, ignored, State}.
@@ -257,9 +266,41 @@ handle_cast(_Msg, State) ->	{noreply, State}.
 handle_info(_Info, State) ->
 	{noreply, State}.
 
-terminate(_Reason, #state{serial=Serial, file=File}) ->
-    ok = erlmachine:write_serial(File, Serial),
+terminate(_Reason, #state{seed=Seed}) ->
+    ok = erlmachine:write_seed(Seed),
     ok.
 
 code_change(_OldVsn, State, _Extra) ->
 	{ok, State}.
+
+-spec accept(GearBox::assembly(), Criteria::criteria()) -> 
+                    success(term()) | failure(term(), term()).
+accept(GearBox, Criteria) ->
+    SN = erlmachine_assembly:serial_no(GearBox),
+    Name = erlmachine_assembly:prototype_name(GearBox),
+    
+    Name:accept(SN, GearBox, Criteria).
+
+-spec accept(GearBox::assembly(), Assembly::assembly(), Criteria::criteria()) -> 
+                    success(term()) | failure(term(), term()).
+accept(GearBox, Assembly, Criteria) ->
+    SN = erlmachine_assembly:serial_no(Assembly),
+    Name = erlmachine_assembly:prototype_name(Assembly),
+    
+    Name:accept(SN, GearBox, Assembly, Criteria).
+
+-spec accepted(GearBox::assembly(), Assembly::assembly(), Criteria::criteria()) -> 
+                      ok.
+accepted(GearBox, Assembly, Criteria) ->
+    SN = erlmachine_assembly:serial_no(GearBox),
+    Name = erlmachine_assembly:prototype_name(GearBox),
+
+    Name:accepted(SN, GearBox, Assembly, Criteria).
+
+-spec rejected(GearBox::assembly(), Assembly::assembly(), Criteria::criteria(), Result::term()) -> 
+                      ok.
+rejected(GearBox, Assembly, Criteria, Result) ->
+    SN = erlmachine_assembly:serial_no(GearBox),
+    Name = erlmachine_assembly:prototype_name(GearBox),
+
+    Name:rejected(SN, GearBox, Assembly, Criteria, Result).

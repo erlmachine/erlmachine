@@ -2,6 +2,8 @@
 
 -folder(<<"erlmachine">>).
 
+-export([attribute/3]).
+
 -export([start/0, stop/0]).
 
 -export([motion/1, motion/2]).
@@ -16,15 +18,15 @@
 -export([success/0, success/1, success/2]).
 
 -export([guid/0, guid/1]).
--export([serial/0, serial/1]).
--export([read_serial/1, write_serial/2]).
+-export([seed/0, seed/1]).
+-export([read_seed/0, write_seed/1]).
 
--export([attribute/3]).
+-export([base64url/1]).
 
 -include("erlmachine_system.hrl").
 -include("erlmachine_filesystem.hrl").
 
--type serial()::integer().
+-type seed()::integer().
 
 -type motion() :: erlmachine_transmission:motion().
 
@@ -34,23 +36,14 @@
 
 -type body() :: erlmachine_transmission:body().
 
--record(guid, {node::node(), reference::reference(), serial::serial()}).
+-record(guid, {node::node(), reference::reference(), seed::seed()}).
 
 -type guid()::#guid{}.
 
--export_types([serial/0, guid/0]).
+-export_types([seed/0, guid/0]).
 
 %% The main purpouse of erlmachine project is providing a set of well designed behaviours which are accompanied with visualization tools as well.
 %%  Erlmachine doesn't restrict your workflow by the one possible way but instead provide to you ability to implement your own components. This ability is available under flexible mechanism of prototypes and overloading.  
-
--spec start() -> success().
-start() ->
-    {ok, _} = application:ensure_all_started(erlmachine),
-    success().
-
--spec stop() -> success() | failure(Reason :: any()).
-stop() ->
-    application:stop(erlmachine).
 
 -spec attribute(Module::atom(), Tag::atom(), Default::term()) -> false | {Tag::atom(), Value::term()}.
 attribute(Module, Tag, Default) ->
@@ -60,6 +53,15 @@ attribute(Module, Tag, Default) ->
         Result of false -> Default;
         {Tag, Data} -> Data 
     end.
+
+-spec start() -> success().
+start() ->
+    {ok, _} = application:ensure_all_started(erlmachine),
+    success().
+
+-spec stop() -> success() | failure(Reason :: any()).
+stop() ->
+    application:stop(erlmachine).
 
 -spec motion(Body::term()) -> motion().
 motion(Body) ->
@@ -113,6 +115,7 @@ request_reply(Body, Address) ->
 request_reply(Header, Body, Address) ->
     erlmachine_transmission:request_reply(Header, Body, Address).
 
+
 -spec failure(E::term(), R::term()) -> failure(E::term(), R::term()).
 failure(E, R) -> 
     erlmachine_system:failure(E, R).
@@ -137,43 +140,54 @@ success(Result, State) ->
 success() ->
     erlmachine_system:success().
 
+%% generate a readable string representation of a SN/MN/PN/TN.
+%%
+%% base64url encoding was provided; 
+%% This format is safer and more applicable by web (in comparison with base64);
+
+-spec base64url(N::binary()) -> Base64::binary().
+base64url(N) when is_binary(N) ->
+    Base64 = base64:encode(N),
+    Base64Url = [fun($+) -> <<"-">>; ($/) -> <<"_">>; (C) -> <<C>> end(Char)|| <<Char>> <= Base64],
+    << <<X/binary>> || X <- Base64Url >>.
+
 -spec guid() -> GUID::guid().
 guid() ->
     guid(0).
 
--spec guid(Serial::serial()) -> GUID::guid().
-guid(Serial) ->
-    GUID = #guid{node=node(), serial=Serial, reference=make_ref()},
+-spec guid(Seed::seed()) -> GUID::guid().
+guid(Seed) ->
+    GUID = #guid{node=node(), seed=Seed, reference=make_ref()},
     MD5 = erlang:md5(term_to_binary(GUID)),
     MD5.
 
--spec serial() -> serial().
-serial() ->
+-spec seed() -> seed().
+seed() ->
     0.
 
--spec serial(Serial::serial()) -> serial().
-serial(Serial) ->
-    Serial + 1.
+-spec seed(Seed::seed()) -> seed().
+seed(Seed) ->
+    Seed + 1.
 
 %% At this point we provide persisnence layer over serial counter;
 %% Until persistence layer exists we can be sureabout uniqueness of SN;
 %% When persistence layer is lost it's usually about both kind of data (seed and actually data itself);
 
--spec read_serial(Path::path()) -> success(Serial::integer()) | failure(E::term(), R::term()).
-read_serial(Path) ->
-    Serial =
-        case erlmachine_filesystem:read(Path) of
+-spec read_seed() -> success(Seed::integer()) | failure(E::term(), R::term()).
+read_seed() ->
+    Seed =
+        case erlmachine_filesystem:read(<<"">>) of
            {ok, [Num]} ->
                 {ok, Num};
             {ok, _} ->
-                {ok, serial()};
+                {ok, seed()};
             {error, _} = Error ->
                 Error
         end,
-    Serial.
+    Seed.
 
 %% At that place we consider to rewrite file instead of append;
--spec write_serial(Path::path(), Serial::integer()) -> success() | failure(E::term(), R::term()).
-write_serial(Path, Serial) ->
-    Result = erlmachine_filesystem:write(Path, [Serial]),
-    Result.
+-spec write_seed(Seed::integer()) -> success() | failure(E::term(), R::term()).
+write_seed(Seed) ->
+    Status = erlmachine_filesystem:write(<<"">>, [Seed]),
+    Status.

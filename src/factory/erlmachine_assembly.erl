@@ -28,8 +28,7 @@
          installed/2, 
          attached/3, detached/3,
          replaced/3,
-         accepted/4, rejected/4,
-         overloaded/3, blocked/4,
+         overloaded/3, blocked/4, %% TODO relocate to erlmachine_system
          uninstalled/3
         ]).
 
@@ -62,10 +61,10 @@
 %% The main purpose of this module is to instantiate proceses accordingly to design file;
 %% In this module will be provided incapsulation around building of independent parts and whole transmission too;
 
--type serial_no() :: erlmachine_serial_number:serial_no().
+-type serial_no() :: erlmachine_factory:serial_no().
 
--type model_no() :: term().
--type part_no() :: term().
+-type model_no() :: erlmachine_factory:model_no().
+-type part_no() :: erlmachine_factory:part_no().
 
 -type gear() :: erlmachine_gear:gear().
 -type axle() :: erlmachine_axle:axle().
@@ -88,7 +87,8 @@
                 name::atom(),
                 product::product(),
                 prototype::prototype(),
-                options::term()
+                options::term(),
+                sum::term()
                }
        ).
 
@@ -98,6 +98,7 @@
 %% The main difference between them is manual needs to be stored with body, and any changes need to be persisted;
 %% Automated exists in code but manual doesn't;
 
+%% The model is a key, all other parts and assembly itself can be restored;
 -record (assembly, {
                     %% We can get build info (ts, etc..) by serial number from db;
                     serial_no::serial_no(),
@@ -116,13 +117,7 @@
 
 -type label() :: atom().
 
--type acceptance_criteria() :: list().
--type accept() :: true.
--type reject() :: list().
-
 -export_type([assembly/0, model/0, prototype/0, product/0]).
--export_type([model_no/0, part_no/0]).
--export_type([acceptance_criteria/0, accept/0, reject/0]).
 
 -spec install(GearBox::assembly()) ->
                      success(pid()) | ingnore | failure(E::term()).
@@ -139,8 +134,7 @@ install(GearBox) ->
 install(GearBox, Assembly) ->
     SN = serial_no(Assembly),
     Options = prototype_options(Assembly),
-    Result = (prototype_name(Assembly)):install(SN, GearBox, Assembly, Options),
-    Result.
+    (prototype_name(Assembly)):install(SN, GearBox, Assembly, Options).
 
 -spec attach(GearBox::assembly(), Register::term(), Part::assembly()) -> 
                     success(term()) | failure(term(), term()).
@@ -225,8 +219,7 @@ uninstall(GearBox, Reason) ->
                        ok.
 uninstall(GearBox, SN, Reason) ->
     Assembly = erlmachine_gearbox:find(GearBox, SN),
-    Result = (prototype_name(GearBox)):uninstall(SN, GearBox, Assembly, Reason),
-    Result.
+    (prototype_name(GearBox)):uninstall(SN, GearBox, Assembly, Reason).
 
 -spec installed(GearBox::assembly(), Assembly::assembly()) -> 
                          ok.
@@ -259,20 +252,6 @@ detached(GearBox, Part, ID) ->
 replaced(GearBox, Assembly, Part) ->
     SN = serial_no(GearBox),
     Result = (prototype_name(GearBox)):replaced(SN, GearBox, Assembly, Part),
-    Result.
-
--spec accepted(GearBox::assembly(), Assembly::assembly(), Criteria::term(), Report::term()) -> 
-                      ok.
-accepted(GearBox, Assembly, Criteria, Report) ->
-    SN = serial_no(GearBox),
-    Result = (prototype_name(GearBox)):accepted(SN, GearBox, Assembly, Criteria, Report),
-    Result.
-
--spec rejected(GearBox::assembly(), Assembly::assembly(), Criteria::term(), Report::term()) -> 
-                      ok.
-rejected(GearBox, Assembly, Criteria, Report) ->
-    SN = serial_no(GearBox),
-    Result = (prototype_name(GearBox)):rejected(SN, GearBox, Assembly, Criteria, Report),
     Result.
 
 -spec overloaded(GearBox::assembly(), Assembly::assembly(), Load::term()) -> 
