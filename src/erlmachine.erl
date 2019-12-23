@@ -124,9 +124,9 @@ failure(E, R) ->
 failure(E) ->
     erlmachine_system:failure(E).
 
--spec failure(E::term(), R::term(), State::term()) -> failure(E::term(), R::term(), State::term()).
-failure(E, R, State) -> 
-    erlmachine_system:failure(E, R, State).
+-spec failure(E::term(), R::term(), S::term()) -> failure(E::term(), R::term(), S::term()).
+failure(E, R, S) -> 
+    erlmachine_system:failure(E, R, S).
 
 -spec success(Result::term()) -> success(Result::term()).
 success(Result) ->

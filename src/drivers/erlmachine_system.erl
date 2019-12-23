@@ -36,17 +36,17 @@ failure(E, R) ->
 failure(E) ->
     {error, E}.
 
--spec failure(E::term(), R::term(), State::term()) -> failure(E::term(), R::term(), State::term()).
-failure(E, R, State) -> 
-    {error, {E, R}, State}.
+-spec failure(E::term(), R::term(), S::term()) -> failure(E::term(), R::term(), S::term()).
+failure(E, R, S) -> 
+    {error, {E, R}, S}.
 
 -spec success(Result::term()) -> success(Result::term()).
 success(Result) ->
     {ok, Result}.
 
--spec success(Result::term(), State::term()) -> success(Result::term(), State::term()).
-success(Result, State) -> 
-    {ok, Result, State}.
+-spec success(Result::term(), S::term()) -> success(Result::term(), S::term()).
+success(Result, S) -> 
+    {ok, Result, S}.
 
 -spec success() -> success().
 success() ->

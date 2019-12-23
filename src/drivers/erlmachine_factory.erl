@@ -274,12 +274,21 @@ code_change(_OldVsn, State, _Extra) ->
 	{ok, State}.
 
 -spec accept(GearBox::assembly(), Criteria::criteria()) -> 
-                    success(term()) | failure(term(), term()).
+                    success() | failure(E::term(), R::term(), S::term()).
 accept(GearBox, Criteria) ->
     SN = erlmachine_assembly:serial_no(GearBox),
     Name = erlmachine_assembly:prototype_name(GearBox),
     
-    Name:accept(SN, GearBox, Criteria).
+    Result = 
+        try 
+            erlmachine_assembly:install(GearBox),
+            Status = Name:accept(SN, GearBox, Criteria),
+            erlmachine_assembly:uninstall(GearBox, normal),
+            Status
+        catch E:R:S ->
+                erlmachine:failure(E, R, S) 
+        end,
+    Result.
 
 -spec accept(GearBox::assembly(), Assembly::assembly(), Criteria::criteria()) -> 
                     success(term()) | failure(term(), term()).
@@ -287,7 +296,16 @@ accept(GearBox, Assembly, Criteria) ->
     SN = erlmachine_assembly:serial_no(Assembly),
     Name = erlmachine_assembly:prototype_name(Assembly),
     
-    Name:accept(SN, GearBox, Assembly, Criteria).
+    Result = 
+        try 
+            erlmachine_assembly:install(GearBox, Assembly),
+            Status = Name:accept(SN, GearBox, Assembly, Criteria),
+            erlmachine_assembly:uninstall(GearBox, SN, normal),
+            Status
+        catch E:R:S ->
+                erlmachine:failure(E, R, S) 
+        end,
+    Result.
 
 -spec accepted(GearBox::assembly(), Assembly::assembly(), Criteria::criteria()) -> 
                       ok.
