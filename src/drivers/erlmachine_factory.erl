@@ -248,7 +248,6 @@ init([]) ->
     {ok, Seed} = erlmachine:read_seed(),
     
     SN = erlmachine_serial_no:serial_no(Seed),
-    io:format("~nS: ~p~n",[SN]),
     {ok, #state{seed=Seed, serial_no=SN}}.
 
 handle_call(#serial_no{}, _From, #state{seed=Seed, serial_no=SN}=State) ->
