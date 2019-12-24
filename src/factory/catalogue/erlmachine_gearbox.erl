@@ -147,7 +147,8 @@ uninstall(GearBox, Reason) ->
 accept(GearBox, Criteria) ->
     ModelName = erlmachine_assembly:model_name(GearBox),
     SN = erlmachine_assembly:serial_no(GearBox),
-    ModelName:accept(SN, Criteria, body(GearBox)).
+    {ok, Result, _} = ModelName:accept(SN, Criteria, body(GearBox)),
+    {ok, Result, GearBox}.
 
 -spec rotate(GearBox::assembly(), Motion::term()) ->
                     Motion::term().

@@ -135,7 +135,7 @@ accept(GearBox, Gear, Criteria) ->
     ModelName = erlmachine_assembly:model_name(Gear),
     SN = erlmachine_assembly:serial_no(Gear),
 
-    Result = ModelName:accept(SN, Criteria, body(Gear)),
+    {ok, Result, _} = ModelName:accept(SN, Criteria, body(Gear)),
     
     case Result of 
         ok ->
@@ -143,7 +143,7 @@ accept(GearBox, Gear, Criteria) ->
         _ ->
             erlmachine_factory:rejected(GearBox, Gear, Criteria, Result)
     end,
-    Result.
+    {ok, Result, Gear}.
 
 -spec rotate(GearBox::assembly(), Gear::assembly(), Motion::term()) ->
                   success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).

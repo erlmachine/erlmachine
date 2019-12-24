@@ -90,14 +90,14 @@ accept(GearBox, Axle, Criteria) ->
     ModelName = erlmachine_assembly:model_name(Axle),
     SN = erlmachine_assembly:serial_no(Axle),
     
-    Result = ModelName:accept(SN, Criteria, body(Axle)),
+    {ok, Result, _} = ModelName:accept(SN, Criteria, body(Axle)),
     case Result of 
         ok ->
             erlmachine_factory:accepted(GearBox, Axle, Criteria);
         _ ->
             erlmachine_factory:rejected(GearBox, Axle, Criteria, Result)
     end,
-    Result.
+    {ok, Result, Axle}.
 
 -spec uninstall(GearBox::assembly(), Axle::assembly(), Reason::term()) -> 
                        ok.
