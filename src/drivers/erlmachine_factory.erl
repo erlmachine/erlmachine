@@ -45,7 +45,7 @@
 -export([axle/3, axle/4, axle/6]).
 -export([gearbox/3, gearbox/4, gearbox/6]).
 
--export([accept/2, accept/3]).
+-export([accept/2, accept/4]).
 
 -export([accepted/3, rejected/4]).
 
@@ -289,17 +289,17 @@ accept(GearBox, Criteria) ->
         end,
     Result.
 
--spec accept(GearBox::assembly(), Assembly::assembly(), Criteria::criteria()) -> 
+-spec accept(GearBox::assembly(), Register::term(), Assembly::assembly(), Criteria::criteria()) -> 
                     success(term()) | failure(term(), term()).
-accept(GearBox, Assembly, Criteria) ->
+accept(GearBox, Register, Assembly, Criteria) ->
     SN = erlmachine_assembly:serial_no(Assembly),
     Name = erlmachine_assembly:prototype_name(Assembly),
     
     Result = 
         try 
-            erlmachine_assembly:install(GearBox, Assembly),
+            erlmachine_assembly:attach(GearBox, Register, Assembly),
             Status = Name:accept(SN, GearBox, Assembly, Criteria),
-            erlmachine_assembly:uninstall(GearBox, SN, normal),
+            erlmachine_assembly:detach(GearBox, SN),
             Status
         catch E:R:S ->
                 erlmachine:failure(E, R, S) 
