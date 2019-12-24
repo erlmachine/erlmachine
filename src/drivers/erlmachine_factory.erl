@@ -45,7 +45,7 @@
 -export([axle/3, axle/4, axle/6]).
 -export([gearbox/3, gearbox/4, gearbox/6]).
 
--export([accept/2, accept/4]).
+-export([accept/2, accept/3, accept/4]).
 
 -export([accepted/3, rejected/4]).
 
@@ -288,6 +288,11 @@ accept(GearBox, Criteria) ->
                 erlmachine:failure(E, R, S) 
         end,
     Result.
+
+-spec accept(GearBox::assembly(), Assembly::assembly(), Criteria::criteria()) -> 
+                    success(term()) | failure(term(), term()).
+accept(GearBox, Assembly, Criteria) ->
+    accept(GearBox, undefined, Assembly, Criteria).
 
 -spec accept(GearBox::assembly(), Register::term(), Assembly::assembly(), Criteria::criteria()) -> 
                     success(term()) | failure(term(), term()).
