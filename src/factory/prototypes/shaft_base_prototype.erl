@@ -139,15 +139,15 @@ handle_call(#detach{id = ID}, _From, #state{gearbox=GearBox, shaft=Shaft} = Stat
 
 handle_call(#transmit{motion = Motion}, _From, #state{gearbox=GearBox, shaft=Shaft} = State) ->
     {ok, Result, Release} = erlmachine_shaft:transmit(GearBox, Shaft, Motion),
-    {reply, {ok, Result}, State#state{shaft=Release}};
+    {reply, Result, State#state{shaft=Release}};
+
+handle_call(#accept{criteria = Criteria}, _From, #state{gearbox=GearBox, shaft=Shaft} = State) ->
+    {ok, Status, _} = erlmachine_shaft:accept(GearBox, Shaft, Criteria),
+    {reply, Status, State};
 
 handle_call(#replace{repair=Repair}, _From, #state{gearbox=GearBox, shaft=Shaft} = State) ->
     Result = {ok, Release} = erlmachine_shaft:replace(GearBox, Shaft, Repair),
     {reply, Result, State#state{shaft=Release}};
-
-handle_call(#accept{criteria = Criteria}, _From, #state{gearbox=GearBox, shaft=Shaft} = State) ->
-    Status = erlmachine_shaft:accept(GearBox, Shaft, Criteria),
-    {reply, Status, State};
 
 handle_call(Req, _From, #state{gearbox=GearBox, shaft=Shaft} = State) ->
     erlmachine_shaft:call(GearBox, Shaft, Req),

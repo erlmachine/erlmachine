@@ -136,10 +136,10 @@ handle_call(#replace{repair=Repair}, _From, #state{gearbox=GearBox, gear=Gear} =
 
 handle_call(#transmit{motion = Motion}, _From, #state{gearbox=GearBox, gear=Gear} = State) ->
     {ok, Result, Release} = erlmachine_gear:transmit(GearBox, Gear, Motion),
-    {reply, {ok, Result}, State#state{gear=Release}};
+    {reply, Result, State#state{gear=Release}};
 
 handle_call(#accept{criteria = Criteria}, _From, #state{gearbox=GearBox, gear=Gear} = State) ->
-    Status = erlmachine_gear:accept(GearBox, Gear, Criteria),
+    {ok, Status, _} = erlmachine_gear:accept(GearBox, Gear, Criteria),
     {reply, Status, State};
 
 handle_call(Req, _From,  #state{gearbox=GearBox, gear=Gear}=State) ->

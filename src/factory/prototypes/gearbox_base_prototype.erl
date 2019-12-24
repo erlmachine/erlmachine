@@ -166,7 +166,8 @@ uninstall(Name, GearBox, Reason) ->
 -spec accept(Name::serial_no(), GearBox::assembly(), Criteria::acceptance_criteria()) ->
                     success() | failure(E::term(), R::term(), S::term()).
 accept(_Name, GearBox, Criteria) ->
-    erlmachine_gearbox:accept(GearBox, Criteria).
+    {ok, Status, _} = erlmachine_gearbox:accept(GearBox, Criteria),
+    Status.
 
 
 -spec spec(GearBox::assembly(), Part::assembly()) -> Spec::map().

@@ -101,7 +101,8 @@ uninstall(Name, GearBox, Axle, Reason) ->
 -spec accept(Name::serial_no(), GearBox::assembly(), Axle::assembly(), Criteria::criteria()) ->
                     success() | failure(E::term(), R::term(), S::term()).
 accept(_Name, GearBox, Axle, Criteria) ->
-    erlmachine_axle:accept(GearBox, Axle, Criteria).
+    {ok, Status, _} = erlmachine_axle:accept(GearBox, Axle, Criteria),
+    Status.
 
 %% TODO
 %% I am going to provide mnesia gears, mongodb , etc..
