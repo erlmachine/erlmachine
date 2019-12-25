@@ -32,23 +32,46 @@
 
 %% API.
 
--spec start_link() -> success(pid()) | ignore | failure(term()).
-start_link() ->
-    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
+id() -> 
+    ?MODULE.
 
--spec tracking_no(Tracker::atom(), Package::term()) -> success(tracking_no()) | failure(term(), term()).
+-spec start_link() ->
+                        success(pid()) | ignore | failure(term()).
+start_link() ->
+    Id = id(),
+    gen_server:start_link({local, Id}, ?MODULE, [], []).
+
+-spec tracking_no(Tracker::atom(), Package::term()) -> 
+                         success(tracking_no()) | failure(term(), term()).
 tracking_no(Tracker, Package) ->
     Tag = Tracker:tag(Package),
     tracking_no(Tag).
 
--spec tracking_no(Tag::binary()) -> success(tracking_no()) | failure(term(), term()).
+-spec tracking_no(Tag::binary()) -> 
+                         success(tracking_no()) | failure(term(), term()).
 tracking_no(Tag) when is_binary(Tag) ->
-    GUID = <<"GUID">>, %% TODO 
-    <<Tag/binary, ".", GUID/binary>>.
+    try 
+        TN = tracking_no(),
+        GUID = <<"GUID">>,
+
+        TN = <<Tag/binary, ".", GUID/binary>>,
+        erlmachine:success(TN)
+    catch E:R ->
+            erlmachine:failure(E, R)
+    end.
+
+-record (tracking_no, {}).
+
+-spec tracking_no() -> tracking_no().
+tracking_no() ->
+    Id = id(),
+    TN = gen_server:call(Id, #tracking_no{}),
+    erlmachine:base64url(TN).
 
 -record(trace, {package::map(), tracking_no::binary()}).
 
--spec trace(TrackingNumber::binary(), Package::map()) -> success(tracking_no()) | failure(term(), term()).
+-spec trace(TrackingNumber::binary(), Package::map()) -> 
+                   success(tracking_no()) | failure(term(), term()).
 trace(TrackingNumber, Package) ->
     erlang:send(?MODULE, #trace{tracking_no = TrackingNumber, package = Package}).
 
@@ -63,7 +86,7 @@ init([]) ->
     GearBox = null,
     %% We need to implement storing gearboxes and also individual part inside warehouse;
     %% After that we will be able to select needed parts by SN;
-    File = <<"erlmachine_traker.serial">>,
+    File = <<"erlmachine_tracker.serial">>,
     {ok,  #state{gearbox = GearBox, file = File}, {continue, #accept{}}}.
 
 handle_call(_Request, _From, State) ->

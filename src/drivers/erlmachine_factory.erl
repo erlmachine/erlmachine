@@ -55,7 +55,7 @@
 -include("erlmachine_system.hrl").
 -include("erlmachine_filesystem.hrl").
 
--type seed() :: erlmachine:seed().
+-type serial() :: erlmachine_serial:serial().
 
 %% Here are different kind of builders can be provided;
 %% For example - YAML builder;
@@ -102,7 +102,8 @@ product(Assembly, Product) ->
                        assembly().
 serial_no(Assembly, Prefix) ->
     SN = serial_no(),
-    erlmachine_assembly:serial_no(Assembly, <<Prefix/binary, SN/binary>>).
+    %% Abbreviation SN can be added on demand when number will be requested;
+    erlmachine_assembly:serial_no(Assembly, <<Prefix/binary, ".", SN/binary>>). 
 
 %% I am thinking about two kind of acceptance test;
 %% The first one is ability to check prototype with default test models;
@@ -134,7 +135,7 @@ gear(GearBox, Model, ModelOpt, AssemblyOpt) ->
 gear(_GearBox, Model, Prot, ModelOpt, ProtOpt, AssemblyOpt) ->
     Body = #{},
     Gear = erlmachine_gear:gear(Body),
-    Prefix = <<"SN-G-">>,
+    Prefix = <<"G">>,
     %% Additional flags
     Input = [Model, ModelOpt, Prot, ProtOpt, [{type, worker}|AssemblyOpt], Gear, Prefix],
     Assembly = erlmachine_assembly:assembly(),
@@ -158,7 +159,7 @@ shaft(GearBox, Model, ModelOpt, AssemblyOpt) ->
 shaft(_GearBox, Model, Prot, ModelOpt, ProtOpt, AssemblyOpt) ->
     Body = [],
     Shaft = erlmachine_shaft:shaft(Body),
-    Prefix = <<"SN-S-">>,
+    Prefix = <<"S">>,
     Input = [Model, ModelOpt, Prot, ProtOpt, [{type, worker}|AssemblyOpt], Shaft, Prefix],
     Assembly = erlmachine_assembly:assembly(),
     pass(Assembly, ?MODULE, Input).
@@ -181,7 +182,7 @@ axle(GearBox, Model, ModelOpt, AssemblyOpt) ->
 axle(_GearBox, Model, Prot, ModelOpt, ProtOpt, AssemblyOpt) ->
     Body = [],
     Axle = erlmachine_axle:axle(Body),
-    Prefix = <<"SN-A-">>,
+    Prefix = <<"A">>,
     Input = [Model, ModelOpt, Prot, ProtOpt, [{type, supervisor}|AssemblyOpt], Axle, Prefix],
     Assembly = erlmachine_assembly:assembly(),
     pass(Assembly, ?MODULE, Input).
@@ -205,7 +206,7 @@ gearbox(Model, Prot, ModelOpt, ProtOpt, AssemblyOpt, Env) ->
     Body = #{}, %% We can consider to store some meta info in body to pass through all building process;
     Schema = digraph:new([acyclic, protected]),
     GearBox = erlmachine_gearbox:gearbox(Body, Env, Schema),
-    Prefix = <<"SN-GX-">>,
+    Prefix = <<"GX">>,
     Input = [Model, ModelOpt, Prot, ProtOpt, [{type, supervisor}|AssemblyOpt], GearBox, Prefix],
     Assembly = erlmachine_assembly:assembly(),
     pass(Assembly, ?MODULE, Input).
@@ -224,38 +225,39 @@ pass(Assembly, Name, Parts) ->
 id() -> 
     ?MODULE.
 
--spec start_link() -> success(pid()) | ingnore | failure(E::term()).
+-spec start_link() -> 
+                        success(pid()) | ingnore | failure(E::term()).
 start_link() ->
-    ID = id(),
-    gen_server:start_link({local, ID}, ?MODULE, [], []).
+    Id = id(),
+    gen_server:start_link({local, Id}, ?MODULE, [], []).
 
 -record (serial_no, {}).
 
 -spec serial_no() -> serial_no().
 serial_no() ->
     %% Just default timeout for the first time;
-    ID = id(),
-    SN = gen_server:call(ID, #serial_no{}),
-    erlmachine:base64url(SN).
+    Id = id(),
+    SN = gen_server:call(Id, #serial_no{}),
+    erlmachine_serial:base64url(SN).
 
 %% gen_server.
 
--record(state, {seed::seed(), serial_no::serial_no()}).
+-record(state, {serial::serial(), serial_no::serial_no()}).
 
 init([]) ->
     %% A folder will be appended, cause attribute is listed above in the module declaration;
     
-    {ok, Seed} = erlmachine:read_seed(),
+    {ok, Serial} = erlmachine_serial:serial_no(),
     
-    SN = erlmachine_serial_no:serial_no(Seed),
-    {ok, #state{seed=Seed, serial_no=SN}}.
+    SN = erlmachine_serial_no:serial_no(Serial),
+    {ok, #state{serial=Serial, serial_no=SN}}.
 
-handle_call(#serial_no{}, _From, #state{seed=Seed, serial_no=SN}=State) ->
+handle_call(#serial_no{}, _From, #state{serial=Serial, serial_no=SN}=State) ->
  
-    Inc = erlmachine:seed(Seed),
+    Inc = erlmachine_serial:inc(Serial),
     
     Rotate = erlmachine_serial_no:serial_no(Inc, SN),
-    {reply, SN, State#state{seed=Inc, serial_no=Rotate}};
+    {reply, SN, State#state{serial=Inc, serial_no=Rotate}};
 
 handle_call(_Request, _From, State) ->
     {reply, ignored, State}.
@@ -265,8 +267,8 @@ handle_cast(_Msg, State) ->	{noreply, State}.
 handle_info(_Info, State) ->
 	{noreply, State}.
 
-terminate(_Reason, #state{seed=Seed}) ->
-    ok = erlmachine:write_seed(Seed),
+terminate(_Reason, #state{serial=Serial}) ->
+    ok = erlmachine_serial:serial_no(Serial),
     ok.
 
 code_change(_OldVsn, State, _Extra) ->
