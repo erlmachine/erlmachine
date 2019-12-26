@@ -80,8 +80,8 @@ init([]) ->
     _GearTranslator = erlmachine_factory:gear(GearBox, GearTranslatorModel, GearTranslatorOpt),
 
     GearMnesiaModel = gear_mnesia,
-    Table = assembly, Attributes = erlmachine_assembly:fields(), Nodes = [node()],
-    GearMnesiaOpt = [{table, Table}, {options, [{attributes, Attributes}, {disc_copies, Nodes}]}],
+    Name = assembly, Attributes = erlmachine_assembly:fields(), Nodes = [node()],
+    GearMnesiaOpt = [{name, Name}, {tabdef, [{attributes, Attributes}, {disc_copies, Nodes}]}],
     GearMnesia = erlmachine_factory:gear(GearBox, GearMnesiaModel, GearMnesiaOpt),
     
     ShaftMnesiaModel = shaft_mnesia,
