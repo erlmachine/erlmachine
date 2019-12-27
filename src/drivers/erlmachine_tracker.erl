@@ -26,6 +26,8 @@
 
 -callback tag(Packakge::term()) -> Tag::binary().
 
+-type serial() :: erlmachine_serial:serial().
+
 -type tracking_no()::binary().
 
 -export_type([tracking_no/0]).
@@ -52,10 +54,7 @@ tracking_no(Tracker, Package) ->
 tracking_no(Tag) when is_binary(Tag) ->
     try 
         TN = tracking_no(),
-        GUID = <<"GUID">>,
-
-        TN = <<Tag/binary, ".", GUID/binary>>,
-        erlmachine:success(TN)
+        erlmachine:success(<<Tag/binary, ".", TN/binary>>)
     catch E:R ->
             erlmachine:failure(E, R)
     end.
@@ -66,7 +65,7 @@ tracking_no(Tag) when is_binary(Tag) ->
 tracking_no() ->
     Id = id(),
     TN = gen_server:call(Id, #tracking_no{}),
-    erlmachine:base64url(TN).
+    erlmachine_serial_no:base64url(TN).
 
 -record(trace, {package::map(), tracking_no::binary()}).
 
@@ -78,16 +77,25 @@ trace(TrackingNumber, Package) ->
 
 %% gen_server.
 
--record(accept, {}).
--record(state, {gearbox::assembly(), file::term()}).
+-record(accept, { }).
+-record(state, { gearbox::assembly(), serial::serial(), tracking_no::serial_no() }).
 
 init([]) ->
     %% GearBox = erlmachine_factory:gearbox(?MODULE, []), 
+    {ok, Serial} = erlmachine_serial:tracking_no(),
+    TN = erlmachine_serial_no:serial_no(Serial),
+
     GearBox = null,
     %% We need to implement storing gearboxes and also individual part inside warehouse;
     %% After that we will be able to select needed parts by SN;
-    File = <<"erlmachine_tracker.serial">>,
-    {ok,  #state{gearbox = GearBox, file = File}, {continue, #accept{}}}.
+    {ok,  #state{ serial=Serial, gearbox=GearBox, tracking_no=TN }, {continue, #accept{}}}.
+
+handle_call(#tracking_no{}, _From, #state{ serial=Serial, tracking_no=TN }=State) ->
+
+    Inc = erlmachine_serial:inc(Serial),
+
+    Rotate = erlmachine_serial_no:serial_no(Inc, TN),
+    {reply, TN, State#state{ serial=Inc, tracking_no=Rotate }};
 
 handle_call(_Request, _From, State) ->
     %% We need to provide REST API for management inside transmission

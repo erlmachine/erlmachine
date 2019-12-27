@@ -238,11 +238,11 @@ serial_no() ->
     %% Just default timeout for the first time;
     Id = id(),
     SN = gen_server:call(Id, #serial_no{}),
-    erlmachine_serial:base64url(SN).
+    erlmachine_serial_no:base64url(SN).
 
 %% gen_server.
 
--record(state, {serial::serial(), serial_no::serial_no()}).
+-record(state, { serial::serial(), serial_no::serial_no() }).
 
 init([]) ->
     %% A folder will be appended, cause attribute is listed above in the module declaration;
@@ -250,7 +250,7 @@ init([]) ->
     {ok, Serial} = erlmachine_serial:serial_no(),
     
     SN = erlmachine_serial_no:serial_no(Serial),
-    {ok, #state{serial=Serial, serial_no=SN}}.
+    {ok, #state{ serial=Serial, serial_no=SN }}.
 
 handle_call(#serial_no{}, _From, #state{serial=Serial, serial_no=SN}=State) ->
  

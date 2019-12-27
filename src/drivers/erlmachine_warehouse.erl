@@ -39,8 +39,7 @@
 %% We need to provide the specialized callback for this;
 
  
--record(state, {
-}).
+-record(state, { gearbox::assembly() }).
 
 %% API.
 
@@ -72,29 +71,30 @@ unload(_SN) ->
 init([]) ->
     GearBoxModel = gearbox_warehouse,
     GearBoxModelOpt = [],
-    Env = [], %% That is suitable place for taple configuration;
+    Env = [],
     GearBox = erlmachine_factory:gearbox(GearBoxModel, GearBoxModelOpt, Env),
-
-    GearTranslatorModel = gear_assembly_translator,
-    GearTranslatorOpt = [],
-    _GearTranslator = erlmachine_factory:gear(GearBox, GearTranslatorModel, GearTranslatorOpt),
 
     GearMnesiaModel = gear_mnesia,
     Name = assembly, Attributes = erlmachine_assembly:fields(), Nodes = [node()],
-    GearMnesiaOpt = [{name, Name}, {tabdef, [{attributes, Attributes}, {disc_copies, Nodes}]}],
+    GearMnesiaOpt = [
+                     {name, Name}, 
+                     {tabdef, [{attributes, Attributes}, {disc_copies, Nodes}, {record_name, Name}]}
+                    ],
     GearMnesia = erlmachine_factory:gear(GearBox, GearMnesiaModel, GearMnesiaOpt),
-    
-    ShaftMnesiaModel = shaft_mnesia,
-    ShaftMnesiaOpt = [],
-    ShaftMnesia = erlmachine_factory:shaft(GearBox, ShaftMnesiaModel, ShaftMnesiaOpt),
-    
-    _BuildShaftMnesia = erlmachine_shaft:parts(ShaftMnesia, [GearMnesia]),
 
     AxleModel = axle_tracker,
 
     _AxleHttp = erlmachine_factory:axle(GearBox, AxleModel, []),
+
+    Parts = [
+             GearMnesia
+            ],
     
-    {ok, #state{}}.
+    BuildGearBox = erlmachine_gearbox:parts(GearBox, Parts),
+
+    {ok, _PID} = erlmachine_assembly:install(BuildGearBox),
+
+    {ok, #state{ gearbox=BuildGearBox }}.
 
 handle_call(#load{}, _From, State) ->
     {reply, ignored, State};

@@ -22,7 +22,9 @@
 -spec install(SN::serial_no(), ID::serial_no(), State::map(), Opt::term(), Env::list()) -> 
                      success(term()) | failure(term(), term(), term()) | failure(term()).
 install(_SN, _ID, State, Opt, _Env) ->
-    _Name = proplists:get_value(name, Opt), _TabDef = proplists:get_value(tabdef, Opt),
+    Name = proplists:get_value(name, Opt), TabDef = proplists:get_value(tabdef, Opt),
+    io:format("~nName: ~p TabDef: ~p~n",[Name, TabDef]),
+    R = mnesia:create_table(Name, TabDef), io:format("~nR: ~p~n",[R]),
     
     {ok, State}.
 
