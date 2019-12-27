@@ -67,12 +67,12 @@ tracking_no() ->
     TN = gen_server:call(Id, #tracking_no{}),
     erlmachine_serial_no:base64url(TN).
 
--record(trace, {package::map(), tracking_no::binary()}).
+-record(trace, {tracking_no::binary(), package::map()}).
 
--spec trace(TrackingNumber::binary(), Package::map()) -> 
-                   success(tracking_no()) | failure(term(), term()).
-trace(TrackingNumber, Package) ->
-    erlang:send(?MODULE, #trace{tracking_no = TrackingNumber, package = Package}).
+-spec trace(TrackingNo::binary(), Package::map()) -> 
+                   success() | failure(term(), term()).
+trace(TrackingNo, Package) ->
+    erlang:send(?MODULE, #trace{ tracking_no=TrackingNo, package=Package }).
 
 
 %% gen_server.
@@ -81,13 +81,37 @@ trace(TrackingNumber, Package) ->
 -record(state, { gearbox::assembly(), serial::serial(), tracking_no::serial_no() }).
 
 init([]) ->
-    %% GearBox = erlmachine_factory:gearbox(?MODULE, []), 
+   
+    GearBoxModel = gearbox_tracker, 
+    GearBoxProt = gearbox_tracker_prototype,
+    Env = [],
+    GearBox = erlmachine_factory:gearbox(GearBoxModel, GearBoxProt, [], [], [], Env),
+
+    GearMnesiaModel = gear_mnesia,
+    Name = trace, Attributes = record_info(fields, trace), Nodes = [node()],
+    GearMnesiaOpt = [
+                     {name, Name}, 
+                     {tabdef, [{attributes, Attributes}, {disc_copies, Nodes}, {record_name, Name}]}
+                    ],
+    GearMnesia = erlmachine_factory:gear(GearBox, GearMnesiaModel, GearMnesiaOpt),
+
+    AxleModel = axle_tracker,
+    AxleProt = axle_tracker_prototype,
+    Axle = erlmachine_factory:axle(GearBox, AxleModel, AxleProt, [], [], []),
+
+    BuildAxle = erlmachine_axle:parts(Axle, [GearMnesia]),
+
+    Parts = [
+             BuildAxle
+            ],
+
+    BuildGearBox = erlmachine_gearbox:parts(GearBox, Parts),
+
+    {ok, _PID} = erlmachine_assembly:install(BuildGearBox),
+
     {ok, Serial} = erlmachine_serial:tracking_no(),
     TN = erlmachine_serial_no:serial_no(Serial),
 
-    GearBox = null,
-    %% We need to implement storing gearboxes and also individual part inside warehouse;
-    %% After that we will be able to select needed parts by SN;
     {ok,  #state{ serial=Serial, gearbox=GearBox, tracking_no=TN }, {continue, #accept{}}}.
 
 handle_call(#tracking_no{}, _From, #state{ serial=Serial, tracking_no=TN }=State) ->

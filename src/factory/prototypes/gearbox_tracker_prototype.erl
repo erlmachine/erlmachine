@@ -1,0 +1,159 @@
+-module(gearbox_tracker_prototype).
+
+-folder(<<"erlmachine/factory/prototypes/gearbox_tracker_prototype">>).
+
+-behaviour(supervisor).
+
+-export([name/0]).
+
+-export([
+         install/3,
+         attach/4, detach/3, 
+         accept/3,
+         uninstall/3
+        ]).
+
+-export([
+         installed/3,
+         attached/4, detached/4,
+         replaced/4,
+         overloaded/4, blocked/5,
+         uninstalled/4,
+         accepted/4, rejected/5
+        ]).
+
+-export([init/1]).
+
+-include("erlmachine_factory.hrl").
+-include("erlmachine_system.hrl").
+
+%% Gearbox is designed with idea to act like catalogued storage for any design changes inside of particular instance;
+%% It is the place where statistics tend to be collected;
+%% It can be reflected like formated and customized view around whole topology;
+%% I guess some kind of persistence will be provided;
+%% We can write any topology changes to our persistence storage;
+%% After that we will be able to build reflection of whole topology which was stored before;
+
+-spec name() -> Name::atom().
+name() ->
+    ?MODULE.
+
+format_name(SerialNumber) ->
+    ID = erlang:binary_to_atom(SerialNumber, latin1),
+    ID.
+
+-spec installed(Name::serial_no(), GearBox::assembly(), Part::assembly()) ->
+                      ok.
+installed(_Name, _GearBox, _Part) ->
+    ok.
+
+-spec uninstalled(Name::serial_no(), GearBox::assembly(), Part::assembly(), Reason::term()) ->
+                         ok.
+uninstalled(_Name, _GearBox, _Part, _Reason) ->
+    ok.
+
+-spec overloaded(Name::serial_no(), GearBox::assembly(), Part::assembly(), Load::term()) ->
+                        ok.
+overloaded(_Name, _GearBox, _Part, _Load) ->
+    ok.
+
+-spec blocked(Name::serial_no(), GearBox::assembly(), Part::assembly(), Extension::assembly(), Failure::term()) ->
+                     ok.
+blocked(_Name, _GearBox, _Part, _Extension, _Failure) ->
+    ok.
+
+-spec attached(Name::serial_no(), GearBox::assembly(), Part::assembly(), Extension::assembly()) ->
+                      ok.
+attached(_Name, _GearBox, _Part, _Extension) ->
+    ok.
+
+-spec detached(Name::serial_no(), GearBox::assembly(), Part::assembly(), Extension::assembly()) ->
+                      ok.
+detached(_Name, _GearBox, _Part, _Extension) ->
+    ok.
+
+-spec replaced(Name::serial_no(), GearBox::assembly(), Part::assembly(), Extension::assembly()) ->
+                      ok.
+replaced(_Name, _GearBox, _Part, _Extension) ->
+    ok.
+
+-spec accepted(Name::serial_no(), GearBox::assembly(), Extension::assembly(), Criteria::criteria()) -> 
+                      ok.
+accepted(_Name, _GearBox, _Extension, _Criteria) ->
+    ok.
+
+-spec rejected(Name::serial_no(), GearBox::assembly(), Extension::assembly(), Criteria::criteria(), Result::term()) -> 
+                      ok.
+rejected(_Name, _GearBox, _Extension, _Criteria, _Result) ->
+    ok.
+
+-spec attach(Name::serial_no(), GearBox::assembly(), Register::term(), Extension::assembly()) ->
+                    success(Release::assembly()) | failure(E::term(), R::term()).
+attach(Name, GearBox, Register, Extension) ->
+    Result = {ok, Part, Release} = erlmachine_gearbox:attach(GearBox, Register, Extension),
+    %% TODO Conditional case for Result needs to be processed;
+    Spec = spec(Release, Part),
+    %% Mount time will be determined by prototype;
+    SupRef = format_name(Name),
+    {ok, _PID} = supervisor:start_child(SupRef, Spec),
+    Result.
+    
+-spec detach(Name::serial_no(), GearBox::assembly(), ID::serial_no()) ->
+                    success(Child::term()) | success(Child::term(), Info::term()) | failure(E::term()).
+detach(Name, GearBox, ID) ->
+    Result = {ok, _} = erlmachine_gearbox:detach(GearBox, ID),
+    SupRef = format_name(Name),
+    ok = supervisor:terminate_child(SupRef, ID),
+    ok = supervisor:delete_child(SupRef, ID), %% ID the same for chield and SN
+    Result.
+
+-record(install, {gearbox::assembly(), options::list(tuple)}).
+
+-spec install(Name::serial_no(), GearBox::assembly(), Options::list(tuple())) -> 
+                     success(pid()) | ingnore | failure(E::term()).
+install(Name, GearBox, Opt) ->
+    Args = #install{gearbox=GearBox, options=Opt},
+    supervisor:start_link({local, format_name(Name)}, ?MODULE, Args).
+
+init(#install{gearbox=GearBox, options=Opt}) ->
+    Strategy = proplists:get_value(strategy, Opt, one_for_one),
+    {ok, Release} = erlmachine_gearbox:install(GearBox),
+    Specs = specs(Release),
+    Intensity = proplists:get_value(intensity, Opt, 1),
+    Period = proplists:get_value(period, Opt, 5),
+    {ok, {#{strategy => Strategy, intensity => Intensity, period => Period}, Specs}}.
+
+-spec uninstall(Name::serial_no(), GearBox::assembly(), Reason::term()) ->
+                       success().
+uninstall(Name, GearBox, Reason) ->
+    exit(whereis(format_name(Name)), Reason),
+    {ok, _} = erlmachine_gearbox:uninstall(GearBox, Reason),
+    ok.
+
+-spec accept(Name::serial_no(), GearBox::assembly(), Criteria::acceptance_criteria()) ->
+                    success() | failure(E::term(), R::term(), S::term()).
+accept(_Name, GearBox, Criteria) ->
+    {ok, Status, _} = erlmachine_gearbox:accept(GearBox, Criteria),
+    Status.
+
+
+-spec spec(GearBox::assembly(), Part::assembly()) -> Spec::map().
+spec(GearBox, Part) ->
+    SN = erlmachine_assembly:serial_no(Part),
+    Module = erlmachine_assembly:prototype_name(Part),
+    Opt = erlmachine_assembly:prototype_options(Part),
+ 
+    Start = {Module, install, [SN, erlmachine_assembly:parts(GearBox,[]), Part, Opt]},
+ 
+    Restart = proplists:get_value(restart, Opt, permanent),
+    Shutdown = proplists:get_value(shutdown, Opt, 5000),
+    Modules = proplists:get_value(modules, Opt, [Module]),
+
+    Type = proplists:get_value(type, erlmachine_assembly:assembly_options(Part)),
+    #{id => SN, start => Start, restart => Restart, shutdown => Shutdown, modules => Modules, type => Type}.
+
+-spec specs(GearBox::assembly()) -> list(map()).
+specs(GearBox) ->
+    Parts = erlmachine_assembly:parts(GearBox),
+    Specs = [spec(GearBox, Part)|| Part <- Parts],
+    Specs.

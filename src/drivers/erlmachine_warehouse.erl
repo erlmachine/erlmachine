@@ -83,11 +83,12 @@ init([]) ->
     GearMnesia = erlmachine_factory:gear(GearBox, GearMnesiaModel, GearMnesiaOpt),
 
     AxleModel = axle_tracker,
+    Axle = erlmachine_factory:axle(GearBox, AxleModel, []),
 
-    _AxleHttp = erlmachine_factory:axle(GearBox, AxleModel, []),
+    BuildAxle = erlmachine_axle:parts(Axle, [GearMnesia]),
 
     Parts = [
-             GearMnesia
+             BuildAxle
             ],
     
     BuildGearBox = erlmachine_gearbox:parts(GearBox, Parts),
