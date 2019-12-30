@@ -2,7 +2,7 @@
 
 -folder(<<"erlmachine/erlmachine_tracker">>).
 
--input([?MODULE]). %% output([?MODULE]).
+-input([?MODULE]).
 
 -behaviour(gen_server).
 

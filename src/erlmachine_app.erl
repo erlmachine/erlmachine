@@ -7,7 +7,8 @@
 -export([start_phase/3]).
 
 start(_Type, _Args) ->
-    mnesia:create_schema([node()]), ok = mnesia:start(),
+    Schema = mnesia:create_schema([node()]), ok = mnesia:start(),
+    io:format("~nSchema res: ~p~n", [Schema]),
     erlmachine_sup:start_link().
 
 
