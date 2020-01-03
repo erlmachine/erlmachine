@@ -23,10 +23,11 @@
                      success(term()) | failure(term(), term(), term()) | failure(term()).
 install(_SN, _ID, State, Opt, _Env) ->
     Name = proplists:get_value(name, Opt), TabDef = proplists:get_value(tabdef, Opt),
+    Lock = proplists:get_value(lock, Opt, write),
     io:format("~nName: ~p TabDef: ~p~n",[Name, TabDef]),
     R = mnesia:create_table(Name, TabDef), io:format("~nR: ~p~n",[R]),
     
-    {ok, State}.
+    {ok, State#{ name => Name, lock => Lock }}.
 
 -spec replace(SN::serial_no(), ID::serial_no(), Body::map()) -> 
                      success(term()) | failure(term(), term(), term()) | failure(term()).
@@ -60,9 +61,28 @@ detach(SN, ID, State) ->
 
 -spec rotate(SN::serial_no(), Motion::map(), State::map()) -> 
                      success(term(), term()) | failure(term(), term(), term()) | failure(term()).
-rotate(SN, Motion, State) ->
-    io:format("~n~p:rotate(~p ~p ~p)~n",[?MODULE, SN, Motion, State]),
-    {ok, Motion, State}.
+rotate(_SN, Motion, #{ name := Name, lock := _Lock }=State) ->
+    Header = erlmachine:header(Motion), Body = erlmachine:body(Motion),
+    Message  =
+        try 
+            [Command] = maps:keys(Body), Args = maps:get(Command, Body),
+            %% TODO add transaction support;
+            case Command of 
+                write ->
+                    is_tuple(Args) orelse throw(?LINE),
+                    
+                    ok = mnesia:dirty_write(Args),
+                    Event = #{ name => Name, id => element(1, Args) },
+                    erlmachine:event(Header, #{ ?MODULE => Event });
+                read -> 
+                    Result = mnesia:dirty_read(Name, Args),
+                    erlmachine:document(Header, #{ Name => Result }) 
+            end
+        catch E:R ->
+                io:format("~nE: ~p R: ~p~n",[E, R]),
+                erlmachine:event(Header, #{ ?MODULE => erlmachine:failure(E, R) })
+        end,
+    {ok, Message, State}.
 
 -spec load(SN::serial_no(), Load::term(), State::map()) -> 
                   success(term()) | success(term(), term()) | failure(term(), term(), term()) | failure(term()).

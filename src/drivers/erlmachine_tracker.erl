@@ -19,12 +19,16 @@
          format_status/2
         ]).
 
--export([tracking_no/1, tracking_no/2, trace/2]).
+-export([tracking_no/1, tracking_no/2]).
+-export([write/2]).
+-export([read/2]).
 
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
 
 -callback tag(Packakge::term()) -> Tag::binary().
+
+-record(trace, { tracking_no::binary(), package::map() }).
 
 -type serial() :: erlmachine_serial:serial().
 
@@ -67,13 +71,20 @@ tracking_no() ->
     TN = gen_server:call(Id, #tracking_no{}),
     erlmachine_serial_no:base64url(TN).
 
--record(trace, {tracking_no::binary(), package::map()}).
+%% Additional options like mode, etc. can be added later;
+-record (write, { tracking_no::binary(), package::map() }).
 
--spec trace(TrackingNo::binary(), Package::map()) -> 
+-spec write(TN::binary(), Package::map()) -> 
                    success() | failure(term(), term()).
-trace(TrackingNo, Package) ->
-    erlang:send(?MODULE, #trace{ tracking_no=TrackingNo, package=Package }).
+write(TN, Package) ->
+    erlang:send(?MODULE, #write{ tracking_no=TN, package=Package }).
 
+-record (read, { tracking_no::binary(), pid::pid() }).
+
+-spec read(TN::binary(), Pid::pid()) -> 
+                   success() | failure(term(), term()).
+read(TN, Pid) ->
+    erlang:send(?MODULE, #read{ tracking_no=TN, pid=Pid }).
 
 %% gen_server.
 
@@ -87,6 +98,9 @@ init([]) ->
     Env = [],
     GearBox = erlmachine_factory:gearbox(GearBoxModel, GearBoxProt, [], [], [], Env),
 
+    GearReplyModel = gear_reply,
+    GearReply = erlmachine_factory:gear(GearBox, GearReplyModel, []),
+
     GearMnesiaModel = gear_mnesia,
     Name = trace, Attributes = record_info(fields, trace), Nodes = [node()],
     GearMnesiaOpt = [
@@ -95,24 +109,28 @@ init([]) ->
                     ],
     GearMnesia = erlmachine_factory:gear(GearBox, GearMnesiaModel, GearMnesiaOpt),
 
+    BuildGearMnesia = erlmachine_gear:parts(GearMnesia, [GearReply]),
+
     AxleModel = axle_tracker,
     AxleProt = axle_tracker_prototype,
     Axle = erlmachine_factory:axle(GearBox, AxleModel, AxleProt, [], [], []),
 
-    BuildAxle = erlmachine_axle:parts(Axle, [GearMnesia]),
+    BuildAxle = erlmachine_axle:parts(Axle, [BuildGearMnesia]),
 
+    Input = erlmachine_assembly:serial_no(GearMnesia),
     Parts = [
+             GearReply,
              BuildAxle
             ],
 
-    BuildGearBox = erlmachine_gearbox:parts(GearBox, Parts),
+    BuildGearBox = erlmachine_gearbox:input(erlmachine_gearbox:parts(GearBox, Parts), Input),
 
     {ok, _PID} = erlmachine_assembly:install(BuildGearBox),
 
     {ok, Serial} = erlmachine_serial:tracking_no(),
     TN = erlmachine_serial_no:serial_no(Serial),
 
-    {ok,  #state{ serial=Serial, gearbox=GearBox, tracking_no=TN }, {continue, #accept{}}}.
+    {ok,  #state{ serial=Serial, gearbox=BuildGearBox, tracking_no=TN }, {continue, #accept{}}}.
 
 handle_call(#tracking_no{}, _From, #state{ serial=Serial, tracking_no=TN }=State) ->
 
@@ -130,12 +148,19 @@ handle_call(_Request, _From, State) ->
 handle_cast(_Msg, State) ->
 	{noreply, State}.
 
-handle_info(#trace{} = Command, #state{gearbox = _GearBox} = State) ->
-    #trace{tracking_no = TrackingNumber, package = Package} = Command,
-    %% TODO trace needs to be implemented;
-    io:format("~ntrace: ~p~n",[#{TrackingNumber => Package}]),
-    %%erlmachine_transmission:rotate(GearBox, #{TrackingNumber => Package}),
+handle_info(#write{ tracking_no=TN, package=Package }, #state{ gearbox=GearBox } = State) ->
+    io:format("~nwrite: ~p~n ~p~n",[TN, Package]),
+    Args = #trace{ tracking_no=TN, package=Package },
+
+    erlmachine_gearbox:rotate(GearBox, erlmachine:command(#{ write => Args })),
     {noreply, State};
+
+handle_info(#read{ tracking_no=TN, pid=Pid }, #state{ gearbox=GearBox } = State) ->
+    io:format("~nRead: ~p~n",[TN]),
+
+    erlmachine_gearbox:rotate(GearBox, erlmachine:request_reply(#{ read => TN }, Pid)),
+    {noreply, State};
+
 handle_info(_Message, State) ->
     {noreply, State}.
 

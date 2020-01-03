@@ -243,7 +243,7 @@ serial_no() ->
 %% gen_server.
 
 -record(state, { serial::serial(), serial_no::serial_no() }).
-
+%% Factory will be responsible for the model's storing and management;
 init([]) ->
     %% A folder will be appended, cause attribute is listed above in the module declaration;
     
