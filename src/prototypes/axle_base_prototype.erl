@@ -55,10 +55,12 @@ uninstalled(_Name, _GearBox, Axle, Part, Reason) ->
                     success(Release::assembly()) | failure(E::term(), R::term()).
 attach(Name, GearBox, Axle, Register, Extension) ->
     Result = {ok, Part, Release} = erlmachine_axle:attach(GearBox, Axle, Register, Extension),
+
     %% TODO Conditional case for Result needs to be processed;
     Spec = spec(GearBox, Release, Part),
     %% Mount time will be determined by prototype;
     SupRef = format_name(Name),
+
     {ok, _PID} = supervisor:start_child(SupRef, Spec),
     Result.
     
@@ -66,7 +68,9 @@ attach(Name, GearBox, Axle, Register, Extension) ->
                     success(Child::term()) | success(Child::term(), Info::term()) | failure(E::term()).
 detach(Name, GearBox, Axle, ID) ->
     SupRef = format_name(Name),
+
     Result = {ok, _} = erlmachine_axle:detach(GearBox, Axle, ID),
+
     ok = supervisor:terminate_child(SupRef, ID),
     ok = supervisor:delete_child(SupRef, ID), %% ID the same for chield and SN
     Result.
@@ -77,15 +81,19 @@ detach(Name, GearBox, Axle, ID) ->
                      success(pid()) | ingnore | failure(E::term()).
 install(Name, GearBox, Axle, Opt) ->
     ID = {local, format_name(Name)},
-    Args = #install{gearbox=GearBox, axle=Axle, options=Opt},
-    supervisor:start_link(ID, ?MODULE, Args).
+    Command = #install{ gearbox=GearBox, axle=Axle, options=Opt },
+
+    supervisor:start_link(ID, ?MODULE, Command).
 
 init(#install{gearbox=GearBox, axle=Axle, options=Opt}) ->
     Strategy = proplists:get_value(strategy, Opt, one_for_all),
+
     {ok, Release} = erlmachine_axle:install(GearBox, Axle),
+
     Specs = specs(GearBox, Release),
     Intensity = proplists:get_value(intensity, Opt, 1),
     Period = proplists:get_value(period, Opt, 5),
+
     {ok, {#{strategy => Strategy, intensity => Intensity, period => Period}, Specs}}.
 
 %% I guess later we need some way to adress axle instance inside gearbox;

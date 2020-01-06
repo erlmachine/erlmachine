@@ -45,28 +45,36 @@ format_name(SerialNumber) ->
                      success(pid()) | ingnore | failure(E::term()).
 install(Name, GearBox, Gear, Opt) ->
     ID = {local, format_name(Name)},
-    gen_server:start_link(ID, ?MODULE, #install{gearbox=GearBox, gear=Gear, options=Opt}, []).
+    Command = #install{ gearbox=GearBox, gear=Gear, options=Opt },
+
+    gen_server:start_link(ID, ?MODULE, Command, []).
 
 -record(attach, {part::assembly(), register::term()}).
 
 -spec attach(Name::serial_no(), GearBox::assembly(), Gear::assembly(), Register::term(), Part::assembly()) -> 
                     success(Release::assembly()) | failure(E::term(), R::term()).
 attach(Name, _GearBox, _Gear, Register, Part) ->
-    gen_server:call(format_name(Name), #attach{part=Part, register=Register}).
+    Command = #attach{ part=Part, register=Register },
+
+    gen_server:call(format_name(Name), Command).
 
 -record(detach, {id::serial_no()}).
 
 -spec detach(Name::serial_no(), GearBox::assembly(), Gear::assembly(), ID::serial_no()) -> 
                     success(Release::assembly()) | failure(E::term(), R::term()).
 detach(Name, _GearBox, _Gear, ID) ->
-    gen_server:call(format_name(Name), #detach{id=ID}).
+    Command = #detach{ id=ID },
+
+    gen_server:call(format_name(Name), Command).
 
 -record(overload, {load::term()}).
 
 -spec overload(Name::serial_no(), GearBox::assembly(), Gear::assembly(), Load::term()) ->
                       Load::term().
 overload(Name, _GearBox, _Gear, Load) ->
-    erlang:send(format_name(Name), #overload{load=Load}), 
+    Command = #overload{ load=Load },
+
+    erlang:send(format_name(Name), Command), 
     Load.
 
 -record(block, {part::assembly(), failure::term()}).
@@ -74,7 +82,9 @@ overload(Name, _GearBox, _Gear, Load) ->
 -spec block(Name::serial_no(), GearBox::assembly(), Gear::assembly(), Part::assembly(), Failure::term()) -> 
                    Failure::term().
 block(Name, _GearBox, _Gear, Part, Failure) ->
-    erlang:send(format_name(Name), #block{part=Part, failure=Failure}), 
+    Command = #block{ part=Part, failure=Failure },
+
+    erlang:send(format_name(Name), Command), 
     Failure.
 
 -record(replace, {repair::assembly()}).
@@ -82,14 +92,18 @@ block(Name, _GearBox, _Gear, Part, Failure) ->
 -spec replace(Name::serial_no(), GearBox::assembly(), Gear::assembly(), Repair::assembly()) -> 
                      success(Release::assembly()) | failure(E::term(), R::term()).
 replace(Name, _GearBox, _Gear, Repair) ->
-    gen_server:call(format_name(Name), #replace{repair=Repair}).
+    Command = #replace{ repair=Repair },
+
+    gen_server:call(format_name(Name), Command).
 
 -record(rotate, {motion::term()}).
 
 -spec rotate(Name::serial_no(), GearBox::assembly(), Gear::assembly(), Motion::term()) -> 
                     Motion::term().
 rotate(Name, _GearBox, _Gear, Motion) ->
-    erlang:send(format_name(Name), #rotate{motion=Motion}), 
+    Command = #rotate{ motion=Motion },
+
+    erlang:send(format_name(Name), Command), 
     Motion.
 
 -record(transmit, {motion::term()}).
@@ -97,19 +111,23 @@ rotate(Name, _GearBox, _Gear, Motion) ->
 -spec transmit(Name::serial_no(), GearBox::assembly(), Gear::assembly(), Motion::term()) ->
                       Force::term().
 transmit(Name, _GearBox, _Gear, Motion) ->
-    gen_server:call(format_name(Name), #transmit{motion=Motion}).
+    Command = #transmit{ motion=Motion },
 
--spec uninstall(Name::serial_no(), GearBox::assembly(), Gear::assembly(), Reason::term()) ->
-                       ok.
-uninstall(Name, _GearBox, _Gear, Reason) ->
-    gen_server:stop({local, format_name(Name)}, Reason).
+    gen_server:call(format_name(Name), Command).
 
 -record(accept, {criteria::acceptance_criteria()}).
 
 -spec accept(Name::serial_no(), GearBox::assembly(), Gear::assembly(), Criteria::criteria()) ->
                     success() | failure(E::term(), R::term(), S::term()).
 accept(Name, _GearBox, _Gear, Criteria) -> 
-    gen_server:call(format_name(Name), #accept{criteria=Criteria}).
+    Command = #accept{ criteria=Criteria },
+
+    gen_server:call(format_name(Name), Command).
+
+-spec uninstall(Name::serial_no(), GearBox::assembly(), Gear::assembly(), Reason::term()) ->
+                       ok.
+uninstall(Name, _GearBox, _Gear, Reason) ->
+    gen_server:stop({local, format_name(Name)}, Reason).
 
 %% gen_server.
 -record(state, {gearbox::assembly(), gear::assembly()}).

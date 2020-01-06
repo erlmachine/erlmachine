@@ -35,29 +35,36 @@
 name() ->
     ?MODULE.
 
-format_name(Name) ->
-    {via, syn, Name}.
+-spec format_name(SN::serial_no()) -> {via, syn, serial_no()}.
+format_name(SN) ->
+    {via, syn, SN}.
 
 -record(install, {gearbox::assembly(), gear::assembly(), options::list(tuple())}).
 
 -spec install(Name::serial_no(), GearBox::assembly(), Gear::assembly(), Opt::list(tuple())) -> 
                      success(pid()) | ingnore | failure(E::term()).
 install(Name, GearBox, Gear, Opt) ->
-    gen_server:start_link(format_name(Name), ?MODULE, #install{gearbox=GearBox, gear=Gear, options=Opt}, []).
+    Command = #install{ gearbox=GearBox, gear=Gear, options=Opt },
+
+    gen_server:start_link(format_name(Name), ?MODULE, Command, []).
 
 -record(attach, {part::assembly(), register::term()}).
 
 -spec attach(Name::serial_no(), GearBox::assembly(), Gear::assembly(), Register::term(), Part::assembly()) -> 
                     success(Release::assembly()) | failure(E::term(), R::term()).
 attach(Name, _GearBox, _Gear, Register, Part) ->
-    gen_server:call(format_name(Name), #attach{part=Part, register=Register}).
+    Command = #attach{ part=Part, register=Register },
+
+    gen_server:call(format_name(Name), Command).
 
 -record(detach, {id::serial_no()}).
 
 -spec detach(Name::serial_no(), GearBox::assembly(), Gear::assembly(), ID::serial_no()) -> 
                     success(Release::assembly()) | failure(E::term(), R::term()).
 detach(Name, _GearBox, _Gear, ID) ->
-    gen_server:call(format_name(Name), #detach{id=ID}).
+    Command = #detach{ id=ID },
+
+    gen_server:call(format_name(Name), Command).
 
 -record(overload, {load::term()}).
 
@@ -65,7 +72,9 @@ detach(Name, _GearBox, _Gear, ID) ->
                       Load::term().
 overload(Name, _GearBox, _Gear, Load) ->
     Pid = syn:whereis(Name),
-    erlang:send(Pid, #overload{load=Load}), 
+    Command = #overload{ load=Load },
+
+    erlang:send(Pid, Command), 
     Load.
 
 -record(block, {part::assembly(), failure::term()}).
@@ -74,7 +83,9 @@ overload(Name, _GearBox, _Gear, Load) ->
                    Failure::term().
 block(Name, _GearBox, _Gear, Part, Failure) ->
     Pid = syn:whereis(Name),
-    erlang:send(Pid, #block{part=Part, failure=Failure}), 
+    Command = #block{ part=Part, failure=Failure },
+
+    erlang:send(Pid, Command), 
     Failure.
 
 -record(replace, {repair::assembly()}).
@@ -82,7 +93,9 @@ block(Name, _GearBox, _Gear, Part, Failure) ->
 -spec replace(Name::serial_no(), GearBox::assembly(), Gear::assembly(), Repair::assembly()) -> 
                      success(Release::assembly()) | failure(E::term(), R::term()).
 replace(Name, _GearBox, _Gear, Repair) ->
-    gen_server:call(format_name(Name), #replace{repair=Repair}).
+    Command = #replace{ repair=Repair },
+
+    gen_server:call(format_name(Name), Command).
 
 -record(rotate, {motion::term()}).
 
@@ -90,7 +103,9 @@ replace(Name, _GearBox, _Gear, Repair) ->
                     Motion::term().
 rotate(Name, _GearBox, _Gear, Motion) ->
     Pid = syn:whereis(Name),
-    erlang:send(Pid, #rotate{motion=Motion}), 
+    Command = #rotate{ motion=Motion },
+
+    erlang:send(Pid, Command),
     Motion.
 
 -record(transmit, {motion::term()}).
@@ -98,7 +113,9 @@ rotate(Name, _GearBox, _Gear, Motion) ->
 -spec transmit(Name::serial_no(), GearBox::assembly(), Gear::assembly(), Motion::term()) ->
                       Force::term().
 transmit(Name, _GearBox, _Gear, Motion) ->
-    gen_server:call(format_name(Name), #transmit{motion=Motion}).
+    Command = #transmit{ motion=Motion },
+
+    gen_server:call(format_name(Name), Command).
 
 -spec uninstall(Name::serial_no(), GearBox::assembly(), Gear::assembly(), Reason::term()) ->
                        ok.
@@ -110,7 +127,9 @@ uninstall(Name, _GearBox, _Gear, Reason) ->
 -spec accept(Name::serial_no(), GearBox::assembly(), Gear::assembly(), Criteria::criteria()) ->
                     success() | failure(E::term(), R::term(), S::term()).
 accept(Name, _GearBox, _Gear, Criteria) -> 
-    gen_server:call(format_name(Name), #accept{criteria=Criteria}).
+    Command = #accept{ criteria=Criteria },
+
+    gen_server:call(format_name(Name), Command).
 
 %% gen_server.
 -record(state, {gearbox::assembly(), gear::assembly()}).

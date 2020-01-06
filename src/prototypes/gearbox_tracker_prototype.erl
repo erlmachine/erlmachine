@@ -91,10 +91,12 @@ rejected(_Name, _GearBox, _Extension, _Criteria, _Result) ->
                     success(Release::assembly()) | failure(E::term(), R::term()).
 attach(Name, GearBox, Register, Extension) ->
     Result = {ok, Part, Release} = erlmachine_gearbox:attach(GearBox, Register, Extension),
+
     %% TODO Conditional case for Result needs to be processed;
     Spec = spec(Release, Part),
     %% Mount time will be determined by prototype;
     SupRef = format_name(Name),
+
     {ok, _PID} = supervisor:start_child(SupRef, Spec),
     Result.
     
@@ -102,7 +104,9 @@ attach(Name, GearBox, Register, Extension) ->
                     success(Child::term()) | success(Child::term(), Info::term()) | failure(E::term()).
 detach(Name, GearBox, ID) ->
     Result = {ok, _} = erlmachine_gearbox:detach(GearBox, ID),
+
     SupRef = format_name(Name),
+
     ok = supervisor:terminate_child(SupRef, ID),
     ok = supervisor:delete_child(SupRef, ID), %% ID the same for chield and SN
     Result.
@@ -112,21 +116,26 @@ detach(Name, GearBox, ID) ->
 -spec install(Name::serial_no(), GearBox::assembly(), Options::list(tuple())) -> 
                      success(pid()) | ingnore | failure(E::term()).
 install(Name, GearBox, Opt) ->
-    Args = #install{gearbox=GearBox, options=Opt},
-    supervisor:start_link({local, format_name(Name)}, ?MODULE, Args).
+    Command = #install{gearbox=GearBox, options=Opt},
+
+    supervisor:start_link({local, format_name(Name)}, ?MODULE, Command).
 
 init(#install{gearbox=GearBox, options=Opt}) ->
     Strategy = proplists:get_value(strategy, Opt, one_for_one),
+
     {ok, Release} = erlmachine_gearbox:install(GearBox),
+
     Specs = specs(Release),
     Intensity = proplists:get_value(intensity, Opt, 1),
     Period = proplists:get_value(period, Opt, 5),
+
     {ok, {#{strategy => Strategy, intensity => Intensity, period => Period}, Specs}}.
 
 -spec uninstall(Name::serial_no(), GearBox::assembly(), Reason::term()) ->
                        success().
 uninstall(Name, GearBox, Reason) ->
     exit(whereis(format_name(Name)), Reason),
+
     {ok, _} = erlmachine_gearbox:uninstall(GearBox, Reason),
     ok.
 
