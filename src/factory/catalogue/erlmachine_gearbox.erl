@@ -89,7 +89,7 @@ gearbox(Body, Env, Schema) ->
 
 -spec master(GearBox::assembly()) -> Release::assembly().
 master(GearBox) ->
-    Schema = digraph:new([acyclic, protected]),
+    Schema = digraph:new(),
     schema(GearBox, Schema).
 
 -spec mounted(GearBox::assembly(), Parts::list(assembly())) -> Release::assembly().
