@@ -20,8 +20,7 @@
         ]).
 
 -export([tracking_no/1, tracking_no/2]).
--export([write/2]).
--export([read/2]).
+-export([trace/2, trace/1]).
 
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
@@ -72,19 +71,29 @@ tracking_no() ->
     erlmachine_serial_no:base64url(TN).
 
 %% Additional options like mode, etc. can be added later;
--record (write, { tracking_no::binary(), package::map() }).
 
--spec write(TN::binary(), Package::map()) -> 
+-spec trace(TN::binary(), Package::map()) -> 
+                   success().
+trace(TN, Package) ->
+    update(TN, Package).
+
+-spec trace(TN::binary()) -> success().
+trace(TN) ->
+    read(TN, self()).
+
+-record (update, { id::binary(), object::map(), pid::pid() }).
+
+-spec update(ID::binary(), Object::map()) -> 
+                   success().
+update(ID, Object) ->
+    erlang:send(id(), #update{ id=ID, object=Object }).
+
+-record (read, { id::binary(), pid::pid() }).
+
+-spec read(ID::binary(), Pid::pid()) -> 
                    success() | failure(term(), term()).
-write(TN, Package) ->
-    erlang:send(?MODULE, #write{ tracking_no=TN, package=Package }).
-
--record (read, { tracking_no::binary(), pid::pid() }).
-
--spec read(TN::binary(), Pid::pid()) -> 
-                   success() | failure(term(), term()).
-read(TN, Pid) ->
-    erlang:send(?MODULE, #read{ tracking_no=TN, pid=Pid }).
+read(ID, Pid) ->
+    erlang:send(id(), #read{ id=ID, pid=Pid }).
 
 %% gen_server.
 
@@ -148,17 +157,17 @@ handle_call(_Request, _From, State) ->
 handle_cast(_Msg, State) ->
 	{noreply, State}.
 
-handle_info(#write{ tracking_no=TN, package=Package }, #state{ gearbox=GearBox } = State) ->
-    io:format("~nwrite: ~p~n ~p~n",[TN, Package]),
-    Args = #trace{ tracking_no=TN, package=Package },
+handle_info(#update{ id=ID, object=Object }, #state{ gearbox=GearBox } = State) ->
+    io:format("~n~p~nUpdate: ~p~n~p~n",[?MODULE, ID, Object]),
+    Args = #trace{ tracking_no=ID, package=Object },
 
     erlmachine_gearbox:rotate(GearBox, erlmachine:command(#{ write => Args })),
     {noreply, State};
 
-handle_info(#read{ tracking_no=TN, pid=Pid }, #state{ gearbox=GearBox } = State) ->
-    io:format("~nRead: ~p~n",[TN]),
+handle_info(#read{ id=ID, pid=Pid }, #state{ gearbox=GearBox } = State) ->
+    io:format("~n~p~nRead: ~p~n",[?MODULE, ID]),
 
-    erlmachine_gearbox:rotate(GearBox, erlmachine:request_reply(#{ read => TN }, Pid)),
+    erlmachine_gearbox:rotate(GearBox, erlmachine:request_reply(#{ read => ID }, Pid)),
     {noreply, State};
 
 handle_info(_Message, State) ->

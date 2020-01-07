@@ -142,4 +142,4 @@ trace(Assembly, Insight) ->
     SN = erlmachine_assembly:serial_no(Assembly),
     Package = #{prototype => ?MODULE, model => Model, serial_no => SN},
     TN = erlmachine_tracker:tracking_no(?MODULE, Package),
-    erlmachine_tracker:write(TN, Package#{insight => Insight}).
+    erlmachine_tracker:trace(TN, Package#{insight => Insight}).

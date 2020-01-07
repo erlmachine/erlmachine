@@ -92,6 +92,12 @@ load(SN, Load, State) ->
 
 -spec transmit(SN::serial_no(), Motion::map(), State::map()) -> 
                       success(term(), term()) | failure(term(), term(), term()) | failure(term()).
+transmit(SN, #{ read := ID }=Motion, #{ name := Name }=State) ->
+    io:format("~n~p:transmit(~p, ~p, ~p)~n",[?MODULE, SN, Motion, State]),
+    Result = mnesia:dirty_read(Name, ID),
+
+    {ok, {ok, Result}, State};
+
 transmit(SN, Motion, State) ->
     io:format("~n~p:transmit(~p, ~p, ~p)~n",[?MODULE, SN, Motion, State]),
     {ok, ignore, State}.
