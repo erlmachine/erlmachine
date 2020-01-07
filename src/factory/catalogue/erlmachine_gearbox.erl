@@ -32,6 +32,8 @@
          output/1, output/2
         ]).
 
+-export([master/1]).
+
 -export([mounted/2]).
 
 -export([parts/2]).
@@ -84,6 +86,11 @@ gearbox(Body, Env) ->
 -spec gearbox(Body::term(), Env::term(), Schema::term()) -> gearbox().
 gearbox(Body, Env, Schema) ->
     #gearbox{body=Body, env=Env, schema=Schema}.
+
+-spec master(GearBox::assembly()) -> Release::assembly().
+master(GearBox) ->
+    Schema = digraph:new([acyclic, protected]),
+    schema(GearBox, Schema).
 
 -spec mounted(GearBox::assembly(), Parts::list(assembly())) -> Release::assembly().
 mounted(GearBox, Parts) ->

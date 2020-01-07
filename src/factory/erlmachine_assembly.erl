@@ -124,9 +124,10 @@
 install(GearBox) ->
     SN = serial_no(GearBox),
     Options = prototype_options(GearBox),
+    Schema = erlmachine_gearbox:schema(GearBox),
     %% TODO at that place we can register information about scheme in persistence storage;
     Result = (prototype_name(GearBox)):install(SN, GearBox, Options),
-    erlmachine_schema:add_edges(erlmachine_gearbox:schema(GearBox), GearBox),
+    erlmachine_schema:add_edges(Schema, GearBox),
     Result.
 
 -spec install(GearBox::assembly(), Assembly::assembly()) ->
