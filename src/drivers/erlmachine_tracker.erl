@@ -20,7 +20,7 @@
         ]).
 
 -export([tracking_no/1, tracking_no/2]).
--export([trace/2, trace/1]).
+-export([trace/2, track/1]).
 
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
@@ -36,6 +36,9 @@
 -export_type([tracking_no/0]).
 
 %% API.
+
+table() ->
+    trace.
 
 id() -> 
     ?MODULE.
@@ -75,25 +78,13 @@ tracking_no() ->
 -spec trace(TN::binary(), Package::map()) -> 
                    success().
 trace(TN, Package) ->
-    update(TN, Package).
+    erlang:send(id(), #trace{ tracking_no=TN, package=Package })
 
--spec trace(TN::binary()) -> success().
-trace(TN) ->
-    read(TN, self()).
-
--record (update, { id::binary(), object::map(), pid::pid() }).
-
--spec update(ID::binary(), Object::map()) -> 
-                   success().
-update(ID, Object) ->
-    erlang:send(id(), #update{ id=ID, object=Object }).
-
--record (read, { id::binary(), pid::pid() }).
-
--spec read(ID::binary(), Pid::pid()) -> 
-                   success() | failure(term(), term()).
-read(ID, Pid) ->
-    erlang:send(id(), #read{ id=ID, pid=Pid }).
+-spec track(ID::binary()) -> 
+                   success(list()) | failure(term(), term()).
+track(ID) ->
+    Result = mnesia:dirty_read(table(), ID),
+    {ok, Result}.
 
 %% gen_server.
 
@@ -101,7 +92,7 @@ read(ID, Pid) ->
 -record(state, { gearbox::assembly(), serial::serial(), tracking_no::serial_no() }).
 
 init([]) ->
-   
+    %% TODO the special notification gear for journal needs to be implemented;
     GearBoxModel = gearbox_tracker, 
     GearBoxProt = gearbox_tracker_prototype,
     Env = [],
@@ -152,22 +143,15 @@ handle_call(_Request, _From, State) ->
     %% We need to provide REST API for management inside transmission
     %% We need to incapsulate transmission management inside callbacks
     %% We need to provide  measurements of transmission loading, etc..
-	{reply, ignored, State}.
+    {reply, ignored, State}.
 
 handle_cast(_Msg, State) ->
-	{noreply, State}.
+    {noreply, State}.
 
-handle_info(#update{ id=ID, object=Object }, #state{ gearbox=GearBox } = State) ->
-    io:format("~n~p~nUpdate: ~p~n~p~n",[?MODULE, ID, Object]),
-    Args = #trace{ tracking_no=ID, package=Object },
+handle_info(Args = #trace{ tracking_no=TN, package=Package }, #state{ gearbox=GearBox } = State) ->
+    io:format("~n~p~nTrace: ~p~n~p~n",[?MODULE, TN, Package]),
 
     erlmachine_gearbox:rotate(GearBox, erlmachine:command(#{ write => Args })),
-    {noreply, State};
-
-handle_info(#read{ id=ID, pid=Pid }, #state{ gearbox=GearBox } = State) ->
-    io:format("~n~p~nRead: ~p~n",[?MODULE, ID]),
-
-    erlmachine_gearbox:rotate(GearBox, erlmachine:request_reply(#{ read => ID }, Pid)),
     {noreply, State};
 
 handle_info(_Message, State) ->

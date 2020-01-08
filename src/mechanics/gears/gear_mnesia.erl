@@ -67,7 +67,10 @@ rotate(_SN, Motion, #{ name := Name, lock := _Lock }=State) ->
         try 
             [Command] = maps:keys(Body), Args = maps:get(Command, Body),
             %% TODO add transaction support;
-            case Command of 
+            case Command of
+                keys ->
+                    Result = mnesia:dirty_all_keys(Name),
+                    erlmachine:document(Header, #{ Name => Result });
                 write ->
                     is_tuple(Args) orelse throw(?LINE),
                     

@@ -205,11 +205,11 @@ gearbox(Model, ModelOpt, AssemblyOpt, Env) ->
 gearbox(Model, Prot, ModelOpt, ProtOpt, AssemblyOpt, Env) ->
     Body = #{}, %% We can consider to store some meta info in body to pass through all building process;
     GearBox = erlmachine_gearbox:gearbox(Body, Env),
-    Master = erlmachine_gearbox:master(GearBox),
     Prefix = <<"GX">>,
-    Input = [Model, ModelOpt, Prot, ProtOpt, [{type, supervisor}|AssemblyOpt], Master, Prefix],
+    Input = [Model, ModelOpt, Prot, ProtOpt, [{type, supervisor}|AssemblyOpt], GearBox, Prefix],
     Assembly = erlmachine_assembly:assembly(),
-    pass(Assembly, ?MODULE, Input).
+    Master = erlmachine_gearbox:master(pass(Assembly, ?MODULE, Input)),
+    Master.
 
 -spec pass(Assembly::assembly(), Name::atom(), Parts::list(term())) ->
                   assembly().

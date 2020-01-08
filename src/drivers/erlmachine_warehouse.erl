@@ -39,8 +39,11 @@
 
  
 -record(state, { gearbox::assembly() }).
-
+%% We are going to replace this functionality with load, unload inside assembly module.
 %% API.
+
+table() ->
+    assembly.
 
 id() -> 
     ?MODULE.
@@ -53,80 +56,34 @@ start_link() ->
 -spec assembly(SN::serial_no()) -> 
                       success(assembly()) | failure(E::term(), R::term()).
 assembly(SN) ->
-    read(SN).
+    read(table(), SN).
 
--spec assembly(SN::serial_no(), Assembly::assembly()) -> 
+-spec store(Assembly::assembly()) -> 
                       success().
-assembly(SN, Assembly) ->
-    update(SN, Assembly).
+store(Assembly) ->
+    update(Assembly).
 
--record(read, { id::serial_no() }).
-
--spec read(ID::serial_no()) -> assembly().
+-spec read(Table::atom(), ID::serial_no()) -> 
+                  assembly().
 read(ID) ->
-    %% Just default timeout for the first time;
-    gen_server:call(id(), #read{ id=ID }).
+    Result = mnesia:dirty_read(table(), ID),
+    {ok, Result}.
 
--record(update, { id::serial_no(), object::assembly() }).
-
--spec update(ID::serial_no(), Object::assembly()) -> success().
-update(ID, Object) ->
-    erlang:send(id(), #update{ id=ID, object=Object }).
+-spec update(Object::assembly()) -> 
+                    success().
+update(Object) ->
+    ok = mnesia:dirty_write(Object).
  
 %% gen_server.
 
 init([]) ->
-    GearBoxModel = gearbox_warehouse,
-    GearBoxModelOpt = [],
-    Env = [],
-    GearBox = erlmachine_factory:gearbox(GearBoxModel, GearBoxModelOpt, Env),
-
-    GearReplyModel = gear_reply,
-    GearReply = erlmachine_factory:gear(GearBox, GearReplyModel, []),
-
-    GearMnesiaModel = gear_mnesia,
-    Name = assembly, Attributes = erlmachine_assembly:fields(), Nodes = [node()],
-    GearMnesiaOpt = [
-                     {name, Name}, 
-                     {tabdef, [{attributes, Attributes}, {disc_copies, Nodes}, {record_name, Name}]}
-                    ],
-    GearMnesia = erlmachine_factory:gear(GearBox, GearMnesiaModel, GearMnesiaOpt),
-
-    BuildGearMnesia = erlmachine_gear:parts(GearMnesia, [GearReply]),
-
-    AxleModel = axle_tracker,
-    Axle = erlmachine_factory:axle(GearBox, AxleModel, []),
-
-    BuildAxle = erlmachine_axle:parts(Axle, [BuildGearMnesia]),
-
-    Input = erlmachine_assembly:serial_no(GearMnesia),
-    Parts = [
-             GearReply,
-             BuildAxle
-            ],
-    
-    BuildGearBox = erlmachine_gearbox:input(erlmachine_gearbox:parts(GearBox, Parts), Input),
-
-    {ok, _PID} = erlmachine_assembly:install(BuildGearBox),
-
-    {ok, #state{ gearbox=BuildGearBox }}.
-
-handle_call(#read{ id=ID }, _From, #state{ gearbox=GearBox } = State) ->
-    Result = erlmachine_gearbox:transmit(GearBox, #{ read => ID }),
-    
-    {reply, Result, State};
+    {ok, #state{ }}.
 
 handle_call(_Request, _From, State) ->
 	{reply, ignored, State}.
 
 handle_cast(_Msg, State) ->
 	{noreply, State}.
-
-handle_info(#update{ id=ID, object=Object }, #state{ gearbox=GearBox } = State) ->
-    io:format("~n~p~nUpdate: ~p~n~p~n",[?MODULE, ID, Object]),
-
-    erlmachine_gearbox:rotate(GearBox, erlmachine:command(#{ write => Object })),
-    {noreply, State};
 
 handle_info(_Info, State) ->
 	{noreply, State}.
