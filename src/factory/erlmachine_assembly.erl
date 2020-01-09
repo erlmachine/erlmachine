@@ -60,6 +60,8 @@
 
 %% The main purpose of this module is to instantiate proceses accordingly to design file;
 %% In this module will be provided incapsulation around building of independent parts and whole transmission too;
+%% We consider Module as implementation point (like class) and serial number as instance - (like object); 
+%% We can support polymorphism by different ways - by overriding prototype or by changing topology itself;
 
 -type serial_no() :: erlmachine_factory:serial_no().
 
@@ -280,34 +282,6 @@ uninstalled(GearBox, Assembly, Reason) ->
     %% NOTE Instead of access from external process we are going to provide
     %% notification and update monitoring copy with suitable tags, etc.;
     ok.
-
-%% API.
-
--spec start_link() -> {ok, pid()}.
-start_link() ->
-	gen_server:start_link(?MODULE, [], []).
-
-%% gen_server.
-
--record(state, {}).
-
-init([]) ->
-	{ok, #state{}}.
-
-handle_call(_Request, _From, State) ->
-	{reply, ignored, State}.
-
-handle_cast(_Msg, State) ->
-	{noreply, State}.
-
-handle_info(_Info, State) ->
-	{noreply, State}.
-
-terminate(_Reason, _State) ->
-	ok.
-
-code_change(_OldVsn, State, _Extra) ->
-	{ok, State}.
 
 -spec assembly() -> assembly().
 assembly() ->

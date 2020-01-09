@@ -240,13 +240,59 @@ serial_no() ->
     SN = gen_server:call(Id, #serial_no{}),
     erlmachine_serial_no:base64url(SN).
 
+-spec unload(SN::serial_no()) -> 
+                    success(assembly()) | failure(term(), term()).
+unload(SN) ->
+    Result = mnesia:dirty_read(table(), SN),
+    {ok, Result}.
+
+-record(load, { assembly::assembly(), pid::pid() }).
+
+-spec load(Assembly::assembly()) -> 
+                  success().
+load(Assembly) ->
+    erlang:send(id(), #load{ assembly=Assembly, pid=self() }), 
+    ok.
+
 %% gen_server.
 
 -record(state, { serial::serial(), serial_no::serial_no() }).
 %% Factory will be responsible for the model's storing and management;
 init([]) ->
     %% A folder will be appended, cause attribute is listed above in the module declaration;
-    
+    GearBoxModel = gearbox_assembly, 
+    Env = [],
+    GearBox = erlmachine_factory:gearbox(GearBoxModel, [], Env),
+
+    GearReplyModel = gear_reply,
+    GearReply = erlmachine_factory:gear(GearBox, GearReplyModel, []),
+
+    GearMnesiaModel = gear_mnesia,
+    Name = assembly, Attributes = fields(), Nodes = [node()],
+    GearMnesiaOpt = [
+                     {name, Name}, 
+                     {tabdef, [{attributes, Attributes}, {disc_copies, Nodes}, {record_name, Name}]}
+                    ],
+    GearMnesia = erlmachine_factory:gear(GearBox, GearMnesiaModel, GearMnesiaOpt),
+
+    BuildGearMnesia = erlmachine_gear:parts(GearMnesia, [GearReply]),
+
+    AxleModel = axle_tracker,
+    AxleProt = axle_tracker_prototype,
+    Axle = erlmachine_factory:axle(GearBox, AxleModel, AxleProt, [], [], []),
+
+    BuildAxle = erlmachine_axle:parts(Axle, [BuildGearMnesia]),
+
+    Input = erlmachine_assembly:serial_no(GearMnesia),
+    Parts = [
+             GearReply,
+             BuildAxle
+            ],
+
+    BuildGearBox = erlmachine_gearbox:input(erlmachine_gearbox:parts(GearBox, Parts), Input),
+
+    {ok, _PID} = erlmachine_assembly:install(BuildGearBox),
+
     {ok, Serial} = erlmachine_serial:serial_no(),
     
     SN = erlmachine_serial_no:serial_no(Serial),
@@ -264,6 +310,12 @@ handle_call(_Request, _From, State) ->
 
 handle_cast(_Msg, State) ->	{noreply, State}.
 
+handle_info(#load{ assembly=Assembly, pid=Pid }, #state{ gearbox=GearBox } = State) ->
+    io:format("~n~p~nLoad: ~p~n~p~n",[?MODULE, TN, Package]),
+
+    erlmachine_gearbox:rotate(GearBox, erlmachine:request_reply(#{ write => Assembly }, Pid)),
+    {noreply, State};
+
 handle_info(_Info, State) ->
 	{noreply, State}.
 
@@ -273,6 +325,22 @@ terminate(_Reason, #state{serial=Serial}) ->
 
 code_change(_OldVsn, State, _Extra) ->
 	{ok, State}.
+
+handle_continue(#accept{}, #state{gearbox=_GearBox}=State) ->
+    try
+        %% true = erlmachine_factory:accept(GearBox),
+        {noreply, State}
+    catch E:R ->
+            {stop, {E, R}, State}
+    end;
+handle_continue(_, State) ->
+    {noreply, State}.
+
+terminate(_Reason, _State) ->
+    ok.
+
+format_status(_Opt, [_PDict, _State]) ->
+    [].
 
 -spec accept(GearBox::assembly(), Criteria::criteria()) -> 
                     success() | failure(E::term(), R::term(), S::term()).

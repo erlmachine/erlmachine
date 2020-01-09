@@ -78,12 +78,13 @@ tracking_no() ->
 -spec trace(TN::binary(), Package::map()) -> 
                    success().
 trace(TN, Package) ->
-    erlang:send(id(), #trace{ tracking_no=TN, package=Package })
+    erlang:send(id(), #trace{ tracking_no=TN, package=Package }),
+    ok.
 
--spec track(ID::binary()) -> 
+-spec track(TN::binary()) -> 
                    success(list()) | failure(term(), term()).
-track(ID) ->
-    Result = mnesia:dirty_read(table(), ID),
+track(TN) ->
+    Result = mnesia:dirty_read(table(), TN),
     {ok, Result}.
 
 %% gen_server.
