@@ -3,6 +3,8 @@
 
 %% API.
 
+-export([name/0]).
+
 -export([fields/0]).
 
 -export([start_link/0]).
@@ -11,8 +13,10 @@
 -export([
          init/1,
          handle_call/3, handle_cast/2, handle_info/2,
+         handle_continue/2,
          terminate/2,
-         code_change/3
+         code_change/3,
+         format_status/2
         ]).
 
 -export([assembly/0, model/0, prototype/0]).
@@ -54,6 +58,8 @@
 -export([add_part/2, remove_part/2, get_part/2]).
 
 -export([labels/1]).
+
+-export([load/1, unload/1]).
 
 -include("erlmachine_system.hrl").
 
@@ -283,6 +289,106 @@ uninstalled(GearBox, Assembly, Reason) ->
     %% notification and update monitoring copy with suitable tags, etc.;
     ok.
 
+%% API.
+
+id() -> 
+    ?MODULE.
+
+-spec start_link() -> 
+                        success(pid()) | ingnore | failure(E::term()).
+start_link() ->
+    Id = id(),
+    gen_server:start_link({local, Id}, ?MODULE, [], []).
+
+-spec unload(SN::serial_no()) -> 
+                    success(assembly()) | failure(term(), term()).
+unload(SN) ->
+    Result = mnesia:dirty_read(name(), SN),
+    {ok, Result}.
+
+-record(load, { assembly::assembly(), pid::pid() }).
+
+-spec load(Assembly::assembly()) -> 
+                  success().
+load(Assembly) ->
+    erlang:send(id(), #load{ assembly=Assembly, pid=self() }), 
+    ok.
+
+-record(state, { gearbox::assembly() }).
+-record(accept, { }).
+%% Factory will be responsible for the model's, assemblies, storing and management;
+init([]) ->
+    %% A folder will be appended, cause attribute is listed above in the module declaration;
+    GearBoxModel = gearbox_assembly, 
+    Env = [],
+    GearBox = erlmachine_factory:gearbox(GearBoxModel, [], Env),
+
+    GearReplyModel = gear_reply,
+    GearReply = erlmachine_factory:gear(GearBox, GearReplyModel, []),
+
+    GearMnesiaModel = gear_mnesia,
+    Name = name(), Attributes = fields(), Nodes = [node()],
+    GearMnesiaOpt = [
+                     {name, Name}, 
+                     {tabdef, [{attributes, Attributes}, {disc_copies, Nodes}, {record_name, Name}]}
+                    ],
+    GearMnesia = erlmachine_factory:gear(GearBox, GearMnesiaModel, GearMnesiaOpt),
+
+    BuildGearMnesia = erlmachine_gear:parts(GearMnesia, [GearReply]),
+
+    AxleModel = axle_tracker,
+    Axle = erlmachine_factory:axle(GearBox, AxleModel, []),
+
+    BuildAxle = erlmachine_axle:parts(Axle, [BuildGearMnesia]),
+
+    Input = serial_no(GearMnesia),
+    Parts = [
+             GearReply,
+             BuildAxle
+            ],
+
+    BuildGearBox = erlmachine_gearbox:input(erlmachine_gearbox:parts(GearBox, Parts), Input),
+
+    {ok, _PID} = install(BuildGearBox),
+
+    {ok, #state{ gearbox=BuildGearBox }}.
+
+handle_call(_Request, _From, State) ->
+    {reply, ignored, State}.
+
+handle_cast(_Msg, State) ->	
+    {noreply, State}.
+
+handle_info(#load{ assembly=Assembly, pid=Pid }, #state{ gearbox=GearBox } = State) ->
+    io:format("~n~p~nLoad: ~p~n",[?MODULE, Assembly]),
+
+    erlmachine_gearbox:rotate(GearBox, erlmachine:request_reply(#{ write => Assembly }, Pid)),
+    {noreply, State};
+
+handle_info(_Info, State) ->
+	{noreply, State}.
+
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.
+
+handle_continue(#accept{}, #state{ gearbox=_GearBox }=State) ->
+    try
+        %% true = erlmachine_factory:accept(GearBox),
+        {noreply, State}
+    catch E:R ->
+            {stop, {E, R}, State}
+    end;
+
+handle_continue(_, State) ->
+    {noreply, State}.
+
+terminate(_Reason, _State) ->
+    %% TODO table can be relocated to the memory and then be persisted at that point;
+    ok.
+
+format_status(_Opt, [_PDict, _State]) ->
+    [].
+
 -spec assembly() -> assembly().
 assembly() ->
     #assembly{}.
@@ -290,6 +396,10 @@ assembly() ->
 -spec fields() -> list(atom()).
 fields() ->
     record_info(fields, assembly).
+
+-spec name() -> atom().
+name() -> 
+    assembly.
 
 -spec is_mounted(Assembly::assembly()) -> boolean().
 is_mounted(Assembly) -> 

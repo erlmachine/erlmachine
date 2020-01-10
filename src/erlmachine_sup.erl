@@ -10,7 +10,7 @@ start_link() ->
 init([]) ->
     FactoryDriver = erlmachine_factory,
     TrackerDriver = erlmachine_tracker,
-    WarehouseDriver = erlmachine_warehouse,
+    AssemblyDriver = erlmachine_assembly,
 
     Fun = start_link, Args = [],
 
@@ -19,7 +19,7 @@ init([]) ->
     Specs = [
              #{id => FactoryDriver, start => {FactoryDriver, Fun, Args}},
              #{id => TrackerDriver, start => {TrackerDriver, Fun, Args}},
-             #{id => WarehouseDriver, start => {WarehouseDriver, Fun, Args}}
+             #{id => AssemblyDriver, start => {AssemblyDriver, Fun, Args}}
             ],
 
     {ok, {#{strategy => Strategy}, Specs}}.

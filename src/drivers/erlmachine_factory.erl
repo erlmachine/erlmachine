@@ -32,13 +32,17 @@
 %% My assumption is that factory can be driven from production capacity perspective; 
 %% Measurements over manufactures production activity needs to be satisfied too;
 
+%% I guess factory needs to have the specialized, predefined parts with reserved serial_no;
+
 %% gen_server.
 -export([init/1]).
 -export([handle_call/3]).
 -export([handle_cast/2]).
 -export([handle_info/2]).
+-export([handle_continue/2]).
 -export([terminate/2]).
 -export([code_change/3]).
+-export([format_status/2]).
 
 -export([gear/3, gear/4, gear/6]).
 -export([shaft/3, shaft/4, shaft/6]).
@@ -64,7 +68,6 @@
 %% The main purpouse of the factory is to provide product planing;
 %% We can control available capacity of all individual parts;
 %% We can utilize different pools for that purpouse;
-%% The all managment over thoose capabilities is a warehouse option;
 
 -spec model_name(Assembly::assembly(), Name::atom()) -> 
                         assembly().
@@ -240,69 +243,23 @@ serial_no() ->
     SN = gen_server:call(Id, #serial_no{}),
     erlmachine_serial_no:base64url(SN).
 
--spec unload(SN::serial_no()) -> 
-                    success(assembly()) | failure(term(), term()).
-unload(SN) ->
-    Result = mnesia:dirty_read(table(), SN),
-    {ok, Result}.
-
--record(load, { assembly::assembly(), pid::pid() }).
-
--spec load(Assembly::assembly()) -> 
-                  success().
-load(Assembly) ->
-    erlang:send(id(), #load{ assembly=Assembly, pid=self() }), 
-    ok.
-
 %% gen_server.
 
 -record(state, { serial::serial(), serial_no::serial_no() }).
-%% Factory will be responsible for the model's storing and management;
+-record(accept, { }).
+%% Factory will be responsible for the model's, assemblies, storing and management;
 init([]) ->
     %% A folder will be appended, cause attribute is listed above in the module declaration;
-    GearBoxModel = gearbox_assembly, 
-    Env = [],
-    GearBox = erlmachine_factory:gearbox(GearBoxModel, [], Env),
-
-    GearReplyModel = gear_reply,
-    GearReply = erlmachine_factory:gear(GearBox, GearReplyModel, []),
-
-    GearMnesiaModel = gear_mnesia,
-    Name = assembly, Attributes = fields(), Nodes = [node()],
-    GearMnesiaOpt = [
-                     {name, Name}, 
-                     {tabdef, [{attributes, Attributes}, {disc_copies, Nodes}, {record_name, Name}]}
-                    ],
-    GearMnesia = erlmachine_factory:gear(GearBox, GearMnesiaModel, GearMnesiaOpt),
-
-    BuildGearMnesia = erlmachine_gear:parts(GearMnesia, [GearReply]),
-
-    AxleModel = axle_tracker,
-    AxleProt = axle_tracker_prototype,
-    Axle = erlmachine_factory:axle(GearBox, AxleModel, AxleProt, [], [], []),
-
-    BuildAxle = erlmachine_axle:parts(Axle, [BuildGearMnesia]),
-
-    Input = erlmachine_assembly:serial_no(GearMnesia),
-    Parts = [
-             GearReply,
-             BuildAxle
-            ],
-
-    BuildGearBox = erlmachine_gearbox:input(erlmachine_gearbox:parts(GearBox, Parts), Input),
-
-    {ok, _PID} = erlmachine_assembly:install(BuildGearBox),
-
     {ok, Serial} = erlmachine_serial:serial_no(),
-    
+
     SN = erlmachine_serial_no:serial_no(Serial),
+
     {ok, #state{ serial=Serial, serial_no=SN }}.
 
 handle_call(#serial_no{}, _From, #state{serial=Serial, serial_no=SN}=State) ->
- 
     Inc = erlmachine_serial:inc(Serial),
-    
     Rotate = erlmachine_serial_no:serial_no(Inc, SN),
+
     {reply, SN, State#state{serial=Inc, serial_no=Rotate}};
 
 handle_call(_Request, _From, State) ->
@@ -310,25 +267,15 @@ handle_call(_Request, _From, State) ->
 
 handle_cast(_Msg, State) ->	{noreply, State}.
 
-handle_info(#load{ assembly=Assembly, pid=Pid }, #state{ gearbox=GearBox } = State) ->
-    io:format("~n~p~nLoad: ~p~n~p~n",[?MODULE, TN, Package]),
-
-    erlmachine_gearbox:rotate(GearBox, erlmachine:request_reply(#{ write => Assembly }, Pid)),
-    {noreply, State};
-
 handle_info(_Info, State) ->
 	{noreply, State}.
 
-terminate(_Reason, #state{serial=Serial}) ->
-    ok = erlmachine_serial:serial_no(Serial),
-    ok.
-
 code_change(_OldVsn, State, _Extra) ->
-	{ok, State}.
+    {ok, State}.
 
-handle_continue(#accept{}, #state{gearbox=_GearBox}=State) ->
+handle_continue(#accept{}, #state{}=State) ->
     try
-        %% true = erlmachine_factory:accept(GearBox),
+        %% TODO acceptance test over SN can be satisfied;
         {noreply, State}
     catch E:R ->
             {stop, {E, R}, State}
@@ -336,8 +283,8 @@ handle_continue(#accept{}, #state{gearbox=_GearBox}=State) ->
 handle_continue(_, State) ->
     {noreply, State}.
 
-terminate(_Reason, _State) ->
-    ok.
+terminate(_Reason, #state{serial=Serial}) ->
+    ok = erlmachine_serial:serial_no(Serial).
 
 format_status(_Opt, [_PDict, _State]) ->
     [].
