@@ -8,9 +8,20 @@
 
 start(_Type, _Args) ->
     Nodes = [node()],
-    Schema = mnesia:create_schema(Nodes), ok = mnesia:start(),
+    mnesia:create_schema(Nodes), ok = mnesia:start(),
+    
+    DiscOnlyCopies = {disc_only_copies, Nodes},
  
-    io:format("~nSchema res: ~p~n", [Schema]),
+    TrackTab = erlmachine_tracker:table(), TrackAttr = erlmachine_tracker:attributes(),
+    TrackTabTabDef = [{attributes, TrackAttr}, DiscOnlyCopies, {record_name, TrackTab}],
+
+    mnesia:create_table(TrackTab, TrackTabTabDef),
+
+    AssemblyTab = erlmachine_assembly:table(), AssemblyAttr = erlmachine_assembly:attributes(),
+    AssemblyTabDef = [{attributes, AssemblyAttr}, DiscOnlyCopies, {record_name, AssemblyTab}],
+
+    mnesia:create_table(AssemblyTab, AssemblyTabDef),
+
     erlmachine_sup:start_link().
 
 

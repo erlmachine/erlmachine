@@ -6,6 +6,8 @@
 
 -behaviour(gen_server).
 
+-export([table/0, attributes/0]).
+
 %% API.
 -export([start_link/0]).
 
@@ -20,14 +22,14 @@
         ]).
 
 -export([tracking_no/1, tracking_no/2]).
--export([trace/2, track/1]).
+-export([to_track/2, track/1]).
 
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
 
 -callback tag(Packakge::term()) -> Tag::binary().
 
--record(trace, { tracking_no::binary(), package::map() }).
+-record(track, { tracking_no::binary(), package::map() }).
 
 -type serial() :: erlmachine_serial:serial().
 
@@ -35,10 +37,19 @@
 
 -export_type([tracking_no/0]).
 
+%% I guess tracker needs to be optimized by gen_batch_server modification;
+%% As a table is located completely on a disc 
+%% the specialized event for the journal purpouses needs to be provided too;
+
 %% API.
 
+-spec table() -> atom().
 table() ->
-    trace.
+    track.
+
+-spec attributes() -> list(atom()).
+attributes() ->
+    record_info(fields, track).
 
 id() -> 
     ?MODULE.
@@ -75,11 +86,10 @@ tracking_no() ->
 
 %% Additional options like mode, etc. can be added later;
 
--spec trace(TN::binary(), Package::map()) -> 
+-spec to_track(TN::binary(), Package::map()) -> 
                    success().
-trace(TN, Package) ->
-    erlang:send(id(), #trace{ tracking_no=TN, package=Package }),
-    ok.
+to_track(TN, Package) ->
+    ok = mnesia:dirty_write(#track{ tracking_no=TN, package=Package }).
 
 -spec track(TN::binary()) -> 
                    success(list()) | failure(term(), term()).
@@ -94,44 +104,11 @@ track(TN) ->
 
 init([]) ->
     %% TODO the special notification gear for journal needs to be implemented;
-    GearBoxModel = gearbox_tracker, 
-    GearBoxProt = gearbox_tracker_prototype,
-    Env = [],
-    GearBox = erlmachine_factory:gearbox(GearBoxModel, GearBoxProt, [], [], [], Env),
-
-    GearReplyModel = gear_reply,
-    GearReply = erlmachine_factory:gear(GearBox, GearReplyModel, []),
-
-    GearMnesiaModel = gear_mnesia,
-    Name = trace, Attributes = record_info(fields, trace), Nodes = [node()],
-    GearMnesiaOpt = [
-                     {name, Name}, 
-                     {tabdef, [{attributes, Attributes}, {disc_copies, Nodes}, {record_name, Name}]}
-                    ],
-    GearMnesia = erlmachine_factory:gear(GearBox, GearMnesiaModel, GearMnesiaOpt),
-
-    BuildGearMnesia = erlmachine_gear:parts(GearMnesia, [GearReply]),
-
-    AxleModel = axle_tracker,
-    AxleProt = axle_tracker_prototype,
-    Axle = erlmachine_factory:axle(GearBox, AxleModel, AxleProt, [], [], []),
-
-    BuildAxle = erlmachine_axle:parts(Axle, [BuildGearMnesia]),
-
-    Input = erlmachine_assembly:serial_no(GearMnesia),
-    Parts = [
-             GearReply,
-             BuildAxle
-            ],
-
-    BuildGearBox = erlmachine_gearbox:input(erlmachine_gearbox:parts(GearBox, Parts), Input),
-
-    {ok, _PID} = erlmachine_assembly:install(BuildGearBox),
 
     {ok, Serial} = erlmachine_serial:tracking_no(),
     TN = erlmachine_serial_no:serial_no(Serial),
 
-    {ok,  #state{ serial=Serial, gearbox=BuildGearBox, tracking_no=TN }, {continue, #accept{}}}.
+    {ok,  #state{ serial=Serial, tracking_no=TN }, {continue, #accept{}}}.
 
 handle_call(#tracking_no{}, _From, #state{ serial=Serial, tracking_no=TN }=State) ->
 
@@ -148,12 +125,6 @@ handle_call(_Request, _From, State) ->
 
 handle_cast(_Msg, State) ->
     {noreply, State}.
-
-handle_info(Args = #trace{ tracking_no=TN, package=Package }, #state{ gearbox=GearBox } = State) ->
-    io:format("~n~p~nTrace: ~p~n~p~n",[?MODULE, TN, Package]),
-
-    erlmachine_gearbox:rotate(GearBox, erlmachine:command(#{ write => Args })),
-    {noreply, State};
 
 handle_info(_Message, State) ->
     {noreply, State}.
@@ -178,5 +149,4 @@ terminate(_Reason, _State) ->
 
 format_status(_Opt, [_PDict, _State]) ->
     [].
-
 

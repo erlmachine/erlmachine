@@ -32,23 +32,24 @@ format_name(SerialNumber) ->
     ID = erlang:binary_to_atom(SerialNumber, latin1),
     ID.
 
--spec tag(Package::map()) -> Tag::binary().
-tag(#{model := Model}) ->
+-spec tag(Axle::assembly()) -> Tag::binary().
+tag(Axle) ->
+    Model = erlmachine_assembly:model_name(Axle),
     ID = atom_to_binary(Model, latin1),
     ID.
 
 -spec installed(Name::serial_no(), GearBox::assembly(), Axle::assembly(), Part::assembly()) ->
-                      ok.
+                      success().
 installed(_Name, _GearBox, Axle, Part) ->
-    SN = erlmachine_assembly:serial_no(Part),
-    trace(Axle, #{installed => SN}),
+    SN = erlmachine_assembly:serial_no(Axle),
+    to_track(SN, #{ installed => erlmachine_assembly:serial_no(Part) }),
     ok.
 
 -spec uninstalled(Name::serial_no(), GearBox::assembly(), Axle::assembly(), Part::assembly(), Reason::term()) -> 
-                         ok.
+                         success().
 uninstalled(_Name, _GearBox, Axle, Part, Reason) ->
-    SN = erlmachine_assembly:serial_no(Part),
-    trace(Axle, #{uninstalled => SN, reason => Reason}),
+    SN = erlmachine_assembly:serial_no(Axle),
+    to_track(SN, #{uninstalled => erlmachine_assembly:serial_no(Part), reason => Reason}),
     ok.
 
 -spec attach(Name::serial_no(), GearBox::assembly(), Axle::assembly(), Register::term(), Extension::assembly()) ->
@@ -62,6 +63,9 @@ attach(Name, GearBox, Axle, Register, Extension) ->
     SupRef = format_name(Name),
 
     {ok, _PID} = supervisor:start_child(SupRef, Spec),
+
+    SN = erlmachine_assembly:serial_no(Axle),
+    to_track(SN, #{ attach => erlmachine_assembly:serial_no(Extension) }), load(Axle),
     Result.
     
 -spec detach(Name::serial_no(), GearBox::assembly(), Axle::assembly(), ID::serial_no()) ->
@@ -73,6 +77,9 @@ detach(Name, GearBox, Axle, ID) ->
 
     ok = supervisor:terminate_child(SupRef, ID),
     ok = supervisor:delete_child(SupRef, ID), %% ID the same for chield and SN
+
+    SN = erlmachine_assembly:serial_no(Axle), load(Axle),
+    to_track(SN, #{ detach => ID }),
     Result.
 
 -record(install, {gearbox::assembly(), axle::assembly(), options::list(tuple)}).
@@ -80,10 +87,15 @@ detach(Name, GearBox, Axle, ID) ->
 -spec install(Name::serial_no(), GearBox::assembly(), Axle::assembly(), Options::list(tuple())) -> 
                      success(pid()) | ingnore | failure(E::term()).
 install(Name, GearBox, Axle, Opt) ->
+    SN = erlmachine_assembly:serial_no(Axle),
+
     ID = {local, format_name(Name)},
     Command = #install{ gearbox=GearBox, axle=Axle, options=Opt },
 
-    supervisor:start_link(ID, ?MODULE, Command).
+    Result = supervisor:start_link(ID, ?MODULE, Command),
+ 
+    to_track(SN, #{ install => ts() }), load(Axle),
+    Result.
 
 init(#install{gearbox=GearBox, axle=Axle, options=Opt}) ->
     Strategy = proplists:get_value(strategy, Opt, one_for_all),
@@ -104,12 +116,20 @@ init(#install{gearbox=GearBox, axle=Axle, options=Opt}) ->
                        success().
 uninstall(Name, GearBox, Axle, Reason) ->
     exit(whereis(format_name(Name)), Reason),
-    erlmachine_axle:uninstall(GearBox, Axle, Reason).
+
+    Result = erlmachine_axle:uninstall(GearBox, Axle, Reason),
+
+    SN = erlmachine_assembly:serial_no(Axle),
+    to_track(SN, #{uninstall => ts()}), load(Axle),
+    Result.
 
 -spec accept(Name::serial_no(), GearBox::assembly(), Axle::assembly(), Criteria::criteria()) ->
                     success() | failure(E::term(), R::term(), S::term()).
 accept(_Name, GearBox, Axle, Criteria) ->
     {ok, Status, _} = erlmachine_axle:accept(GearBox, Axle, Criteria),
+
+    SN = erlmachine_assembly:serial_no(Axle),
+    to_track(SN, #{ accept => Status }),
     Status.
 
 %% TODO
@@ -137,9 +157,15 @@ specs(GearBox, Axle) ->
     Specs = [spec(GearBox, Axle, Part)|| Part <- Parts],
     Specs.
 
-trace(Assembly, Insight) ->
-    Model = erlmachine_assembly:model_name(Assembly),
-    SN = erlmachine_assembly:serial_no(Assembly),
-    Package = #{prototype => ?MODULE, model => Model, serial_no => SN},
-    {ok, TN} = erlmachine_tracker:tracking_no(?MODULE, Package),
-    erlmachine_tracker:trace(TN, Package#{insight => Insight}).
+-spec to_track(TN::serial_no(), Package::map()) -> success().
+to_track(TN, Package) ->
+    erlmachine_tracker:to_track(TN, Package), 
+    ok.
+
+-spec load(Axle::assembly()) -> success().
+load(Axle) ->
+    erlmachine_assembly:load(Axle).
+
+-spec ts() -> integer().
+ts() ->
+    erlang:system_time(seconds).

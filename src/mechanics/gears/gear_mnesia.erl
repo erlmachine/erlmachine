@@ -24,8 +24,7 @@
 install(_SN, _ID, State, Opt, _Env) ->
     Name = proplists:get_value(name, Opt), TabDef = proplists:get_value(tabdef, Opt),
     Lock = proplists:get_value(lock, Opt, write),
-    io:format("~nName: ~p TabDef: ~p~n",[Name, TabDef]),
-    R = mnesia:create_table(Name, TabDef), io:format("~nR: ~p~n",[R]),
+    Name == undefined orelse begin mnesia:create_table(Name, TabDef) end,
     
     {ok, State#{ name => Name, lock => Lock }}.
 

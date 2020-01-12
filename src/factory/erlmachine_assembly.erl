@@ -1,23 +1,6 @@
 -module(erlmachine_assembly).
--behaviour(gen_server).
 
 %% API.
-
--export([name/0]).
-
--export([fields/0]).
-
--export([start_link/0]).
-
-%% gen_server.
--export([
-         init/1,
-         handle_call/3, handle_cast/2, handle_info/2,
-         handle_continue/2,
-         terminate/2,
-         code_change/3,
-         format_status/2
-        ]).
 
 -export([assembly/0, model/0, prototype/0]).
 
@@ -44,6 +27,7 @@
          model_options/1, model_options/2,
          prototype/1, prototype/2, 
          prototype_name/1, prototype_name/2,
+         prototype_body/1, prototype_body/2,
          prototype_options/1, prototype_options/2,
          assembly_options/1, assembly_options/2,
          model_no/1, model_no/2,
@@ -59,7 +43,11 @@
 
 -export([labels/1]).
 
+-export([table/0, attributes/0]).
+
 -export([load/1, unload/1]).
+
+-export([by_serial_no/1]).
 
 -include("erlmachine_system.hrl").
 
@@ -83,7 +71,8 @@
 
 -record(prototype, {
                     name::atom(),
-                    options::term()
+                    options::term(),
+                    body::term()
                    }
        ).
 
@@ -119,13 +108,21 @@
                     tags=[]::list(term()),
                     label::label()
                    }
-        ).j
+        ).
 
 -type assembly() :: #assembly{}.
 
 -type label() :: atom().
 
 -export_type([assembly/0, model/0, prototype/0, product/0]).
+
+-spec table() -> atom().
+table() -> 
+    assembly.
+
+-spec attributes() -> list(atom()).
+attributes() ->
+    record_info(fields, assembly).
 
 -spec install(GearBox::assembly()) ->
                      success(pid()) | ingnore | failure(E::term()).
@@ -153,6 +150,14 @@ attach(GearBox, Register, Part) ->
     erlmachine_schema:add_edge(erlmachine_gearbox:schema(GearBox), SN, Part),
     Result.
 
+-spec attach(GearBox::assembly(), SN::serial_no(), Register::term(), Part::assembly()) -> 
+                    success(term()) | failure(term(), term()).
+attach(GearBox, SN, Register, Part) ->
+    Assembly = erlmachine_gearbox:find(GearBox, SN),
+    Result = (prototype_name(Assembly)):attach(SN, GearBox, Assembly, Register, Part), 
+    erlmachine_schema:add_edge(erlmachine_gearbox:schema(GearBox), SN, Part),
+    Result.
+
 -spec attach_to_label(GearBox::assembly(), Label::term(), Register::term(), Part::assembly()) -> 
                              success(term()) | failure(term(), term()).
 attach_to_label(GearBox, Label, Register, Part) ->
@@ -173,19 +178,19 @@ attach_by_serial_no(GearBox, SN, Register, ID) ->
     Part =  erlmachine_gearbox:find(GearBox, ID),
     attach(GearBox, SN, Register, Part).
 
--spec attach(GearBox::assembly(), SN::serial_no(), Register::term(), Part::assembly()) -> 
-                    success(term()) | failure(term(), term()).
-attach(GearBox, SN, Register, Part) ->
-    Assembly = erlmachine_gearbox:find(GearBox, SN),
-    Result = (prototype_name(Assembly)):attach(SN, GearBox, Assembly, Register, Part), 
-    erlmachine_schema:add_edge(erlmachine_gearbox:schema(GearBox), SN, Part),
-    Result.
-
 -spec detach(GearBox::assembly(), ID::serial_no()) -> 
                     success(term()) | failure(term(), term()).
 detach(GearBox, ID) ->
     SN = serial_no(GearBox),
     Result = (prototype_name(GearBox)):detach(SN, GearBox, ID),
+    ok = erlmachine_schema:del_vertex(erlmachine_gearbox:schema(GearBox), ID),
+    Result.
+
+-spec detach(GearBox::assembly(), SN::serial_no(), ID::serial_no()) -> 
+                    success(term()) | failure(term(), term()).
+detach(GearBox, SN, ID) ->
+    Assembly = erlmachine_gearbox:find(GearBox, SN),
+    Result = (prototype_name(Assembly)):detach(SN, GearBox, Assembly, ID),
     ok = erlmachine_schema:del_vertex(erlmachine_gearbox:schema(GearBox), ID),
     Result.
 
@@ -207,14 +212,6 @@ detach_by_label(GearBox, SN, Label) ->
                              success(term()) | failure(term(), term()).
 detach_by_serial_no(GearBox, SN, ID) ->
     detach(GearBox, SN, ID). 
-
--spec detach(GearBox::assembly(), SN::serial_no(), ID::serial_no()) -> 
-                    success(term()) | failure(term(), term()).
-detach(GearBox, SN, ID) ->
-    Assembly = erlmachine_gearbox:find(GearBox, SN),
-    Result = (prototype_name(Assembly)):detach(SN, GearBox, Assembly, ID),
-    ok = erlmachine_schema:del_vertex(erlmachine_gearbox:schema(GearBox), ID),
-    Result.
 
 -spec uninstall(GearBox::assembly(), Reason::term()) ->
                      ok.
@@ -289,129 +286,26 @@ uninstalled(GearBox, Assembly, Reason) ->
     %% notification and update monitoring copy with suitable tags, etc.;
     ok.
 
-%% API.
-
-id() -> 
-    ?MODULE.
-
--spec start_link() -> 
-                        success(pid()) | ingnore | failure(E::term()).
-start_link() ->
-    Id = id(),
-    gen_server:start_link({local, Id}, ?MODULE, [], []).
-
+%% TODO We need to provide methods like by_model_no, by_sum.
 -spec by_serial_no(SN::serial_no()) -> 
-                    success(assembly()) | failure(term(), term()).
+                          success(assembly()) | failure(term(), term()).
 by_serial_no(SN) ->
-    Result = mnesia:dirty_read(name(), SN),
+    Result = mnesia:dirty_read(table(), SN),
     {ok, Result}.
 
--spec by_model_no(MN::model_no()) ->
-                         success(assembly()) | failure(term(), term()).
-by_model_no(MN) ->
-    Result = mnesia:dirty_read(name(), SN),
-    {ok, Result}.
-
--spec by_sum(Sum::binary()) ->
-                         success(assembly()) | failure(term(), term()).
-by_sum(MN) ->
-    Result = mnesia:dirty_read(name(), SN),
-    {ok, Result}.
-
--record(update, { assembly::assembly(), pid::pid() }).
-
--spec update(Assembly::assembly()) -> 
+-spec load(Assembly::assembly()) -> 
                   success().
-update(Assembly) ->
-    erlang:send(id(), #update{ assembly=Assembly, pid=self() }), 
-    ok.
+load(Assembly) when is_record(Assembly, assembly) ->
+    ok = mnesia:dirty_write(Assembly).
 
--record(state, { gearbox::assembly() }).
--record(accept, { }).
-%% Factory will be responsible for the model's, assemblies, storing and management;
-init([]) ->
-    %% A folder will be appended, cause attribute is listed above in the module declaration;
-    GearBoxModel = gearbox_assembly, 
-    Env = [],
-    GearBox = erlmachine_factory:gearbox(GearBoxModel, [], Env),
-
-    GearReplyModel = gear_reply,
-    GearReply = erlmachine_factory:gear(GearBox, GearReplyModel, []),
-
-    GearMnesiaModel = gear_mnesia,
-    Name = name(), Attributes = fields(), Nodes = [node()],
-    GearMnesiaOpt = [
-                     {name, Name}, 
-                     {tabdef, [{attributes, Attributes}, {disc_copies, Nodes}, {record_name, Name}]}
-                    ],
-    GearMnesia = erlmachine_factory:gear(GearBox, GearMnesiaModel, GearMnesiaOpt),
-
-    BuildGearMnesia = erlmachine_gear:parts(GearMnesia, [GearReply]),
-
-    AxleModel = axle_tracker,
-    Axle = erlmachine_factory:axle(GearBox, AxleModel, []),
-
-    BuildAxle = erlmachine_axle:parts(Axle, [BuildGearMnesia]),
-
-    Input = serial_no(GearMnesia),
-    Parts = [
-             GearReply,
-             BuildAxle
-            ],
-
-    BuildGearBox = erlmachine_gearbox:input(erlmachine_gearbox:parts(GearBox, Parts), Input),
-
-    {ok, _PID} = install(BuildGearBox),
-
-    {ok, #state{ gearbox=BuildGearBox }}.
-
-handle_call(_Request, _From, State) ->
-    {reply, ignored, State}.
-
-handle_cast(_Msg, State) ->	
-    {noreply, State}.
-
-handle_info(#load{ assembly=Assembly, pid=Pid }, #state{ gearbox=GearBox } = State) ->
-    io:format("~n~p~nLoad: ~p~n",[?MODULE, Assembly]),
-
-    erlmachine_gearbox:rotate(GearBox, erlmachine:request_reply(#{ write => Assembly }, Pid)),
-    {noreply, State};
-
-handle_info(_Info, State) ->
-	{noreply, State}.
-
-code_change(_OldVsn, State, _Extra) ->
-    {ok, State}.
-
-handle_continue(#accept{}, #state{ gearbox=_GearBox }=State) ->
-    try
-        %% true = erlmachine_factory:accept(GearBox),
-        {noreply, State}
-    catch E:R ->
-            {stop, {E, R}, State}
-    end;
-
-handle_continue(_, State) ->
-    {noreply, State}.
-
-terminate(_Reason, _State) ->
-    %% TODO table can be relocated to the memory and then be persisted at that point;
-    ok.
-
-format_status(_Opt, [_PDict, _State]) ->
-    [].
+-spec unload(SN::serial_no()) -> 
+                    success().
+unload(SN) ->
+    ok = mnesia:dirty_delete(table(), SN).
 
 -spec assembly() -> assembly().
 assembly() ->
     #assembly{}.
-
--spec fields() -> list(atom()).
-fields() ->
-    record_info(fields, assembly).
-
--spec name() -> atom().
-name() -> 
-    assembly.
 
 -spec is_mounted(Assembly::assembly()) -> boolean().
 is_mounted(Assembly) -> 
@@ -495,6 +389,18 @@ prototype_name(Assembly) ->
 prototype_name(Assembly, Name) ->
     Prototype = prototype(Assembly),
     Release = prototype(Assembly, Prototype#prototype{name=Name}),
+    Release.
+
+-spec prototype_body(Assembly::assembly()) -> term().
+prototype_body(Assembly) ->
+    Prototype = prototype(Assembly),
+    Body = Prototype#prototype.body,
+    Body.
+
+-spec prototype_body(Assembly::assembly(), Body::term()) -> Release::assembly().
+prototype_body(Assembly, Body) ->
+    Prototype = prototype(Assembly),
+    Release = prototype(Assembly, Prototype#prototype{body=Body}),
     Release.
 
 -spec model_options(Assembly::assembly()) -> Options::list().
