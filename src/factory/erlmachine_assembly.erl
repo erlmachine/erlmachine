@@ -6,8 +6,8 @@
 
 -export([
          install/1, install/2,
-         attach/4, attach_to_label/4, attach_by_label/4, attach_by_serial_no/4, attach/3,
-         detach/3, detach_from_label/3, detach_by_label/3, detach_by_serial_no/3, detach/2,
+         attach/3, attach/4, attach_to_label/4, attach_by_label/4, attach_by_serial_no/4,
+         detach/2, detach/3, detach_from_label/3, detach_by_label/3, detach_by_serial_no/3,
          uninstall/2, uninstall/3
         ]).
 
@@ -20,23 +20,32 @@
         ]).
 
 -export([
-         is_mounted/1,
          serial_no/0, serial_no/1, serial_no/2,
+   
          model/1, model/2, 
+         product/1, product/2,
+         prototype/1, prototype/2, 
+
          model_name/1, model_name/2,
          model_options/1, model_options/2,
-         prototype/1, prototype/2, 
+         model_no/1, model_no/2,
+
          prototype_name/1, prototype_name/2,
          prototype_body/1, prototype_body/2,
          prototype_options/1, prototype_options/2,
+
          assembly_options/1, assembly_options/2,
-         model_no/1, model_no/2,
-         part_no/1, part_no/2,
-         product/1, product/2,
+        
          parts/1, parts/2,
          mounted/1, mounted/2,
+         is_mounted/1,
+
+         part_no/1, part_no/2,
+
          tags/1, tags/2,
-         label/1, label/2
+         label/1, label/2,
+
+         sum/1, sum/2
         ]).
 
 -export([add_part/2, remove_part/2, get_part/2]).
@@ -45,9 +54,9 @@
 
 -export([table/0, attributes/0]).
 
--export([load/1, unload/1]).
-
 -export([by_serial_no/1]).
+
+-export([load/1, unload/1]).
 
 -include("erlmachine_system.hrl").
 
@@ -62,34 +71,9 @@
 -type model_no() :: erlmachine_factory:model_no().
 -type part_no() :: erlmachine_factory:part_no().
 
--type gear() :: erlmachine_gear:gear().
--type axle() :: erlmachine_axle:axle().
--type shaft() :: erlmachine_shaft:shaft().
--type gearbox() :: erlmachine_gearbox:gerbox().
-
--type product() :: gear() | axle() | gearbox() | shaft().
-
--record(prototype, {
-                    name::atom(),
-                    options::term(),
-                    body::term()
-                   }
-       ).
-
--type prototype() :: #prototype{}.
-
--record(model, {
-                %% A modle_no can act as product configurator to generate a master production schedule;
-                model_no::model_no(),
-                name::atom(),
-                product::product(),
-                prototype::prototype(),
-                options::term(),
-                sum::term()
-               }
-       ).
-
--type model() :: #model{}.
+-type model() :: erlmachine_factory:model().
+-type prototype() :: erlmachine_factory:prototype().
+-type product() :: erlmachine_factory:product().
 
 %% I am thinking about two kinds of assembly manual and automated;
 %% The main difference between them is manual needs to be stored with body, and any changes need to be persisted;
@@ -114,7 +98,7 @@
 
 -type label() :: atom().
 
--export_type([assembly/0, model/0, prototype/0, product/0]).
+-export_type([assembly/0]).
 
 -spec table() -> atom().
 table() -> 
@@ -123,6 +107,23 @@ table() ->
 -spec attributes() -> list(atom()).
 attributes() ->
     record_info(fields, assembly).
+
+%% TODO We need to provide methods like by_model_no, by_sum.
+-spec by_serial_no(SN::serial_no()) -> 
+                          success(assembly()) | failure(term(), term()).
+by_serial_no(SN) ->
+    Result = mnesia:dirty_read(table(), SN),
+    {ok, Result}.
+
+-spec load(Assembly::assembly()) -> 
+                  success().
+load(Assembly) when is_record(Assembly, assembly) ->
+    ok = mnesia:dirty_write(Assembly).
+
+-spec unload(SN::serial_no()) -> 
+                    success().
+unload(SN) ->
+    ok = mnesia:dirty_delete(table(), SN).
 
 -spec install(GearBox::assembly()) ->
                      success(pid()) | ingnore | failure(E::term()).
@@ -286,23 +287,6 @@ uninstalled(GearBox, Assembly, Reason) ->
     %% notification and update monitoring copy with suitable tags, etc.;
     ok.
 
-%% TODO We need to provide methods like by_model_no, by_sum.
--spec by_serial_no(SN::serial_no()) -> 
-                          success(assembly()) | failure(term(), term()).
-by_serial_no(SN) ->
-    Result = mnesia:dirty_read(table(), SN),
-    {ok, Result}.
-
--spec load(Assembly::assembly()) -> 
-                  success().
-load(Assembly) when is_record(Assembly, assembly) ->
-    ok = mnesia:dirty_write(Assembly).
-
--spec unload(SN::serial_no()) -> 
-                    success().
-unload(SN) ->
-    ok = mnesia:dirty_delete(table(), SN).
-
 -spec assembly() -> assembly().
 assembly() ->
     #assembly{}.
@@ -322,132 +306,128 @@ serial_no(Assembly) ->
 
 -spec serial_no(Assembly::assembly(), SN::serial_no()) -> Release::assembly().
 serial_no(Assembly, SN) ->
-    Release = Assembly#assembly{serial_no=SN},
+    Release = Assembly#assembly{ serial_no=SN },
     Release.
 
 -spec model() -> model().
 model() ->
-    #model{}.
+    erlmachine_model:model().
 
--spec model(Assembly::assembly()) -> Model::model().
+-spec model(Assembly::assembly()) -> model().
 model(Assembly) ->
-    Model = Assembly#assembly.model,
-    Model.
+    Assembly#assembly.model.
 
--spec model(Assembly::assembly(), Model::model()) -> Release::assembly().
+-spec model(Assembly::assembly(), Model::model()) -> assembly().
 model(Assembly, Model) ->
-    Release = Assembly#assembly{model = Model},
-    Release.
+    Assembly#assembly{model = Model}.
 
--spec prototype(Assembly::assembly()) -> Prototype::prototype().
+-spec prototype(Assembly::assembly()) -> prototype().
 prototype(Assembly) ->
     Model = model(Assembly),
-    Prototype = Model#model.prototype,
-    Prototype.
+    erlmachine_model:prototype(Model).
 
--spec prototype(Assembly::assembly(), Prototype::prototype()) -> Release::assembly().
+-spec prototype(Assembly::assembly(), Prototype::prototype()) -> assembly().
 prototype(Assembly, Prototype) ->
     Model = model(Assembly),
-    Release = model(Assembly, Model#model{prototype = Prototype}),
-    Release.
+    model(Assembly, erlmachine_model:prototype(Model, Prototype)).
 
 -spec model_no(Assembly::assembly()) -> MN::term().
 model_no(Assembly) ->
     Model = model(Assembly),
-    MN = Model#model.model_no,
-    MN.
+    erlmachine_model:model_no(Model).
 
--spec model_no(Assembly::assembly(), MN::term()) -> Release::assembly().
+-spec model_no(Assembly::assembly(), MN::term()) -> assembly().
 model_no(Assembly, MN) ->
     Model = model(Assembly),
-    Release = model(Assembly, Model#model{model_no=MN}),
-    Release.
+    model(Assembly, erlmachine_model:model_no(Model, MN)).
 
--spec model_name(Assembly::assembly()) -> Name::atom().
+-spec model_name(Assembly::assembly()) -> atom().
 model_name(Assembly) ->
     Model = model(Assembly),
-    Name = Model#model.name, 
-    Name.
+    erlmachine_model:name(Model).
 
--spec model_name(Assembly::assembly(), Name::atom()) -> Release::assembly().
+-spec model_name(Assembly::assembly(), Name::atom()) -> assembly().
 model_name(Assembly, Name) ->
     Model = model(Assembly),
-    Release = model(Assembly, Model#model{name=Name}),
-    Release.
+    model(Assembly, erlmachine_model:name(Model, Name)).
+
+-spec model_options(Assembly::assembly()) -> list().
+model_options(Assembly) ->
+    Model = model(Assembly),
+    erlmachine_model:options(Model).
+
+-spec model_options(Assembly::assembly(), Opt::list()) -> assembly().
+model_options(Assembly, Opt) ->
+    Model = model(Assembly),
+    model(Assembly, erlmachine_model:options(Model, Opt)).
+
+-spec product(Assembly::assembly()) -> product().
+product(Assembly) ->
+    Model = model(Assembly),
+    erlmachine_model:product(Model).
+
+-spec product(Assembly::assembly(), Product::product()) -> assembly().
+product(Assembly, Product) ->
+    Model = model(Assembly),
+    model(Assembly, erlmachine_model:product(Model, Product)).
+
+-spec sum(Assembly::assembly()) -> binary().
+sum(Assembly) ->
+    Model = model(Assembly),
+    erlmachine_model:sum(Model).
+
+-spec sum(Assembly::assembly(), Sum::binary()) -> assembly().
+sum(Assembly, Sum) ->
+    Model = model(Assembly),
+    model(Assembly, erlmachine_model:sum(Model, Sum)).
 
 -spec prototype() -> prototype().
 prototype() ->
-    #prototype{}.
+    erlmachine_prototype:prototype().
 
 -spec prototype_name(Assembly::assembly()) -> Name::atom().
 prototype_name(Assembly) ->
-    Prototype = prototype(Assembly),
-    Name =  Prototype#prototype.name,
-    Name.
+    Model = model(Assembly),
+    Prototype = erlmachine_model:prototype(Model),
+    erlmachine_prototype:name(Prototype).
 
 -spec prototype_name(Assembly::assembly(), Name::atom()) -> Release::assembly().
 prototype_name(Assembly, Name) ->
-    Prototype = prototype(Assembly),
-    Release = prototype(Assembly, Prototype#prototype{name=Name}),
-    Release.
+    Model = model(Assembly),
+    Prototype = erlmachine_model:prototype(Model),
+    prototype(Assembly, erlmachine_prototype:name(Prototype, Name)).
 
 -spec prototype_body(Assembly::assembly()) -> term().
 prototype_body(Assembly) ->
-    Prototype = prototype(Assembly),
-    Body = Prototype#prototype.body,
-    Body.
+    Model = model(Assembly),
+    Prototype = erlmachine_model:prototype(Model),
+    erlmachine_prototype:body(Prototype).
 
 -spec prototype_body(Assembly::assembly(), Body::term()) -> Release::assembly().
 prototype_body(Assembly, Body) ->
-    Prototype = prototype(Assembly),
-    Release = prototype(Assembly, Prototype#prototype{body=Body}),
-    Release.
-
--spec model_options(Assembly::assembly()) -> Options::list().
-model_options(Assembly) ->
     Model = model(Assembly),
-    Options = Model#model.options,
-    Options.
+    Prototype = erlmachine_model:prototype(Model),
+    prototype(Assembly, erlmachine_prototype:body(Prototype, Body)).
 
--spec model_options(Assembly::assembly(), Options::list()) -> Release::assembly().
-model_options(Assembly, Options) ->
-    Model = model(Assembly),
-    Release = model(Assembly, Model#model{options=Options}),
-    Release.
-
--spec prototype_options(Assembly::assembly()) -> Options::list().
+-spec prototype_options(Assembly::assembly()) -> list().
 prototype_options(Assembly) ->
-    Prototype = prototype(Assembly),
-    Options = Prototype#prototype.options,
-    Options.
+    Model = model(Assembly),
+    Prototype = erlmachine_model:prototype(Model),
+    erlmachine_prototype:options(Prototype).
 
--spec prototype_options(Assembly::assembly(), Options::list()) -> Release::assembly().
-prototype_options(Assembly, Options) ->
-    Prototype = prototype(Assembly),
-    Release = prototype(Assembly, Prototype#prototype{options=Options}),
-    Release.
+-spec prototype_options(Assembly::assembly(), Opt::list()) -> assembly().
+prototype_options(Assembly, Opt) ->
+    Model = model(Assembly),
+    Prototype = erlmachine_model:prototype(Model),
+    prototype(Assembly, erlmachine_prototype:options(Prototype, Opt)).
 
--spec assembly_options(Assembly::assembly()) -> Options::list().
+-spec assembly_options(Assembly::assembly()) -> list().
 assembly_options(Assembly) ->
-    Options = Assembly#assembly.options,
-    Options.
+    Assembly#assembly.options.
 
--spec assembly_options(Assembly::assembly(), Options::list()) -> Release::assembly().
-assembly_options(Assembly, Options) ->
-    Release = Assembly#assembly{options=Options},
-    Release.
-
--spec product(Assembly::assembly()) -> Product::product().
-product(Assembly) ->
-    Model = model(Assembly),
-    Product = Model#model.product,
-    Product.
-
--spec product(Assembly::assembly(), Product::product()) -> Release::assembly().
-product(Assembly, Product) ->
-    Model = model(Assembly),
-    Release = model(Assembly, Model#model{product=Product}),
-    Release.
+-spec assembly_options(Assembly::assembly(), Opt::list()) -> assembly().
+assembly_options(Assembly, Opt) ->
+    Assembly#assembly{ options=Opt }.
 
 -spec parts(Assembly::assembly()) -> list(assembly()).
 parts(Assembly) ->
@@ -455,7 +435,7 @@ parts(Assembly) ->
 
 -spec parts(Assembly::assembly(), Parts::list(assembly())) -> assembly().
 parts(Assembly, Parts) ->
-    Assembly#assembly{parts=Parts}.
+    Assembly#assembly{ parts=Parts }.
 
 -spec mounted(Assembly::assembly()) -> assembly().
 mounted(Assembly) ->
@@ -463,54 +443,45 @@ mounted(Assembly) ->
 
 -spec mounted(Assembly::assembly(), Mount::assembly()) -> assembly().
 mounted(Assembly, Mount) ->
-    Assembly#assembly{mounted=parts(Mount, [])}.
+    Assembly#assembly{ mounted=parts(Mount, []) }.
 
--spec part_no(Assembly::assembly()) -> PN::term().
+-spec part_no(Assembly::assembly()) -> term().
 part_no(Assembly) ->
-    PN = Assembly#assembly.part_no,
-    PN.
+    Assembly#assembly.part_no.
 
 -spec part_no(Assembly::assembly(), PN::term()) -> assembly().
 part_no(Assembly, PN) ->
-    Release = Assembly#assembly{part_no=PN},
-    Release.
+    Assembly#assembly{ part_no=PN }.
 
--spec tags(Assembly::assembly()) -> Tags::term().
+-spec tags(Assembly::assembly()) -> term().
 tags(Assembly) ->
-    Tags = Assembly#assembly.tags,
-    Tags.
+    Assembly#assembly.tags.
 
 -spec tags(Assembly::assembly(), Tags::term()) -> assembly().
 tags(Assembly, Tags) ->
-    Release = Assembly#assembly{tags=Tags},
-    Release.
+    Assembly#assembly{ tags=Tags }.
 
 -spec label(Assembly::assembly()) -> label().
 label(Assembly) ->
-    Label = Assembly#assembly.label,
-    Label.
+    Assembly#assembly.label.
 
 -spec label(Assembly::assembly(), Label::label()) -> assembly().
 label(Assembly, Label) ->
-    Release = Assembly#assembly{label = Label},
-    Release.
+    Assembly#assembly{label = Label}.
 
 -spec add_part(Assembly::assembly(), Part::assembly()) -> assembly().
 add_part(Assembly, Part) ->
     Parts = lists:keystore(serial_no(Part), serial_no(), parts(Assembly), Part),
-    Release = parts(Assembly, Parts),
-    Release.
+    parts(Assembly, Parts).
 
 -spec remove_part(Assembly::assembly(), ID::serial_no()) -> assembly().
 remove_part(Assembly, ID) ->
     Parts = lists:keydelete(ID, #assembly.serial_no, parts(Assembly)),
-    Release = parts(Assembly, Parts),
-    Release.
+    parts(Assembly, Parts).
 
 -spec get_part(Assembly::assembly(), ID::serial_no()) -> assembly().
 get_part(Assembly, ID) ->
-    Part = lists:keyfind(ID, #assembly.serial_no, parts(Assembly)),
-    Part.
+    lists:keyfind(ID, #assembly.serial_no, parts(Assembly)).
 
 -spec labeled(Assembly::assembly()) -> list().
 labeled(Assembly) ->

@@ -13,14 +13,24 @@ start(_Type, _Args) ->
     DiscOnlyCopies = {disc_only_copies, Nodes},
  
     TrackTab = erlmachine_tracker:table(), TrackAttr = erlmachine_tracker:attributes(),
-    TrackTabTabDef = [{attributes, TrackAttr}, DiscOnlyCopies, {record_name, TrackTab}],
+    TrackTabDef = [{attributes, TrackAttr}, DiscOnlyCopies, {record_name, TrackTab}],
 
-    mnesia:create_table(TrackTab, TrackTabTabDef),
+    _TrackTabRes = mnesia:create_table(TrackTab, TrackTabDef),
+
+    ModelTab = erlmachine_model:table(), ModelAttr = erlmachine_model:attributes(),
+    ModelTabDef = [{attributes, ModelAttr}, DiscOnlyCopies, {record_name, ModelTab}],
+
+    _ModelTabRes = mnesia:create_table(ModelTab, ModelTabDef),
+
+    ProtTab = erlmachine_prototype:table(), ProtAttr = erlmachine_prototype:attributes(),
+    ProtTabDef = [{attributes, ProtAttr}, DiscOnlyCopies, {record_name, ProtTab}],
+
+    _ProtTabRes = mnesia:create_table(ProtTab, ProtTabDef),
 
     AssemblyTab = erlmachine_assembly:table(), AssemblyAttr = erlmachine_assembly:attributes(),
     AssemblyTabDef = [{attributes, AssemblyAttr}, DiscOnlyCopies, {record_name, AssemblyTab}],
 
-    mnesia:create_table(AssemblyTab, AssemblyTabDef),
+    _AssemblyTabRes = mnesia:create_table(AssemblyTab, AssemblyTabDef),
 
     erlmachine_sup:start_link().
 
