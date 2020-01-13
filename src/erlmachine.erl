@@ -19,6 +19,8 @@
 
 -export([guid/0, guid/1]).
 
+-export([digest/1]).
+
 -include("erlmachine_system.hrl").
 -include("erlmachine_filesystem.hrl").
 
@@ -33,10 +35,6 @@
 -type serial() :: erlmachine_serial:serial().
 
 -record(guid, {node::node(), reference::reference(), serial::serial()}).
-
--type guid()::#guid{}.
-
--export_types([guid/0]).
 
 %% The main purpouse of erlmachine project is providing a set of well designed behaviours which are accompanied with visualization tools as well.
 %%  Erlmachine doesn't restrict your workflow by the one possible way but instead provide to you ability to implement your own components. This ability is available under flexible mechanism of prototypes and overloading.  
@@ -141,13 +139,16 @@ success() ->
 %% base64url encoding was provided; 
 %% This format is safer and more applicable by web (in comparison with base64);
 
--spec guid() -> GUID::guid().
+-spec guid() -> binary().
 guid() ->
     guid(0).
 
--spec guid(Serial::serial()) -> GUID::guid().
+-spec guid(Serial::serial()) -> binary().
 guid(Serial) ->
     GUID = #guid{node=node(), serial=Serial, reference=make_ref()},
-    MD5 = erlang:md5(term_to_binary(GUID)),
-    MD5.
+    digest(GUID).
 
+-spec digest(Data::term()) -> binary().
+digest(Data) ->
+    MD5 = erlang:md5(term_to_binary(Data)),
+    MD5.

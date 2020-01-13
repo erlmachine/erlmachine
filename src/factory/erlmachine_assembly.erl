@@ -2,7 +2,7 @@
 
 %% API.
 
--export([assembly/0, model/0, prototype/0]).
+-export([assembly/0, assembly/3, model/0, prototype/0]).
 
 -export([
          install/1, install/2,
@@ -290,6 +290,10 @@ uninstalled(GearBox, Assembly, Reason) ->
 -spec assembly() -> assembly().
 assembly() ->
     #assembly{}.
+
+-spec assembly(SN::serial_no(), Model::model(), Opt::list()) -> assembly().
+assembly(SN, Model, Opt) ->
+    #assembly{ serial_no=SN, model=Model, options=Opt }.
 
 -spec is_mounted(Assembly::assembly()) -> boolean().
 is_mounted(Assembly) -> 

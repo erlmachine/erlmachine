@@ -2,31 +2,11 @@
 
 -folder(<<"erlmachine/factory">>).
 
--steps([
-        model_name,
-        model_options,
-        prototype_name,
-        prototype_options,
-        assembly_options,
-        product,
-        serial_no
-       ]).
-
 -behaviour(gen_server).
 
 %% API.
 
 -export([start_link/0]).
-
--export([
-         model_name/2,
-         model_options/2,
-         prototype_name/2, 
-         prototype_options/2,
-         assembly_options/2,
-         product/2,
-         serial_no/2
-        ]).
 
 %% We assume that factory will also provide production of all components and their registration too;
 %% My assumption is that factory can be driven from production capacity perspective; 
@@ -69,45 +49,6 @@
 %% We can control available capacity of all individual parts;
 %% We can utilize different pools for that purpouse;
 
--spec model_name(Assembly::assembly(), Name::atom()) -> 
-                        assembly().
-model_name(Assembly, Name) ->
-    Model = erlmachine_assembly:model(),
-    erlmachine_assembly:model_name(erlmachine_assembly:model(Assembly, Model), Name).
-
--spec model_options(Assembly::assembly(), Opt::list(term())) ->
-                           assembly().
-model_options(Assembly, Opt) ->
-    erlmachine_assembly:model_options(Assembly, Opt).
-
--spec prototype_name(Assembly::assembly(), Name::atom()) -> 
-                            assembly().
-prototype_name(Assembly, Name) ->
-    Prototype = erlmachine_assembly:prototype(),
-    erlmachine_assembly:prototype_name(erlmachine_assembly:prototype(Assembly, Prototype), Name).
-
--spec prototype_options(Assembly::assembly(), Opt::list(term())) -> 
-                               assembly().
-prototype_options(Assembly, Opt) ->
-    erlmachine_assembly:prototype_options(Assembly, Opt).
-
--spec assembly_options(Assembly::assembly(), Opt::list()) -> 
-                              assembly().
-assembly_options(Assembly, Opt) ->
-    erlmachine_assembly:assembly_options(Assembly, Opt).
-
--spec product(Assembly::assembly(), Product::product()) -> 
-                     assembly().
-product(Assembly, Product) ->
-    erlmachine_assembly:product(Assembly, Product).
-
--spec serial_no(Assembly::assembly(), Prefix::binary()) ->
-                       assembly().
-serial_no(Assembly, Prefix) ->
-    SN = serial_no(),
-    %% Abbreviation SN can be added on demand when number will be requested;
-    erlmachine_assembly:serial_no(Assembly, <<Prefix/binary, ".", SN/binary>>). 
-
 %% I am thinking about two kind of acceptance test;
 %% The first one is ability to check prototype with default test models;
 %% The second one is acceptance test accordingly to a specific model
@@ -120,108 +61,103 @@ serial_no(Assembly, Prefix) ->
 
 %% I think about catalog concept for models storage;
 
--spec gear(GearBox::assembly(), Model::atom(), ModelOpt::term()) ->
+-spec gear(GearBox::assembly(), ModelName::atom(), ModelOpt::term()) ->
                   Gear::assembly().
-gear(GearBox, Model, ModelOpt) ->
+gear(GearBox, ModelName, ModelOpt) ->
     AssemblyOpt = [],
-    gear(GearBox, Model, ModelOpt, AssemblyOpt).
+    gear(GearBox, ModelName, ModelOpt, AssemblyOpt).
 
--spec gear(GearBox::assembly(), Model::atom(), ModelOpt::term(), AssemblyOpt::list()) -> 
+-spec gear(GearBox::assembly(), ModelName::atom(), ModelOpt::term(), AssemblyOpt::list()) -> 
                   Gear::assembly().
-gear(GearBox, Model, ModelOpt, AssemblyOpt) ->
-    Prot = gear_base_prototype:name(), 
+gear(GearBox, ModelName, ModelOpt, AssemblyOpt) ->
+    ProtName = gear_base_prototype:name(), 
     ProtOpt = [],
-    gear(GearBox, Model, Prot, ModelOpt, ProtOpt, AssemblyOpt).
+    gear(GearBox, ModelName, ProtName, ModelOpt, ProtOpt, AssemblyOpt).
 
--spec gear(GearBox::assembly(), Model::atom(), Prot::atom(), ModelOpt::term(), ProtOpt::list(), AssemblyOpt::list()) -> 
+-spec gear(GearBox::assembly(), ModelName::atom(), ProtName::atom(), ModelOpt::term(), ProtOpt::list(), AssemblyOpt::list()) -> 
                   Gear::assembly().
-gear(_GearBox, Model, Prot, ModelOpt, ProtOpt, AssemblyOpt) ->
-    Body = #{},
-    Gear = erlmachine_gear:gear(Body),
-    Prefix = <<"G">>,
-    %% Additional flags
-    Input = [Model, ModelOpt, Prot, ProtOpt, [{type, worker}|AssemblyOpt], Gear, Prefix],
-    Assembly = erlmachine_assembly:assembly(),
-    pass(Assembly, ?MODULE, Input).
+gear(_GearBox, ModelName, ProtName, ModelOpt, ProtOpt, AssemblyOpt) ->
+    Product = erlmachine_gear:gear(#{}),
+    Prototype = erlmachine_prototype:prototype(ProtName, ProtOpt, #{}),
+    Model = erlmachine_model:model(ModelName, ModelOpt, Prototype, Product),
 
--spec shaft(GearBox::assembly(), Model::atom(), ModelOpt::term()) ->
+    SN = <<"G.", (serial_no())/binary>>,
+
+    erlmachine_assembly:assembly(SN, Model, [{type, worker}|AssemblyOpt]).
+
+-spec shaft(GearBox::assembly(), ModelName::atom(), ModelOpt::term()) ->
                    Shaft::assembly().
-shaft(GearBox, Model, ModelOpt) ->
+shaft(GearBox, ModelName, ModelOpt) ->
     AssemblyOpt = [],
-    shaft(GearBox, Model, ModelOpt, AssemblyOpt).
+    shaft(GearBox, ModelName, ModelOpt, AssemblyOpt).
 
--spec shaft(GearBox::assembly(), Model::atom(), ModelOpt::term(), AssemblyOpt::list()) -> 
+-spec shaft(GearBox::assembly(), ModelName::atom(), ModelOpt::term(), AssemblyOpt::list()) -> 
                    Shaft::assembly().
-shaft(GearBox, Model, ModelOpt, AssemblyOpt) ->
-    Prot = shaft_base_prototype:name(), 
+shaft(GearBox, ModelName, ModelOpt, AssemblyOpt) ->
+    ProtName = shaft_base_prototype:name(), 
     ProtOpt = [],
-    shaft(GearBox, Model, Prot, ModelOpt, ProtOpt, AssemblyOpt).
+    shaft(GearBox, ModelName, ProtName, ModelOpt, ProtOpt, AssemblyOpt).
 
--spec shaft(GearBox::assembly(), Model::atom(), Prot::atom(), ModelOpt::term(), ProtOpt::list(), AssemblyOpt::list()) -> 
+-spec shaft(GearBox::assembly(), ModelName::atom(), ProtName::atom(), ModelOpt::term(), ProtOpt::list(), AssemblyOpt::list()) -> 
                    Shaft::assembly().
-shaft(_GearBox, Model, Prot, ModelOpt, ProtOpt, AssemblyOpt) ->
-    Body = [],
-    Shaft = erlmachine_shaft:shaft(Body),
-    Prefix = <<"S">>,
-    Input = [Model, ModelOpt, Prot, ProtOpt, [{type, worker}|AssemblyOpt], Shaft, Prefix],
-    Assembly = erlmachine_assembly:assembly(),
-    pass(Assembly, ?MODULE, Input).
+shaft(_GearBox, ModelName, ProtName, ModelOpt, ProtOpt, AssemblyOpt) ->
+    Product = erlmachine_shaft:shaft([]),
+    Prototype = erlmachine_prototype:prototype(ProtName, ProtOpt, #{}),
+    Model = erlmachine_model:model(ModelName, ModelOpt, Prototype, Product),
 
--spec axle(GearBox::assembly(), Model::atom(), ModelOpt::term()) -> 
+    SN = <<"S.", (serial_no())/binary>>,
+
+    erlmachine_assembly:assembly(SN, Model, [{type, worker}|AssemblyOpt]).
+
+-spec axle(GearBox::assembly(), ModelName::atom(), ModelOpt::term()) -> 
                   Axle::assembly().
-axle(GearBox, Model, ModelOpt) ->
+axle(GearBox, ModelName, ModelOpt) ->
     AssemblyOpt = [],
-    axle(GearBox, Model, ModelOpt, AssemblyOpt).
+    axle(GearBox, ModelName, ModelOpt, AssemblyOpt).
 
--spec axle(GearBox::assembly(), Model::atom(), ModelOpt::term(), AssemblyOpt::list()) -> 
+-spec axle(GearBox::assembly(), ModelName::atom(), ModelOpt::term(), AssemblyOpt::list()) -> 
                   Axle::assembly().
-axle(GearBox, Model, ModelOpt, AssemblyOpt) ->
-    Prot = axle_base_prototype:name(), 
+axle(GearBox, ModelName, ModelOpt, AssemblyOpt) ->
+    ProtName = axle_base_prototype:name(), 
     ProtOpt = [],
-    axle(GearBox, Model, Prot, ModelOpt, ProtOpt, AssemblyOpt).
+    axle(GearBox, ModelName, ProtName, ModelOpt, ProtOpt, AssemblyOpt).
 
--spec axle(GearBox::assembly(), Model::atom(), Prot::atom(), ModelOpt::term(), ProtOpt::list(), AssemblyOpt::list()) ->
+-spec axle(GearBox::assembly(), ModelName::atom(), ProtName::atom(), ModelOpt::term(), ProtOpt::list(), AssemblyOpt::list()) ->
                   Axle::assembly().
-axle(_GearBox, Model, Prot, ModelOpt, ProtOpt, AssemblyOpt) ->
-    Body = [],
-    Axle = erlmachine_axle:axle(Body),
-    Prefix = <<"A">>,
-    Input = [Model, ModelOpt, Prot, ProtOpt, [{type, supervisor}|AssemblyOpt], Axle, Prefix],
-    Assembly = erlmachine_assembly:assembly(),
-    pass(Assembly, ?MODULE, Input).
+axle(_GearBox, ModelName, ProtName, ModelOpt, ProtOpt, AssemblyOpt) ->
+    Product = erlmachine_axle:axle([]),
+    Prototype = erlmachine_prototype:prototype(ProtName, ProtOpt, #{}),
+    Model = erlmachine_model:model(ModelName, ModelOpt, Prototype, Product),
 
--spec gearbox(Model::atom(), ModelOpt::term(), Env::term()) ->
+    SN = <<"A.", (serial_no())/binary>>,
+
+    erlmachine_assembly:assembly(SN, Model, [{type, supervisor}|AssemblyOpt]).
+
+-spec gearbox(ModelName::atom(), ModelOpt::term(), Env::term()) ->
                      Axle::assembly().
-gearbox(Model, ModelOpt, Env) ->
+gearbox(ModelName, ModelOpt, Env) ->
     AssemblyOpt = [],
-    gearbox(Model, ModelOpt, AssemblyOpt, Env).
+    gearbox(ModelName, ModelOpt, AssemblyOpt, Env).
 
--spec gearbox(Model::atom(), ModelOpt::term(), AssemblyOpt::list(), Env::term()) ->
+-spec gearbox(ModelName::atom(), ModelOpt::term(), AssemblyOpt::list(), Env::term()) ->
                      Axle::assembly().
-gearbox(Model, ModelOpt, AssemblyOpt, Env) ->
-    Prot = gearbox_base_prototype:name(), 
+gearbox(ModelName, ModelOpt, AssemblyOpt, Env) ->
+    ProtName = gearbox_base_prototype:name(), 
     ProtOpt = [],
-    gearbox(Model, Prot, ModelOpt, ProtOpt, AssemblyOpt, Env).
+    gearbox(ModelName, ProtName, ModelOpt, ProtOpt, AssemblyOpt, Env).
 
--spec gearbox(Model::atom(), Prot::atom(), ModelOpt::term(), ProtOpt::list(), AssemblyOpt::list(), Env::term()) -> 
+-spec gearbox(ModelName::atom(), ProtName::atom(), ModelOpt::term(), ProtOpt::list(), AssemblyOpt::list(), Env::term()) -> 
                      GearBox::assembly().
-gearbox(Model, Prot, ModelOpt, ProtOpt, AssemblyOpt, Env) ->
-    Body = #{}, %% We can consider to store some meta info in body to pass through all building process;
-    GearBox = erlmachine_gearbox:gearbox(Body, Env),
-    Prefix = <<"GX">>,
-    Input = [Model, ModelOpt, Prot, ProtOpt, [{type, supervisor}|AssemblyOpt], GearBox, Prefix],
-    Assembly = erlmachine_assembly:assembly(),
-    Master = erlmachine_gearbox:master(pass(Assembly, ?MODULE, Input)),
-    Master.
+gearbox(ModelName, ProtName, ModelOpt, ProtOpt, AssemblyOpt, Env) ->
+    %% We can consider to store some meta info in body to pass through all building process;
+    Product = erlmachine_gearbox:gearbox(#{}, Env),
+    Prototype = erlmachine_prototype:prototype(ProtName, ProtOpt, #{}),
+    Model = erlmachine_model:model(ModelName, ModelOpt, Prototype, Product),
 
--spec pass(Assembly::assembly(), Name::atom(), Parts::list(term())) ->
-                  assembly().
-pass(Assembly, Name, Parts) ->
-    Station = erlmachine_station:station(Name, Assembly, Parts),
-    Pass = erlmachine_station:pass(Station),
-    %% At that point we can store Pass information and provide research over passed station;
-    Release = erlmachine_station:output(Pass),
-    Release.
+    SN = <<"GX.", (serial_no())/binary>>,
+
+    Assembly = erlmachine_assembly:assembly(SN, Model, [{type, supervisor}|AssemblyOpt]),
+    erlmachine_gearbox:master(Assembly).
 
 %% API.
 

@@ -2,7 +2,7 @@
 
 %% API.
 
--export([model/0]).
+-export([model/0, model/4]).
 
 -export([
          name/1, name/2,
@@ -42,6 +42,18 @@
 -type model() :: #model{}.
 
 -export_type([model/0, product/0]).
+
+-spec model(Name::atom(), Opt::list(), Prot::prototype(), Product::product()) ->
+                  model().
+model(Name, Opt, Prot, Product) ->
+    Model = (model())#model{ name=Name, options=Opt, prototype=Prot, product=Product },
+
+    Sum = erlang:phash2(Model, 4294967296),
+
+    Prefix = atom_to_binary(Name, latin1),
+    MN = erlmachine_serial_no:base64url(term_to_binary(Sum)),
+    
+    model_no(sum(Model, Sum), <<Prefix/binary, ".", MN/binary>>).
 
 -spec table() -> atom().
 table() -> 

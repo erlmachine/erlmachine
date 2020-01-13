@@ -2,7 +2,7 @@
 
 %% API.
 
--export([prototype/0]).
+-export([prototype/0, prototype/3]).
 
 -export([
          name/1, name/2,
@@ -24,6 +24,10 @@
 -type prototype() :: #prototype{}.
 
 -export_type([prototype/0]).
+
+-spec prototype(Name::atom(), Opt::list(), Body::term()) -> prototype().
+prototype(Name, Opt, Body) ->
+    (prototype())#prototype{ name=Name, options=Opt, body=Body }.
 
 -spec table() -> atom().
 table() -> 
