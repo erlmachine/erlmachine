@@ -148,7 +148,7 @@ spec(GearBox, _Axle, Part) ->
     Shutdown = proplists:get_value(shutdown, Opt, 5000),
     Modules = proplists:get_value(modules, Opt, [Module]),
 
-    Type = proplists:get_value(type, erlmachine_assembly:assembly_options(Part)),
+    Type = proplists:get_value(type, Opt),
     #{id => SN, start => Start, restart => Restart, shutdown => Shutdown, modules => Modules, type => Type}.
 
 -spec specs(GearBox::assembly(), Axle::assembly()) -> list(map()).

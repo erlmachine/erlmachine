@@ -10,7 +10,7 @@
          options/1, options/2
         ]).
 
--export([table/0, attributes/0]).
+-export([attributes/0]).
 
 -include("erlmachine_system.hrl").
 
@@ -28,10 +28,6 @@
 -spec prototype(Name::atom(), Opt::list(), Body::term()) -> prototype().
 prototype(Name, Opt, Body) ->
     (prototype())#prototype{ name=Name, options=Opt, body=Body }.
-
--spec table() -> atom().
-table() -> 
-    prototype.
 
 -spec attributes() -> list(atom()).
 attributes() ->

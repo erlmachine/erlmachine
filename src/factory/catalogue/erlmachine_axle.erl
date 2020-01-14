@@ -32,7 +32,7 @@
 -callback detach(SN::serial_no(), ID::serial_no(), Body::term()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
--record(axle, {body::term()}).
+-record(axle, { body::term() }).
 
 %% I am thinking about graph ipmlementation of body;
 -type axle() :: #axle{}.
@@ -119,7 +119,7 @@ body(Axle) ->
 -spec body(Axle::assembly(), Body::term()) -> Release::assembly().
 body(Axle, Body) ->
     Product = erlmachine_assembly:product(Axle),
-    erlmachine_assembly:product(Axle, Product#axle{body=Body}).
+    erlmachine_assembly:product(Axle, Product#axle{ body=Body }).
 
 -spec parts(Axle::assembly(), Parts::list(assembly())) -> Release::assembly().
 parts(Axle, Parts) ->

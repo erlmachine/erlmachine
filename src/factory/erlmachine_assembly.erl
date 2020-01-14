@@ -2,7 +2,7 @@
 
 %% API.
 
--export([assembly/0, assembly/3, model/0, prototype/0]).
+-export([assembly/0, assembly/2, model/0, prototype/0]).
 
 -export([
          install/1, install/2,
@@ -21,7 +21,7 @@
 
 -export([
          serial_no/0, serial_no/1, serial_no/2,
-   
+
          model/1, model/2, 
          product/1, product/2,
          prototype/1, prototype/2, 
@@ -29,13 +29,12 @@
          model_name/1, model_name/2,
          model_options/1, model_options/2,
          model_no/1, model_no/2,
+         model_digest/1, model_digest/2,
 
          prototype_name/1, prototype_name/2,
          prototype_body/1, prototype_body/2,
          prototype_options/1, prototype_options/2,
 
-         assembly_options/1, assembly_options/2,
-        
          parts/1, parts/2,
          mounted/1, mounted/2,
          is_mounted/1,
@@ -43,9 +42,7 @@
          part_no/1, part_no/2,
 
          tags/1, tags/2,
-         label/1, label/2,
-
-         sum/1, sum/2
+         label/1, label/2
         ]).
 
 -export([add_part/2, remove_part/2, get_part/2]).
@@ -86,11 +83,10 @@
                     model::model() | model_no(),
                     mounted::assembly() | serial_no(),
                     parts=[]::list(assembly() | serial_no()),
-                    %% By part_no we can be able to track quality of component through release period;
-                    part_no::part_no(),
-                    options=[]::list(),
                     tags=[]::list(term()),
-                    label::label()
+                    label::label(),
+                    %% By part_no we can be able to track quality of component through release period;
+                    part_no::part_no()
                    }
         ).
 
@@ -291,9 +287,9 @@ uninstalled(GearBox, Assembly, Reason) ->
 assembly() ->
     #assembly{}.
 
--spec assembly(SN::serial_no(), Model::model(), Opt::list()) -> assembly().
-assembly(SN, Model, Opt) ->
-    #assembly{ serial_no=SN, model=Model, options=Opt }.
+-spec assembly(SN::serial_no(), Model::model()) -> assembly().
+assembly(SN, Model) ->
+    #assembly{ serial_no=SN, model=Model }.
 
 -spec is_mounted(Assembly::assembly()) -> boolean().
 is_mounted(Assembly) -> 
@@ -365,6 +361,17 @@ model_options(Assembly, Opt) ->
     Model = model(Assembly),
     model(Assembly, erlmachine_model:options(Model, Opt)).
 
+-spec model_digest(Assembly::assembly()) -> binary().
+model_digest(Assembly) ->
+    Model = model(Assembly),
+    erlmachine_model:digest(Model).
+
+-spec model_digest(Assembly::assembly(), Digest::binary()) -> assembly().
+model_digest(Assembly, Digest) ->
+    Model = model(Assembly),
+    model(Assembly, erlmachine_model:digest(Model, Digest)).
+
+
 -spec product(Assembly::assembly()) -> product().
 product(Assembly) ->
     Model = model(Assembly),
@@ -374,16 +381,6 @@ product(Assembly) ->
 product(Assembly, Product) ->
     Model = model(Assembly),
     model(Assembly, erlmachine_model:product(Model, Product)).
-
--spec sum(Assembly::assembly()) -> binary().
-sum(Assembly) ->
-    Model = model(Assembly),
-    erlmachine_model:sum(Model).
-
--spec sum(Assembly::assembly(), Sum::binary()) -> assembly().
-sum(Assembly, Sum) ->
-    Model = model(Assembly),
-    model(Assembly, erlmachine_model:sum(Model, Sum)).
 
 -spec prototype() -> prototype().
 prototype() ->
@@ -424,14 +421,6 @@ prototype_options(Assembly, Opt) ->
     Model = model(Assembly),
     Prototype = erlmachine_model:prototype(Model),
     prototype(Assembly, erlmachine_prototype:options(Prototype, Opt)).
-
--spec assembly_options(Assembly::assembly()) -> list().
-assembly_options(Assembly) ->
-    Assembly#assembly.options.
-
--spec assembly_options(Assembly::assembly(), Opt::list()) -> assembly().
-assembly_options(Assembly, Opt) ->
-    Assembly#assembly{ options=Opt }.
 
 -spec parts(Assembly::assembly()) -> list(assembly()).
 parts(Assembly) ->

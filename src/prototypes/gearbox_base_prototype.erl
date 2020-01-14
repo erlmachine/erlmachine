@@ -151,7 +151,7 @@ install(Name, GearBox, Opt) ->
 
     supervisor:start_link({local, format_name(Name)}, ?MODULE, Command).
 
-init(#install{gearbox=GearBox, options=Opt}) ->
+init(#install{ gearbox=GearBox, options=Opt }) ->
     Strategy = proplists:get_value(strategy, Opt, one_for_one),
 
     {ok, Release} = erlmachine_gearbox:install(GearBox),
@@ -192,7 +192,7 @@ spec(GearBox, Part) ->
     Shutdown = proplists:get_value(shutdown, Opt, 5000),
     Modules = proplists:get_value(modules, Opt, [Module]),
 
-    Type = proplists:get_value(type, erlmachine_assembly:assembly_options(Part)),
+    Type = proplists:get_value(type, Opt),
     #{id => SN, start => Start, restart => Restart, shutdown => Shutdown, modules => Modules, type => Type}.
 
 -spec specs(GearBox::assembly()) -> list(map()).

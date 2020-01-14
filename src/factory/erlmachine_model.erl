@@ -10,10 +10,10 @@
          model_no/1, model_no/2,
          product/1, product/2,
          prototype/1, prototype/2, 
-         sum/1, sum/2
+         digest/1, digest/2
         ]).
 
--export([table/0, attributes/0]).
+-export([attributes/0]).
 
 -include("erlmachine_system.hrl").
 
@@ -35,7 +35,7 @@
                 product::product(),
                 prototype::prototype(),
                 options::term(),
-                sum::term()
+                digest::binary()
                }
        ).
 
@@ -48,16 +48,10 @@
 model(Name, Opt, Prot, Product) ->
     Model = (model())#model{ name=Name, options=Opt, prototype=Prot, product=Product },
 
-    Sum = erlang:phash2(Model, 4294967296),
+    Digest = erlmachine:digest(Model),
+    MN = erlmachine_serial_no:base64url(Digest),
 
-    Prefix = atom_to_binary(Name, latin1),
-    MN = erlmachine_serial_no:base64url(term_to_binary(Sum)),
-    
-    model_no(sum(Model, Sum), <<Prefix/binary, ".", MN/binary>>).
-
--spec table() -> atom().
-table() -> 
-    model.
+    model_no(digest(Model, Digest), MN).
 
 -spec attributes() -> list(atom()).
 attributes() ->
@@ -107,10 +101,10 @@ product(Model) ->
 product(Model, Product) ->
     Model#model{ product=Product }.
 
--spec sum(Model::model()) -> binary().
-sum(Model) ->
-    Model#model.sum.
+-spec digest(Model::model()) -> binary().
+digest(Model) ->
+    Model#model.digest.
 
--spec sum(Model::model(), Sum::binary()) -> model().
-sum(Model, Sum) ->
-    Model#model{ sum=Sum }.
+-spec digest(Model::model(), Digest::binary()) -> model().
+digest(Model, Digest) ->
+    Model#model{ digest=Digest }.
