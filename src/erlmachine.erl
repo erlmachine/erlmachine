@@ -19,7 +19,8 @@
 
 -export([guid/0, guid/1]).
 
--export([digest/1]).
+-export([digest/1, digest/2]).
+-export([base64url/1]).
 
 -include("erlmachine_system.hrl").
 -include("erlmachine_filesystem.hrl").
@@ -148,7 +149,20 @@ guid(Serial) ->
     GUID = #guid{node=node(), serial=Serial, reference=make_ref()},
     digest(GUID).
 
+-spec digest(Data::term(), base64 | base64url) -> binary().
+digest(Data, base64) ->
+    base64:encode(digest(Data));
+
+digest(Data, base64url) ->
+    base64url(digest(Data)).
+
 -spec digest(Data::term()) -> binary().
 digest(Data) ->
     MD5 = erlang:md5(term_to_binary(Data)),
     MD5.
+
+-spec base64url(N::binary()) -> Base64::binary().
+base64url(N) when is_binary(N) ->
+    Base64 = base64:encode(N),
+    Base64Url = [fun($+) -> <<"-">>; ($/) -> <<"_">>; (C) -> <<C>> end(Char)|| <<Char>> <= Base64],
+    << <<X/binary>> || X <- Base64Url >>.

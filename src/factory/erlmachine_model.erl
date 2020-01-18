@@ -48,10 +48,9 @@
 model(Name, Opt, Prot, Product) ->
     Model = (model())#model{ name=Name, options=Opt, prototype=Prot, product=Product },
 
-    Digest = erlmachine:digest(Model),
-    MN = erlmachine_serial_no:base64url(Digest),
+    MN = erlmachine:digest(Model, base64),
 
-    model_no(digest(Model, Digest), MN).
+    model_no(digest(Model, MN), MN).
 
 -spec attributes() -> list(atom()).
 attributes() ->

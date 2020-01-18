@@ -151,7 +151,7 @@ serial_no() ->
     %% Just default timeout for the first time;
     Id = id(),
     SN = gen_server:call(Id, #serial_no{}),
-    erlmachine_serial_no:base64url(SN).
+    erlmachine:base64url(SN).
 
 %% gen_server.
 
