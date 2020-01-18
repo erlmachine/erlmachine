@@ -36,7 +36,7 @@
 
 -export([mounted/2]).
 
--export([parts/2]).
+-export([parts/2, parts/3, parts/4]).
 
 -export([find/2]).
 
@@ -235,8 +235,17 @@ env(GearBox, Env) ->
 -spec parts(GearBox::assembly(), Parts::list(assembly())) -> Release::assembly().
 parts(GearBox, Parts) ->
     Mounted = [erlmachine_assembly:mounted(Part, GearBox)|| Part <- Parts],
-    Release = erlmachine_assembly:parts(GearBox, Mounted),
-    Release.
+    erlmachine_assembly:parts(GearBox, Mounted).
+
+-spec parts(GearBox::assembly(), Input::assembly(), Parts::list(assembly())) ->
+                   Release::assembly().
+parts(GearBox, Input, Parts) ->
+    input(parts(GearBox, Parts), Input).
+
+-spec parts(GearBox::assembly(), Input::assembly(), Parts::list(assembly()), Output::assembly()) ->
+                   Release::assembly().
+parts(GearBox, Input, Parts, Output) ->
+    output(input(parts(GearBox, Parts), Input), Output).
 
 %% processes need to be instantiated by builder before;
 
