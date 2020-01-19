@@ -6,7 +6,7 @@
 
 -behaviour(gen_server).
 
--export([table/0, attributes/0]).
+-export([tabname/0, record_name/0, attributes/0]).
 
 %% API.
 -export([start_link/0]).
@@ -43,8 +43,12 @@
 
 %% API.
 
--spec table() -> atom().
-table() ->
+-spec tabname() -> atom().
+tabname() ->
+    ?MODULE.
+
+-spec record_name() -> atom().
+record_name() ->
     track.
 
 -spec attributes() -> list(atom()).
@@ -94,7 +98,7 @@ to_track(TN, Package) ->
 -spec track(TN::binary()) -> 
                    success(list()) | failure(term(), term()).
 track(TN) ->
-    Result = mnesia:dirty_read(table(), TN),
+    Result = mnesia:dirty_read(tabname(), TN),
     {ok, Result}.
 
 %% gen_server.

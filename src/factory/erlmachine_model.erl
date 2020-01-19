@@ -13,7 +13,7 @@
          digest/1, digest/2
         ]).
 
--export([attributes/0]).
+-export([record_name/0, attributes/0]).
 
 -include("erlmachine_system.hrl").
 
@@ -51,6 +51,10 @@ model(Name, Opt, Prot, Product) ->
     MN = erlmachine:digest(Model, base64),
 
     model_no(digest(Model, MN), MN).
+
+-spec record_name() -> atom().
+record_name() ->
+    model.
 
 -spec attributes() -> list(atom()).
 attributes() ->

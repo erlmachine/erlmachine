@@ -49,7 +49,7 @@
 
 -export([labels/1]).
 
--export([table/0, attributes/0]).
+-export([tabname/0, record_name/0, attributes/0]).
 
 -export([by_serial_no/1]).
 
@@ -96,8 +96,11 @@
 
 -export_type([assembly/0]).
 
--spec table() -> atom().
-table() -> 
+-spec tabname() -> atom().
+tabname() -> 
+    assembly.
+
+record_name() ->
     assembly.
 
 -spec attributes() -> list(atom()).
@@ -108,7 +111,7 @@ attributes() ->
 -spec by_serial_no(SN::serial_no()) -> 
                           success(assembly()) | failure(term(), term()).
 by_serial_no(SN) ->
-    Result = mnesia:dirty_read(table(), SN),
+    Result = mnesia:dirty_read(tabname(), SN),
     {ok, Result}.
 
 -spec load(Assembly::assembly()) -> 
@@ -119,7 +122,7 @@ load(Assembly) when is_record(Assembly, assembly) ->
 -spec unload(SN::serial_no()) -> 
                     success().
 unload(SN) ->
-    ok = mnesia:dirty_delete(table(), SN).
+    ok = mnesia:dirty_delete(tabname(), SN).
 
 -spec install(GearBox::assembly()) ->
                      success(pid()) | ingnore | failure(E::term()).
