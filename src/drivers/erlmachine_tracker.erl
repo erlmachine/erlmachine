@@ -82,7 +82,7 @@ tracking_no(Tag) when is_binary(Tag) ->
 tracking_no() ->
     Id = id(),
     TN = gen_server:call(Id, #tracking_no{}),
-    erlmachine_serial_no:base64url(TN).
+    erlmachine:base64url(TN).
 
 %% Additional options like mode, etc. can be added later;
 
