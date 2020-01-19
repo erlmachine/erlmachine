@@ -93,7 +93,7 @@ tracking_no() ->
 -spec to_track(TN::binary(), Package::map()) -> 
                    success().
 to_track(TN, Package) ->
-    ok = mnesia:dirty_write(#track{ tracking_no=TN, package=Package }).
+    ok = mnesia:dirty_write(tabname(), #track{ tracking_no=TN, package=Package }).
 
 -spec track(TN::binary()) -> 
                    success(list()) | failure(term(), term()).

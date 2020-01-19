@@ -117,7 +117,7 @@ by_serial_no(SN) ->
 -spec load(Assembly::assembly()) -> 
                   success().
 load(Assembly) when is_record(Assembly, assembly) ->
-    ok = mnesia:dirty_write(Assembly).
+    ok = mnesia:dirty_write(tabname(), Assembly).
 
 -spec unload(SN::serial_no()) -> 
                     success().
