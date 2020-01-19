@@ -98,7 +98,7 @@
 
 -spec tabname() -> atom().
 tabname() -> 
-    assembly.
+    ?MODULE.
 
 record_name() ->
     assembly.
