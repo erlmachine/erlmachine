@@ -2,7 +2,7 @@
 
 -folder(<<"erlmachine">>).
 
--export([attribute/3]).
+-export([serial_no/1]).
 
 -export([start/0, stop/0]).
 
@@ -22,7 +22,10 @@
 -export([digest/1, digest/2]).
 -export([base64url/1]).
 
+-export([attribute/3]).
+
 -include("erlmachine_system.hrl").
+-include("erlmachine_factory.hrl").
 -include("erlmachine_filesystem.hrl").
 
 -type motion() :: erlmachine_transmission:motion().
@@ -40,14 +43,9 @@
 %% The main purpouse of erlmachine project is providing a set of well designed behaviours which are accompanied with visualization tools as well.
 %%  Erlmachine doesn't restrict your workflow by the one possible way but instead provide to you ability to implement your own components. This ability is available under flexible mechanism of prototypes and overloading.  
 
--spec attribute(Module::atom(), Tag::atom(), Default::term()) -> false | {Tag::atom(), Value::term()}.
-attribute(Module, Tag, Default) ->
-    Attributes = Module:module_info(attributes),
-    Result = lists:keyfind(Tag, 1, Attributes),
-    case 
-        Result of false -> Default;
-        {Tag, Data} -> Data 
-    end.
+-spec serial_no(Assembly::assembly()) -> serial_no().
+serial_no(Assembly) ->
+    erlmachine_assembly:serial_no(Assembly).
 
 -spec start() -> success().
 start() ->
@@ -134,6 +132,15 @@ success(Result, State) ->
 -spec success() -> success().
 success() ->
     erlmachine_system:success().
+
+-spec attribute(Module::atom(), Tag::atom(), Default::term()) -> false | {Tag::atom(), Value::term()}.
+attribute(Module, Tag, Default) ->
+    Attributes = Module:module_info(attributes),
+    Result = lists:keyfind(Tag, 1, Attributes),
+    case 
+        Result of false -> Default;
+        {Tag, Data} -> Data 
+    end.
 
 %% generate a readable string representation of a SN/MN/PN/TN.
 %%

@@ -38,8 +38,6 @@
 
 -export([parts/2, parts/3, parts/4]).
 
--export([contained/1]).
-
 -export([find/2]).
 
 -include("erlmachine_factory.hrl").
@@ -248,20 +246,6 @@ parts(GearBox, Input, Parts) ->
                    Release::assembly().
 parts(GearBox, Input, Parts, Output) ->
     output(input(parts(GearBox, Parts), Input), Output).
-
--spec contained(Assembly::assembly()) -> map().
-contained(GearBox) ->
-    lists:reverse(contained(GearBox, [])).
-
--spec contained(Assembly::assembly(), Acc::map()) -> map().
-contained(Assembly, Acc) ->
-    Parts = erlmachine_assembly:parts(Assembly),
-    SN = erlmachine_assembly:serial_no(Assembly),
-    if Parts == [] ->
-            [SN|Acc];
-       true ->
-            [SN|lists:foldl(fun contained/2, Acc, Parts)]
-    end.
 
 %% processes need to be instantiated by builder before;
 
