@@ -244,12 +244,10 @@ parts(GearBox, Parts) ->
 parts(GearBox, Input, Parts) ->
     input(parts(GearBox, Parts), Input).
 
--spec parts(GearBox::assembly(), Input::assembly(), Parts::list(assembly()), Output::assembly()) ->
+-spec parts(GearBox::assembly(), Input::serial_no(), Parts::list(assembly()), Output::serial_no()) ->
                    Release::assembly().
 parts(GearBox, Input, Parts, Output) ->
-    Build = parts(GearBox, Parts),
-
-    output(input(Build, erlmachine_assembly:serial_no(Input)), erlmachine_assembly:serial_no(Output)).
+    output(input(parts(GearBox, Parts), Input), Output).
 
 -spec contained(Assembly::assembly()) -> map().
 contained(GearBox) ->
