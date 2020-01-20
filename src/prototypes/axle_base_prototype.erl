@@ -1,6 +1,6 @@
 -module(axle_base_prototype).
 
--folder(<<"erlmachine/factory/prototypes/axle_base_prototype">>).
+-folder(<<"erlmachine/prototypes/axle_base_prototype">>).
 %% We need to provide the specialized prototype behaviour;
 -behaviour(erlmachine_tracker).
 

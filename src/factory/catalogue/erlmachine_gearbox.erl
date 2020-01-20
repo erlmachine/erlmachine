@@ -191,7 +191,7 @@ body(GearBox) ->
 -spec body(GearBox::assembly(), Body::term()) -> Release::assembly().
 body(GearBox, Body) ->
     Product = erlmachine_assembly:product(GearBox),
-    erlmachine_assembly:product(GearBox, Product#gearbox{body=Body}).
+    erlmachine_assembly:product(GearBox, Product#gearbox{ body=Body }).
 
 -spec input(GearBox::assembly()) -> assembly().
 input(GearBox) ->
@@ -201,7 +201,7 @@ input(GearBox) ->
 -spec input(GearBox::assembly(), SN::serial_no()) -> Release::assembly().
 input(GearBox, SN) ->
     Product = erlmachine_assembly:product(GearBox),
-    erlmachine_assembly:product(GearBox, Product#gearbox{input=SN}).
+    erlmachine_assembly:product(GearBox, Product#gearbox{ input=SN }).
 
 -spec schema(GearBox::assembly()) -> term().
 schema(GearBox) ->
@@ -212,7 +212,7 @@ schema(GearBox) ->
 -spec schema(GearBox::assembly(), Schema::term()) -> Release::assembly().
 schema(GearBox, Schema) ->
     Product = erlmachine_assembly:product(GearBox),
-    erlmachine_assembly:product(GearBox, Product#gearbox{schema=Schema}).
+    erlmachine_assembly:product(GearBox, Product#gearbox{ schema=Schema }).
 
 -spec output(GearBox::assembly()) -> assembly().
 output(GearBox) ->
@@ -221,7 +221,7 @@ output(GearBox) ->
 -spec output(GearBox::assembly(), SN::assembly()) -> Release::assembly().
 output(GearBox, SN) ->
     Product = erlmachine_assembly:product(GearBox),
-    erlmachine_assembly:product(GearBox, Product#gearbox{output=SN}).
+    erlmachine_assembly:product(GearBox, Product#gearbox{ output=SN }).
 
 -spec env(GearBox::assembly()) -> term().
 env(GearBox) ->
@@ -232,7 +232,7 @@ env(GearBox) ->
 -spec env(GearBox::assembly(), Env::term()) -> Release::assembly().
 env(GearBox, Env) ->
     Product = erlmachine_assembly:product(GearBox),
-    erlmachine_assembly:product(GearBox, Product#gearbox{env=Env}).
+    erlmachine_assembly:product(GearBox, Product#gearbox{ env=Env }).
 
 -spec parts(GearBox::assembly(), Parts::list(assembly())) -> Release::assembly().
 parts(GearBox, Parts) ->
@@ -247,7 +247,9 @@ parts(GearBox, Input, Parts) ->
 -spec parts(GearBox::assembly(), Input::assembly(), Parts::list(assembly()), Output::assembly()) ->
                    Release::assembly().
 parts(GearBox, Input, Parts, Output) ->
-    output(input(parts(GearBox, Parts), Input), Output).
+    Build = parts(GearBox, Parts),
+
+    output(input(Build, erlmachine_assembly:serial_no(Input)), erlmachine_assembly:serial_no(Output)).
 
 -spec contained(Assembly::assembly()) -> map().
 contained(GearBox) ->

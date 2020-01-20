@@ -1,6 +1,6 @@
 -module(gear_base_prototype).
 
--folder(<<"erlmachine/factory/prototypes/gear_base_prototype">>).
+-folder(<<"erlmachine/prototypes/gear_base_prototype">>).
 
 -behaviour(gen_server).
 

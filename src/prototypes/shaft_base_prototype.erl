@@ -1,6 +1,6 @@
 -module(shaft_base_prototype).
 
--folder(<<"erlmachine/factory/prototypes/shaft_base_prototype">>).
+-folder(<<"erlmachine/prototypes/shaft_base_prototype">>).
 
 %% I guess factory will write to catalogue via catalogue behaviour;
 %% The main purpose of a prototype is to provide implemetation of both communication and configuration layers;

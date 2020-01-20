@@ -1,6 +1,6 @@
 -module(gearbox_base_prototype).
 
--folder(<<"erlmachine/factory/prototypes/gearbox_base_prototype">>).
+-folder(<<"erlmachine/prototypes/gearbox_base_prototype">>).
 
 -behaviour(erlmachine_tracker).
 
