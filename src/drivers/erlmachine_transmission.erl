@@ -14,7 +14,7 @@
 
 -export([
          rotate/3, rotate_by_serial_no/3, rotate_by_label/3,
-         transmit/3, transmit_by_label/3
+         transmit/3, transmit_by_serial_no/3, transmit_by_label/3
         ]).
 
 -export([motion/1, motion/2, envelope/1, header/1, body/1]).
@@ -63,6 +63,12 @@ rotate(GearBox, Assembly, Motion) ->
 transmit_by_label(GearBox, Label, Motion) ->
     Labels = erlmachine_assembly:labels(GearBox),
     SN = maps:get(Label, Labels),
+    Assembly = erlmachine_gearbox:find(GearBox, SN),
+    transmit(GearBox, Assembly, Motion).
+
+-spec transmit_by_serial_no(GearBox::assembly(), SN::serial_no(), Motion::term()) ->
+                                   success(term()) | failure(term(), term()).
+transmit_by_serial_no(GearBox, SN, Motion) ->
     Assembly = erlmachine_gearbox:find(GearBox, SN),
     transmit(GearBox, Assembly, Motion).
 
