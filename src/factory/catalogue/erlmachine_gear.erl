@@ -17,6 +17,8 @@
 
 -export([parts/2]).
 
+-export([tabname/0, record_name/0, attributes/0]).
+
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
 
@@ -61,6 +63,18 @@
 -type gear() :: #gear{}.
 
 -export_type([gear/0]).
+
+-spec tabname() -> atom().
+tabname() -> 
+    ?MODULE.
+
+-spec record_name() -> atom().
+record_name() ->
+    gear.
+
+-spec attributes() -> list(atom()).
+attributes() ->
+    record_info(fields, gear).
 
 -spec gear(Body::term()) -> gear().
 gear(Body) ->

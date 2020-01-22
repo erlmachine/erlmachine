@@ -14,6 +14,8 @@
 
 -export([parts/2]).
 
+-export([tabname/0, record_name/0, attributes/0]).
+
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
 
@@ -38,6 +40,18 @@
 -type axle() :: #axle{}.
 
 -export_type([axle/0]).
+
+-spec tabname() -> atom().
+tabname() -> 
+    ?MODULE.
+
+-spec record_name() -> atom().
+record_name() ->
+    axle.
+
+-spec attributes() -> list(atom()).
+attributes() ->
+    record_info(fields, axle).
 
 -spec axle(Body::term()) -> axle().
 axle(Body) ->
