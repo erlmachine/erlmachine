@@ -10,10 +10,7 @@
          uninstall/3
         ]).
 
--export([
-         shaft/1,
-         body/1, body/2
-        ]).
+-export([shaft/0]).
 
 -export([parts/2]).
 
@@ -54,7 +51,7 @@
 
 %% Instead of gear the main puropse of shaft is to transmit power between parts;
 
--record(shaft, {body::term()}).
+-record(shaft, { }).
 
 -type shaft() :: #shaft{}.
 
@@ -72,9 +69,9 @@ record_name() ->
 attributes() ->
     record_info(fields, shaft).
 
--spec shaft(Body::term()) -> shaft().
-shaft(Body) ->
-    #shaft{body=Body}.
+-spec shaft() -> shaft().
+shaft() ->
+    #shaft{ }.
 
 -spec install(GearBox::assembly(), Shaft::assembly()) -> 
                      success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
@@ -229,13 +226,11 @@ uninstall(GearBox, Shaft, Reason) ->
 
 -spec body(Shaft::assembly()) -> Body::term().
 body(Shaft) ->
-    Product = erlmachine_assembly:product(Shaft),
-    Product#shaft.body.
+    erlmachine_assembly:body(Shaft).
 
 -spec body(Shaft::assembly(), Body::term()) -> Release::assembly().
 body(Shaft, Body) ->
-    Product = erlmachine_assembly:product(Shaft),
-    erlmachine_assembly:product(Shaft, Product#shaft{body=Body}).
+    erlmachine_assembly:body(Shaft, Body).
 
 -spec parts(Shaft::assembly(), Parts::list(assembly())) -> Release::assembly().
 parts(Shaft, Parts) ->

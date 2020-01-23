@@ -10,10 +10,7 @@
          uninstall/3
         ]).
 
--export([
-         gear/1,
-         body/1, body/2
-        ]).
+-export([gear/0]).
 
 -export([parts/2]).
 
@@ -58,7 +55,7 @@
 %% The main difference between gear and shaft in the next:
 %% Gear as working element, shaft is transmitter instead; 
 
--record(gear, {body::term()}).
+-record(gear, {}). %% TODO Here is place with additional attributes discribed product itself;
 
 -type gear() :: #gear{}.
 
@@ -76,9 +73,9 @@ record_name() ->
 attributes() ->
     record_info(fields, gear).
 
--spec gear(Body::term()) -> gear().
-gear(Body) ->
-    #gear{body=Body}.
+-spec gear() -> gear(). %% Default representation;
+gear() ->
+    #gear{}.
 
 -spec install(GearBox::assembly(), Gear::assembly()) -> 
                      success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
@@ -246,13 +243,11 @@ uninstall(GearBox, Gear, Reason) ->
 
 -spec body(Gear::assembly()) -> Body::term().
 body(Gear) ->
-    Product = erlmachine_assembly:product(Gear),
-    Product#gear.body.
+    erlmachine_assembly:body(Gear).
 
 -spec body(Gear::assembly(), Body::term()) -> Release::assembly().
 body(Gear, Body) ->
-    Product = erlmachine_assembly:product(Gear),
-    erlmachine_assembly:product(Gear, Product#gear{body=Body}).
+    erlmachine_assembly:body(Gear, Body).
 
 -spec parts(Gear::assembly(), Parts::list(assembly())) -> Release::assembly().
 parts(Gear, [_]=Parts) ->

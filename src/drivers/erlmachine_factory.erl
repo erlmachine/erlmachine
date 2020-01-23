@@ -24,7 +24,7 @@
 -export([code_change/3]).
 -export([format_status/2]).
 
--export([assembly/1]).
+-export([assembly/2, assembly/3]).
 
 -export([gear/3, gear/5]).
 -export([shaft/3, shaft/5]).
@@ -63,9 +63,13 @@
 
 %% I think about catalog concept for models storage;
 
--spec assembly(Model::model()) -> assembly().
-assembly(Model) ->
-    erlmachine_assembly:assembly(serial_no(), Model).
+-spec assembly(Body::term(), Model::model()) -> assembly().
+assembly(Body, Model) ->
+    assembly(serial_no(), Body, Model).
+
+-spec assembly(SN::serial_no(), Body::term(), Model::model()) -> assembly().
+assembly(SN, Body, Model) ->
+    erlmachine_assembly:assembly(SN, Body, Model).
 
 -spec gear(GearBox::assembly(), ModelName::atom(), ModelOpt::term()) -> 
                   Gear::assembly().
@@ -77,11 +81,12 @@ gear(GearBox, ModelName, ModelOpt) ->
 -spec gear(GearBox::assembly(), ModelName::atom(), ProtName::atom(), ModelOpt::term(), ProtOpt::list()) -> 
                   Gear::assembly().
 gear(_GearBox, ModelName, ProtName, ModelOpt, ProtOpt) ->
-    Product = erlmachine_gear:gear(#{}),
-    Prototype = erlmachine_prototype:prototype(ProtName, [{type, worker}|ProtOpt], #{}),
+    Product = erlmachine_gear:gear(),
+    Prototype = erlmachine_prototype:prototype(ProtName, [{type, worker}|ProtOpt]),
     Model = erlmachine_model:model(ModelName, ModelOpt, Prototype, Product),
+    Body = #{},
 
-    erlmachine_assembly:assembly(serial_no(), Model).
+    assembly(Body, Model).
 
 -spec shaft(GearBox::assembly(), ModelName::atom(), ModelOpt::term()) -> 
                    Shaft::assembly().
@@ -93,11 +98,12 @@ shaft(GearBox, ModelName, ModelOpt) ->
 -spec shaft(GearBox::assembly(), ModelName::atom(), ProtName::atom(), ModelOpt::term(), ProtOpt::list()) -> 
                    Shaft::assembly().
 shaft(_GearBox, ModelName, ProtName, ModelOpt, ProtOpt) ->
-    Product = erlmachine_shaft:shaft([]),
-    Prototype = erlmachine_prototype:prototype(ProtName, [{type, worker}|ProtOpt], #{}),
+    Product = erlmachine_shaft:shaft(),
+    Prototype = erlmachine_prototype:prototype(ProtName, [{type, worker}|ProtOpt]),
     Model = erlmachine_model:model(ModelName, ModelOpt, Prototype, Product),
+    Body = [],
 
-    erlmachine_assembly:assembly(serial_no(), Model).
+    assembly(Body, Model).
 
 -spec axle(GearBox::assembly(), ModelName::atom(), ModelOpt::term()) -> 
                   Axle::assembly().
@@ -109,11 +115,12 @@ axle(GearBox, ModelName, ModelOpt) ->
 -spec axle(GearBox::assembly(), ModelName::atom(), ProtName::atom(), ModelOpt::term(), ProtOpt::list()) ->
                   Axle::assembly().
 axle(_GearBox, ModelName, ProtName, ModelOpt, ProtOpt) ->
-    Product = erlmachine_axle:axle([]),
-    Prototype = erlmachine_prototype:prototype(ProtName, [{type, supervisor}|ProtOpt], #{}),
+    Product = erlmachine_axle:axle(),
+    Prototype = erlmachine_prototype:prototype(ProtName, [{type, supervisor}|ProtOpt]),
     Model = erlmachine_model:model(ModelName, ModelOpt, Prototype, Product),
+    Body = [],
 
-    erlmachine_assembly:assembly(serial_no(), Model).
+    assembly(Body, Model).
 
 -spec gearbox(ModelName::atom(), ModelOpt::term(), Env::term()) ->
                      Axle::assembly().
@@ -126,12 +133,13 @@ gearbox(ModelName, ModelOpt, Env) ->
                      GearBox::assembly().
 gearbox(ModelName, ProtName, ModelOpt, ProtOpt, Env) ->
     %% We can consider to store some meta info in body to pass through all building process;
-    Product = erlmachine_gearbox:gearbox(#{}, Env),
-    Prototype = erlmachine_prototype:prototype(ProtName, [{type, supervisor}|ProtOpt], #{}),
+    Schema = erlmachine_gearbox:schema(),
+    Product = erlmachine_gearbox:gearbox(Schema, Env),
+    Prototype = erlmachine_prototype:prototype(ProtName, [{type, supervisor}|ProtOpt]),
     Model = erlmachine_model:model(ModelName, ModelOpt, Prototype, Product),
+    Body = [],
 
-    Assembly = erlmachine_assembly:assembly(serial_no(), Model),
-    erlmachine_gearbox:master(Assembly).
+    assembly(Body, Model).
 
 %% API.
 

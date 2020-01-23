@@ -7,10 +7,7 @@
          uninstall/3
         ]).
 
--export([
-         axle/1,
-         body/1, body/2
-        ]).
+-export([axle/0]).
 
 -export([parts/2]).
 
@@ -34,10 +31,10 @@
 -callback detach(SN::serial_no(), ID::serial_no(), Body::term()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
--record(axle, { body::term() }).
+-record(axle, { }).
 
 %% I am thinking about graph ipmlementation of body;
--type axle() :: #axle{}.
+-type axle() :: #axle{}. %% Here is place for describing product attributes;
 
 -export_type([axle/0]).
 
@@ -53,9 +50,9 @@ record_name() ->
 attributes() ->
     record_info(fields, axle).
 
--spec axle(Body::term()) -> axle().
-axle(Body) ->
-    #axle{body=Body}.
+-spec axle() -> axle().
+axle() ->
+    #axle{ }.
 
 -spec install(GearBox::assembly(), Axle::assembly()) -> 
                      success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
@@ -127,13 +124,11 @@ uninstall(GearBox, Axle, Reason) ->
 
 -spec body(Axle::assembly()) -> Body::term().
 body(Axle) ->
-    Product = erlmachine_assembly:product(Axle),
-    Product#axle.body.
+    erlmachine_assembly:body(Axle).
 
 -spec body(Axle::assembly(), Body::term()) -> Release::assembly().
 body(Axle, Body) ->
-    Product = erlmachine_assembly:product(Axle),
-    erlmachine_assembly:product(Axle, Product#axle{ body=Body }).
+    erlmachine_assembly:body(Axle, Body).
 
 -spec parts(Axle::assembly(), Parts::list(assembly())) -> Release::assembly().
 parts(Axle, Parts) ->

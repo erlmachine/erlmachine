@@ -2,7 +2,9 @@
 
 %% API.
 
--export([assembly/0, assembly/2, model/0, prototype/0]).
+-export([assembly/3]).
+
+-export([model/0, prototype/0]).
 
 -export([
          install/1, install/2,
@@ -21,6 +23,8 @@
 
 -export([
          serial_no/0, serial_no/1, serial_no/2,
+
+         body/1, body/2,
 
          model/1, model/2, 
          product/1, product/2,
@@ -80,6 +84,7 @@
 -record (assembly, {
                     %% We can get build info (ts, etc..) by serial number from db;
                     serial_no::serial_no(),
+                    body::term(),
                     model::model() | model_no(),
                     mounted::assembly() | serial_no(),
                     parts=[]::list(assembly() | serial_no()),
@@ -286,13 +291,9 @@ uninstalled(GearBox, Assembly, Reason) ->
     %% notification and update monitoring copy with suitable tags, etc.;
     ok.
 
--spec assembly() -> assembly().
-assembly() ->
-    #assembly{}.
-
--spec assembly(SN::serial_no(), Model::model()) -> assembly().
-assembly(SN, Model) ->
-    #assembly{ serial_no=SN, model=Model }.
+-spec assembly(SN::serial_no(), Body::term(), Model::model()) -> assembly().
+assembly(SN, Body, Model) ->
+    #assembly{ serial_no=SN, body=Body, model=Model }.
 
 -spec is_mounted(Assembly::assembly()) -> boolean().
 is_mounted(Assembly) -> 
@@ -302,15 +303,22 @@ is_mounted(Assembly) ->
 serial_no() ->
     #assembly.serial_no.
 
--spec serial_no(Assembly::assembly()) -> SN::serial_no().
+-spec serial_no(Assembly::assembly()) -> serial_no().
 serial_no(Assembly) ->
     SN = Assembly#assembly.serial_no,
     SN.
 
 -spec serial_no(Assembly::assembly(), SN::serial_no()) -> Release::assembly().
 serial_no(Assembly, SN) ->
-    Release = Assembly#assembly{ serial_no=SN },
-    Release.
+    Assembly#assembly{ serial_no=SN }.
+
+-spec body(Assembly::assembly()) -> term().
+body(Assembly) ->
+    Assembly#assembly.body.
+
+-spec body(Assembly::assembly(), Body::term()) -> assembly().
+body(Assembly, Body) ->
+    Assembly#assembly{ body=Body }.
 
 -spec model() -> model().
 model() ->

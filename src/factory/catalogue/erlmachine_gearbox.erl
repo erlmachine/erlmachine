@@ -23,12 +23,12 @@
          uninstall/2
         ]).
 
+-export([gearbox/2]).
+
 -export([
-         gearbox/1, gearbox/2, gearbox/3,
          input/1, input/2,
-         body/1, body/2,
          env/1, env/2,
-         schema/1, schema/2,
+         schema/0, schema/1, schema/2,
          output/1, output/2
         ]).
 
@@ -63,7 +63,6 @@
 
 -record(gearbox, {
                   input::serial_no(),
-                  body::term(),
                   schema::term(),
                   %% Body can be implemented by various ways and then be represented by different formats; 
                   %% Each implementation can do that over its own discretion;
@@ -89,21 +88,13 @@ record_name() ->
 attributes() ->
     record_info(fields, gearbox).
 
--spec gearbox(Body::term()) -> gearbox().
-gearbox(Body) ->
-    #gearbox{body=Body}.
-
--spec gearbox(Body::term(), Env::term()) -> gearbox().
-gearbox(Body, Env) ->
-    #gearbox{body=Body, env=Env}.
-
--spec gearbox(Body::term(), Env::term(), Schema::term()) -> gearbox().
-gearbox(Body, Env, Schema) ->
-    #gearbox{body=Body, env=Env, schema=Schema}.
+-spec gearbox(Schema::term(), Env::term()) -> gearbox().
+gearbox(Schema, Env) ->
+    #gearbox{ schema=Schema, env=Env }.
 
 -spec master(GearBox::assembly()) -> Release::assembly().
 master(GearBox) ->
-    Schema = digraph:new(),
+    Schema = schema(),
     schema(GearBox, Schema).
 
 -spec mounted(GearBox::assembly(), Parts::list(assembly())) -> Release::assembly().
@@ -197,13 +188,11 @@ disconnect(GearBox, ID) ->
 
 -spec body(GearBox::assembly()) -> Body::term().
 body(GearBox) ->
-    Product = erlmachine_assembly:product(GearBox),
-    Product#gearbox.body.
+    erlmachine_assembly:body(GearBox).
 
 -spec body(GearBox::assembly(), Body::term()) -> Release::assembly().
 body(GearBox, Body) ->
-    Product = erlmachine_assembly:product(GearBox),
-    erlmachine_assembly:product(GearBox, Product#gearbox{ body=Body }).
+    erlmachine_assembly:body(GearBox, Body).
 
 -spec input(GearBox::assembly()) -> assembly().
 input(GearBox) ->
@@ -214,6 +203,10 @@ input(GearBox) ->
 input(GearBox, SN) ->
     Product = erlmachine_assembly:product(GearBox),
     erlmachine_assembly:product(GearBox, Product#gearbox{ input=SN }).
+
+-spec schema() -> term().
+schema() ->
+    digraph:new().
 
 -spec schema(GearBox::assembly()) -> term().
 schema(GearBox) ->
