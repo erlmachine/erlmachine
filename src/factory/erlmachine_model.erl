@@ -43,6 +43,14 @@
 
 -export_type([model/0, product/0]).
 
+-spec record_name() -> atom().
+record_name() ->
+    model.
+
+-spec attributes() -> list(atom()).
+attributes() ->
+    record_info(fields, model).
+
 -spec model(Name::atom(), Opt::list(), Prot::prototype(), Product::product()) ->
                   model().
 model(Name, Opt, Prot, Product) ->
@@ -51,14 +59,6 @@ model(Name, Opt, Prot, Product) ->
     MN = erlmachine:digest(Model, base64),
 
     model_no(digest(Model, MN), MN).
-
--spec record_name() -> atom().
-record_name() ->
-    model.
-
--spec attributes() -> list(atom()).
-attributes() ->
-    record_info(fields, model).
 
 -spec model() -> model().
 model() ->

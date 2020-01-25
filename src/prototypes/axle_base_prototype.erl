@@ -159,7 +159,7 @@ specs(GearBox, Axle) ->
 
 -spec to_track(TN::serial_no(), Package::map()) -> success().
 to_track(TN, Package) ->
-    erlmachine_tracker:to_track(TN, Package), 
+    erlmachine_tracker:track(TN, Package), 
     ok.
 
 -spec load(Axle::assembly()) -> success().

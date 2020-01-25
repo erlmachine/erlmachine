@@ -38,9 +38,9 @@
 
 -export([parts/2, parts/3, parts/4]).
 
--export([tabname/0, record_name/0, attributes/0]).
-
 -export([find/2]).
+
+-export([record_name/0, attributes/0]).
 
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
@@ -75,10 +75,6 @@
 -type gearbox() :: #gearbox{}.
 
 -export_type([gearbox/0]).
-
--spec tabname() -> atom().
-tabname() -> 
-    ?MODULE.
 
 -spec record_name() -> atom().
 record_name() ->

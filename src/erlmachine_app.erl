@@ -10,21 +10,13 @@ start(_Type, _Args) ->
     Nodes = [node()],
     mnesia:create_schema(Nodes), ok = mnesia:start(),
 
-    _TrackTabRes = 
+    _CounterTabRes =
         mnesia:create_table(
-          erlmachine_tracker:tabname(),
+          erlmachine_serial:tabname(),
           [
-           attributes(erlmachine_tracker:attributes()),
+           attributes(erlmachine_serial:attributes()),
            disc_only_copies(Nodes),
-           record_name(erlmachine_tracker:record_name())
-          ]),
-
-    _AssemblyTabRes = 
-        mnesia:create_table(
-          erlmachine_assembly:tabname(),
-          [
-           attributes(erlmachine_assembly:attributes()),
-           record_name(erlmachine_assembly:record_name())
+           record_name(erlmachine_serial:record_name())
           ]),
 
     erlmachine_sup:start_link().

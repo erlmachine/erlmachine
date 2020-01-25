@@ -41,8 +41,6 @@
 -include("erlmachine_system.hrl").
 -include("erlmachine_filesystem.hrl").
 
--type serial() :: erlmachine_serial:serial().
-
 %% Here are different kind of builders can be provided;
 %% For example - YAML builder;
 %% But from begining we are going to build directly from code;
@@ -163,22 +161,20 @@ serial_no() ->
 
 %% gen_server.
 
--record(state, { serial::serial(), serial_no::serial_no() }).
+-record(state, { serial_no::serial_no() }).
 -record(accept, { }).
 %% Factory will be responsible for the model's, assemblies, storing and management;
 init([]) ->
-    %% A folder will be appended, cause attribute is listed above in the module declaration;
-    {ok, Serial} = erlmachine_serial:serial_no(),
-
+    {ok, Serial} = erlmachine_serial:update(?MODULE),
     SN = erlmachine_serial_no:serial_no(Serial),
 
-    {ok, #state{ serial=Serial, serial_no=SN }}.
+    {ok, #state{ serial_no=SN }}.
 
-handle_call(#serial_no{}, _From, #state{serial=Serial, serial_no=SN}=State) ->
-    Inc = erlmachine_serial:inc(Serial),
-    Rotate = erlmachine_serial_no:serial_no(Inc, SN),
+handle_call(#serial_no{}, _From, #state{ serial_no=SN }=State) ->
+    {ok, Serial} = erlmachine_serial:update(?MODULE),
+    Rotate = erlmachine_serial_no:serial_no(Serial, SN),
 
-    {reply, SN, State#state{serial=Inc, serial_no=Rotate}};
+    {reply, SN, State#state{ serial_no=Rotate }};
 
 handle_call(_Request, _From, State) ->
     {reply, ignored, State}.
@@ -201,8 +197,8 @@ handle_continue(#accept{}, #state{}=State) ->
 handle_continue(_, State) ->
     {noreply, State}.
 
-terminate(_Reason, #state{serial=Serial}) ->
-    ok = erlmachine_serial:serial_no(Serial).
+terminate(_Reason, _State) ->
+    ok.
 
 format_status(_Opt, [_PDict, _State]) ->
     [].

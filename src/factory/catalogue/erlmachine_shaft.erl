@@ -14,7 +14,7 @@
 
 -export([parts/2]).
 
--export([tabname/0, record_name/0, attributes/0]).
+-export([record_name/0, attributes/0]).
 
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
@@ -56,10 +56,6 @@
 -type shaft() :: #shaft{}.
 
 -export_type([shaft/0]).
-
--spec tabname() -> atom().
-tabname() -> 
-    ?MODULE.
 
 -spec record_name() -> atom().
 record_name() ->

@@ -53,14 +53,9 @@
 
 -export([labels/1]).
 
--export([tabname/0, record_name/0, attributes/0]).
-
--export([by_serial_no/1]).
-
--export([load/1, unload/1]).
+-export([record_name/0, attributes/0]).
 
 -include("erlmachine_system.hrl").
-
 
 %% The main purpose of this module is to instantiate proceses accordingly to design file;
 %% In this module will be provided incapsulation around building of independent parts and whole transmission too;
@@ -101,33 +96,13 @@
 
 -export_type([assembly/0]).
 
--spec tabname() -> atom().
-tabname() -> 
-    ?MODULE.
-
+-spec record_name() -> atom().
 record_name() ->
     assembly.
 
 -spec attributes() -> list(atom()).
 attributes() ->
     record_info(fields, assembly).
-
-%% TODO We need to provide methods like by_model_no, by_sum.
--spec by_serial_no(SN::serial_no()) -> 
-                          success(assembly()) | failure(term(), term()).
-by_serial_no(SN) ->
-    Result = mnesia:dirty_read(tabname(), SN),
-    {ok, Result}.
-
--spec load(Assembly::assembly()) -> 
-                  success().
-load(Assembly) when is_record(Assembly, assembly) ->
-    ok = mnesia:dirty_write(tabname(), Assembly).
-
--spec unload(SN::serial_no()) -> 
-                    success().
-unload(SN) ->
-    ok = mnesia:dirty_delete(tabname(), SN).
 
 -spec install(GearBox::assembly()) ->
                      success(pid()) | ingnore | failure(E::term()).

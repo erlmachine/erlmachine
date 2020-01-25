@@ -17,7 +17,7 @@
 -export([failure/1, failure/2, failure/3]).
 -export([success/0, success/1, success/2]).
 
--export([guid/0, guid/1]).
+-export([guid/1]).
 
 -export([digest/1, digest/2]).
 -export([base64url/1]).
@@ -146,10 +146,6 @@ attribute(Module, Tag, Default) ->
 %%
 %% base64url encoding was provided; 
 %% This format is safer and more applicable by web (in comparison with base64);
-
--spec guid() -> binary().
-guid() ->
-    guid(0).
 
 -spec guid(Serial::serial()) -> binary().
 guid(Serial) ->

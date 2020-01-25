@@ -19,10 +19,6 @@
 
 -export_type([prototype/0]).
 
--spec prototype(Name::atom(), Opt::list()) -> prototype().
-prototype(Name, Opt) ->
-    (prototype())#prototype{ name=Name, options=Opt }.
-
 -spec record_name() -> atom().
 record_name() ->
     prototype.
@@ -30,6 +26,10 @@ record_name() ->
 -spec attributes() -> list(atom()).
 attributes() ->
     record_info(fields, prototype).
+
+-spec prototype(Name::atom(), Opt::list()) -> prototype().
+prototype(Name, Opt) ->
+    (prototype())#prototype{ name=Name, options=Opt }.
 
 -spec prototype() -> prototype().
 prototype() ->
