@@ -65,7 +65,7 @@ attach(Name, GearBox, Axle, Register, Extension) ->
     {ok, _PID} = supervisor:start_child(SupRef, Spec),
 
     SN = erlmachine_assembly:serial_no(Axle),
-    to_track(SN, #{ attach => erlmachine_assembly:serial_no(Extension) }), load(Axle),
+    to_track(SN, #{ attach => erlmachine_assembly:serial_no(Extension) }),
     Result.
     
 -spec detach(Name::serial_no(), GearBox::assembly(), Axle::assembly(), ID::serial_no()) ->
@@ -78,7 +78,7 @@ detach(Name, GearBox, Axle, ID) ->
     ok = supervisor:terminate_child(SupRef, ID),
     ok = supervisor:delete_child(SupRef, ID), %% ID the same for chield and SN
 
-    SN = erlmachine_assembly:serial_no(Axle), load(Axle),
+    SN = erlmachine_assembly:serial_no(Axle),
     to_track(SN, #{ detach => ID }),
     Result.
 
@@ -94,7 +94,7 @@ install(Name, GearBox, Axle, Opt) ->
 
     Result = supervisor:start_link(ID, ?MODULE, Command),
  
-    to_track(SN, #{ install => ts() }), load(Axle),
+    to_track(SN, #{ install => ts() }),
     Result.
 
 init(#install{gearbox=GearBox, axle=Axle, options=Opt}) ->
@@ -120,7 +120,7 @@ uninstall(Name, GearBox, Axle, Reason) ->
     Result = erlmachine_axle:uninstall(GearBox, Axle, Reason),
 
     SN = erlmachine_assembly:serial_no(Axle),
-    to_track(SN, #{uninstall => ts()}), load(Axle),
+    to_track(SN, #{uninstall => ts()}),
     Result.
 
 -spec accept(Name::serial_no(), GearBox::assembly(), Axle::assembly(), Criteria::criteria()) ->
@@ -161,10 +161,6 @@ specs(GearBox, Axle) ->
 to_track(TN, Package) ->
     erlmachine_tracker:track(TN, Package), 
     ok.
-
--spec load(Axle::assembly()) -> success().
-load(Axle) ->
-    erlmachine_assembly:load(Axle).
 
 -spec ts() -> integer().
 ts() ->
