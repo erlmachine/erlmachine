@@ -17,12 +17,14 @@
 -export([failure/1, failure/2, failure/3]).
 -export([success/0, success/1, success/2]).
 
+-export([attribute/3]).
+
 -export([guid/1]).
 
 -export([digest/1, digest/2]).
 -export([base64url/1]).
 
--export([attribute/3]).
+-export([timestamp/0]).
 
 -include("erlmachine_system.hrl").
 -include("erlmachine_factory.hrl").
@@ -169,3 +171,7 @@ base64url(N) when is_binary(N) ->
     Base64 = base64:encode(N),
     Base64Url = [fun($+) -> <<"-">>; ($/) -> <<"_">>; (C) -> <<C>> end(Char)|| <<Char>> <= Base64],
     << <<X/binary>> || X <- Base64Url >>.
+
+-spec timestamp() -> integer().
+timestamp() ->
+    erlang:system_time(seconds).

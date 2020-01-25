@@ -164,4 +164,4 @@ to_track(TN, Package) ->
 
 -spec ts() -> integer().
 ts() ->
-    erlang:system_time(seconds).
+    erlmachine:timestamp().
