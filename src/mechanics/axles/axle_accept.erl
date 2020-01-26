@@ -1,2 +1,0 @@
--module(axle_accept).
--export([]).

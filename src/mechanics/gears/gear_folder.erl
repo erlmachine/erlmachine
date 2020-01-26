@@ -1,2 +1,0 @@
--module(gear_folder).
--export([]).
