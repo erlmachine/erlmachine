@@ -12,7 +12,8 @@
          install/4,
          attach/5, detach/4, 
          accept/4,
-         uninstall/4
+         uninstall/4,
+         schema/4
         ]).
 
 -export([installed/4, uninstalled/5]).
@@ -53,7 +54,7 @@ uninstalled(_Name, _GearBox, Axle, Part, Reason) ->
     ok.
 
 -spec attach(Name::serial_no(), GearBox::assembly(), Axle::assembly(), Register::term(), Extension::assembly()) ->
-                    success(Release::assembly()) | failure(E::term(), R::term()).
+                    success(assembly()) | failure(term(), term()).
 attach(Name, GearBox, Axle, Register, Extension) ->
     Result = {ok, Part, Release} = erlmachine_axle:attach(GearBox, Axle, Register, Extension),
 
@@ -69,7 +70,7 @@ attach(Name, GearBox, Axle, Register, Extension) ->
     Result.
     
 -spec detach(Name::serial_no(), GearBox::assembly(), Axle::assembly(), ID::serial_no()) ->
-                    success(Child::term()) | success(Child::term(), Info::term()) | failure(E::term()).
+                    success(term()) | success(term(), term()) | failure(term()).
 detach(Name, GearBox, Axle, ID) ->
     SupRef = format_name(Name),
 
@@ -131,6 +132,12 @@ accept(_Name, GearBox, Axle, Criteria) ->
     SN = erlmachine_assembly:serial_no(Axle),
     to_track(SN, #{ accept => Status }),
     Status.
+
+-spec schema(Name::serial_no(), GearBox::assembly(), Axle::assembly(), Format::term()) ->
+                    success(term()) | failure(term(), term()).
+schema(_Name, GearBox, Axle, Format) ->
+    {ok, Schema, _} = erlmachine_axle:schema(GearBox, Axle, Format),
+    {ok, Schema}.
 
 %% TODO
 %% I am going to provide mnesia gears, mongodb , etc..

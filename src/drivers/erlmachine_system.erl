@@ -4,6 +4,8 @@
 %% API.
 -export([start_link/0]).
 
+-export([schema/2, schema/3]).
+
 %% gen_server.
 -export([
          init/1,
@@ -27,6 +29,21 @@
 -type success() :: ok.
 
 -export_type([failure/1, failure/2, failure/3, success/0, success/1, success/2]).
+
+
+-spec schema(GearBox::assembly(), Format::term()) ->
+                    success(term()) | failure(term(), term()).
+schema(GearBox, Format) ->
+    SN = erlmachine_assembly:serial_no(GearBox),
+    ProtName = erlmachine_assembly:prototype_name(GearBox),
+    ProtName:schema(SN, GearBox, Format).
+
+-spec schema(GearBox::assembly(), Assembly::assembly(), Format::term()) ->
+                    success(term()) | failure(term(), term()).
+schema(GearBox, Assembly, Format) ->
+    SN = erlmachine_assembly:serial_no(Assembly),
+    ProtName = erlmachine_assembly:prototype_name(Assembly),
+    ProtName:schema(SN, GearBox, Assembly, Format).
 
 -spec failure(E::term(), R::term()) -> failure(E::term(), R::term()).
 failure(E, R) -> 

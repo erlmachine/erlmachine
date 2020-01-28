@@ -18,17 +18,17 @@
 
 -export([
          install/1,
+         schema/2,
          attach/3, detach/2,
          accept/2,
          uninstall/2
         ]).
 
--export([gearbox/2]).
+-export([gearbox/1]).
 
 -export([
          input/1, input/2,
          env/1, env/2,
-         schema/0, schema/1, schema/2,
          output/1, output/2
         ]).
 
@@ -53,7 +53,7 @@
     success() | failure(term(), term(), term()).
 
 -callback accept(SN::serial_no(), Criteria::criteria(), Body::term()) -> 
-    success() | failure(term(), term(), term()).
+    success(term(), term()) | failure(term(), term(), term()).
 
 -callback attach(SN::serial_no(), Register::term(), ID::serial_no(), Body::term()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
@@ -68,8 +68,7 @@
 
 -record(gearbox, {
                   input::serial_no(),
-                  schema::term(),
-                  %% Body can be implemented by various ways and then be represented by different formats; 
+                  %% Schema can be implemented by various ways and then be represented by different formats; 
                   %% Each implementation can do that over its own discretion;
                   %% Erlmachine do that accordingly to YAML format;
                   env::term(),
@@ -89,14 +88,14 @@ record_name() ->
 attributes() ->
     record_info(fields, gearbox).
 
--spec gearbox(Schema::term(), Env::term()) -> gearbox().
-gearbox(Schema, Env) ->
-    #gearbox{ schema=Schema, env=Env }.
+-spec gearbox(Env::term()) -> gearbox().
+gearbox(Env) ->
+    #gearbox{ env=Env }.
 
 -spec master(GearBox::assembly()) -> Release::assembly().
 master(GearBox) ->
-    Schema = schema(),
-    schema(GearBox, Schema).
+    Schema = erlmachine_assembly:schema(),
+    erlmachine_assembly:schema(GearBox, Schema).
 
 -spec mounted(GearBox::assembly(), Parts::list(assembly())) -> Release::assembly().
 mounted(GearBox, Parts) ->
@@ -109,7 +108,7 @@ mounted(GearBox, Parts) ->
 -spec find(GearBox::assembly(), SN::serial_no()) -> 
                   assembly() | false.
 find(GearBox, SN) ->
-    Schema = schema(GearBox),
+    Schema = erlmachine_assembly:schema(GearBox),
     erlmachine_schema:vertex(Schema, SN).
 
 -spec install(GearBox::assembly()) -> 
@@ -121,9 +120,9 @@ install(GearBox) ->
     Options = erlmachine_assembly:model_options(GearBox),
     Parts = erlmachine_assembly:parts(GearBox),
     IDs = [erlmachine_assembly:serial_no(Part)|| Part <- Parts],
-    {ok, Body} = ModelName:install(SN, IDs, body(GearBox), Options, Env),
+    {ok, State} = ModelName:install(SN, IDs, state(GearBox), Options, Env),
     %% We are going to add error handling later;
-    Release = body(GearBox, Body),
+    Release = state(GearBox, State),
     {ok, Release}.
 
 -spec attach(GearBox::assembly(), Register::term(), Extension::assembly()) ->
@@ -132,10 +131,10 @@ attach(GearBox, Register, Extension) ->
     ModelName = erlmachine_assembly:model_name(GearBox),
     SN = erlmachine_assembly:serial_no(GearBox), ID = erlmachine_assembly:serial_no(Extension),
  
-    {ok, Body} = ModelName:attach(SN, Register, ID, body(GearBox)),
+    {ok, State} = ModelName:attach(SN, Register, ID, state(GearBox)),
     
     Part = erlmachine_assembly:mounted(Extension, GearBox),
-    Release = erlmachine_assembly:add_part(body(GearBox, Body), Part),
+    Release = erlmachine_assembly:add_part(state(GearBox, State), Part),
     %% At that place we don't issue any events (cause is gearbox issue level);
     {ok, Part, Release}. %% TODO
 
@@ -144,24 +143,32 @@ attach(GearBox, Register, Extension) ->
 detach(GearBox, ID) ->
     ModelName = erlmachine_assembly:model_name(GearBox),
     SN = erlmachine_assembly:serial_no(GearBox),
-    {ok, Body} = ModelName:detach(SN, ID, body(GearBox)),
-    Release = erlmachine_assembly:remove_part(body(GearBox, Body), ID),
+    {ok, State} = ModelName:detach(SN, ID, state(GearBox)),
+    Release = erlmachine_assembly:remove_part(state(GearBox, State), ID),
     {ok, Release}. %% TODO
-
--spec uninstall(GearBox::assembly(), Reason::term()) -> 
-                       ok.
-uninstall(GearBox, Reason) ->
-    ModelName = erlmachine_assembly:model_name(GearBox),
-    SN = erlmachine_assembly:serial_no(GearBox),
-    ModelName:uninstall(SN, Reason, body(GearBox)).
 
 -spec accept(GearBox::assembly(), Criteria::term()) ->
                     success()| failure(E::term(), R::term(), S::term()).
 accept(GearBox, Criteria) ->
     ModelName = erlmachine_assembly:model_name(GearBox),
     SN = erlmachine_assembly:serial_no(GearBox),
-    {ok, Result, _} = ModelName:accept(SN, Criteria, body(GearBox)),
-    {ok, Result, GearBox}.
+    {ok, Result, State} = ModelName:accept(SN, Criteria, state(GearBox)),
+    Release = state(GearBox, State),
+    {ok, Result, Release}.
+
+-spec uninstall(GearBox::assembly(), Reason::term()) -> 
+                       ok.
+uninstall(GearBox, Reason) ->
+    ModelName = erlmachine_assembly:model_name(GearBox),
+    SN = erlmachine_assembly:serial_no(GearBox),
+    ModelName:uninstall(SN, Reason, state(GearBox)).
+
+-spec schema(GearBox::assembly(), Format::term()) ->
+                    success(term(), term()) | failure(term(), term(), term()).
+schema(GearBox, Format) ->
+    ModelName = erlmachine_assembly:model_name(GearBox),
+    SN = erlmachine_assembly:serial_no(GearBox),
+    {ok, _, _} = ModelName:schema(SN, Format, state(GearBox)).
 
 -spec rotate(GearBox::assembly(), Motion::term()) ->
                     Motion::term().
@@ -187,13 +194,13 @@ disconnect(GearBox, ID) ->
     Output = output(GearBox), Assembly = find(GearBox, Output),
     erlmachine_transmission:detach(Assembly, ID).
 
--spec body(GearBox::assembly()) -> Body::term().
-body(GearBox) ->
-    erlmachine_assembly:body(GearBox).
+-spec state(Axle::assembly()) -> term().
+state(Axle) ->
+    erlmachine_assembly:schema(Axle).
 
--spec body(GearBox::assembly(), Body::term()) -> Release::assembly().
-body(GearBox, Body) ->
-    erlmachine_assembly:body(GearBox, Body).
+-spec state(Axle::assembly(), Schema::term()) -> assembly().
+state(Axle, Schema) ->
+    erlmachine_assembly:schema(Axle, Schema).
 
 -spec input(GearBox::assembly()) -> assembly().
 input(GearBox) ->
@@ -204,21 +211,6 @@ input(GearBox) ->
 input(GearBox, SN) ->
     Product = erlmachine_assembly:product(GearBox),
     erlmachine_assembly:product(GearBox, Product#gearbox{ input=SN }).
-
--spec schema() -> term().
-schema() ->
-    digraph:new().
-
--spec schema(GearBox::assembly()) -> term().
-schema(GearBox) ->
-    Product = erlmachine_assembly:product(GearBox),
-    Schema = Product#gearbox.schema,
-    Schema.
-
--spec schema(GearBox::assembly(), Schema::term()) -> Release::assembly().
-schema(GearBox, Schema) ->
-    Product = erlmachine_assembly:product(GearBox),
-    erlmachine_assembly:product(GearBox, Product#gearbox{ schema=Schema }).
 
 -spec output(GearBox::assembly()) -> assembly().
 output(GearBox) ->

@@ -26,6 +26,8 @@
 
          body/1, body/2,
 
+         schema/0, schema/1, schema/2,
+
          model/1, model/2, 
          product/1, product/2,
          prototype/1, prototype/2, 
@@ -80,6 +82,7 @@
                     %% We can get build info (ts, etc..) by serial number from db;
                     serial_no::serial_no(),
                     body::term(),
+                    schema::term(),
                     model::model() | model_no(),
                     mounted::assembly() | serial_no(),
                     parts=[]::list(assembly() | serial_no()),
@@ -109,7 +112,7 @@ attributes() ->
 install(GearBox) ->
     SN = serial_no(GearBox),
     Options = prototype_options(GearBox),
-    Schema = erlmachine_gearbox:schema(GearBox),
+    Schema = schema(GearBox),
     %% TODO at that place we can register information about scheme in persistence storage;
     Result = (prototype_name(GearBox)):install(SN, GearBox, Options),
     erlmachine_schema:add_edges(Schema, GearBox),
@@ -127,7 +130,7 @@ install(GearBox, Assembly) ->
 attach(GearBox, Register, Part) ->
     SN = serial_no(GearBox),
     Result = (prototype_name(GearBox)):attach(SN, GearBox, Register, Part), 
-    erlmachine_schema:add_edge(erlmachine_gearbox:schema(GearBox), SN, Part),
+    erlmachine_schema:add_edge(schema(GearBox), SN, Part),
     Result.
 
 -spec attach(GearBox::assembly(), SN::serial_no(), Register::term(), Part::assembly()) -> 
@@ -135,7 +138,7 @@ attach(GearBox, Register, Part) ->
 attach(GearBox, SN, Register, Part) ->
     Assembly = erlmachine_gearbox:find(GearBox, SN),
     Result = (prototype_name(Assembly)):attach(SN, GearBox, Assembly, Register, Part), 
-    erlmachine_schema:add_edge(erlmachine_gearbox:schema(GearBox), SN, Part),
+    erlmachine_schema:add_edge(schema(GearBox), SN, Part),
     Result.
 
 -spec attach_to_label(GearBox::assembly(), Label::term(), Register::term(), Part::assembly()) -> 
@@ -163,7 +166,7 @@ attach_by_serial_no(GearBox, SN, Register, ID) ->
 detach(GearBox, ID) ->
     SN = serial_no(GearBox),
     Result = (prototype_name(GearBox)):detach(SN, GearBox, ID),
-    ok = erlmachine_schema:del_vertex(erlmachine_gearbox:schema(GearBox), ID),
+    ok = erlmachine_schema:del_vertex(schema(GearBox), ID),
     Result.
 
 -spec detach(GearBox::assembly(), SN::serial_no(), ID::serial_no()) -> 
@@ -171,7 +174,7 @@ detach(GearBox, ID) ->
 detach(GearBox, SN, ID) ->
     Assembly = erlmachine_gearbox:find(GearBox, SN),
     Result = (prototype_name(Assembly)):detach(SN, GearBox, Assembly, ID),
-    ok = erlmachine_schema:del_vertex(erlmachine_gearbox:schema(GearBox), ID),
+    ok = erlmachine_schema:del_vertex(schema(GearBox), ID),
     Result.
 
 -spec detach_from_label(GearBox::assembly(), Label::term(), ID::serial_no()) -> 
@@ -198,7 +201,7 @@ detach_by_serial_no(GearBox, SN, ID) ->
 uninstall(GearBox, Reason) ->
     SN = serial_no(GearBox),
     Result = (prototype_name(GearBox)):uninstall(SN, GearBox, Reason),
-    ok = erlmachine_schema:del_vertex(erlmachine_gearbox:schema(GearBox), SN),
+    ok = erlmachine_schema:del_vertex(schema(GearBox), SN),
     Result.
 
 -spec uninstall(GearBox::assembly(), SN::serial_no(), Reason::term()) ->
@@ -294,6 +297,18 @@ body(Assembly) ->
 -spec body(Assembly::assembly(), Body::term()) -> assembly().
 body(Assembly, Body) ->
     Assembly#assembly{ body=Body }.
+
+-spec schema() -> term().
+schema() ->
+    digraph:new().
+
+-spec schema(Assembly::assembly()) -> term().
+schema(Assembly) ->
+    Assembly#assembly.schema.
+
+-spec schema(Assembly::assembly(), Schema::term()) -> assembly().
+schema(Assembly, Schema) ->
+    Assembly#assembly{ schema=Schema }.
 
 -spec model() -> model().
 model() ->

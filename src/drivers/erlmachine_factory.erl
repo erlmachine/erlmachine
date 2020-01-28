@@ -113,12 +113,13 @@ axle(GearBox, ModelName, ModelOpt) ->
 -spec axle(GearBox::assembly(), ModelName::atom(), ProtName::atom(), ModelOpt::term(), ProtOpt::list()) ->
                   Axle::assembly().
 axle(_GearBox, ModelName, ProtName, ModelOpt, ProtOpt) ->
+    Schema = erlmachine_assembly:schema(),
     Product = erlmachine_axle:axle(),
     Prototype = erlmachine_prototype:prototype(ProtName, [{type, supervisor}|ProtOpt]),
     Model = erlmachine_model:model(ModelName, ModelOpt, Prototype, Product),
     Body = [],
 
-    assembly(Body, Model).
+    erlmachine_assembly:schema(assembly(Body, Model), Schema).
 
 -spec gearbox(ModelName::atom(), ModelOpt::term(), Env::term()) ->
                      Axle::assembly().
@@ -131,13 +132,13 @@ gearbox(ModelName, ModelOpt, Env) ->
                      GearBox::assembly().
 gearbox(ModelName, ProtName, ModelOpt, ProtOpt, Env) ->
     %% We can consider to store some meta info in body to pass through all building process;
-    Schema = erlmachine_gearbox:schema(),
-    Product = erlmachine_gearbox:gearbox(Schema, Env),
+    Schema = erlmachine_assembly:schema(),
+    Product = erlmachine_gearbox:gearbox(Env),
     Prototype = erlmachine_prototype:prototype(ProtName, [{type, supervisor}|ProtOpt]),
     Model = erlmachine_model:model(ModelName, ModelOpt, Prototype, Product),
     Body = [],
 
-    assembly(Body, Model).
+    erlmachine_assembly:schema(assembly(Body, Model), Schema).
 
 %% API.
 

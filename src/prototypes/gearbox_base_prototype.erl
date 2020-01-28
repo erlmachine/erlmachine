@@ -12,7 +12,8 @@
          install/3,
          attach/4, detach/3, 
          accept/3,
-         uninstall/3
+         uninstall/3,
+         schema/3
         ]).
 
 -export([
@@ -179,6 +180,11 @@ accept(_Name, GearBox, Criteria) ->
     {ok, Status, _} = erlmachine_gearbox:accept(GearBox, Criteria),
     Status.
 
+-spec schema(Name::serial_no(), GearBox::assembly(), Format::term()) ->
+                    success(term()) | failure(term(), term()).
+schema(_Name, GearBox, Format) ->
+    {ok, Schema, _} = erlmachine_gearbox:schema(GearBox, Format),
+    {ok, Schema}.
 
 -spec spec(GearBox::assembly(), Part::assembly()) -> Spec::map().
 spec(GearBox, Part) ->
