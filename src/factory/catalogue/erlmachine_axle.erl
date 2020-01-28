@@ -16,7 +16,7 @@
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
 
--callback install(SN::serial_no(), IDs::list(serial_no()), Body::term(), Options::term(), Env::list()) -> 
+-callback install(SN::serial_no(), IDs::list(serial_no()), Body::term(), Opt::term(), Env::list()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
 -callback uninstall(SN::serial_no(), Reason::term(), Body::term()) -> 
@@ -30,6 +30,11 @@
 
 -callback detach(SN::serial_no(), ID::serial_no(), Body::term()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
+
+-callback schema(SN::serial_no(), Schema::term(), Body::term()) ->
+    success(term(), term()) | failure(term(), term(), term()) | failure(term()).
+
+-optional_callbacks([schema/3]).
 
 -record(axle, { }).
 

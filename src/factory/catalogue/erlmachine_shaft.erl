@@ -19,7 +19,7 @@
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
 
--callback install(SN::serial_no(), IDs::list(serial_no()), Body::term(), Options::term(), Env::list()) -> 
+-callback install(SN::serial_no(), IDs::list(serial_no()), Body::term(), Opt::term(), Env::list()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
 -callback replace(SN::serial_no(), ID::serial_no(), Body::term()) -> 
@@ -48,6 +48,14 @@
 
 -callback block(SN::serial_no(), ID::serial_no(), Failure::term(), Body::term()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
+
+-callback form(SN::serial_no(), Body::term()) ->
+    success(term(), term()) | failure(term(), term(), term()) | failure(term()).
+
+-callback submit(SN::serial_no(), Form::term(), Body::term()) ->
+    success(term()) | failure(term(), term(), term()) | failure(term()).
+
+-optional_callbacks([form/2, submit/3]).
 
 %% Instead of gear the main puropse of shaft is to transmit power between parts;
 
