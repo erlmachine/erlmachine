@@ -4,7 +4,8 @@
 %% API.
 -export([start_link/0]).
 
--export([schema/2, schema/3]).
+-export([schema/1, schema/2]).
+-export([form/2, submit/3]).
 
 %% gen_server.
 -export([
@@ -31,19 +32,37 @@
 -export_type([failure/1, failure/2, failure/3, success/0, success/1, success/2]).
 
 
--spec schema(GearBox::assembly(), Format::term()) ->
-                    success(term()) | failure(term(), term()).
-schema(GearBox, Format) ->
+-spec schema(GearBox::assembly()) ->
+                    term().
+schema(GearBox) ->
     SN = erlmachine_assembly:serial_no(GearBox),
     ProtName = erlmachine_assembly:prototype_name(GearBox),
-    ProtName:schema(SN, GearBox, Format).
 
--spec schema(GearBox::assembly(), Assembly::assembly(), Format::term()) ->
-                    success(term()) | failure(term(), term()).
-schema(GearBox, Assembly, Format) ->
+    ProtName:schema(SN, GearBox).
+
+-spec schema(GearBox::assembly(), Assembly::assembly()) ->
+                    term().
+schema(GearBox, Assembly) ->
     SN = erlmachine_assembly:serial_no(Assembly),
     ProtName = erlmachine_assembly:prototype_name(Assembly),
-    ProtName:schema(SN, GearBox, Assembly, Format).
+
+    ProtName:schema(SN, GearBox, Assembly).
+
+-spec form(GearBox::assembly(), Assembly::assembly()) ->
+                  term().
+form(GearBox, Assembly) ->
+    SN = erlmachine_assembly:serial_no(Assembly),
+    ProtName = erlmachine_assembly:prototype_name(Assembly),
+
+    ProtName:form(SN, GearBox, Assembly).
+
+-spec submit(GearBox::assembly(), Assembly::assembly(), Form::term()) ->
+                    term().
+submit(GearBox, Assembly, Form) ->
+    SN = erlmachine_assembly:serial_no(Assembly),
+    ProtName = erlmachine_assembly:prototype_name(Assembly),
+
+    ProtName:submit(SN, GearBox, Assembly, Form).
 
 -spec failure(E::term(), R::term()) -> failure(E::term(), R::term()).
 failure(E, R) -> 
