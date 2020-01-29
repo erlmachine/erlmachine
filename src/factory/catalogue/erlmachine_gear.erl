@@ -7,7 +7,8 @@
          transmit/3, load/3, rotate/3,
          accept/3,
          overload/3, block/4,
-         uninstall/3
+         uninstall/3,
+         form/2, submit/3
         ]).
 
 -export([gear/0]).
@@ -58,6 +59,7 @@
 -callback submit(SN::serial_no(), Form::term(), Body::term()) ->
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
+-optional_callbacks([replace/3, attach/4, detach/3, overload/3, block/4]).
 -optional_callbacks([form/2, submit/3]).
 
 %% The main difference between gear and shaft in the next:
@@ -82,12 +84,12 @@ gear() ->
     #gear{}.
 
 -spec install(GearBox::assembly(), Gear::assembly()) -> 
-                     success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
+                     success(assembly()) | failure(term(), term(), term()).
 install(GearBox, Gear) ->
     ModelName = erlmachine_assembly:model_name(Gear),
     SN = erlmachine_assembly:serial_no(Gear),
     Env = erlmachine_gearbox:env(GearBox), 
-    Options = erlmachine_assembly:model_options(Gear),
+    Opt = erlmachine_assembly:model_options(Gear),
     %% We can check exported functions accordingly to this kind of behaviour; 
     %% We are going to add error handling later; 
     Parts = erlmachine_assembly:parts(Gear), 
@@ -98,160 +100,179 @@ install(GearBox, Gear) ->
                  erlmachine_assembly:serial_no(Part)
          end,
 
-    {ok, Body} = ModelName:install(SN, ID, body(Gear), Options, Env),
+    {ok, State} = ModelName:install(SN, ID, state(Gear), Opt, Env),
     
     %% We are going to add error handling later; 
-    Release = body(Gear, Body), 
+    Release = state(Gear, State), 
     erlmachine_assembly:installed(GearBox, Release),
     {ok, Release}.
 
 -spec attach(GearBox::assembly(), Gear::assembly(), Register::term(), Extension::assembly()) ->
-                    success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
+                    success(assembly()) | failure(term(), term(), term()).
 attach(GearBox, Gear, Register, Extension) ->
     ModelName= erlmachine_assembly:model_name(Gear),
-    SN = erlmachine_assembly:serial_no(Gear), ID = erlmachine_assembly:serial_no(Extension),
+    SN = erlmachine_assembly:serial_no(Gear), 
+    ID = erlmachine_assembly:serial_no(Extension),
  
-    {ok, Body} = ModelName:attach(SN, Register, ID, body(Gear)),
+    Mod = ModelName, Fun = attach, Args = [SN, Register, ID, state(Gear)],
+    {ok, State} = erlmachine:optional_callback(Mod, Fun, Args, erlmachine:success(state(Gear))),
     
     Part = Extension,
     %% TODO At this place we can provide modification layer over attach;
-    Release = erlmachine_assembly:parts(body(Gear, Body), [Part]),
+    Release = erlmachine_assembly:parts(state(Gear, State), [Part]),
     erlmachine_assembly:attached(GearBox, Release, Part),
     {ok, Part, Release}.
 
 -spec detach(GearBox::assembly(), Gear::assembly(), ID::serial_no()) ->
-                    success(Release::assembly()) | failure(E::term(), R::term(),  Rejected::assembly()).
+                    success(assembly()) | failure(term(), term(), term()).
 detach(GearBox, Gear, ID) ->
     ModelName= erlmachine_assembly:model_name(Gear),
     SN = erlmachine_assembly:serial_no(Gear),
-    %% At that place we need to find Part inside assembly by SN and transmit;
 
-    {ok, Body} = ModelName:detach(SN, ID, body(Gear)),
-    
-    Release = erlmachine_assembly:parts(body(Gear, Body), []),
+    Mod = ModelName, Fun = detach, Args = [SN, ID, state(Gear)],
+    {ok, State} = erlmachine:optional_callback(Mod, Fun, Args, erlmachine:success(state(Gear))),
+
+    Release = erlmachine_assembly:parts(state(Gear, State), []),
     erlmachine_assembly:detached(GearBox, Release, ID),
     {ok, Release}.
 
 -spec replace(GearBox::assembly(), Gear::assembly(), Part::assembly()) ->
-                     success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
+                     success(assembly()) | failure(term(), term(), term()).
 replace(GearBox, Gear, Part) ->
     ModelName = erlmachine_assembly:model_name(Gear),
     SN = erlmachine_assembly:serial_no(Gear), ID = erlmachine_assembly:serial_no(Part),
- 
-    {ok, Body} = ModelName:replace(SN, ID, body(Gear)),
-    
-    Release = body(Gear, Body),
+
+    Mod = ModelName, Fun = replace, Args = [SN, ID, state(Gear)],
+    {ok, State} = erlmachine:optional_callback(Mod, Fun, Args, erlmachine:success(state(Gear))),
+
+    Release = state(Gear, State),
     erlmachine_assembly:replaced(GearBox, Release, Part),
     {ok, Release}.
 
 -spec accept(GearBox::assembly(), Gear::assembly(), Criteria::term()) ->
-                    success() | failure(E::term(), R::term(), S::term()).
+                    success() | failure(term(), term(), term()).
 accept(GearBox, Gear, Criteria) ->
     ModelName = erlmachine_assembly:model_name(Gear),
     SN = erlmachine_assembly:serial_no(Gear),
 
-    {ok, Result, _} = ModelName:accept(SN, Criteria, body(Gear)),
+    {ok, Result, State} = ModelName:accept(SN, Criteria, state(Gear)),
     
-    case Result of 
+    Release = state(Gear, State),
+    case Result of
         ok ->
-            erlmachine_factory:accepted(GearBox, Gear, Criteria);
+            erlmachine_factory:accepted(GearBox, Release, Criteria);
         _ ->
-            erlmachine_factory:rejected(GearBox, Gear, Criteria, Result)
+            erlmachine_factory:rejected(GearBox, Release, Criteria, Result)
     end,
     {ok, Result, Gear}.
 
 -spec rotate(GearBox::assembly(), Gear::assembly(), Motion::term()) ->
-                  success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
+                  success(assembly()) | failure(term(), term(), term()).
 rotate(GearBox, Gear, Motion) ->
     ModelName = erlmachine_assembly:model_name(Gear),
     SN = erlmachine_assembly:serial_no(Gear),
     Parts =erlmachine_assembly:parts(Gear),
 
-    ReleaseBody = 
-        case ModelName:rotate(SN, Motion, body(Gear)) of 
-            {ok, Result, Body} -> 
-                [erlmachine_transmission:rotate(GearBox, Part, Result) || Part <- Parts],
-                Body;
-            {ok, Body} -> 
-                Body 
-        end,
-
-    Release = body(Gear, ReleaseBody),
-    {ok, Release}.
+    case ModelName:rotate(SN, Motion, state(Gear)) of 
+        {ok, Result, State} -> 
+            [erlmachine_transmission:rotate(GearBox, Part, Result) || Part <- Parts],
+            {ok, state(Gear, State)};
+        {ok, State} ->
+            {ok, state(Gear, State)}
+        end.
 
 -spec transmit(GearBox::assembly(), Gear::assembly(), Motion::term()) ->
-                      success(Result::term(), Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
+                      success(term(), assembly()) | failure(term(), term(), term()).
 transmit(_GearBox, Gear, Motion) ->
     ModelName = erlmachine_assembly:model_name(Gear),
     SN = erlmachine_assembly:serial_no(Gear),
  
-    {ok, Result, Body} = ModelName:transmit(SN, Motion, body(Gear)),
+    {ok, Result, State} = ModelName:transmit(SN, Motion, state(Gear)),
     
-    Release = body(Gear, Body),
+    Release = state(Gear, State),
     {ok, Result, Release}.
 
 -spec overload(GearBox::assembly(), Gear::assembly(), Load::term()) ->
-                      success(Release::assembly()) | failure(E::term(), R::term(), Reject::assembly()).
+                      success(assembly()) | failure(term(), term(), term()).
 overload(GearBox, Gear, Load) ->
     ModelName = erlmachine_assembly:model_name(Gear),
     SN = erlmachine_assembly:serial_no(Gear),
-  
-    {ok, Body} = ModelName:overload(SN, Load, body(Gear)),
     
-    Release = body(Gear, Body),
+    Mod = ModelName, Fun = overload, Args = [SN, Load, state(Gear)],
+    {ok, State} = erlmachine:optional_callback(Mod, Fun, Args, erlmachine:success(state(Gear))),
+
+    Release = state(Gear, State),
     erlmachine_assembly:overloaded(GearBox, Release, Load),
     {ok, Release}.
 
 -spec block(GearBox::assembly(), Gear::assembly(), Part::assembly(), Failure::term()) ->
-                      success(Release::assembly()) | failure(E::term(), R::term(), Reject::assembly()).
+                      success(assembly()) | failure(term(), term(), term()).
 block(GearBox, Gear, Part, Failure) ->
     ModelName = erlmachine_assembly:model_name(Gear),
     SN = erlmachine_assembly:serial_no(Gear), ID = erlmachine_assembly:serial_no(Part),
-  
-    {ok, Body} = ModelName:block(SN, ID, Failure, body(Gear)),
-    
-    Release = body(Gear, Body),
+
+    Mod = ModelName, Fun = block, Args = [SN, ID, Failure, state(Gear)],
+    {ok, State} = erlmachine:optional_callback(Mod, Fun, Args, erlmachine:success(state(Gear))),
+
+    Release = state(Gear, State),
     erlmachine_assembly:blocked(GearBox, Release, Part, Failure),
     {ok, Release}.
 
 -spec load(GearBox::assembly(), Gear::assembly(), Load::term()) ->
-                    success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
+                    success(assembly()) | failure(term(), term(), term()).
 load(GearBox, Gear, Load) ->
     ModelName = erlmachine_assembly:model_name(Gear),
     SN = erlmachine_assembly:serial_no(Gear),
-    Parts =erlmachine_assembly:parts(Gear),
-  
-    ReleaseBody = 
-        case ModelName:load(SN, Load, body(Gear)) of 
-            {ok, Result, Body} -> 
-                [erlmachine_transmission:rotate(GearBox, Part, Result) || Part <- Parts],
-                Body;
-            {ok, Body} -> 
-                Body 
-        end,
-  
-    Release = body(Gear, ReleaseBody),
-    {ok, Release}.
+    Parts = erlmachine_assembly:parts(Gear),
+
+    case ModelName:load(SN, Load, state(Gear)) of 
+        {ok, Result, State} -> 
+            [erlmachine_transmission:rotate(GearBox, Part, Result) || Part <- Parts], 
+            {ok, state(Gear, State)};
+        {ok, State} -> 
+            {ok, state(Gear, State)}
+    end.
 
 -spec uninstall(GearBox::assembly(), Gear::assembly(), Reason::term()) -> 
                        ok.
 uninstall(GearBox, Gear, Reason) ->
     ModelName = erlmachine_assembly:model_name(Gear),
     SN = erlmachine_assembly:serial_no(Gear),
-  
-    {ok, Body} = ModelName:uninstall(SN, Reason, body(Gear)),
-    
-    Release = body(Gear, Body),
+
+    {ok, State} = ModelName:uninstall(SN, Reason, state(Gear)),
+
+    Release = state(Gear, State),
     erlmachine_assembly:uninstalled(GearBox, Release, Reason),
     ok.
 
--spec body(Gear::assembly()) -> Body::term().
-body(Gear) ->
+-spec form(GearBox::assembly(), Gear::assembly()) ->
+                  success(term(), assembly()) | failure(term(), term(), term()).
+form(_GearBox, Gear) ->
+    ModelName = erlmachine_assembly:model_name(Gear),
+    SN = erlmachine_assembly:serial_no(Gear),
+
+    Mod = ModelName, Fun = form, Args = [SN, state(Gear)],
+    Def = erlmachine:success([], state(Gear)),
+
+    {ok, Form, State} = erlmachine:optional_callback(Mod, Fun, Args, Def),
+    {ok, Form, state(Gear, State)}.
+
+-spec submit(GearBox::assembly(), Gear::assembly(), Form::term()) ->
+                    success(term(), assembly()) | failure(term(), term(), term()).
+submit(_GearBox, Gear, Form) ->
+    ModelName = erlmachine_assembly:model_name(Gear),
+    SN = erlmachine_assembly:serial_no(Gear),
+
+    {ok, Res, State} = ModelName:submit(SN, Form, state(Gear)),
+    {ok, Res, state(Gear, State)}.
+
+-spec state(Gear::assembly()) -> term().
+state(Gear) ->
     erlmachine_assembly:body(Gear).
 
--spec body(Gear::assembly(), Body::term()) -> Release::assembly().
-body(Gear, Body) ->
-    erlmachine_assembly:body(Gear, Body).
+-spec state(Gear::assembly(), State::term()) -> assembly().
+state(Gear, State) ->
+    erlmachine_assembly:body(Gear, State).
 
 -spec parts(Gear::assembly(), Parts::list(assembly())) -> Release::assembly().
 parts(Gear, [_]=Parts) ->

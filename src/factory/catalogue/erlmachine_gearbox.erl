@@ -18,10 +18,10 @@
 
 -export([
          install/1,
-         schema/2,
          attach/3, detach/2,
          accept/2,
-         uninstall/2
+         uninstall/2,
+         schema/1
         ]).
 
 -export([gearbox/1]).
@@ -46,25 +46,25 @@
 -include("erlmachine_system.hrl").
 
 
--callback install(SN::serial_no(), IDs::list(serial_no()), Body::term(), Opt::term(), Env::list()) -> 
+-callback install(SN::serial_no(), IDs::list(serial_no()), Schema::term(), Opt::term(), Env::list()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
--callback uninstall(SN::serial_no(), Reason::term(), Body::term()) -> 
+-callback uninstall(SN::serial_no(), Reason::term(), Schema::term()) -> 
     success() | failure(term(), term(), term()).
 
--callback accept(SN::serial_no(), Criteria::criteria(), Body::term()) -> 
+-callback accept(SN::serial_no(), Criteria::criteria(), Schema::term()) -> 
     success(term(), term()) | failure(term(), term(), term()).
 
--callback attach(SN::serial_no(), Register::term(), ID::serial_no(), Body::term()) -> 
+-callback attach(SN::serial_no(), Register::term(), ID::serial_no(), Schema::term()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
--callback detach(SN::serial_no(), ID::serial_no(), Body::term()) -> 
+-callback detach(SN::serial_no(), ID::serial_no(), Schema::term()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
--callback schema(SN::serial_no(), Schema::term(), Body::term()) ->
+-callback schema(SN::serial_no(), Schema::term()) ->
     success(term(), term()) | failure(term(), term(), term()) | failure(term()).
 
--optional_callbacks([schema/3]).
+-optional_callbacks([schema/2]).
 
 -record(gearbox, {
                   input::serial_no(),
@@ -163,12 +163,17 @@ uninstall(GearBox, Reason) ->
     SN = erlmachine_assembly:serial_no(GearBox),
     ModelName:uninstall(SN, Reason, state(GearBox)).
 
--spec schema(GearBox::assembly(), Format::term()) ->
+-spec schema(GearBox::assembly()) ->
                     success(term(), term()) | failure(term(), term(), term()).
-schema(GearBox, Format) ->
+schema(GearBox) ->
     ModelName = erlmachine_assembly:model_name(GearBox),
     SN = erlmachine_assembly:serial_no(GearBox),
-    {ok, _, _} = ModelName:schema(SN, Format, state(GearBox)).
+
+    Mod = ModelName, Fun = schema, Args = [SN, state(GearBox)],
+    Def = erlmachine:success([], state(GearBox)),
+
+    {ok, Schema, State} = erlmachine:optional_callback(Mod, Fun, Args, Def),
+    {ok, Schema, state(GearBox, State)}.
 
 -spec rotate(GearBox::assembly(), Motion::term()) ->
                     Motion::term().

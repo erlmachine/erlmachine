@@ -4,8 +4,8 @@
          install/2,
          attach/4, detach/3,
          accept/3,
-         schema/3,
-         uninstall/3
+         uninstall/3,
+         schema/2
         ]).
 
 -export([axle/0]).
@@ -32,10 +32,10 @@
 -callback detach(SN::serial_no(), ID::serial_no(), Schema::term()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
--callback schema(SN::serial_no(), Format::term(), Schema::term()) ->
+-callback schema(SN::serial_no(), Schema::term()) ->
     success(term(), term()) | failure(term(), term(), term()) | failure(term()).
 
--optional_callbacks([schema/3]).
+-optional_callbacks([schema/2]).
 
 -record(axle, { }).
 
@@ -102,8 +102,9 @@ detach(GearBox, Axle, ID) ->
 accept(GearBox, Axle, Criteria) ->
     ModelName = erlmachine_assembly:model_name(Axle),
     SN = erlmachine_assembly:serial_no(Axle),
-    
+
     {ok, Result, State} = ModelName:accept(SN, Criteria, state(Axle)),
+
     Release = state(Axle, State),
     case Result of 
         ok ->
@@ -125,12 +126,17 @@ uninstall(GearBox, Axle, Reason) ->
     erlmachine_assembly:uninstalled(GearBox, Release, Reason),
     ok.
 
--spec schema(GearBox::assembly(), Axle::assembly(), Format::term()) ->
+-spec schema(GearBox::assembly(), Axle::assembly()) ->
                     success(term(), term()) | failure(term(), term(), term()).
-schema(_GearBox, Axle, Format) ->
+schema(_GearBox, Axle) ->
     ModelName = erlmachine_assembly:model_name(Axle),
     SN = erlmachine_assembly:serial_no(Axle),
-    {ok, _, _} = ModelName:schema(SN, Format, state(Axle)).
+
+    Mod = ModelName, Fun = schema, Args = [SN, state(Axle)],
+    Def = erlmachine:success([], state(Axle)),
+
+    {ok, Schema, State} = erlmachine:optional_callback(Mod, Fun, Args, Def),
+    {ok, Schema, state(Axle, State)}.
 
 -spec state(Axle::assembly()) -> term().
 state(Axle) ->

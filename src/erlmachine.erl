@@ -18,6 +18,7 @@
 -export([success/0, success/1, success/2]).
 
 -export([attribute/3]).
+-export([optional_callback/4]).
 
 -export([guid/1]).
 
@@ -139,9 +140,21 @@ success() ->
 attribute(Module, Tag, Default) ->
     Attributes = Module:module_info(attributes),
     Result = lists:keyfind(Tag, 1, Attributes),
-    case 
-        Result of false -> Default;
-        {Tag, Data} -> Data 
+    case Result of 
+        false -> 
+            Default;
+        {Tag, Data} -> 
+            Data 
+    end.
+
+-spec optional_callback(Mod::atom(), Fun::atom(), Args::list(), Def::term()) -> 
+                               term().
+optional_callback(Mod, Fun, Args, Def) ->
+    case erlang:function_exported(Mod, Fun, length(Args)) of 
+        true ->
+            erlang:apply(Mod, Fun, Args); 
+        _  -> 
+            Def 
     end.
 
 %% generate a readable string representation of a SN/MN/PN/TN.

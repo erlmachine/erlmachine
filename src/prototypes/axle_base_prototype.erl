@@ -8,17 +8,19 @@
 
 -export([name/0]).
 
+%% supervisor.
+-export([init/1]).
+
 -export([
          install/4,
          attach/5, detach/4, 
          accept/4,
-         uninstall/4,
-         schema/4
+         uninstall/4
         ]).
 
 -export([installed/4, uninstalled/5]).
 
--export([init/1]).
+-export([schema/3]).
 
 -export([tag/1]).
 
@@ -133,10 +135,10 @@ accept(_Name, GearBox, Axle, Criteria) ->
     to_track(SN, #{ accept => Status }),
     Status.
 
--spec schema(Name::serial_no(), GearBox::assembly(), Axle::assembly(), Format::term()) ->
+-spec schema(Name::serial_no(), GearBox::assembly(), Axle::assembly()) ->
                     success(term()) | failure(term(), term()).
-schema(_Name, GearBox, Axle, Format) ->
-    {ok, Schema, _} = erlmachine_axle:schema(GearBox, Axle, Format),
+schema(_Name, GearBox, Axle) ->
+    {ok, Schema, _} = erlmachine_axle:schema(GearBox, Axle),
     {ok, Schema}.
 
 %% TODO

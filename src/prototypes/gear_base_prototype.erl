@@ -26,6 +26,8 @@
          accept/4
         ]).
 
+-export([form/3, submit/4]).
+
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
 
@@ -42,7 +44,7 @@ format_name(SerialNumber) ->
 -record(install, {gearbox::assembly(), gear::assembly(), options::list(tuple())}).
 
 -spec install(Name::serial_no(), GearBox::assembly(), Gear::assembly(), Options::list(tuple())) -> 
-                     success(pid()) | ingnore | failure(E::term()).
+                     success(pid()) | ingnore | failure(term()).
 install(Name, GearBox, Gear, Opt) ->
     ID = {local, format_name(Name)},
     Command = #install{ gearbox=GearBox, gear=Gear, options=Opt },
@@ -52,7 +54,7 @@ install(Name, GearBox, Gear, Opt) ->
 -record(attach, {part::assembly(), register::term()}).
 
 -spec attach(Name::serial_no(), GearBox::assembly(), Gear::assembly(), Register::term(), Part::assembly()) -> 
-                    success(Release::assembly()) | failure(E::term(), R::term()).
+                    success(assembly()) | failure(term(), term()).
 attach(Name, _GearBox, _Gear, Register, Part) ->
     Command = #attach{ part=Part, register=Register },
 
@@ -61,7 +63,7 @@ attach(Name, _GearBox, _Gear, Register, Part) ->
 -record(detach, {id::serial_no()}).
 
 -spec detach(Name::serial_no(), GearBox::assembly(), Gear::assembly(), ID::serial_no()) -> 
-                    success(Release::assembly()) | failure(E::term(), R::term()).
+                    success(assembly()) | failure(term(), term()).
 detach(Name, _GearBox, _Gear, ID) ->
     Command = #detach{ id=ID },
 
@@ -70,7 +72,7 @@ detach(Name, _GearBox, _Gear, ID) ->
 -record(overload, {load::term()}).
 
 -spec overload(Name::serial_no(), GearBox::assembly(), Gear::assembly(), Load::term()) ->
-                      Load::term().
+                      term().
 overload(Name, _GearBox, _Gear, Load) ->
     Command = #overload{ load=Load },
 
@@ -80,7 +82,7 @@ overload(Name, _GearBox, _Gear, Load) ->
 -record(block, {part::assembly(), failure::term()}).
 
 -spec block(Name::serial_no(), GearBox::assembly(), Gear::assembly(), Part::assembly(), Failure::term()) -> 
-                   Failure::term().
+                   term().
 block(Name, _GearBox, _Gear, Part, Failure) ->
     Command = #block{ part=Part, failure=Failure },
 
@@ -90,7 +92,7 @@ block(Name, _GearBox, _Gear, Part, Failure) ->
 -record(replace, {repair::assembly()}).
 
 -spec replace(Name::serial_no(), GearBox::assembly(), Gear::assembly(), Repair::assembly()) -> 
-                     success(Release::assembly()) | failure(E::term(), R::term()).
+                     success(assembly()) | failure(term(), term()).
 replace(Name, _GearBox, _Gear, Repair) ->
     Command = #replace{ repair=Repair },
 
@@ -99,7 +101,7 @@ replace(Name, _GearBox, _Gear, Repair) ->
 -record(rotate, {motion::term()}).
 
 -spec rotate(Name::serial_no(), GearBox::assembly(), Gear::assembly(), Motion::term()) -> 
-                    Motion::term().
+                    term().
 rotate(Name, _GearBox, _Gear, Motion) ->
     Command = #rotate{ motion=Motion },
 
@@ -109,7 +111,7 @@ rotate(Name, _GearBox, _Gear, Motion) ->
 -record(transmit, {motion::term()}).
 
 -spec transmit(Name::serial_no(), GearBox::assembly(), Gear::assembly(), Motion::term()) ->
-                      Force::term().
+                      term().
 transmit(Name, _GearBox, _Gear, Motion) ->
     Command = #transmit{ motion=Motion },
 
@@ -118,7 +120,7 @@ transmit(Name, _GearBox, _Gear, Motion) ->
 -record(accept, {criteria::acceptance_criteria()}).
 
 -spec accept(Name::serial_no(), GearBox::assembly(), Gear::assembly(), Criteria::criteria()) ->
-                    success() | failure(E::term(), R::term(), S::term()).
+                    success(term()) | failure(term(), term(), term()).
 accept(Name, _GearBox, _Gear, Criteria) -> 
     Command = #accept{ criteria=Criteria },
 
@@ -127,7 +129,25 @@ accept(Name, _GearBox, _Gear, Criteria) ->
 -spec uninstall(Name::serial_no(), GearBox::assembly(), Gear::assembly(), Reason::term()) ->
                        ok.
 uninstall(Name, _GearBox, _Gear, Reason) ->
-    gen_server:stop({local, format_name(Name)}, Reason).
+    gen_server:stop(format_name(Name), Reason).
+
+-record(form, {}).
+
+-spec form(Name::serial_no(), GearBox::assembly(), Gear::assembly()) -> 
+                  term().
+form(Name, _GearBox, _Gear) ->
+    Command = #form{},
+
+    gen_server:call(format_name(Name), Command).
+
+-record(submit, { form::term() }).
+
+-spec submit(Name::serial_no(), GearBox::assembly(), Gear::assembly(), Form::term()) -> 
+                    term().
+submit(Name, _GearBox, _Gear, Form) ->
+    Command = #submit{ form=Form },
+
+    gen_server:call(format_name(Name), Command).
 
 %% gen_server.
 -record(state, {gearbox::assembly(), gear::assembly()}).
@@ -137,28 +157,36 @@ init(#install{gearbox=GearBox, gear=Gear, options=Opt}) ->
     [process_flag(ID, Param)|| {ID, Param} <- [{trap_exit, true}|Flags]],
     %% process_flag(trap_exit, true), Needs to be passed by default;
     %% Gearbox is intended to use like specification of destination point (it's not about persistence);
-    {ok, Release} = erlmachine_gear:install(GearBox, Gear),
-    {ok, #state{gearbox=GearBox, gear=Release}}.
+    {ok, Rel} = erlmachine_gear:install(GearBox, Gear),
+    {ok, #state{gearbox=GearBox, gear=Rel}}.
 
 handle_call(#attach{part = Part, register = Register}, _From, #state{gearbox=GearBox, gear=Gear} = State) ->
-    Result = {ok, _, Release} = erlmachine_gear:attach(GearBox, Gear, Register, Part),
-    {reply, Result, State#state{gear=Release}};
+    Res = {ok, _, Rel} = erlmachine_gear:attach(GearBox, Gear, Register, Part),
+    {reply, Res, State#state{ gear=Rel }};
 
 handle_call(#detach{id = ID}, _From, #state{gearbox=GearBox, gear=Gear} = State) ->
-    Result = {ok, Release} = erlmachine_gear:detach(GearBox, Gear, ID),
-    {reply, Result, State#state{gear=Release}};
+    Res = {ok, Rel} = erlmachine_gear:detach(GearBox, Gear, ID),
+    {reply, Res, State#state{ gear=Rel }};
 
 handle_call(#replace{repair=Repair}, _From, #state{gearbox=GearBox, gear=Gear} = State) ->
-    Result = {ok, Release} = erlmachine_gear:replace(GearBox, Gear, Repair),
-    {reply, Result, State#state{gear=Release}};
+    Res = {ok, Rel} = erlmachine_gear:replace(GearBox, Gear, Repair),
+    {reply, Res, State#state{ gear=Rel }};
 
 handle_call(#transmit{motion = Motion}, _From, #state{gearbox=GearBox, gear=Gear} = State) ->
-    {ok, Result, Release} = erlmachine_gear:transmit(GearBox, Gear, Motion),
-    {reply, Result, State#state{gear=Release}};
+    {ok, Res, Rel} = erlmachine_gear:transmit(GearBox, Gear, Motion),
+    {reply, Res, State#state{ gear=Rel }};
 
 handle_call(#accept{criteria = Criteria}, _From, #state{gearbox=GearBox, gear=Gear} = State) ->
-    {ok, Status, _} = erlmachine_gear:accept(GearBox, Gear, Criteria),
-    {reply, Status, State};
+    {ok, Res, _} = erlmachine_gear:accept(GearBox, Gear, Criteria),
+    {reply, Res, State};
+
+handle_call(#form{}, _From, #state{ gearbox=GearBox, gear=Gear } = State) ->
+    {ok, Res, _} = erlmachine_gear:form(GearBox, Gear),
+    {reply, Res, State};
+
+handle_call(#submit{ form=Form }, _From, #state{ gearbox=GearBox, gear=Gear } = State) ->
+    {ok, Res, Rel} = erlmachine_gear:submit(GearBox, Gear, Form),
+    {reply, Res, State#state{ gear=Rel }};
 
 handle_call(Req, _From,  #state{gearbox=GearBox, gear=Gear}=State) ->
     erlmachine_gear:call(GearBox, Gear, Req),

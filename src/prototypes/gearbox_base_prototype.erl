@@ -8,12 +8,14 @@
 
 -export([name/0]).
 
+%% supervisor.
+-export([init/1]).
+
 -export([
          install/3,
          attach/4, detach/3, 
          accept/3,
-         uninstall/3,
-         schema/3
+         uninstall/3
         ]).
 
 -export([
@@ -25,7 +27,7 @@
          accepted/4, rejected/5
         ]).
 
--export([init/1]).
+-export([schema/2]).
 
 -export([tag/1]).
 
@@ -180,10 +182,10 @@ accept(_Name, GearBox, Criteria) ->
     {ok, Status, _} = erlmachine_gearbox:accept(GearBox, Criteria),
     Status.
 
--spec schema(Name::serial_no(), GearBox::assembly(), Format::term()) ->
+-spec schema(Name::serial_no(), GearBox::assembly()) ->
                     success(term()) | failure(term(), term()).
-schema(_Name, GearBox, Format) ->
-    {ok, Schema, _} = erlmachine_gearbox:schema(GearBox, Format),
+schema(_Name, GearBox) ->
+    {ok, Schema, _} = erlmachine_gearbox:schema(GearBox),
     {ok, Schema}.
 
 -spec spec(GearBox::assembly(), Part::assembly()) -> Spec::map().
