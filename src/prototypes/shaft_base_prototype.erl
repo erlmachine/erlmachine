@@ -31,6 +31,8 @@
          accept/4
         ]).
 
+-export([form/3, submit/4]).
+
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
 
@@ -136,6 +138,24 @@ accept(Name, _GearBox, _Shaft, Criteria) ->
 uninstall(Name, _GearBox, _Shaft, Reason) ->
     gen_server:stop(format_name(Name), Reason).
 
+-record(form, {}).
+
+-spec form(Name::serial_no(), GearBox::assembly(), Shaft::assembly()) -> 
+                  term().
+form(Name, _GearBox, _Shaft) ->
+    Command = #form{},
+
+    gen_server:call(format_name(Name), Command).
+
+-record(submit, { form::term() }).
+
+-spec submit(Name::serial_no(), GearBox::assembly(), Shaft::assembly(), Form::term()) -> 
+                    term().
+submit(Name, _GearBox, _Shaft, Form) ->
+    Command = #submit{ form=Form },
+
+    gen_server:call(format_name(Name), Command).
+
 %% gen_server.
 -record(state, {gearbox::assembly(), shaft::assembly()}).
 
@@ -166,6 +186,14 @@ handle_call(#accept{criteria = Criteria}, _From, #state{gearbox=GearBox, shaft=S
 handle_call(#replace{repair=Repair}, _From, #state{gearbox=GearBox, shaft=Shaft} = State) ->
     Result = {ok, Release} = erlmachine_shaft:replace(GearBox, Shaft, Repair),
     {reply, Result, State#state{shaft=Release}};
+
+handle_call(#form{}, _From, #state{ gearbox=GearBox, shaft=Shaft } = State) ->
+    {ok, Res, _} = erlmachine_shaft:form(GearBox, Shaft),
+    {reply, Res, State};
+
+handle_call(#submit{ form=Form }, _From, #state{ gearbox=GearBox, shaft=Shaft } = State) ->
+    {ok, Res, Rel} = erlmachine_shaft:submit(GearBox, Shaft, Form),
+    {reply, Res, State#state{ shaft=Rel }};
 
 handle_call(Req, _From, #state{gearbox=GearBox, shaft=Shaft} = State) ->
     erlmachine_shaft:call(GearBox, Shaft, Req),
