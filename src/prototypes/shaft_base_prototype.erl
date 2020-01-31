@@ -57,12 +57,12 @@ install(Name, GearBox, Shaft, Opt) ->
     gen_server:start_link(ID, ?MODULE, Command, []).
 
 %% I think about ability to reflect both kind of switching - manual and automated;
--record(attach, {part::assembly(), register::term()}).
+-record(attach, { extension::assembly(), register::term() }).
 
--spec attach(Name::serial_no(), GearBox::assembly(), Shaft::assembly(), Register::term(), Part::assembly()) -> 
-                    success(Release::assembly()) | failure(E::term(), R::term()).
-attach(Name, _GearBox, _Shaft, Register, Part) ->
-    Command = #attach{ part=Part, register=Register },
+-spec attach(Name::serial_no(), GearBox::assembly(), Shaft::assembly(), Reg::term(), Ext::assembly()) -> 
+                    success(assembly()) | failure(term(), term()).
+attach(Name, _GearBox, _Shaft, Reg, Ext) ->
+    Command = #attach{ extension=Ext, register=Reg },
 
     gen_server:call(format_name(Name), Command).
 
@@ -164,36 +164,36 @@ init(#install{gearbox=GearBox, shaft=Shaft, options=Opt}) ->
     [process_flag(ID, Param)|| {ID, Param} <- [{trap_exit, true}|Flags]],
     %% process_flag(trap_exit, true), Needs to be passed by default;
     %% Gearbox is intended to use like specification of destination point (it's not about persistence);
-    {ok, Release} = erlmachine_shaft:install(GearBox, Shaft),
-    {ok, #state{gearbox=GearBox, shaft=Release}}.
+    {ok, Rel} = erlmachine_shaft:install(GearBox, Shaft),
+    erlmachine:success(#state{ gearbox=GearBox, shaft=Rel }).
 
-handle_call(#attach{part = Part, register = Register}, _From, #state{gearbox=GearBox, shaft=Shaft} = State) ->
-    Result = {ok, _, Release} = erlmachine_shaft:attach(GearBox, Shaft, Register, Part),
-    {reply, Result, State#state{shaft=Release}};
+handle_call(#attach{extension = Ext, register = Reg}, _From, #state{gearbox=GearBox, shaft=Shaft} = State) ->
+    {ok, Part, Rel} = erlmachine_shaft:attach(GearBox, Shaft, Reg, Ext),
+    {reply, erlmachine:success(Part, Rel), State#state{ shaft=Rel }};
 
 handle_call(#detach{id = ID}, _From, #state{gearbox=GearBox, shaft=Shaft} = State) ->
-    Result = {ok, Release} = erlmachine_shaft:detach(GearBox, Shaft, ID),
-    {reply, Result, State#state{shaft=Release}};
+    {ok, Rel} = erlmachine_shaft:detach(GearBox, Shaft, ID),
+    {reply, erlmachine:success(Rel), State#state{ shaft=Rel }};
 
 handle_call(#transmit{motion = Motion}, _From, #state{gearbox=GearBox, shaft=Shaft} = State) ->
-    {ok, Result, Release} = erlmachine_shaft:transmit(GearBox, Shaft, Motion),
-    {reply, Result, State#state{shaft=Release}};
+    {ok, Res, Rel} = erlmachine_shaft:transmit(GearBox, Shaft, Motion),
+    {reply, erlmachine:success(Res, Rel), State#state{ shaft=Rel }};
 
 handle_call(#accept{criteria = Criteria}, _From, #state{gearbox=GearBox, shaft=Shaft} = State) ->
-    {ok, Status, _} = erlmachine_shaft:accept(GearBox, Shaft, Criteria),
-    {reply, Status, State};
+    {ok, Res, Rel} = erlmachine_shaft:accept(GearBox, Shaft, Criteria),
+    {reply, erlmachine:success(Res, Rel), State};
 
 handle_call(#replace{repair=Repair}, _From, #state{gearbox=GearBox, shaft=Shaft} = State) ->
-    Result = {ok, Release} = erlmachine_shaft:replace(GearBox, Shaft, Repair),
-    {reply, Result, State#state{shaft=Release}};
+    {ok, Rel} = erlmachine_shaft:replace(GearBox, Shaft, Repair),
+    {reply, erlmachine:success(Rel), State#state{ shaft=Rel }};
 
 handle_call(#form{}, _From, #state{ gearbox=GearBox, shaft=Shaft } = State) ->
-    {ok, Res, _} = erlmachine_shaft:form(GearBox, Shaft),
-    {reply, Res, State};
+    {ok, Res, Rel} = erlmachine_shaft:form(GearBox, Shaft),
+    {reply, erlmachine:success(Res, Rel), State};
 
 handle_call(#submit{ form=Form }, _From, #state{ gearbox=GearBox, shaft=Shaft } = State) ->
     {ok, Res, Rel} = erlmachine_shaft:submit(GearBox, Shaft, Form),
-    {reply, Res, State#state{ shaft=Rel }};
+    {reply, erlmachine:success(Res, Rel), State#state{ shaft=Rel }};
 
 handle_call(Req, _From, #state{gearbox=GearBox, shaft=Shaft} = State) ->
     erlmachine_shaft:call(GearBox, Shaft, Req),

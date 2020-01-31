@@ -58,7 +58,7 @@ uninstalled(_Name, _GearBox, Axle, Part, Reason) ->
 -spec attach(Name::serial_no(), GearBox::assembly(), Axle::assembly(), Register::term(), Extension::assembly()) ->
                     success(assembly()) | failure(term(), term()).
 attach(Name, GearBox, Axle, Register, Extension) ->
-    Result = {ok, Part, Release} = erlmachine_axle:attach(GearBox, Axle, Register, Extension),
+    {ok, Part, Release} = erlmachine_axle:attach(GearBox, Axle, Register, Extension),
 
     %% TODO Conditional case for Result needs to be processed;
     Spec = spec(GearBox, Release, Part),
@@ -69,21 +69,21 @@ attach(Name, GearBox, Axle, Register, Extension) ->
 
     SN = erlmachine_assembly:serial_no(Axle),
     to_track(SN, #{ attach => erlmachine_assembly:serial_no(Extension) }),
-    Result.
+    erlmachine:success(Part, Release).
     
 -spec detach(Name::serial_no(), GearBox::assembly(), Axle::assembly(), ID::serial_no()) ->
                     success(term()) | success(term(), term()) | failure(term()).
 detach(Name, GearBox, Axle, ID) ->
     SupRef = format_name(Name),
 
-    Result = {ok, _} = erlmachine_axle:detach(GearBox, Axle, ID),
+    {ok, Rel} = erlmachine_axle:detach(GearBox, Axle, ID),
 
     ok = supervisor:terminate_child(SupRef, ID),
     ok = supervisor:delete_child(SupRef, ID), %% ID the same for chield and SN
 
     SN = erlmachine_assembly:serial_no(Axle),
     to_track(SN, #{ detach => ID }),
-    Result.
+    erlmachine:success(Rel).
 
 -record(install, {gearbox::assembly(), axle::assembly(), options::list(tuple)}).
 
@@ -95,10 +95,10 @@ install(Name, GearBox, Axle, Opt) ->
     ID = {local, format_name(Name)},
     Command = #install{ gearbox=GearBox, axle=Axle, options=Opt },
 
-    Result = supervisor:start_link(ID, ?MODULE, Command),
+    Res = supervisor:start_link(ID, ?MODULE, Command),
  
     to_track(SN, #{ install => ts() }),
-    Result.
+    Res.
 
 init(#install{gearbox=GearBox, axle=Axle, options=Opt}) ->
     Strategy = proplists:get_value(strategy, Opt, one_for_all),
@@ -106,10 +106,10 @@ init(#install{gearbox=GearBox, axle=Axle, options=Opt}) ->
     {ok, Release} = erlmachine_axle:install(GearBox, Axle),
 
     Specs = specs(GearBox, Release),
-    Intensity = proplists:get_value(intensity, Opt, 1),
-    Period = proplists:get_value(period, Opt, 5),
+    Int = proplists:get_value(intensity, Opt, 1),
+    Per = proplists:get_value(period, Opt, 5),
 
-    {ok, {#{strategy => Strategy, intensity => Intensity, period => Period}, Specs}}.
+    erlmachine:success({#{strategy => Strategy, intensity => Int, period => Per}, Specs}).
 
 %% I guess later we need some way to adress axle instance inside gearbox;
 %% Cause persistence only gearbox and the direction can look like gerabox -> SN -> SN (axle);
@@ -120,26 +120,26 @@ init(#install{gearbox=GearBox, axle=Axle, options=Opt}) ->
 uninstall(Name, GearBox, Axle, Reason) ->
     exit(whereis(format_name(Name)), Reason),
 
-    Result = erlmachine_axle:uninstall(GearBox, Axle, Reason),
+    {ok, Rel} = erlmachine_axle:uninstall(GearBox, Axle, Reason),
 
     SN = erlmachine_assembly:serial_no(Axle),
     to_track(SN, #{uninstall => ts()}),
-    Result.
+    erlmachine:success(Rel).
 
 -spec accept(Name::serial_no(), GearBox::assembly(), Axle::assembly(), Criteria::criteria()) ->
-                    success() | failure(E::term(), R::term(), S::term()).
+                    success(term()) | failure(E::term(), R::term(), S::term()).
 accept(_Name, GearBox, Axle, Criteria) ->
-    {ok, Status, _} = erlmachine_axle:accept(GearBox, Axle, Criteria),
+    {ok, Res, Rel} = erlmachine_axle:accept(GearBox, Axle, Criteria),
 
     SN = erlmachine_assembly:serial_no(Axle),
-    to_track(SN, #{ accept => Status }),
-    Status.
+    to_track(SN, #{ accept => Res }),
+    erlmachine:success(Res, Rel).
 
 -spec schema(Name::serial_no(), GearBox::assembly(), Axle::assembly()) ->
                     success(term()) | failure(term(), term()).
 schema(_Name, GearBox, Axle) ->
-    {ok, Schema, _} = erlmachine_axle:schema(GearBox, Axle),
-    {ok, Schema}.
+    {ok, Schema, Rel} = erlmachine_axle:schema(GearBox, Axle),
+    erlmachine:success(Schema, Rel).
 
 %% TODO
 %% I am going to provide mnesia gears, mongodb , etc..
