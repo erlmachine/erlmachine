@@ -79,7 +79,7 @@ detach(Name, _GearBox, _Shaft, ID) ->
 -record(transmit, {motion::term()}).
 
 -spec transmit(Name::serial_no(), GearBox::assembly(), Shaft::assembly(), Motion::term()) ->
-                      success(Result::term()) | failure(E::term(), R::term()).
+                      success(term()) | failure(term(), term(), term()).
 transmit(Name, _GearBox, _Shaft, Motion) ->
     Command = #transmit{ motion=Motion },
 
@@ -127,7 +127,7 @@ rotate(Name, _GearBox, _Shaft, Motion) ->
 -record(accept, {criteria::acceptance_criteria()}).
 
 -spec accept(Name::serial_no(), GearBox::assembly(), Shaft::assembly(), Criteria::criteria()) ->
-                    success() | failure(E::term(), R::term(), S::term()).
+                    success(term()) | failure(term(), term(), term()).
 accept(Name, _GearBox, _Shaft, Criteria) -> 
     Command = #accept{ criteria=Criteria },
 
@@ -141,7 +141,7 @@ uninstall(Name, _GearBox, _Shaft, Reason) ->
 -record(form, {}).
 
 -spec form(Name::serial_no(), GearBox::assembly(), Shaft::assembly()) -> 
-                  term().
+                  success(term()) | failure(term(), term(), term()).
 form(Name, _GearBox, _Shaft) ->
     Command = #form{},
 
@@ -150,7 +150,7 @@ form(Name, _GearBox, _Shaft) ->
 -record(submit, { form::term() }).
 
 -spec submit(Name::serial_no(), GearBox::assembly(), Shaft::assembly(), Form::term()) -> 
-                    term().
+                    success(term()) | failure(term(), term(), term()).
 submit(Name, _GearBox, _Shaft, Form) ->
     Command = #submit{ form=Form },
 

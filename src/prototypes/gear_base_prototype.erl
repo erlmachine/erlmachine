@@ -134,7 +134,7 @@ uninstall(Name, _GearBox, _Gear, Reason) ->
 -record(form, {}).
 
 -spec form(Name::serial_no(), GearBox::assembly(), Gear::assembly()) -> 
-                  term().
+                  success(term()) | failure(term(), term(), term()).
 form(Name, _GearBox, _Gear) ->
     Command = #form{},
 
@@ -143,7 +143,7 @@ form(Name, _GearBox, _Gear) ->
 -record(submit, { form::term() }).
 
 -spec submit(Name::serial_no(), GearBox::assembly(), Gear::assembly(), Form::term()) -> 
-                    term().
+                    success(term()) | failure(term(), term(), term()).
 submit(Name, _GearBox, _Gear, Form) ->
     Command = #submit{ form=Form },
 

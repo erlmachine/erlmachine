@@ -51,9 +51,7 @@
          label/1, label/2
         ]).
 
--export([add_part/2, remove_part/2, get_part/2]).
-
--export([labels/1]).
+-export([add/2, remove/2, get/2]).
 
 -export([record_name/0, attributes/0]).
 
@@ -144,14 +142,14 @@ attach(GearBox, SN, Register, Part) ->
 -spec attach_to_label(GearBox::assembly(), Label::term(), Register::term(), Part::assembly()) -> 
                              success(term()) | failure(term(), term()).
 attach_to_label(GearBox, Label, Register, Part) ->
-    Labels = labels(GearBox),
+    Labels = erlmachine_gearbox:labels(GearBox),
     SN = maps:get(Label, Labels), %% TODO Label's access can be incapsulated in separated function;
     attach(GearBox, SN, Register, Part).
 
 -spec attach_by_label(GearBox::assembly(), SN::serial_no(), Register::term(), Label::term()) -> 
                              success(term()) | failure(term(), term()).
 attach_by_label(GearBox, SN, Register, Label) ->
-    Labels = labels(GearBox),
+    Labels = erlmachine_gearbox:labels(GearBox),
     Part =  erlmachine_gearbox:find(GearBox, maps:get(Label, Labels)),
     attach(GearBox, SN, Register, Part).
 
@@ -180,14 +178,14 @@ detach(GearBox, SN, ID) ->
 -spec detach_from_label(GearBox::assembly(), Label::term(), ID::serial_no()) -> 
                     success(term()) | failure(term(), term()).
 detach_from_label(GearBox, Label, ID) ->
-    Labels = labels(GearBox),
+    Labels = erlmachine_gearbox:labels(GearBox),
     SN = maps:get(Label, Labels),
     detach(GearBox, SN, ID). 
 
 -spec detach_by_label(GearBox::assembly(), SN::serial_no(), Label::term()) -> 
                                success(term()) | failure(term(), term()).
 detach_by_label(GearBox, SN, Label) ->
-    Labels = labels(GearBox),
+    Labels = erlmachine_gearbox:labels(GearBox),
     ID = maps:get(Label, Labels),
     detach(GearBox, SN, ID). 
 
@@ -463,39 +461,16 @@ label(Assembly) ->
 label(Assembly, Label) ->
     Assembly#assembly{label = Label}.
 
--spec add_part(Assembly::assembly(), Part::assembly()) -> assembly().
-add_part(Assembly, Part) ->
+-spec add(Assembly::assembly(), Part::assembly()) -> assembly().
+add(Assembly, Part) ->
     Parts = lists:keystore(serial_no(Part), serial_no(), parts(Assembly), Part),
     parts(Assembly, Parts).
 
--spec remove_part(Assembly::assembly(), ID::serial_no()) -> assembly().
-remove_part(Assembly, ID) ->
+-spec remove(Assembly::assembly(), ID::serial_no()) -> assembly().
+remove(Assembly, ID) ->
     Parts = lists:keydelete(ID, #assembly.serial_no, parts(Assembly)),
     parts(Assembly, Parts).
 
--spec get_part(Assembly::assembly(), ID::serial_no()) -> assembly().
-get_part(Assembly, ID) ->
+-spec get(Assembly::assembly(), ID::serial_no()) -> assembly().
+get(Assembly, ID) ->
     lists:keyfind(ID, #assembly.serial_no, parts(Assembly)).
-
--spec labeled(Assembly::assembly()) -> list().
-labeled(Assembly) ->
-    Label = label(Assembly),
-    if Label == undefined ->
-            #{};
-       true  ->
-            #{Label => serial_no(Assembly)}
-    end.
-
--spec labels(Assembly::assembly()) -> map().
-labels(Assembly) ->
-    labels(Assembly, #{}).
-
--spec labels(Assembly::assembly(), Acc::map()) -> map().
-labels(Assembly, Acc) ->
-    Parts = parts(Assembly),
-    Labeled = labeled(Assembly),
-    if Parts == [] ->
-            maps:merge(Labeled, Acc);
-       true ->
-            maps:merge(Labeled, lists:foldl(fun labels/2, Acc, Parts))
-    end.

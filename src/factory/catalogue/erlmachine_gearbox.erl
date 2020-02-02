@@ -38,7 +38,9 @@
 
 -export([parts/2, parts/3, parts/4]).
 
--export([find/2]).
+-export([find/1, find/2]).
+
+-export([labels/1]).
 
 -export([record_name/0, attributes/0]).
 
@@ -111,6 +113,25 @@ find(GearBox, SN) ->
     Schema = erlmachine_assembly:schema(GearBox),
     erlmachine_schema:vertex(Schema, SN).
 
+-spec find(GearBox::assembly()) -> list().
+find(GearBox) ->
+    Schema = erlmachine_assembly:schema(GearBox),
+    [erlmachine_schema:vertex(Schema, SN)|| SN <- digraph:vertices(Schema)].
+
+-spec labels(GearBox::assembly()) -> map().
+labels(GearBox) ->
+    Parts = find(GearBox),
+    lists:foldl(fun label/2, #{}, Parts).
+
+-spec label(Assembly::assembly(), Acc::map()) -> map().
+label(Assembly, Acc) ->
+    Label = erlmachine_assembly:label(Assembly),
+    if Label == undefined ->
+            Acc;
+       true  ->
+            Acc#{Label => erlmachine_assembly:serial_no(Assembly)}
+    end.
+
 -spec install(GearBox::assembly()) -> 
                      success(Release::assembly()) | failure(E::term(), R::term(), Rejected::assembly()).
 install(GearBox) ->
@@ -134,7 +155,7 @@ attach(GearBox, Register, Extension) ->
     {ok, State} = ModelName:attach(SN, Register, ID, state(GearBox)),
     
     Part = erlmachine_assembly:mounted(Extension, GearBox),
-    Release = erlmachine_assembly:add_part(state(GearBox, State), Part),
+    Release = erlmachine_assembly:add(state(GearBox, State), Part),
     %% At that place we don't issue any events (cause is gearbox issue level);
     {ok, Part, Release}. %% TODO
 
@@ -144,7 +165,7 @@ detach(GearBox, ID) ->
     ModelName = erlmachine_assembly:model_name(GearBox),
     SN = erlmachine_assembly:serial_no(GearBox),
     {ok, State} = ModelName:detach(SN, ID, state(GearBox)),
-    Release = erlmachine_assembly:remove_part(state(GearBox, State), ID),
+    Release = erlmachine_assembly:remove(state(GearBox, State), ID),
     {ok, Release}. %% TODO
 
 -spec accept(GearBox::assembly(), Criteria::term()) ->

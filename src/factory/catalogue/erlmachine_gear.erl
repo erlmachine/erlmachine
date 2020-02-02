@@ -20,43 +20,43 @@
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
 
--callback install(SN::serial_no(), ID::serial_no(), Body::term(), Opt::term(), Env::list()) -> 
+-callback install(SN::serial_no(), ID::serial_no(), State::term(), Opt::term(), Env::list()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
--callback replace(SN::serial_no(), ID::serial_no(), Body::term()) -> 
+-callback replace(SN::serial_no(), ID::serial_no(), State::term()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
--callback uninstall(SN::serial_no(), Reason::term(), Body::term()) -> 
+-callback uninstall(SN::serial_no(), Reason::term(), State::term()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
--callback accept(SN::serial_no(), Criteria::term(), Body::term()) -> 
+-callback accept(SN::serial_no(), Criteria::term(), State::term()) -> 
     success() | failure(term(), term(), term()).
 
--callback attach(SN::serial_no(), Register::term(), ID::serial_no(), Body::term()) -> 
+-callback attach(SN::serial_no(), Register::term(), ID::serial_no(), State::term()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
--callback detach(SN::serial_no(), ID::serial_no(), Body::term()) -> 
+-callback detach(SN::serial_no(), ID::serial_no(), State::term()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
--callback rotate(SN::serial_no(), Motion::term(), Body::term()) -> 
+-callback rotate(SN::serial_no(), Motion::term(), State::term()) -> 
     success(term()) | success(term(), term()) | failure(term(), term(), term()) | failure(term()).
 
--callback transmit(SN::serial_no(), Motion::term(), Body::term()) -> 
+-callback transmit(SN::serial_no(), Motion::term(), State::term()) -> 
     success(term(), term()) | failure(term(), term(), term()) | failure(term()).
 
--callback load(SN::serial_no(), Load::term(), Body::term()) ->
+-callback load(SN::serial_no(), Load::term(), State::term()) ->
     success(term()) |  success(term(), term()) | failure(term(), term(), term()) | failure(term()).
 
--callback overload(SN::serial_no(), Load::term(), Body::term()) -> 
+-callback overload(SN::serial_no(), Load::term(), State::term()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
--callback block(SN::serial_no(), ID::serial_no(), Failure::term(), Body::term()) -> 
+-callback block(SN::serial_no(), ID::serial_no(), Failure::term(), State::term()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
--callback form(SN::serial_no(), Body::term()) ->
+-callback form(SN::serial_no(), State::term()) ->
     success(term(), term()) | failure(term(), term(), term()) | failure(term()).
 
--callback submit(SN::serial_no(), Form::term(), Body::term()) ->
+-callback submit(SN::serial_no(), Form::term(), State::term()) ->
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
 -optional_callbacks([replace/3, attach/4, detach/3, overload/3, block/4]).

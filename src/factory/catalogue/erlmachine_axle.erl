@@ -81,7 +81,7 @@ attach(GearBox, Axle, Register, Extension) ->
     {ok, State} = ModelName:attach(SN, Register, ID, state(Axle)),
     
     Part = erlmachine_assembly:mounted(Extension, Axle),
-    Release = erlmachine_assembly:add_part(state(Axle, State), Part),
+    Release = erlmachine_assembly:add(state(Axle, State), Part),
     erlmachine_assembly:attached(GearBox, Release, Part),
     {ok, Part, Release}. %% TODO
 
@@ -93,7 +93,7 @@ detach(GearBox, Axle, ID) ->
 
     {ok, State} = ModelName:detach(SN, ID, state(Axle)),
     
-    Release = erlmachine_assembly:remove_part(state(Axle, State), ID),
+    Release = erlmachine_assembly:remove(state(Axle, State), ID),
     erlmachine_assembly:detached(GearBox, Release, ID),
     {ok, Release}. %% TODO
 

@@ -20,40 +20,40 @@
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
 
--callback install(SN::serial_no(), IDs::list(serial_no()), Body::term(), Opt::term(), Env::list()) -> 
+-callback install(SN::serial_no(), IDs::list(serial_no()), State::term(), Opt::term(), Env::list()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
--callback replace(SN::serial_no(), ID::serial_no(), Body::term()) -> 
+-callback replace(SN::serial_no(), ID::serial_no(), State::term()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
--callback uninstall(SN::serial_no(), Reason::term(), Body::term()) -> 
+-callback uninstall(SN::serial_no(), Reason::term(), State::term()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
--callback accept(SN::serial_no(), Criteria::criteria(), Body::term()) -> 
+-callback accept(SN::serial_no(), Criteria::criteria(), State::term()) -> 
     success() | failure(term(), term(), term()).
 
--callback attach(SN::serial_no(), Register::term(), ID::serial_no(), Body::term()) -> 
+-callback attach(SN::serial_no(), Register::term(), ID::serial_no(), State::term()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
--callback detach(SN::serial_no(), ID::serial_no(), Body::term()) -> 
+-callback detach(SN::serial_no(), ID::serial_no(), State::term()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
--callback rotate(SN::serial_no(), ID::serial_no(), Motion::term(), Body::term()) -> 
+-callback rotate(SN::serial_no(), ID::serial_no(), Motion::term(), State::term()) -> 
     success(term(), term()) | success(term()) | failure(term(), term(), term()) | failure(term()).
 
--callback transmit(SN::serial_no(), Motion::term(), Body::term()) -> 
+-callback transmit(SN::serial_no(), Motion::term(), State::term()) -> 
     success(term(), term()) | failure(term(), term(), term()) | failure(term()).
 
--callback overload(SN::serial_no(), Load::term(), Body::term()) -> 
+-callback overload(SN::serial_no(), Load::term(), State::term()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
--callback block(SN::serial_no(), ID::serial_no(), Failure::term(), Body::term()) -> 
+-callback block(SN::serial_no(), ID::serial_no(), Failure::term(), State::term()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
--callback form(SN::serial_no(), Body::term()) ->
+-callback form(SN::serial_no(), State::term()) ->
     success(term(), term()) | failure(term(), term(), term()) | failure(term()).
 
--callback submit(SN::serial_no(), Form::term(), Body::term()) ->
+-callback submit(SN::serial_no(), Form::term(), State::term()) ->
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
 -optional_callbacks([replace/3, attach/4, detach/3, overload/3, block/4]).
@@ -107,7 +107,7 @@ attach(GearBox, Shaft, Register, Extension) ->
     {ok, State} = erlmachine:optional_callback(Mod, Fun, Args, erlmachine:success(state(Shaft))),
 
     Part = Extension,
-    Rel = erlmachine_assembly:add_part(state(Shaft, State), Part),
+    Rel = erlmachine_assembly:add(state(Shaft, State), Part),
     erlmachine_assembly:attached(GearBox, Rel, Part),
     {ok, Part, Rel}.
 
@@ -120,7 +120,7 @@ detach(GearBox, Shaft, ID) ->
     Mod = ModelName, Fun = detach, Args = [SN, ID, state(Shaft)],
     {ok, State} = erlmachine:optional_callback(Mod, Fun, Args, erlmachine:success(state(Shaft))),
 
-    Rel = erlmachine_assembly:remove_part(state(Shaft, State), ID),
+    Rel = erlmachine_assembly:remove(state(Shaft, State), ID),
     erlmachine_assembly:detached(GearBox, Rel, ID),
     {ok, Rel}.
 
@@ -159,7 +159,7 @@ accept(GearBox, Shaft, Criteria) ->
 rotate(GearBox, Shaft, ID, Motion) ->
     ModelName = erlmachine_assembly:model_name(Shaft),
     SN = erlmachine_assembly:serial_no(Shaft),
-    Part = erlmachine_assembly:get_part(Shaft, ID),
+    Part = erlmachine_assembly:get(Shaft, ID),
 
     case ModelName:rotate(SN, ID, Motion, state(Shaft)) of 
         {ok, Res, State} -> 
