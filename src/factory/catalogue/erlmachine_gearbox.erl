@@ -21,7 +21,8 @@
          attach/3, detach/2,
          accept/2,
          uninstall/2,
-         schema/1
+         schema/1,
+         form/1, submit/2
         ]).
 
 -export([gearbox/1]).
@@ -66,7 +67,14 @@
 -callback schema(SN::serial_no(), Schema::term()) ->
     success(term(), term()) | failure(term(), term(), term()) | failure(term()).
 
+-callback form(SN::serial_no(), Schema::term()) ->
+    success(term(), term()) | failure(term(), term(), term()) | failure(term()).
+
+-callback submit(SN::serial_no(), Form::term(), Schema::term()) ->
+    success(term()) | failure(term(), term(), term()) | failure(term()).
+
 -optional_callbacks([schema/2]).
+-optional_callbacks([form/2, submit/3]).
 
 -record(gearbox, {
                   input::serial_no(),
@@ -115,8 +123,9 @@ find(GearBox, SN) ->
 
 -spec find(GearBox::assembly()) -> list().
 find(GearBox) ->
+    SN = erlmachine:serial_no(GearBox),
     Schema = erlmachine_assembly:schema(GearBox),
-    [erlmachine_schema:vertex(Schema, SN)|| SN <- digraph:vertices(Schema)].
+    [erlmachine_schema:vertex(Schema, V)|| V <- digraph:vertices(Schema), V /= SN].
 
 -spec labels(GearBox::assembly()) -> map().
 labels(GearBox) ->
@@ -195,6 +204,27 @@ schema(GearBox) ->
 
     {ok, Schema, State} = erlmachine:optional_callback(Mod, Fun, Args, Def),
     {ok, Schema, state(GearBox, State)}.
+
+-spec form(GearBox::assembly()) ->
+                  success(term(), assembly()) | failure(term(), term(), term()).
+form(GearBox) ->
+    ModelName = erlmachine_assembly:model_name(GearBox),
+    SN = erlmachine_assembly:serial_no(GearBox),
+
+    Mod = ModelName, Fun = form, Args = [SN, state(GearBox)],
+    Def = erlmachine:success([], state(GearBox)),
+
+    {ok, Form, State} = erlmachine:optional_callback(Mod, Fun, Args, Def),
+    {ok, Form, state(GearBox, State)}.
+
+-spec submit(GearBox::assembly(), Form::term()) ->
+                    success(term(), assembly()) | failure(term(), term(), term()).
+submit(GearBox, Form) ->
+    ModelName = erlmachine_assembly:model_name(GearBox),
+    SN = erlmachine_assembly:serial_no(GearBox),
+
+    {ok, Res, State} = ModelName:submit(SN, Form, state(GearBox)),
+    {ok, Res, state(GearBox, State)}.
 
 -spec rotate(GearBox::assembly(), Motion::term()) ->
                     Motion::term().

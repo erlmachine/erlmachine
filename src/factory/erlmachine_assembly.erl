@@ -53,7 +53,10 @@
 
 -export([add/2, remove/2, get/2]).
 
--export([record_name/0, attributes/0]).
+-export([tabname/0, record_name/0, attributes/0]).
+
+%% CRUD
+-export([create/1, read/1, update/1, delete/1]).
 
 -include("erlmachine_system.hrl").
 
@@ -96,14 +99,6 @@
 -type label() :: atom().
 
 -export_type([assembly/0]).
-
--spec record_name() -> atom().
-record_name() ->
-    assembly.
-
--spec attributes() -> list(atom()).
-attributes() ->
-    record_info(fields, assembly).
 
 -spec install(GearBox::assembly()) ->
                      success(pid()) | ingnore | failure(E::term()).
@@ -474,3 +469,38 @@ remove(Assembly, ID) ->
 -spec get(Assembly::assembly(), ID::serial_no()) -> assembly().
 get(Assembly, ID) ->
     lists:keyfind(ID, #assembly.serial_no, parts(Assembly)).
+
+-spec tabname() -> atom().
+tabname() -> 
+    ?MODULE.
+
+-spec record_name() -> atom().
+record_name() ->
+    assembly.
+
+-spec attributes() -> list(atom()).
+attributes() ->
+    record_info(fields, assembly).
+
+-spec create(Assembly::assembly()) ->
+                    success(serial_no()).
+create(Assembly) ->
+    ID = serial_no(Assembly),
+    ok = mnesia:dirty_write(tabname(), Assembly),
+    {ok, ID}.
+
+-spec read(ID::serial_no()) -> 
+                  success(assembly()).
+read(ID) ->
+    [Assembly] = mnesia:dirty_read(tabname(), ID),
+    {ok, Assembly}.
+
+-spec update(Assembly::assembly()) -> 
+                    success().
+update(Assembly) ->
+    ok = mnesia:dirty_write(tabname(), Assembly).
+
+-spec delete(ID::serial_no()) -> 
+                    success().
+delete(ID) ->
+    ok = mnesia:dirty_delete(tabname(), ID).

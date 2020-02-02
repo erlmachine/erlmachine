@@ -28,6 +28,7 @@
         ]).
 
 -export([schema/2]).
+-export([form/2, submit/3]).
 
 -export([tag/1]).
 
@@ -45,7 +46,6 @@
 tag(#{model := Model}) ->
     ID = atom_to_binary(Model, latin1),
     ID.
-
 
 -spec name() -> Name::atom().
 name() ->
@@ -119,32 +119,6 @@ rejected(_Name, GearBox, Extension, Criteria, Result) ->
     trace(GearBox, #{rejected => SN, criteria => Criteria, result => Result}),
     ok.
 
--spec attach(Name::serial_no(), GearBox::assembly(), Reg::term(), Ext::assembly()) ->
-                    success(assembly()) | failure(term(), term()).
-attach(Name, GearBox, Reg, Ext) ->
-    {ok, Part, Rel} = erlmachine_gearbox:attach(GearBox, Reg, Ext),
-
-    %% TODO Conditional case for Result needs to be processed;
-    Spec = spec(Rel, Part),
-    %% Mount time will be determined by prototype;
-    SupRef = format_name(Name),
-
-    {ok, _PID} = supervisor:start_child(SupRef, Spec),
-    trace(GearBox, #{attach => erlmachine_assembly:serial_no(Part)}),
-    erlmachine:success(Part, Rel).
-    
--spec detach(Name::serial_no(), GearBox::assembly(), ID::serial_no()) ->
-                    success(term()) | success(term(), term()) | failure(term()).
-detach(Name, GearBox, ID) ->
-    trace(GearBox, #{detach => ID}),
-    {ok, Rel} = erlmachine_gearbox:detach(GearBox, ID),
-
-    SupRef = format_name(Name),
- 
-    ok = supervisor:terminate_child(SupRef, ID),
-    ok = supervisor:delete_child(SupRef, ID), %% ID the same for chield and SN
-    erlmachine:success(Rel).
-
 -record(install, {gearbox::assembly(), options::list(tuple)}).
 
 -spec install(Name::serial_no(), GearBox::assembly(), Opt::list(tuple())) -> 
@@ -165,6 +139,32 @@ init(#install{ gearbox=GearBox, options=Opt }) ->
 
     erlmachine:success({#{strategy => Strategy, intensity => Int, period => Per}, Specs}).
 
+-spec attach(Name::serial_no(), GearBox::assembly(), Reg::term(), Ext::assembly()) ->
+                    success(assembly()) | failure(term(), term()).
+attach(Name, GearBox, Reg, Ext) ->
+    {ok, Part, Rel} = erlmachine_gearbox:attach(GearBox, Reg, Ext),
+
+    %% TODO Conditional case for Result needs to be processed;
+    Spec = spec(Rel, Part),
+    %% Mount time will be determined by prototype;
+    SupRef = format_name(Name),
+
+    {ok, _PID} = supervisor:start_child(SupRef, Spec),
+    trace(GearBox, #{attach => erlmachine_assembly:serial_no(Part)}),
+    erlmachine:success(Part).
+    
+-spec detach(Name::serial_no(), GearBox::assembly(), ID::serial_no()) ->
+                    success() | success(term(), term()) | failure(term()).
+detach(Name, GearBox, ID) ->
+    trace(GearBox, #{detach => ID}),
+    {ok, _} = erlmachine_gearbox:detach(GearBox, ID),
+
+    SupRef = format_name(Name),
+ 
+    ok = supervisor:terminate_child(SupRef, ID),
+    ok = supervisor:delete_child(SupRef, ID), %% ID the same for chield and SN
+    erlmachine:success().
+
 -spec uninstall(Name::serial_no(), GearBox::assembly(), Reason::term()) ->
                        success().
 uninstall(Name, GearBox, Reason) ->
@@ -173,20 +173,32 @@ uninstall(Name, GearBox, Reason) ->
     IDs = [erlmachine_assembly:serial_no(Part) || Part <- erlmachine_gearbox:parts(GearBox)],
     
     trace(GearBox, #{uninstall => IDs, reason => Reason}),
-    {ok, Rel} = erlmachine_gearbox:uninstall(GearBox, Reason),
-    erlmachine:success(Rel).
+    {ok, _} = erlmachine_gearbox:uninstall(GearBox, Reason),
+    erlmachine:success().
 
 -spec accept(Name::serial_no(), GearBox::assembly(), Criteria::acceptance_criteria()) ->
                     success() | failure(term(), term(), term()).
 accept(_Name, GearBox, Criteria) ->
-    {ok, Res, Rel} = erlmachine_gearbox:accept(GearBox, Criteria),
-    erlmachine:success(Res, Rel).
+    {ok, Res, _} = erlmachine_gearbox:accept(GearBox, Criteria),
+    erlmachine:success(Res).
 
 -spec schema(Name::serial_no(), GearBox::assembly()) ->
                     success(term()) | failure(term(), term()).
 schema(_Name, GearBox) ->
-    {ok, Schema, Rel} = erlmachine_gearbox:schema(GearBox),
-    erlmachine:success(Schema, Rel).
+    {ok, Schema, _} = erlmachine_gearbox:schema(GearBox),
+    erlmachine:success(Schema).
+
+-spec form(Name::serial_no(), GearBox::assembly()) -> 
+                  success(term()) | failure(term(), term(), term()).
+form(_Name, GearBox) ->
+    {ok, Form, _} = erlmachine_gearbox:form(GearBox),
+    erlmachine:success(Form).
+
+-spec submit(Name::serial_no(), GearBox::assembly(), Form::term()) -> 
+                    success(term()) | failure(term(), term(), term()).
+submit(_Name, GearBox, Form) ->
+    {ok, Res, _} = erlmachine_gearbox:submit(GearBox, Form),
+    erlmachine:success(Res).
 
 -spec spec(GearBox::assembly(), Part::assembly()) -> map().
 spec(GearBox, Part) ->

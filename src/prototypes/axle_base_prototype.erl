@@ -21,6 +21,7 @@
 -export([installed/4, uninstalled/5]).
 
 -export([schema/3]).
+-export([form/3, submit/4]).
 
 -export([tag/1]).
 
@@ -69,26 +70,26 @@ attach(Name, GearBox, Axle, Register, Extension) ->
 
     SN = erlmachine_assembly:serial_no(Axle),
     to_track(SN, #{ attach => erlmachine_assembly:serial_no(Extension) }),
-    erlmachine:success(Part, Release).
+    erlmachine:success(Part).
     
 -spec detach(Name::serial_no(), GearBox::assembly(), Axle::assembly(), ID::serial_no()) ->
-                    success(term()) | success(term(), term()) | failure(term()).
+                    success() | success(term(), term()) | failure(term()).
 detach(Name, GearBox, Axle, ID) ->
     SupRef = format_name(Name),
 
-    {ok, Rel} = erlmachine_axle:detach(GearBox, Axle, ID),
+    {ok, _} = erlmachine_axle:detach(GearBox, Axle, ID),
 
     ok = supervisor:terminate_child(SupRef, ID),
     ok = supervisor:delete_child(SupRef, ID), %% ID the same for chield and SN
 
     SN = erlmachine_assembly:serial_no(Axle),
     to_track(SN, #{ detach => ID }),
-    erlmachine:success(Rel).
+    erlmachine:success().
 
 -record(install, {gearbox::assembly(), axle::assembly(), options::list(tuple)}).
 
 -spec install(Name::serial_no(), GearBox::assembly(), Axle::assembly(), Options::list(tuple())) -> 
-                     success(pid()) | ingnore | failure(E::term()).
+                     success(pid()) | ingnore | failure(term()).
 install(Name, GearBox, Axle, Opt) ->
     SN = erlmachine_assembly:serial_no(Axle),
 
@@ -120,26 +121,38 @@ init(#install{gearbox=GearBox, axle=Axle, options=Opt}) ->
 uninstall(Name, GearBox, Axle, Reason) ->
     exit(whereis(format_name(Name)), Reason),
 
-    {ok, Rel} = erlmachine_axle:uninstall(GearBox, Axle, Reason),
+    {ok, _} = erlmachine_axle:uninstall(GearBox, Axle, Reason),
 
     SN = erlmachine_assembly:serial_no(Axle),
     to_track(SN, #{uninstall => ts()}),
-    erlmachine:success(Rel).
+    erlmachine:success().
 
 -spec accept(Name::serial_no(), GearBox::assembly(), Axle::assembly(), Criteria::criteria()) ->
-                    success(term()) | failure(E::term(), R::term(), S::term()).
+                    success(term()) | failure(term(), term(), term()).
 accept(_Name, GearBox, Axle, Criteria) ->
-    {ok, Res, Rel} = erlmachine_axle:accept(GearBox, Axle, Criteria),
+    {ok, Res, _} = erlmachine_axle:accept(GearBox, Axle, Criteria),
 
     SN = erlmachine_assembly:serial_no(Axle),
     to_track(SN, #{ accept => Res }),
-    erlmachine:success(Res, Rel).
+    erlmachine:success(Res).
 
 -spec schema(Name::serial_no(), GearBox::assembly(), Axle::assembly()) ->
                     success(term()) | failure(term(), term()).
 schema(_Name, GearBox, Axle) ->
-    {ok, Schema, Rel} = erlmachine_axle:schema(GearBox, Axle),
-    erlmachine:success(Schema, Rel).
+    {ok, Schema, _} = erlmachine_axle:schema(GearBox, Axle),
+    erlmachine:success(Schema).
+
+-spec form(Name::serial_no(), GearBox::assembly(), Axle::assembly()) ->
+                  success(term()) | failure(term(), term(), term()).
+form(_Name, GearBox, Axle) ->
+    {ok, Form, _} = erlmachine_axle:form(GearBox, Axle),
+    erlmachine:success(Form).
+
+-spec submit(Name::serial_no(), GearBox::assembly(), Axle::assembly(), Form::term()) -> 
+                    success(term()) | failure(term(), term(), term()).
+submit(_Name, GearBox, Axle, Form) ->
+    {ok, Res, _} = erlmachine_axle:submit(GearBox, Axle, Form),
+    erlmachine:success(Res).
 
 %% TODO
 %% I am going to provide mnesia gears, mongodb , etc..

@@ -10,6 +10,15 @@ start(_Type, _Args) ->
     Nodes = [node()],
     mnesia:create_schema(Nodes), ok = mnesia:start(),
 
+    _AssemblyTabRes =
+        mnesia:create_table(
+          erlmachine_assembly:tabname(),
+          [
+           attributes(erlmachine_assembly:attributes()),
+           disc_copies(Nodes),
+           record_name(erlmachine_assembly:record_name())
+          ]),
+
     _CounterTabRes =
         mnesia:create_table(
           erlmachine_serial:tabname(),
@@ -36,6 +45,9 @@ attributes(Attr) ->
 
 disc_only_copies(Nodes) ->
     {disc_only_copies, Nodes}.
+
+disc_copies(Nodes) ->
+    {disc_copies, Nodes}.
 
 record_name(Name) ->
     {record_name, Name}.
