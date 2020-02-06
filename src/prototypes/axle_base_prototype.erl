@@ -20,7 +20,6 @@
 
 -export([installed/4, uninstalled/5]).
 
--export([schema/3]).
 -export([form/3, submit/4]).
 
 -export([tag/1]).
@@ -135,12 +134,6 @@ accept(_Name, GearBox, Axle, Criteria) ->
     SN = erlmachine_assembly:serial_no(Axle),
     to_track(SN, #{ accept => Res }),
     erlmachine:success(Res).
-
--spec schema(Name::serial_no(), GearBox::assembly(), Axle::assembly()) ->
-                    success(term()) | failure(term(), term()).
-schema(_Name, GearBox, Axle) ->
-    {ok, Schema, _} = erlmachine_axle:schema(GearBox, Axle),
-    erlmachine:success(Schema).
 
 -spec form(Name::serial_no(), GearBox::assembly(), Axle::assembly()) ->
                   success(term()) | failure(term(), term(), term()).

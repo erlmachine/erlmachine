@@ -27,7 +27,6 @@
          accepted/4, rejected/5
         ]).
 
--export([schema/2]).
 -export([form/2, submit/3]).
 
 -export([tag/1]).
@@ -181,12 +180,6 @@ uninstall(Name, GearBox, Reason) ->
 accept(_Name, GearBox, Criteria) ->
     {ok, Res, _} = erlmachine_gearbox:accept(GearBox, Criteria),
     erlmachine:success(Res).
-
--spec schema(Name::serial_no(), GearBox::assembly()) ->
-                    success(term()) | failure(term(), term()).
-schema(_Name, GearBox) ->
-    {ok, Schema, _} = erlmachine_gearbox:schema(GearBox),
-    erlmachine:success(Schema).
 
 -spec form(Name::serial_no(), GearBox::assembly()) -> 
                   success(term()) | failure(term(), term(), term()).

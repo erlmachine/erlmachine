@@ -4,8 +4,6 @@
 %% API.
 -export([start_link/0]).
 
--export([schema/1, forms/1]).
--export([schema/2, schema_by_serial_no/2]).
 -export([form/1, form/2, form_by_serial_no/2]).
 -export([submit/2, submit/3, submit_by_serial_no/3]).
 
@@ -32,36 +30,6 @@
 -type success() :: ok.
 
 -export_type([failure/1, failure/2, failure/3, success/0, success/1, success/2]).
-
--spec schema_by_serial_no(GearBox::assembly(), SN::serial_no()) ->
-                                 success(term()) | failure(term(), term(), term()).
-schema_by_serial_no(GearBox, SN) ->
-    Assembly = erlmachine_gearbox:find(GearBox, SN),
-    schema(GearBox, Assembly).
-
--spec schema(GearBox::assembly()) ->
-                    success(term()) | failure(term(), term(), term()).
-schema(GearBox) ->
-    SN = erlmachine_assembly:serial_no(GearBox),
-    ProtName = erlmachine_assembly:prototype_name(GearBox),
-
-    ProtName:schema(SN, GearBox).
-
--spec schema(GearBox::assembly(), Assembly::assembly()) ->
-                    success(term()) | failure(term(), term(), term()).
-schema(GearBox, Assembly) ->
-    SN = erlmachine_assembly:serial_no(Assembly),
-    ProtName = erlmachine_assembly:prototype_name(Assembly),
-
-    ProtName:schema(SN, GearBox, Assembly).
-
--spec forms(GearBox::assembly()) ->
-                   success(term()) | failure(term(), term(), term()).
-forms(GearBox) ->
-    Find = erlmachine_gearbox:find(GearBox),
-    {ok, Main} = form(GearBox),
-    Ext = [begin {ok, Form} = form(GearBox, Part), Form end || Part <- Find],
-    {ok, lists:flatten([Main|Ext])}.
 
 -spec form_by_serial_no(GearBox::assembly(), SN::serial_no()) ->
                                success(term()) | failure(term(), term(), term()).

@@ -7,9 +7,10 @@
          transmit/3, load/3, rotate/3,
          accept/3,
          overload/3, block/4,
-         uninstall/3,
-         form/2, submit/3
+         uninstall/3
         ]).
+
+-export([form/2, submit/3]).
 
 -export([gear/0]).
 
