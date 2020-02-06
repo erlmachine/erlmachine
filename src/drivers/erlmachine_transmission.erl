@@ -21,7 +21,7 @@
 -export([command/1, command/2]).
 -export([document/1, document/2]).
 -export([event/1, event/2]).
--export([request_reply/2, request_reply/3]).
+-export([request_reply/2, request_reply/3, request_reply/4]).
 
 %% Transmission will be loaded directly by call where ID argument is provided; 
 %% Transmission can be represented by a lot of copies where each of them is marked by unique serial number;
@@ -110,37 +110,50 @@ body(Motion) ->
     #{body := Body} = Envelope,
     Body.
 
--spec command(Body::body()) -> motion(). 
+-spec command(Body::body()) -> 
+                     motion(). 
 command(Body) ->
     command(#{}, Body).
 
--spec command(Header::header(), Body::body()) -> motion().
+-spec command(Header::header(), Body::body()) -> 
+                     motion().
 command(Header, Body) ->
     motion(Header#{type => command}, Body).
 
--spec document(Body::body()) -> motion(). 
+-spec document(Body::body()) ->
+                      motion(). 
 document(Body) ->
     document(#{}, Body).
 
--spec document(Header::header(), Body::body()) -> motion().
+-spec document(Header::header(), Body::body()) -> 
+                      motion().
 document(Header, Body) ->
     motion(Header#{type => document}, Body).
 
--spec event(Body::body()) -> motion(). 
+-spec event(Body::body()) -> 
+                   motion(). 
 event(Body) ->
     event(#{}, Body).
 
--spec event(Header::header(), Body::body()) -> motion().
+-spec event(Header::header(), Body::body()) -> 
+                   motion().
 event(Header, Body) ->
     motion(Header#{type => event}, Body).
 
--spec request_reply(Body::body(), Address::term()) -> motion().
+-spec request_reply(Body::body(), Address::term()) -> 
+                           motion().
 request_reply(Body, Address) ->
     request_reply(#{}, Body, Address).
 
--spec request_reply(Header::header(), Body::body(), Address::term()) -> motion().
+-spec request_reply(Header::header(), Body::body(), Address::term()) -> 
+                           motion().
 request_reply(Header, Body, Address) ->
     motion(Header#{type => request_reply, return_address => Address}, Body).
+
+-spec request_reply(Header::header(), Body::body(), Address::term(), Ref::reference()) -> 
+                           motion().
+request_reply(Header, Body, Address, Ref) ->
+    motion(Header#{type => request_reply, return_address => Address, reference => Ref}, Body).
 
 %% API.
 

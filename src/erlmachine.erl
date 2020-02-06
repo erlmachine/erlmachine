@@ -12,7 +12,7 @@
 -export([command/1, command/2]).
 -export([document/1, document/2]).
 -export([event/1, event/2]).
--export([request_reply/2, request_reply/3]).
+-export([request_reply/2, request_reply/3, request_reply/4]).
 
 -export([failure/1, failure/2, failure/3]).
 -export([success/0, success/1, success/2]).
@@ -59,58 +59,75 @@ start() ->
 stop() ->
     application:stop(erlmachine).
 
--spec motion(Body::term()) -> motion().
+-spec motion(Body::term()) -> 
+                    motion().
 motion(Body) ->
     erlmachine_transmission:motion(Body).
 
--spec motion(Header::header(), Body::body()) -> motion().
+-spec motion(Header::header(), Body::body()) -> 
+                    motion().
 motion(Header, Body) ->
     erlmachine_transmission:motion(Header, Body).
 
--spec envelope(Motion::motion()) -> envelope().
+-spec envelope(Motion::motion()) -> 
+                      envelope().
 envelope(Motion) ->
     erlmachine_transmission:envelope(Motion).
 
--spec header(Motion::motion()) -> header().
+-spec header(Motion::motion()) -> 
+                    header().
 header(Motion) ->
     erlmachine_transmission:header(Motion).
 
--spec body(Motion::motion()) -> body().
+-spec body(Motion::motion()) -> 
+                  body().
 body(Motion) ->
     erlmachine_transmission:body(Motion).
 
--spec command(Body::body()) -> motion(). 
+-spec command(Body::body()) ->
+                     motion(). 
 command(Body) ->
     erlmachine_transmission:command(Body).
 
--spec command(Header::header(), Body::body()) -> motion().
+-spec command(Header::header(), Body::body()) -> 
+                     motion().
 command(Header, Body) ->
     erlmachine_transmission:command(Header, Body).
 
--spec document(Body::body()) -> motion(). 
+-spec document(Body::body()) -> 
+                      motion(). 
 document(Body) ->
     erlmachine_transmission:document(Body).
 
--spec document(Header::header(), Body::body()) -> motion().
+-spec document(Header::header(), Body::body()) -> 
+                      motion().
 document(Header, Body) ->
     erlmachine_transmission:document(Header, Body).
 
--spec event(Body::body()) -> motion(). 
+-spec event(Body::body()) -> 
+                   motion(). 
 event(Body) ->
     erlmachine_transmission:event(Body).
 
--spec event(Header::header(), Body::body()) -> motion().
+-spec event(Header::header(), Body::body()) -> 
+                   motion().
 event(Header, Body) ->
     erlmachine_transmission:event(Header, Body).
 
--spec request_reply(Body::body(), Address::term()) -> motion().
+-spec request_reply(Body::body(), Address::term()) -> 
+                           motion().
 request_reply(Body, Address) ->
     erlmachine_transmission:request_reply(Body, Address).
 
--spec request_reply(Header::header(), Body::body(), Address::term()) -> motion().
+-spec request_reply(Header::header(), Body::body(), Address::term()) -> 
+                           motion().
 request_reply(Header, Body, Address) ->
     erlmachine_transmission:request_reply(Header, Body, Address).
 
+-spec request_reply(Header::header(), Body::body(), Address::term(), Ref::reference()) -> 
+                           motion().
+request_reply(Header, Body, Address, Ref) ->
+    erlmachine_transmission:request_reply(Header, Body, Address, Ref).
 
 -spec failure(E::term(), R::term()) -> failure(E::term(), R::term()).
 failure(E, R) -> 
