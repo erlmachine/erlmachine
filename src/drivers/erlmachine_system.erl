@@ -4,8 +4,8 @@
 %% API.
 -export([start_link/0]).
 
--export([form/1, form/2, form_by_serial_no/2]).
--export([submit/2, submit/3, submit_by_serial_no/3]).
+-export([form/1, form/2]).
+-export([submit/2, submit/3]).
 
 %% gen_server.
 -export([
@@ -31,12 +31,6 @@
 
 -export_type([failure/1, failure/2, failure/3, success/0, success/1, success/2]).
 
--spec form_by_serial_no(GearBox::assembly(), SN::serial_no()) ->
-                               success(term()) | failure(term(), term(), term()).
-form_by_serial_no(GearBox, SN) ->
-    Assembly = erlmachine_gearbox:find(GearBox, SN),
-    form(GearBox, Assembly).
-
 -spec form(GearBox::assembly()) ->
                   success(term()) | failure(term(), term(), term()).
 form(GearBox) ->
@@ -45,19 +39,15 @@ form(GearBox) ->
 
     ProtName:form(SN, GearBox).
 
--spec form(GearBox::assembly(), Assembly::assembly()) ->
+-spec form(GearBox::assembly(), Label::term()) ->
                   success(term()) | failure(term(), term(), term()).
-form(GearBox, Assembly) ->
-    SN = erlmachine_assembly:serial_no(Assembly),
-    ProtName = erlmachine_assembly:prototype_name(Assembly),
+form(GearBox, Label) ->
+    Part = erlmachine_gearbox:find(GearBox, Label),
 
-    ProtName:form(SN, GearBox, Assembly).
+    SN = erlmachine_assembly:serial_no(Part),
+    ProtName = erlmachine_assembly:prototype_name(Part),
 
--spec submit_by_serial_no(GearBox::assembly(), SN::serial_no(), Form::term()) ->
-                                 success(term()) | failure(term(), term(), term()).
-submit_by_serial_no(GearBox, SN, Form) ->
-    Assembly = erlmachine_gearbox:find(GearBox, SN),
-    submit(GearBox, Assembly, Form).
+    ProtName:form(SN, GearBox, Part).
 
 -spec submit(GearBox::assembly(), Form::term()) ->
                     success(term()) | failure(term(), term(), term()).
@@ -67,13 +57,15 @@ submit(GearBox, Form) ->
 
     ProtName:submit(SN, GearBox, Form).
 
--spec submit(GearBox::assembly(), Assembly::assembly(), Form::term()) ->
+-spec submit(GearBox::assembly(), Label::term(), Form::term()) ->
                     success(term()) | failure(term(), term(), term()).
-submit(GearBox, Assembly, Form) ->
-    SN = erlmachine_assembly:serial_no(Assembly),
-    ProtName = erlmachine_assembly:prototype_name(Assembly),
+submit(GearBox, Label, Form) ->
+    Part = erlmachine_gearbox:find(GearBox, Label),
 
-    ProtName:submit(SN, GearBox, Assembly, Form).
+    SN = erlmachine_assembly:serial_no(Part),
+    ProtName = erlmachine_assembly:prototype_name(Part),
+
+    ProtName:submit(SN, GearBox, Part, Form).
 
 -spec failure(E::term(), R::term()) -> 
                      failure(E::term(), R::term()).

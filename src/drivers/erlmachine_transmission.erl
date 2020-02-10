@@ -12,10 +12,9 @@
          code_change/3
         ]).
 
--export([
-         rotate/3, rotate_by_serial_no/3, rotate_by_label/3,
-         transmit/3, transmit_by_serial_no/3, transmit_by_label/3
-        ]).
+-export([rotate/3, transmit/3]).
+-export([rotation/3]).
+-export([transmission/3]).
 
 -export([motion/1, motion/2, envelope/1, header/1, body/1]).
 -export([command/1, command/2]).
@@ -39,44 +38,30 @@
 
 -export_type([motion/0, envelope/0, header/0, body/0]).
 
--spec rotate_by_label(GearBox::assembly(), Label::term(), Motion::term()) -> 
-                             Motion::term().
-rotate_by_label(GearBox, Label, Motion) ->
-    Labels = erlmachine_assembly:labels(GearBox),
-    SN = maps:get(Label, Labels),
-    rotate_by_serial_no(GearBox, SN, Motion).
+-spec rotate(GearBox::assembly(), Label::term(), Motion::term()) ->
+                    term().
+rotate(GearBox, Label, Motion) ->
+    Part = erlmachine_gearbox:find(GearBox, Label),
+    rotation(GearBox, Part, Motion).
 
--spec rotate_by_serial_no(GearBox::assembly(), SN::serial_no(), Motion::term()) -> 
-                             Motion::term().
-rotate_by_serial_no(GearBox, SN, Motion) ->
-    Assembly = erlmachine_gearbox:find(GearBox, SN),
-    rotate(GearBox, Assembly, Motion).
-
--spec rotate(GearBox::assembly(), Assembly::assembly(), Motion::term()) ->
-                    Motion::term().
-rotate(GearBox, Assembly, Motion) ->
-    SN = erlmachine_assembly:serial_no(Assembly),
-    (erlmachine_assembly:prototype_name(Assembly)):rotate(SN, GearBox, Assembly, Motion).
-
--spec transmit_by_label(GearBox::assembly(), Label::term(), Motion::term()) ->
-                               term().
-transmit_by_label(GearBox, Label, Motion) ->
-    Labels = erlmachine_assembly:labels(GearBox),
-    SN = maps:get(Label, Labels),
-    Assembly = erlmachine_gearbox:find(GearBox, SN),
-    transmit(GearBox, Assembly, Motion).
-
--spec transmit_by_serial_no(GearBox::assembly(), SN::serial_no(), Motion::term()) ->
-                                   term().
-transmit_by_serial_no(GearBox, SN, Motion) ->
-    Assembly = erlmachine_gearbox:find(GearBox, SN),
-    transmit(GearBox, Assembly, Motion).
-
--spec transmit(GearBox::assembly(), Assembly::assembly(), Motion::term()) ->
+-spec transmit(GearBox::assembly(), Label::term(), Motion::term()) ->
                       term().
-transmit(GearBox, Assembly, Motion) ->
-    SN = erlmachine_assembly:serial_no(Assembly),
-    (erlmachine_assembly:prototype_name(Assembly)):transmit(SN, GearBox, Assembly, Motion).
+transmit(GearBox, Label, Motion) ->
+    Part = erlmachine_gearbox:find(GearBox, Label),
+    transmission(GearBox, Part, Motion).
+
+-spec rotation(GearBox::assembly(), Part::assembly(), Motion::term()) -> 
+                         term().
+rotation(GearBox, Part, Motion) -> 
+    SN = erlmachine_assembly:serial_no(Part),
+    (erlmachine_assembly:prototype_name(Part)):rotate(SN, GearBox, Part, Motion).
+
+-spec transmission(GearBox::assembly(), Part::assembly(), Motion::term()) ->
+                      term().
+transmission(GearBox, Part, Motion) ->
+    SN = erlmachine_assembly:serial_no(Part),
+    (erlmachine_assembly:prototype_name(Part)):transmit(SN, GearBox, Part, Motion).
+
 
 -record(state, {
 }).

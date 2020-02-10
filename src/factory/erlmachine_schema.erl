@@ -1,6 +1,12 @@
 -module(erlmachine_schema).
 
--export([add_edges/2, add_edge/3, add_vertex/2, del_vertex/2, vertex/2]).
+-export([vertex/2]).
+
+-export([add_edges/2, add_edge/3]).
+
+-export([add_vertex/2, del_vertex/2]).
+
+-export([del_path/3]).
 
 -include("erlmachine_factory.hrl").
 
@@ -9,28 +15,34 @@
 
 -spec add_edges(Schema::term(), Assembly::assembly()) -> term().
 add_edges(Schema, Assembly) ->
-    V1 = add_vertex(Schema, Assembly),
-    add_edges(Schema, V1, erlmachine_assembly:parts(Assembly)).
+    V = add_vertex(Schema, Assembly),
+    add_edges(Schema, V, erlmachine_assembly:parts(Assembly)).
 
--spec add_edge(Schema::term(), V1::serial_no(), Assembly::assembly()) -> term().
+-spec add_edge(Schema::term(), V1::term(), Assembly::assembly()) -> term().
 add_edge(Schema, V1, Assembly) ->
     V2 = add_vertex(Schema, Assembly),
 
     digraph:add_edge(Schema, V1, V2, []), 
     V2.
 
--spec add_vertex(Schema::term(), Assembly::assembly()) -> term().
-add_vertex(Schema, Assembly) ->
-    V1 = erlmachine_assembly:serial_no(Assembly),
-    digraph:add_vertex(Schema, V1, Assembly),
-    V1.
-
--spec del_vertex(Schema::term(), ID::serial_no()) -> ok.
-del_vertex(Schema, ID) ->
-    digraph:del_vertex(Schema, ID), 
+-spec del_path(Schema::term(), V1::term(), V2::term()) -> ok.
+del_path(Schema, V1, V2) ->
+    true = digraph:del_path(Schema, V1, V2),
     ok.
 
--spec add_edges(Schema::term(), V1::serial_no(), Parts::list(assembly())) -> term().
+-spec add_vertex(Schema::term(), Assembly::assembly()) -> term().
+add_vertex(Schema, Assembly) ->
+    V = erlmachine_assembly:label(Assembly),
+    digraph:add_vertex(Schema, V, Assembly),
+    V.
+
+-spec del_vertex(Schema::term(), V::term()) -> ok.
+del_vertex(Schema, V) ->
+    true = digraph:del_vertex(Schema, V), 
+    ok.
+
+-spec add_edges(Schema::term(), V1::term(), Parts::list(assembly())) -> 
+                       term().
 add_edges(_Schema, V1, []) ->
     V1;
 add_edges(Schema, V1, [Part|T]) ->
@@ -40,11 +52,11 @@ add_edges(Schema, V1, [Part|T]) ->
     add_edges(Schema, V1, T), 
     V1.
 
--spec vertex(Schema::term(), SN::serial_no()) -> 
+-spec vertex(Schema::term(), V::term()) -> 
                   assembly() | false.
-vertex(Schema, SN) ->
-    case digraph:vertex(Schema, SN) of 
-        {_V, Assembly} ->
+vertex(Schema, V) ->
+    case digraph:vertex(Schema, V) of 
+        {_, Assembly} ->
             Assembly;
         _ ->
             false

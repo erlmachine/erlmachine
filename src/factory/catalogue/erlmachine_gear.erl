@@ -108,17 +108,17 @@ install(GearBox, Gear) ->
     erlmachine_assembly:installed(GearBox, Rel),
     {ok, Rel}.
 
--spec attach(GearBox::assembly(), Gear::assembly(), Register::term(), Extension::assembly()) ->
+-spec attach(GearBox::assembly(), Gear::assembly(), Reg::term(), Ext::assembly()) ->
                     success(assembly()) | failure(term(), term(), term()).
-attach(GearBox, Gear, Register, Extension) ->
+attach(GearBox, Gear, Reg, Ext) ->
     ModelName= erlmachine_assembly:model_name(Gear),
     SN = erlmachine_assembly:serial_no(Gear), 
-    ID = erlmachine_assembly:serial_no(Extension),
+    ID = erlmachine_assembly:label(Ext),
  
-    Mod = ModelName, Fun = attach, Args = [SN, Register, ID, state(Gear)],
+    Mod = ModelName, Fun = attach, Args = [SN, Reg, ID, state(Gear)],
     {ok, State} = erlmachine:optional_callback(Mod, Fun, Args, erlmachine:success(state(Gear))),
     
-    Part = Extension,
+    Part = Ext,
     %% TODO At this place we can provide modification layer over attach;
     Rel = erlmachine_assembly:parts(state(Gear, State), [Part]),
     erlmachine_assembly:attached(GearBox, Rel, Part),
@@ -141,7 +141,7 @@ detach(GearBox, Gear, ID) ->
                      success(assembly()) | failure(term(), term(), term()).
 replace(GearBox, Gear, Part) ->
     ModelName = erlmachine_assembly:model_name(Gear),
-    SN = erlmachine_assembly:serial_no(Gear), ID = erlmachine_assembly:serial_no(Part),
+    SN = erlmachine_assembly:serial_no(Gear), ID = erlmachine_assembly:label(Part),
 
     Mod = ModelName, Fun = replace, Args = [SN, ID, state(Gear)],
     {ok, State} = erlmachine:optional_callback(Mod, Fun, Args, erlmachine:success(state(Gear))),
@@ -172,11 +172,11 @@ accept(GearBox, Gear, Criteria) ->
 rotate(GearBox, Gear, Motion) ->
     ModelName = erlmachine_assembly:model_name(Gear),
     SN = erlmachine_assembly:serial_no(Gear),
-    Parts =erlmachine_assembly:parts(Gear),
 
     case ModelName:rotate(SN, Motion, state(Gear)) of 
         {ok, Res, State} -> 
-            [erlmachine_transmission:rotate(GearBox, Part, Res) || Part <- Parts],
+            Parts = erlmachine_assembly:parts(Gear),
+            [erlmachine_transmission:rotation(GearBox, Part, Res) || Part <- Parts],
             {ok, state(Gear, State)};
         {ok, State} ->
             {ok, state(Gear, State)}

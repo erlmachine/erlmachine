@@ -86,12 +86,12 @@ install(GearBox, Shaft) ->
     ModelName = erlmachine_assembly:model_name(Shaft),
     SN = erlmachine_assembly:serial_no(Shaft),
     Env = erlmachine_gearbox:env(GearBox), 
-    Options = erlmachine_assembly:model_options(Shaft),
+    Opt = erlmachine_assembly:model_options(Shaft),
     %% We can check exported functions accordingly to this kind of behaviour; 
     %% We are going to add error handling later; 
     IDs = [erlmachine_assembly:serial_no(Part)|| Part <- erlmachine_assembly:parts(Shaft)], 
 
-    {ok, State} = ModelName:install(SN, IDs, state(Shaft), Options, Env),
+    {ok, State} = ModelName:install(SN, IDs, state(Shaft), Opt, Env),
     
     %% We are going to add error handling later; 
     Rel = state(Shaft, State), 
@@ -160,11 +160,11 @@ accept(GearBox, Shaft, Criteria) ->
 rotate(GearBox, Shaft, ID, Motion) ->
     ModelName = erlmachine_assembly:model_name(Shaft),
     SN = erlmachine_assembly:serial_no(Shaft),
-    Part = erlmachine_assembly:get(Shaft, ID),
+    Part = erlmachine_assembly:find(Shaft, ID),
 
     case ModelName:rotate(SN, ID, Motion, state(Shaft)) of 
         {ok, Res, State} -> 
-            erlmachine_transmission:rotate(GearBox, Part, Res),
+            erlmachine_transmission:rotation(GearBox, Part, Res),
             {ok, state(Shaft, State)};
         {ok, State} -> 
             {ok, state(Shaft, State)}
@@ -211,7 +211,7 @@ overload(GearBox, Shaft, Load) ->
                       success(assembly()) | failure(term(), term(), assembly()).
 block(GearBox, Shaft, Part, Failure) ->
     ModelName = erlmachine_assembly:model_name(Shaft),
-    SN = erlmachine_assembly:serial_no(Shaft), ID = erlmachine_assembly:serial_no(Part),
+    SN = erlmachine_assembly:serial_no(Shaft), ID = erlmachine_assembly:label(Part),
 
     Mod = ModelName, Fun = block, Args = [SN, ID, Failure, state(Shaft)],
     {ok, State} = erlmachine:optional_callback(Mod, Fun, Args, erlmachine:success(state(Shaft))),
