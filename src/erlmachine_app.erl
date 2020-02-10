@@ -27,7 +27,7 @@ start(_Type, _Args) ->
            disc_only_copies(Nodes),
            record_name(erlmachine_serial:record_name())
           ]),
-
+    io:format("~n_CounterTabRes: ~p~n",[_CounterTabRes]),
     erlmachine_sup:start_link().
 
 

@@ -112,21 +112,21 @@ install(GearBox) ->
     erlmachine_schema:add_edges(Schema, GearBox),
     Res.
 
--spec install(GearBox::assembly(), Assembly::assembly()) ->
+-spec install(GearBox::assembly(), Part::assembly()) ->
                      success(pid()) | ingnore | failure(E::term()).
-install(GearBox, Assembly) ->
-    SN = serial_no(Assembly),
-    Opt = prototype_options(Assembly),
-    (prototype_name(Assembly)):install(SN, GearBox, Assembly, Opt).
+install(GearBox, Part) ->
+    SN = serial_no(Part),
+    Opt = prototype_options(Part),
+    (prototype_name(Part)):install(SN, GearBox, Part, Opt).
 
 -spec attach(GearBox::assembly(), Reg::term(), ID::term()) -> 
                     success(term()) | failure(term(), term()).
 attach(GearBox, Reg, ID) ->
-    SN = serial_no(GearBox), Label = label(GearBox),
     Ext = erlmachine_gearbox:find(GearBox, ID),
+    SN = serial_no(GearBox),
     Res = (prototype_name(GearBox)):attach(SN, GearBox, Reg, Ext),
     %% Build edge (GearBox -> Part);
-    erlmachine_schema:add_edge(schema(GearBox), Label, Ext), 
+    erlmachine_schema:add_edge(schema(GearBox), label(GearBox), Ext), 
     Res.
 
 -spec attach(GearBox::assembly(), Label::term(), Reg::term(), ID::term()) -> 
@@ -134,7 +134,6 @@ attach(GearBox, Reg, ID) ->
 attach(GearBox, Label, Reg, ID) ->
     Part = erlmachine_gearbox:find(GearBox, Label), Ext = erlmachine_gearbox:find(GearBox, ID),
     SN = serial_no(Part),
-
     Res = (prototype_name(Part)):attach(SN, GearBox, Part, Reg, Ext),
     %% Build edge (Part -> Ext);
     erlmachine_schema:add_edge(schema(GearBox), Label, Part),
@@ -143,7 +142,8 @@ attach(GearBox, Label, Reg, ID) ->
 -spec detach(GearBox::assembly(), ID::serial_no()) -> 
                     success(term()) | failure(term(), term()).
 detach(GearBox, ID) ->
-    SN = serial_no(GearBox), Res = (prototype_name(GearBox)):detach(SN, GearBox, ID),
+    SN = serial_no(GearBox),
+    Res = (prototype_name(GearBox)):detach(SN, GearBox, ID),
     %% Remove vertex with all edges (GearBox -> Part);
     ok = erlmachine_schema:del_vertex(schema(GearBox), ID),
     Res.
@@ -153,7 +153,6 @@ detach(GearBox, ID) ->
 detach(GearBox, Label, ID) ->
     Part = erlmachine_gearbox:find(GearBox, Label),
     SN = serial_no(Part),
-
     Res = (prototype_name(Part)):detach(SN, GearBox, Part, ID),
     %% Remove edge (Part -> Ext);
     ok = erlmachine_schema:del_path(schema(GearBox), Label, ID),
@@ -162,10 +161,10 @@ detach(GearBox, Label, ID) ->
 -spec uninstall(GearBox::assembly(), Reason::term()) ->
                      ok.
 uninstall(GearBox, Reason) ->
-    SN = serial_no(GearBox), Label = label(GearBox),
+    SN = serial_no(GearBox),
     Res = (prototype_name(GearBox)):uninstall(SN, GearBox, Reason),
     %% Remove vertex with all edges (GearBox);
-    ok = erlmachine_schema:del_vertex(schema(GearBox), Label),
+    ok = erlmachine_schema:del_vertex(schema(GearBox), label(GearBox)),
     Res.
 
 -spec uninstall(GearBox::assembly(), Label::term(), Reason::term()) ->
@@ -173,7 +172,6 @@ uninstall(GearBox, Reason) ->
 uninstall(GearBox, Label, Reason) ->
     Part = erlmachine_gearbox:find(GearBox, Label),
     SN = serial_no(Part),
-
     Res = (prototype_name(GearBox)):uninstall(SN, GearBox, Part, Reason),
     %% Remove vertex with all edges (Part);
     ok = erlmachine_schema:del_vertex(schema(GearBox), Label),

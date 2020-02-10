@@ -134,6 +134,7 @@ axle(GearBox, Name, Opt, Label) ->
 -spec axle(SN::serial_no(), GearBox::assembly(), Name::atom(), Opt::term(), Label::term()) -> 
                   assembly().
 axle(SN, _GearBox, Name, Opt, Label) ->
+    Schema = erlmachine_assembly:schema(),
     Product = erlmachine_axle:axle(),
 
     ProtName = axle_base_prototype:name(), ProtOpt = [],
@@ -142,7 +143,7 @@ axle(SN, _GearBox, Name, Opt, Label) ->
     Model = erlmachine_model:model(Name, Opt, Prot, Product),
     Body = [],
 
-    assembly(SN, Body, Model, Label).
+    erlmachine_assembly:schema(assembly(SN, Body, Model, Label), Schema).
 
 -spec gearbox(Name::atom(), Opt::term(), Env::term()) -> 
                   assembly().

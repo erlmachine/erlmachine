@@ -21,10 +21,10 @@
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
 
--callback install(SN::serial_no(), IDs::list(serial_no()), State::term(), Opt::term(), Env::list()) -> 
+-callback install(SN::serial_no(), IDs::list(term()), State::term(), Opt::term(), Env::list()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
--callback replace(SN::serial_no(), ID::serial_no(), State::term()) -> 
+-callback replace(SN::serial_no(), ID::term(), State::term()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
 -callback uninstall(SN::serial_no(), Reason::term(), State::term()) -> 
@@ -33,13 +33,13 @@
 -callback accept(SN::serial_no(), Criteria::criteria(), State::term()) -> 
     success() | failure(term(), term(), term()).
 
--callback attach(SN::serial_no(), Register::term(), ID::serial_no(), State::term()) -> 
+-callback attach(SN::serial_no(), Reg::term(), ID::term(), State::term()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
--callback detach(SN::serial_no(), ID::serial_no(), State::term()) -> 
+-callback detach(SN::serial_no(), ID::term(), State::term()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
--callback rotate(SN::serial_no(), ID::serial_no(), Motion::term(), State::term()) -> 
+-callback rotate(SN::serial_no(), ID::term(), Motion::term(), State::term()) -> 
     success(term(), term()) | success(term()) | failure(term(), term(), term()) | failure(term()).
 
 -callback transmit(SN::serial_no(), Motion::term(), State::term()) -> 
@@ -48,7 +48,7 @@
 -callback overload(SN::serial_no(), Load::term(), State::term()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
--callback block(SN::serial_no(), ID::serial_no(), Failure::term(), State::term()) -> 
+-callback block(SN::serial_no(), ID::term(), Failure::term(), State::term()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
 -callback form(SN::serial_no(), State::term()) ->

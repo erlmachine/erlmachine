@@ -41,15 +41,13 @@
 
 -export([find/1, find/2]).
 
--export([labels/1]).
-
 -export([record_name/0, attributes/0]).
 
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
 
 
--callback install(SN::serial_no(), IDs::list(serial_no()), Schema::term(), Opt::term(), Env::list()) -> 
+-callback install(SN::serial_no(), IDs::list(term()), Schema::term(), Opt::term(), Env::list()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
 -callback uninstall(SN::serial_no(), Reason::term(), Schema::term()) -> 
@@ -58,10 +56,10 @@
 -callback accept(SN::serial_no(), Criteria::criteria(), Schema::term()) -> 
     success(term(), term()) | failure(term(), term(), term()).
 
--callback attach(SN::serial_no(), Reg::term(), ID::serial_no(), Schema::term()) -> 
+-callback attach(SN::serial_no(), Reg::term(), ID::term(), Schema::term()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
--callback detach(SN::serial_no(), ID::serial_no(), Schema::term()) -> 
+-callback detach(SN::serial_no(), ID::term(), Schema::term()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
 -callback form(SN::serial_no(), Schema::term()) ->
@@ -111,31 +109,17 @@ mounted(GearBox, Parts) ->
 
 %% We are going to provide access by path gearbox.shaft.# (like rabbitmq notation) too;
 
--spec find(GearBox::assembly(), SN::serial_no()) -> 
+-spec find(GearBox::assembly(), Label::term()) -> 
                   assembly() | false.
-find(GearBox, SN) ->
+find(GearBox, Label) ->
     Schema = erlmachine_assembly:schema(GearBox),
-    erlmachine_schema:vertex(Schema, SN).
+    erlmachine_schema:vertex(Schema, Label).
 
 -spec find(GearBox::assembly()) -> list().
 find(GearBox) ->
-    SN = erlmachine:serial_no(GearBox),
+    Label = erlmachine_assembly:label(GearBox),
     Schema = erlmachine_assembly:schema(GearBox),
-    [erlmachine_schema:vertex(Schema, V)|| V <- digraph:vertices(Schema), V /= SN].
-
--spec labels(GearBox::assembly()) -> map().
-labels(GearBox) ->
-    Parts = find(GearBox),
-    lists:foldl(fun label/2, #{}, Parts).
-
--spec label(Assembly::assembly(), Acc::map()) -> map().
-label(Assembly, Acc) ->
-    Label = erlmachine_assembly:label(Assembly),
-    if Label == undefined ->
-            Acc;
-       true  ->
-            Acc#{Label => erlmachine_assembly:serial_no(Assembly)}
-    end.
+    [erlmachine_schema:vertex(Schema, V)|| V <- digraph:vertices(Schema), V /= Label].
 
 -spec install(GearBox::assembly()) -> 
                      success(assembly()) | failure(term(), term(), assembly()).
@@ -258,10 +242,8 @@ input(GearBox) ->
 
 -spec input(GearBox::assembly(), Part::assembly()) -> assembly().
 input(GearBox, Part) ->
-    Label = erlmachine_assembly:label(Part),
-
     Product = erlmachine_assembly:product(GearBox),
-    erlmachine_assembly:product(GearBox, Product#gearbox{ input=Label }).
+    erlmachine_assembly:product(GearBox, Product#gearbox{ input=Part }).
 
 -spec output(GearBox::assembly()) -> assembly().
 output(GearBox) ->
@@ -269,10 +251,8 @@ output(GearBox) ->
 
 -spec output(GearBox::assembly(), Part::assembly()) -> assembly().
 output(GearBox, Part) ->
-    Label = erlmachine_assembly:label(Part),
-
     Product = erlmachine_assembly:product(GearBox),
-    erlmachine_assembly:product(GearBox, Product#gearbox{ output=Label }).
+    erlmachine_assembly:product(GearBox, Product#gearbox{ output=Part }).
 
 -spec env(GearBox::assembly()) -> term().
 env(GearBox) ->
