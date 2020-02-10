@@ -132,7 +132,6 @@ install(GearBox) ->
     Parts = erlmachine_assembly:parts(GearBox),
     IDs = [erlmachine_assembly:label(Part)|| Part <- Parts],
     ModelName = erlmachine_assembly:model_name(GearBox),
-
     {ok, State} = ModelName:install(SN, IDs, state(GearBox), Opt, Env),
     %% We are going to add error handling later;
     Rel = state(GearBox, State),
@@ -204,16 +203,12 @@ submit(GearBox, Form) ->
 -spec rotate(GearBox::assembly(), Motion::term()) ->
                     Motion::term().
 rotate(GearBox, Motion) ->
-    Input = input(GearBox), Part = erlmachine_gearbox:find(GearBox, Input),
-
-    erlmachine_transmission:rotation(GearBox, Part, Motion).
+    erlmachine_transmission:rotation(GearBox, input(GearBox), Motion).
 
 -spec transmit(GearBox::assembly(), Motion::term()) ->
                       success(term()) | failure(term(), term()).
 transmit(GearBox, Motion) ->
-    Input = input(GearBox), Part = erlmachine_gearbox:find(GearBox, Input),
-
-    erlmachine_transmission:transmission(GearBox, Part, Motion).
+    erlmachine_transmission:transmission(GearBox, input(GearBox), Motion).
 
 -spec connect(GearBox::assembly(), Part::assembly()) ->
                     success(term()) | failure(term(), term()).

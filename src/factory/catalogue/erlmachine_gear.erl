@@ -21,7 +21,7 @@
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
 
--callback install(SN::serial_no(), ID::term(), State::term(), Opt::term(), Env::list()) -> 
+-callback install(SN::serial_no(), IDs::list(), State::term(), Opt::term(), Env::list()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
 -callback replace(SN::serial_no(), ID::term(), State::term()) -> 
@@ -93,15 +93,9 @@ install(GearBox, Gear) ->
     Opt = erlmachine_assembly:model_options(Gear),
     %% We can check exported functions accordingly to this kind of behaviour; 
     %% We are going to add error handling later; 
-    Parts = erlmachine_assembly:parts(Gear), 
-    ID = case 
-             Parts of [] -> 
-                 undefined;
-             [Part] -> 
-                 erlmachine_assembly:serial_no(Part)
-         end,
+    IDs = [erlmachine_assembly:label(Part)|| Part <- erlmachine_assembly:parts(Gear)],
 
-    {ok, State} = ModelName:install(SN, ID, state(Gear), Opt, Env),
+    {ok, State} = ModelName:install(SN, IDs, state(Gear), Opt, Env),
     
     %% We are going to add error handling later; 
     Rel = state(Gear, State), 
@@ -228,7 +222,7 @@ load(GearBox, Gear, Load) ->
 
     case ModelName:load(SN, Load, state(Gear)) of 
         {ok, Res, State} -> 
-            [erlmachine_transmission:rotate(GearBox, Part, Res) || Part <- Parts], 
+            [erlmachine_transmission:rotation(GearBox, Part, Res) || Part <- Parts], 
             {ok, state(Gear, State)};
         {ok, State} -> 
             {ok, state(Gear, State)}

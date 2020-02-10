@@ -51,7 +51,7 @@
          label/1, label/2
         ]).
 
--export([add/2, remove/2, find/2]).
+-export([add/2, remove/2, part/2]).%% TODO can be relocated;
 
 -export([tabname/0, record_name/0, attributes/0]).
 
@@ -430,14 +430,14 @@ add(Assembly, Part) ->
     Parts = lists:keystore(serial_no(Part), serial_no(), parts(Assembly), Part),
     parts(Assembly, Parts).
 
--spec remove(Assembly::assembly(), ID::serial_no()) -> assembly().
-remove(Assembly, ID) ->
-    Parts = lists:keydelete(ID, #assembly.serial_no, parts(Assembly)),
+-spec remove(Assembly::assembly(), Label::term()) -> assembly().
+remove(Assembly, Label) ->
+    Parts = lists:keydelete(Label, #assembly.label, parts(Assembly)),
     parts(Assembly, Parts).
 
--spec find(Assembly::assembly(), ID::serial_no()) -> assembly().
-find(Assembly, ID) ->
-    lists:keyfind(ID, #assembly.serial_no, parts(Assembly)).
+-spec part(Assembly::assembly(), Label::term()) -> assembly().
+part(Assembly, Label) ->
+    lists:keyfind(Label, #assembly.label, parts(Assembly)).
 
 -spec tabname() -> atom().
 tabname() -> 

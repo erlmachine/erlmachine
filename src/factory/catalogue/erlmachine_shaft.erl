@@ -89,7 +89,7 @@ install(GearBox, Shaft) ->
     Opt = erlmachine_assembly:model_options(Shaft),
     %% We can check exported functions accordingly to this kind of behaviour; 
     %% We are going to add error handling later; 
-    IDs = [erlmachine_assembly:serial_no(Part)|| Part <- erlmachine_assembly:parts(Shaft)], 
+    IDs = [erlmachine_assembly:label(Part)|| Part <- erlmachine_assembly:parts(Shaft)], 
 
     {ok, State} = ModelName:install(SN, IDs, state(Shaft), Opt, Env),
     
@@ -160,7 +160,7 @@ accept(GearBox, Shaft, Criteria) ->
 rotate(GearBox, Shaft, ID, Motion) ->
     ModelName = erlmachine_assembly:model_name(Shaft),
     SN = erlmachine_assembly:serial_no(Shaft),
-    Part = erlmachine_assembly:find(Shaft, ID),
+    Part = erlmachine_assembly:part(Shaft, ID),
 
     case ModelName:rotate(SN, ID, Motion, state(Shaft)) of 
         {ok, Res, State} -> 
@@ -173,15 +173,11 @@ rotate(GearBox, Shaft, ID, Motion) ->
 -spec rotate(GearBox::assembly(), Shaft::assembly(), Motion::term()) ->
                     success(assembly()) | failure(term(), term(), term()).
 rotate(GearBox, Shaft, Motion) ->
-    Parts = erlmachine_assembly:parts(Shaft),
-    {ok, Rel} = lists:foldl(
-      fun (Part, {ok, Acc}) ->
-              ID = erlmachine_assembly:serial_no(Part),
-              rotate(GearBox, Acc, ID, Motion)
-      end,
-      {ok, Shaft},
-      Parts),
-    {ok, Rel}.
+    Fun = fun (Part, {ok, Acc}) -> 
+                  ID = erlmachine_assembly:label(Part),
+                  rotate(GearBox, Acc, ID, Motion)
+          end,
+    lists:foldl(Fun, {ok, Shaft}, erlmachine_assembly:parts(Shaft)).
 
 -spec transmit(GearBox::assembly(), Shaft::assembly(), Motion::term()) ->
                     success(term(), assembly()) | failure(term(), term(), assembly()).
