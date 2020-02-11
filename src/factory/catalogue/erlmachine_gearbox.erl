@@ -119,7 +119,7 @@ find(GearBox, Label) ->
 find(GearBox) ->
     Label = erlmachine_assembly:label(GearBox),
     Schema = erlmachine_assembly:schema(GearBox),
-    [erlmachine_schema:vertex(Schema, V)|| V <- digraph:vertices(Schema), V /= Label].
+    [erlmachine_schema:vertex(Schema, V)|| V <- erlmachine_schema:vertices(Schema), V /= Label].
 
 -spec install(GearBox::assembly()) -> 
                      success(assembly()) | failure(term(), term(), assembly()).

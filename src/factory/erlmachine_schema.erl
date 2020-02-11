@@ -1,9 +1,12 @@
 -module(erlmachine_schema).
 
+-export([vertices/1]).
 -export([vertex/2]).
 
--export([add_edges/2, add_edge/3]).
+-export([edges/1]).
+-export([edge/2]).
 
+-export([add_edges/2, add_edge/3]).
 -export([add_vertex/2, del_vertex/2]).
 
 -export([del_path/3]).
@@ -52,6 +55,10 @@ add_edges(Schema, V1, [Part|T]) ->
     add_edges(Schema, V1, T), 
     V1.
 
+-spec vertices(Schema::term()) -> list().
+vertices(Schema) ->
+    digraph:vertices(Schema).
+
 -spec vertex(Schema::term(), V::term()) -> 
                   assembly() | false.
 vertex(Schema, V) ->
@@ -61,3 +68,11 @@ vertex(Schema, V) ->
         _ ->
             false
     end.
+
+-spec edges(Schema::term()) -> list().
+edges(Schema) ->
+    digraph:edges(Schema).
+
+-spec edge(Schema::term(), E::term()) -> term().
+edge(Schema, E) ->
+    digraph:edge(Schema, E).
