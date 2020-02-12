@@ -141,9 +141,8 @@ axle(SN, _GearBox, Name, Opt, Label) ->
     Prot = erlmachine_prototype:prototype(ProtName, [{type, supervisor}|ProtOpt]),
 
     Model = erlmachine_model:model(Name, Opt, Prot, Product),
-    Body = [],
 
-    erlmachine_assembly:schema(assembly(SN, Body, Model, Label), Schema).
+    erlmachine_assembly:schema(assembly(SN, Schema, Model, Label), Schema).
 
 -spec gearbox(Name::atom(), Opt::term(), Env::term()) -> 
                   assembly().
@@ -166,9 +165,8 @@ gearbox(SN, Name, Opt, Env, Label) ->
     Prot = erlmachine_prototype:prototype(ProtName, [{type, supervisor}|ProtOpt]),
 
     Model = erlmachine_model:model(Name, Opt, Prot, Product),
-    Body = [],
 
-    erlmachine_assembly:schema(assembly(SN, Body, Model, Label), Schema).
+    erlmachine_assembly:schema(assembly(SN, Schema, Model, Label), Schema).
 
 %% API.
 

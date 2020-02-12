@@ -150,19 +150,19 @@ attach(Name, GearBox, Reg, Ext) ->
 
     {ok, _PID} = supervisor:start_child(SupRef, Spec),
     trace(GearBox, #{attach => erlmachine_assembly:serial_no(Part)}),
-    erlmachine:success(Part).
+    erlmachine:success(Part, Rel).
     
 -spec detach(Name::serial_no(), GearBox::assembly(), ID::serial_no()) ->
                     success() | success(term(), term()) | failure(term()).
 detach(Name, GearBox, ID) ->
     trace(GearBox, #{detach => ID}),
-    {ok, _} = erlmachine_gearbox:detach(GearBox, ID),
+    {ok, Rel} = erlmachine_gearbox:detach(GearBox, ID),
 
     SupRef = format_name(Name),
  
     ok = supervisor:terminate_child(SupRef, ID),
     ok = supervisor:delete_child(SupRef, ID), %% ID the same for chield and SN
-    erlmachine:success().
+    erlmachine:success(Rel).
 
 -spec uninstall(Name::serial_no(), GearBox::assembly(), Reason::term()) ->
                        success().
@@ -206,7 +206,15 @@ spec(GearBox, Part) ->
     Modules = proplists:get_value(modules, Opt, [Module]),
 
     Type = proplists:get_value(type, Opt),
-    #{id => SN, start => Start, restart => Restart, shutdown => Shutdown, modules => Modules, type => Type}.
+    Label = erlmachine_assembly:label(Part),
+    #{
+      id => Label,
+      start => Start,
+      restart => Restart, 
+      shutdown => Shutdown,
+      modules => Modules, 
+      type => Type
+     }.
 
 -spec specs(GearBox::assembly()) -> list(map()).
 specs(GearBox) ->

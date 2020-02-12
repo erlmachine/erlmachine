@@ -55,35 +55,35 @@ uninstalled(_Name, _GearBox, Axle, Part, Reason) ->
     to_track(SN, #{uninstalled => erlmachine_assembly:serial_no(Part), reason => Reason}),
     ok.
 
--spec attach(Name::serial_no(), GearBox::assembly(), Axle::assembly(), Register::term(), Extension::assembly()) ->
+-spec attach(Name::serial_no(), GearBox::assembly(), Axle::assembly(), Reg::term(), Ext::assembly()) ->
                     success(assembly()) | failure(term(), term()).
-attach(Name, GearBox, Axle, Register, Extension) ->
-    {ok, Part, Release} = erlmachine_axle:attach(GearBox, Axle, Register, Extension),
+attach(Name, GearBox, Axle, Reg, Ext) ->
+    {ok, Part, Rel} = erlmachine_axle:attach(GearBox, Axle, Reg, Ext),
 
     %% TODO Conditional case for Result needs to be processed;
-    Spec = spec(GearBox, Release, Part),
+    Spec = spec(GearBox, Rel, Part),
     %% Mount time will be determined by prototype;
     SupRef = format_name(Name),
 
     {ok, _PID} = supervisor:start_child(SupRef, Spec),
 
     SN = erlmachine_assembly:serial_no(Axle),
-    to_track(SN, #{ attach => erlmachine_assembly:serial_no(Extension) }),
-    erlmachine:success(Part).
+    to_track(SN, #{ attach => erlmachine_assembly:serial_no(Ext) }),
+    erlmachine:success(Rel).
     
 -spec detach(Name::serial_no(), GearBox::assembly(), Axle::assembly(), ID::serial_no()) ->
                     success() | success(term(), term()) | failure(term()).
 detach(Name, GearBox, Axle, ID) ->
     SupRef = format_name(Name),
 
-    {ok, _} = erlmachine_axle:detach(GearBox, Axle, ID),
+    {ok, Rel} = erlmachine_axle:detach(GearBox, Axle, ID),
 
     ok = supervisor:terminate_child(SupRef, ID),
     ok = supervisor:delete_child(SupRef, ID), %% ID the same for chield and SN
 
     SN = erlmachine_assembly:serial_no(Axle),
     to_track(SN, #{ detach => ID }),
-    erlmachine:success().
+    erlmachine:success(Rel).
 
 -record(install, {gearbox::assembly(), axle::assembly(), options::list(tuple)}).
 
@@ -164,7 +164,15 @@ spec(GearBox, _Axle, Part) ->
     Modules = proplists:get_value(modules, Opt, [Module]),
 
     Type = proplists:get_value(type, Opt),
-    #{id => SN, start => Start, restart => Restart, shutdown => Shutdown, modules => Modules, type => Type}.
+    Label = erlmachine_assembly:label(Part),
+    #{
+      id => Label, 
+      start => Start, 
+      restart => Restart, 
+      shutdown => Shutdown, 
+      modules => Modules,
+      type => Type
+     }.
 
 -spec specs(GearBox::assembly(), Axle::assembly()) -> list(map()).
 specs(GearBox, Axle) ->

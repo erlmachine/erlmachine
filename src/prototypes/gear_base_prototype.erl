@@ -162,15 +162,15 @@ init(#install{gearbox=GearBox, gear=Gear, options=Opt}) ->
 
 handle_call(#attach{extension = Ext, register = Reg}, _From, #state{gearbox=GearBox, gear=Gear} = State) ->
     {ok, Part, Rel} = erlmachine_gear:attach(GearBox, Gear, Reg, Ext),
-    {reply, erlmachine:success(Part), State#state{ gear=Rel }};
+    {reply, erlmachine:success(Part, Rel), State#state{ gear=Rel }};
 
 handle_call(#detach{id = ID}, _From, #state{gearbox=GearBox, gear=Gear} = State) ->
     {ok, Rel} = erlmachine_gear:detach(GearBox, Gear, ID),
-    {reply, erlmachine:success(), State#state{ gear=Rel }};
+    {reply, erlmachine:success(Rel), State#state{ gear=Rel }};
 
 handle_call(#replace{repair=Repair}, _From, #state{gearbox=GearBox, gear=Gear} = State) ->
     {ok, Rel} = erlmachine_gear:replace(GearBox, Gear, Repair),
-    {reply, erlmachine:success(), State#state{ gear=Rel }};
+    {reply, erlmachine:success(Rel), State#state{ gear=Rel }};
 
 handle_call(#transmit{motion = Motion}, _From, #state{gearbox=GearBox, gear=Gear} = State) ->
     {ok, Res, Rel} = erlmachine_gear:transmit(GearBox, Gear, Motion),
@@ -214,8 +214,8 @@ handle_info(#block{part=Part, failure = Failure}, #state{gearbox=GearBox, gear=G
 
 handle_info(Load, #state{gearbox=GearBox, gear=Gear}=State) ->
     %% At that place load capacity control can be achived;
-    {ok, Release} = erlmachine_gear:load(GearBox, Gear, Load),
-    {noreply, State#state{gear=Release}}.
+    {ok, Rel} = erlmachine_gear:load(GearBox, Gear, Load),
+    {noreply, State#state{gear=Rel}}.
 
 %% When reason is different from normal, or stop - the broken part event is occured;
 terminate(Reason, #state{gearbox=GearBox, gear=Gear}) ->

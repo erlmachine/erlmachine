@@ -4,7 +4,7 @@
          install/2,
          attach/4, detach/3,
          replace/3,
-         transmit/3, rotate/4, rotate/3,
+         transmit/3, rotate/4, rotate/3, load/3,
          accept/3,
          overload/3, block/4,
          uninstall/3
@@ -45,6 +45,9 @@
 -callback transmit(SN::serial_no(), Motion::term(), State::term()) -> 
     success(term(), term()) | failure(term(), term(), term()) | failure(term()).
 
+-callback load(SN::serial_no(), Load::term(), State::term()) ->
+    success(term()) |  success(term(), term()) | failure(term(), term(), term()) | failure(term()).
+
 -callback overload(SN::serial_no(), Load::term(), State::term()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
@@ -57,7 +60,7 @@
 -callback submit(SN::serial_no(), Form::term(), State::term()) ->
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
--optional_callbacks([replace/3, attach/4, detach/3, overload/3, block/4]).
+-optional_callbacks([replace/3, overload/3, block/4]).
 -optional_callbacks([form/2, submit/3]).
 
 %% Instead of gear the main puropse of shaft is to transmit power between parts;
@@ -178,6 +181,19 @@ rotate(GearBox, Shaft, Motion) ->
                   rotate(GearBox, Acc, ID, Motion)
           end,
     lists:foldl(Fun, {ok, Shaft}, erlmachine_assembly:parts(Shaft)).
+
+-spec load(GearBox::assembly(), Shaft::assembly(), Load::term()) ->
+                  success(assembly()) | failure(term(), term(), term()).
+load(GearBox, Shaft, Load) ->
+    ModelName = erlmachine_assembly:model_name(Shaft),
+    SN = erlmachine_assembly:serial_no(Shaft),
+
+    case ModelName:load(SN, Load, state(Shaft)) of 
+        {ok, Res, State} -> 
+            rotate(GearBox, state(Shaft, State), Res);
+        {ok, State} -> 
+            {ok, state(Shaft, State)}
+    end.
 
 -spec transmit(GearBox::assembly(), Shaft::assembly(), Motion::term()) ->
                     success(term(), assembly()) | failure(term(), term(), assembly()).

@@ -169,11 +169,11 @@ init(#install{gearbox=GearBox, shaft=Shaft, options=Opt}) ->
 
 handle_call(#attach{extension = Ext, register = Reg}, _From, #state{gearbox=GearBox, shaft=Shaft} = State) ->
     {ok, Part, Rel} = erlmachine_shaft:attach(GearBox, Shaft, Reg, Ext),
-    {reply, erlmachine:success(Part), State#state{ shaft=Rel }};
+    {reply, erlmachine:success(Part, Rel), State#state{ shaft=Rel }};
 
 handle_call(#detach{id = ID}, _From, #state{gearbox=GearBox, shaft=Shaft} = State) ->
     {ok, Rel} = erlmachine_shaft:detach(GearBox, Shaft, ID),
-    {reply, erlmachine:success(), State#state{ shaft=Rel }};
+    {reply, erlmachine:success(Rel), State#state{ shaft=Rel }};
 
 handle_call(#transmit{motion = Motion}, _From, #state{gearbox=GearBox, shaft=Shaft} = State) ->
     {ok, Res, Rel} = erlmachine_shaft:transmit(GearBox, Shaft, Motion),
@@ -222,9 +222,10 @@ handle_info(#block{part=Part, failure = Failure}, #state{gearbox=GearBox, shaft=
     {ok, Release} = erlmachine_shaft:block(GearBox, Shaft, Part, Failure),
     {noreply, State#state{shaft=Release}};
 
-handle_info(_Message, #state{gearbox=_GearBox, shaft=_Shaft} = State) ->
+handle_info(Load, #state{gearbox=GearBox, shaft=Shaft} = State) ->
     %% We need to provide logging at that place;
-    {noreply, State}.
+    {ok, Rel} = erlmachine_shaft:load(GearBox, Shaft, Load),
+    {noreply, State#state{ shaft=Rel }}.
 
 %% When reason is different from normal, or stop - the broken part event is occured;
 terminate(Reason, #state{gearbox=GearBox, shaft=Shaft}) ->
