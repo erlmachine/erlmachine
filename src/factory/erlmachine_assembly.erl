@@ -139,7 +139,7 @@ attach(GearBox, Label, Reg, Ext) ->
     SN = serial_no(Part),
     Res = (prototype_name(Part)):attach(SN, GearBox, Part, Reg, Ext),
     %% Build edge (Part -> Ext);
-    erlmachine_schema:add_edge(schema(GearBox), Label, Part),
+    erlmachine_schema:add_edge(schema(GearBox), Label, Ext),
     Res.
 
 -spec detach(GearBox::assembly(), ID::serial_no()) -> 

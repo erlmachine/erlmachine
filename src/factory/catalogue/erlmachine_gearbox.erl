@@ -40,6 +40,7 @@
 -export([parts/2, parts/3, parts/4]).
 
 -export([find/1, find/2]).
+-export([print/1]).
 
 -export([record_name/0, attributes/0]).
 
@@ -120,6 +121,12 @@ find(GearBox) ->
     Label = erlmachine_assembly:label(GearBox),
     Schema = erlmachine_assembly:schema(GearBox),
     [erlmachine_schema:vertex(Schema, V)|| V <- erlmachine_schema:vertices(Schema), V /= Label].
+
+-spec print(GearBox::assembly()) -> list().
+print(GearBox) ->
+    Schema = erlmachine_assembly:schema(GearBox),
+    [{erlmachine_schema:vertex(Schema, V1), erlmachine_schema:vertex(Schema, V2), L}
+     || {_, V1, V2, L} <- erlmachine_schema:edges(Schema)].
 
 -spec install(GearBox::assembly()) -> 
                      success(assembly()) | failure(term(), term(), assembly()).

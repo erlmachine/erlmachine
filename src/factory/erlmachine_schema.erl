@@ -71,7 +71,7 @@ vertex(Schema, V) ->
 
 -spec edges(Schema::term()) -> list().
 edges(Schema) ->
-    digraph:edges(Schema).
+    [digraph:edge(Schema, E)|| E <- digraph:edges(Schema)].
 
 -spec edge(Schema::term(), E::term()) -> term().
 edge(Schema, E) ->

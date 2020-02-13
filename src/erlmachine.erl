@@ -25,6 +25,8 @@
 -export([digest/1, digest/2]).
 -export([base64url/1]).
 
+-export([label/1]).
+
 -export([timestamp/0]).
 
 -include("erlmachine_system.hrl").
@@ -49,6 +51,10 @@
 -spec serial_no(Assembly::assembly()) -> serial_no().
 serial_no(Assembly) ->
     erlmachine_assembly:serial_no(Assembly).
+
+-spec label(Assembly::assembly()) -> term().
+label(Assembly) ->
+    erlmachine_assembly:label(Assembly).
 
 -spec start() -> success().
 start() ->
