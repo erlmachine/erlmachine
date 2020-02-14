@@ -2,7 +2,7 @@
 
 -folder(<<"erlmachine">>).
 
--export([serial_no/1]).
+-export([serial_no/1, label/1]).
 
 -export([start/0, stop/0]).
 
@@ -12,7 +12,11 @@
 -export([command/1, command/2]).
 -export([document/1, document/2]).
 -export([event/1, event/2]).
--export([request_reply/2, request_reply/3, request_reply/4]).
+
+-export([return_address/1, return_address/2]).
+-export([correlation_id/1, correlation_id/2]).
+
+-export([request_reply/3]).
 
 -export([failure/1, failure/2, failure/3]).
 -export([success/0, success/1, success/2]).
@@ -24,8 +28,6 @@
 
 -export([digest/1, digest/2]).
 -export([base64url/1]).
-
--export([label/1]).
 
 -export([timestamp/0]).
 
@@ -68,7 +70,7 @@ stop() ->
 -spec motion(Body::term()) -> 
                     motion().
 motion(Body) ->
-    erlmachine_transmission:motion(Body).
+    motion(#{}, Body).
 
 -spec motion(Header::header(), Body::body()) -> 
                     motion().
@@ -93,7 +95,7 @@ body(Motion) ->
 -spec command(Body::body()) ->
                      motion(). 
 command(Body) ->
-    erlmachine_transmission:command(Body).
+    command(#{}, Body).
 
 -spec command(Header::header(), Body::body()) -> 
                      motion().
@@ -103,7 +105,7 @@ command(Header, Body) ->
 -spec document(Body::body()) -> 
                       motion(). 
 document(Body) ->
-    erlmachine_transmission:document(Body).
+    document(#{}, Body).
 
 -spec document(Header::header(), Body::body()) -> 
                       motion().
@@ -113,27 +115,34 @@ document(Header, Body) ->
 -spec event(Body::body()) -> 
                    motion(). 
 event(Body) ->
-    erlmachine_transmission:event(Body).
+    event(#{}, Body).
 
 -spec event(Header::header(), Body::body()) -> 
                    motion().
 event(Header, Body) ->
     erlmachine_transmission:event(Header, Body).
 
--spec request_reply(Body::body(), Address::term()) -> 
-                           motion().
-request_reply(Body, Address) ->
-    erlmachine_transmission:request_reply(Body, Address).
+-spec return_address(Header::header(), Address::term()) -> header().
+return_address(Header, Address) ->
+    Header#{ return_address => Address }.
 
--spec request_reply(Header::header(), Body::body(), Address::term()) -> 
-                           motion().
-request_reply(Header, Body, Address) ->
-    erlmachine_transmission:request_reply(Header, Body, Address).
+-spec return_address(Header::header()) -> term().
+return_address(Header) ->
+    maps:get(return_address, Header, undefined).
 
--spec request_reply(Header::header(), Body::body(), Address::term(), Ref::reference()) -> 
+-spec correlation_id(Header::header()) -> term().
+correlation_id(Header) ->
+    maps:get(correlation_id, Header, undefined).
+
+-spec correlation_id(Header::header(), Id::term()) -> header().
+correlation_id(Header, Id) ->
+    Header#{ correlation_id => Id }.
+
+-spec request_reply(Motion::motion(), Address::term(), Id::term()) -> 
                            motion().
-request_reply(Header, Body, Address, Ref) ->
-    erlmachine_transmission:request_reply(Header, Body, Address, Ref).
+request_reply(Motion, Address, Id) ->
+    Header = header(Motion), 
+    correlation_id(return_address(Header, Address), Id).
 
 -spec failure(E::term(), R::term()) -> failure(E::term(), R::term()).
 failure(E, R) -> 

@@ -31,8 +31,7 @@ start(_Type, _Args) ->
 
 
 stop(_State) ->	
-    Nodes = [node()],
-    ok = mnesia:stop(), mnesia:delete_schema(Nodes).
+    ok = mnesia:stop().
 
 start_phase(erlmachine_filesystem, _Type, _PhaseArgs) ->
     ok;
