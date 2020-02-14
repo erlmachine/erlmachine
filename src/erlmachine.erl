@@ -141,8 +141,8 @@ correlation_id(Header, Id) ->
 -spec request_reply(Motion::motion(), Address::term(), Id::term()) -> 
                            motion().
 request_reply(Motion, Address, Id) ->
-    Header = header(Motion), 
-    correlation_id(return_address(Header, Address), Id).
+    Header = correlation_id(return_address(header(Motion), Address), Id),
+    motion(Header, body(Motion)).
 
 -spec failure(E::term(), R::term()) -> failure(E::term(), R::term()).
 failure(E, R) -> 
