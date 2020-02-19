@@ -48,7 +48,7 @@
          part_no/1, part_no/2,
 
          tags/1, tags/2,
-         label/1, label/2
+         label/0, label/1, label/2
         ]).
 
 -export([add/2, remove/2, part/2]).%% TODO can be relocated;
@@ -246,6 +246,10 @@ is_mounted(Assembly) ->
 serial_no() ->
     #assembly.serial_no.
 
+-spec label() -> integer().
+label() ->
+    #assembly.label.
+
 -spec serial_no(Assembly::assembly()) -> serial_no().
 serial_no(Assembly) ->
     SN = Assembly#assembly.serial_no,
@@ -430,7 +434,7 @@ label(Assembly, Label) ->
 
 -spec add(Assembly::assembly(), Part::assembly()) -> assembly().
 add(Assembly, Part) ->
-    Parts = lists:keystore(serial_no(Part), serial_no(), parts(Assembly), Part),
+    Parts = lists:keystore(label(Part), label(), parts(Assembly), Part),
     parts(Assembly, Parts).
 
 -spec remove(Assembly::assembly(), Label::term()) -> assembly().
