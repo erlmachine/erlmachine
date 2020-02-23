@@ -16,14 +16,17 @@
 -export([transmit/2]).
 -export([connect/2, disconnect/2]).
 
--export([
-         install/1,
-         attach/3, detach/2,
-         accept/2,
-         uninstall/2
-        ]).
+%% erlmachine_assembly
+-export([install/1, uninstall/2, attach/3, detach/2]).
+-export([installed/2, uninstalled/3, attached/3, detached/3]).
 
+%% erlmachine_factory
+-export([accept/2]).
+-export([accepted/3, rejected/3]).
+
+%% erlmachine_system
 -export([form/1, submit/2]).
+-export([blocked/4, overloaded/3]).
 
 -export([gearbox/1]).
 
@@ -47,15 +50,13 @@
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
 
-
+%% erlmachine_assembly callbacks;
+%% Requests:
 -callback install(Label::term(), Ids::list(term()), Schema::term(), Opt::term(), Env::list()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
 -callback uninstall(Label::term(), Reason::term(), Schema::term()) -> 
     success() | failure(term(), term(), term()).
-
--callback accept(Label::term(), Criteria::criteria(), Schema::term()) -> 
-    success(term(), term()) | failure(term(), term(), term()).
 
 -callback attach(Label::term(), Reg::term(), Id::term(), Schema::term()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
@@ -63,12 +64,51 @@
 -callback detach(Label::term(), Id::term(), Schema::term()) -> 
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
+%% Events:
+-callback installed(GearBox::assembly(), Part::assembly()) -> 
+    success().
+
+-callback uninstalled(GearBox::assembly(), Part::assembly(), Reason::term()) ->
+    success().
+
+-callback attached(GearBox::assembly(), Part::assembly(), Ext::assembly()) ->
+    success().
+
+-callback detached(GearBox::assembly(), Part::assembly(), Ext::assembly()) -> 
+    success().
+
+%% erlmachine_factory callbacks;
+%% Requests:
+-callback accept(Label::term(), Criteria::criteria(), Schema::term()) -> 
+    success(term(), term()) | failure(term(), term(), term()).
+
+%% Events:
+-callback accepted(GearBox::assembly(), Ext::assembly(), Criteria::criteria()) -> 
+    success().
+
+-callback rejected(GearBox::assembly(), Ext::assembly(), Criteria::criteria()) -> 
+    success().
+
+%% erlmachine_system callbacks;
+%% Requests:
 -callback form(Label::term(), Schema::term()) ->
     success(term(), term()) | failure(term(), term(), term()) | failure(term()).
 
 -callback submit(Label::term(), Form::term(), Schema::term()) ->
     success(term()) | failure(term(), term(), term()) | failure(term()).
 
+%% Events:
+-callback blocked(GearBox::assembly(), Part::assembly(), E::term(), R::term()) ->
+    success().
+
+-callback overloaded(GearBox::assembly(), Part::assembly(), Load::term()) ->
+    success().
+
+%%-optional_callbacks([attach/4, detach/3, installed/2, uninstalled/3, attached/3, detached/3]).
+
+%%-optional_callbacks([accepted/3, rejected/3]).
+
+%%-optional_callbacks([form/2, submit/3, blocked/4, overloaded/3]).
 -optional_callbacks([form/2, submit/3]).
 
 -record(gearbox, {
@@ -93,20 +133,184 @@ record_name() ->
 attributes() ->
     record_info(fields, gearbox).
 
--spec gearbox(Env::term()) -> gearbox().
-gearbox(Env) ->
-    #gearbox{ env=Env }.
+-spec installed(GearBox::assembly(), Part::assembly()) ->
+                       success().
+installed(GearBox, Part) ->
+    ModelName = erlmachine_assembly:model_name(GearBox),
+
+    Mod = ModelName, Fun = installed, Args = [GearBox, Part],
+    erlmachine:optional_callback(Mod, Fun, Args, ok),
+    ok.
+
+-spec uninstalled(GearBox::assembly(), Part::assembly(), Reason::term()) ->
+                         success().
+uninstalled(GearBox, Part, Reason) ->
+    ModelName = erlmachine_assembly:model_name(GearBox),
+
+    Mod = ModelName, Fun = uninstalled, Args = [GearBox, Part, Reason],
+    erlmachine:optional_callback(Mod, Fun, Args, ok),
+    ok.
+
+-spec overloaded(GearBox::assembly(), Part::assembly(), Load::term()) ->
+                        success().
+overloaded(GearBox, Part, Load) ->
+    ModelName = erlmachine_assembly:model_name(GearBox),
+
+    Mod = ModelName, Fun = overloaded, Args = [GearBox, Part, Load],
+    erlmachine:optional_callback(Mod, Fun, Args, ok),
+    ok.
+
+-spec blocked(GearBox::assembly(), Part::assembly(), E::term(), R::term()) ->
+                     success().
+blocked(GearBox, Part, E, R) ->
+    ModelName = erlmachine_assembly:model_name(GearBox),
+
+    Mod = ModelName, Fun = blocked, Args = [GearBox, Part, E, R],
+    erlmachine:optional_callback(Mod, Fun, Args, ok),
+    ok.
+
+-spec attached(GearBox::assembly(), Part::assembly(), Ext::assembly()) ->
+                      success().
+attached(GearBox, Part, Ext) ->
+    ModelName = erlmachine_assembly:model_name(GearBox),
+
+    Mod = ModelName, Fun = attached, Args = [GearBox, Part, Ext],
+    erlmachine:optional_callback(Mod, Fun, Args, ok),
+    ok.
+
+-spec detached(GearBox::assembly(), Part::assembly(), Ext::assembly()) ->
+                      success().
+detached(GearBox, Part, Ext) ->
+    ModelName = erlmachine_assembly:model_name(GearBox),
+
+    Mod = ModelName, Fun = detached, Args = [GearBox, Part, Ext],
+    erlmachine:optional_callback(Mod, Fun, Args, ok),
+    ok.
+
+-spec accepted(GearBox::assembly(), Ext::assembly(), Criteria::criteria()) -> 
+                      success().
+accepted(GearBox, Ext, Criteria) ->
+    ModelName = erlmachine_assembly:model_name(GearBox),
+
+    Mod = ModelName, Fun = accepted, Args = [GearBox, Ext, Criteria],
+    erlmachine:optional_callback(Mod, Fun, Args, ok),
+    ok.
+
+-spec rejected(GearBox::assembly(), Ext::assembly(), Criteria::criteria()) -> 
+                      success().
+rejected(GearBox, Ext, Criteria) ->
+    ModelName = erlmachine_assembly:model_name(GearBox),
+
+    Mod = ModelName, Fun = rejected, Args = [GearBox, Ext, Criteria],
+    erlmachine:optional_callback(Mod, Fun, Args, ok),
+    ok.
+
+-spec install(GearBox::assembly()) -> 
+                     success(assembly()) | failure(term(), term(), assembly()).
+install(GearBox) ->
+    Label = erlmachine_assembly:label(GearBox),
+
+    Env = erlmachine_gearbox:env(GearBox), 
+    Opt = erlmachine_assembly:model_options(GearBox),
+
+    Parts = erlmachine_assembly:parts(GearBox),
+    Ids = [erlmachine_assembly:label(Part)|| Part <- Parts],
+    ModelName = erlmachine_assembly:model_name(GearBox),
+
+    case ModelName:install(Label, Ids, state(GearBox), Opt, Env) of
+        {ok, State} ->
+            %% We are going to add error handling later;
+            Rel = state(GearBox, State),
+            {ok, Rel};
+        {error, E, R, State} ->
+            {error, E, R, state(GearBox, State)}
+    end.
+
+-spec attach(GearBox::assembly(), Reg::term(), Ext::assembly()) ->
+                    success(assembly()) | failure(term(), term(), assembly()).
+attach(GearBox, Reg, Ext) ->
+    ModelName = erlmachine_assembly:model_name(GearBox),
+    Label = erlmachine_assembly:label(GearBox), Id = erlmachine_assembly:label(Ext),
+ 
+    case ModelName:attach(Label, Reg, Id, state(GearBox)) of
+        {ok, State} ->
+            Part = erlmachine_assembly:mounted(Ext, GearBox),
+            Rel = erlmachine_assembly:add(state(GearBox, State), Part),
+            %% At that place we don't emit any events (cause is gearbox issue level);
+            {ok, Part, Rel};
+        {error, E, R, State} ->
+            {error, E, R, state(GearBox, State)}
+    end.
+
+-spec detach(GearBox::assembly(), Id::term()) ->
+                    success(assembly()) | failure(term(), term(), assembly()).
+detach(GearBox, Id) ->
+    Label = erlmachine_assembly:label(GearBox),
+    ModelName = erlmachine_assembly:model_name(GearBox),
+
+    case ModelName:detach(Label, Id, state(GearBox)) of
+        {ok, State} ->
+            Rel = erlmachine_assembly:remove(state(GearBox, State), Id),
+            {ok, Rel};
+        {error, E, R, State} ->
+            {error, E, R, state(GearBox, State)}
+    end.
+
+-spec accept(GearBox::assembly(), Criteria::term()) ->
+                    success()| failure(term(), term(), term()).
+accept(GearBox, Criteria) ->
+    Label = erlmachine_assembly:label(GearBox),
+    ModelName = erlmachine_assembly:model_name(GearBox),
+
+    case ModelName:accept(Label, Criteria, state(GearBox)) of
+        {ok, Res, State} ->
+            {ok, Res, state(GearBox, State)};
+        {error, E, R, State} ->
+            {error, E, R, state(GearBox, State)}
+    end.
+
+-spec uninstall(GearBox::assembly(), Reason::term()) -> 
+                       ok.
+uninstall(GearBox, Reason) ->
+    Label = erlmachine_assembly:label(GearBox),
+    ModelName = erlmachine_assembly:model_name(GearBox),
+
+    {ok, State} = ModelName:uninstall(Label, Reason, state(GearBox)),
+    {ok, state(GearBox, State)}.
+
+-spec form(GearBox::assembly()) ->
+                  success(term(), assembly()) | failure(term(), term(), term()).
+form(GearBox) ->
+    Label = erlmachine_assembly:label(GearBox),
+    ModelName = erlmachine_assembly:model_name(GearBox),
+
+    Mod = ModelName, Fun = form, Args = [Label, state(GearBox)],
+    Def = erlmachine:success([], state(GearBox)),
+
+    case erlmachine:optional_callback(Mod, Fun, Args, Def) of
+        {ok, Form, State} ->
+            {ok, Form, state(GearBox, State)};
+        {error, E, R, State} ->
+            {error, E, R, state(GearBox, State)} 
+    end.
+
+-spec submit(GearBox::assembly(), Form::term()) ->
+                    success(term(), assembly()) | failure(term(), term(), term()).
+submit(GearBox, Form) ->
+    Label = erlmachine_assembly:label(GearBox),
+    ModelName = erlmachine_assembly:model_name(GearBox),
+
+    case ModelName:submit(Label, Form, state(GearBox)) of
+        {ok, Res, State} ->
+            {ok, Res, state(GearBox, State)};
+        {error, E, R, State} ->
+            {error, E, R, state(GearBox, State)} 
+    end.
 
 -spec master(GearBox::assembly()) -> Release::assembly().
 master(GearBox) ->
     Schema = erlmachine_assembly:schema(),
     erlmachine_assembly:schema(GearBox, Schema).
-
--spec mounted(GearBox::assembly(), Parts::list(assembly())) -> Release::assembly().
-mounted(GearBox, Parts) ->
-    Mounted = [erlmachine_assembly:mounted(Part, GearBox)|| Part <- Parts],
-    Release = erlmachine_assembly:parts(GearBox, Mounted),
-    Release.
 
 %% We are going to provide access by path gearbox.shaft.# (like rabbitmq notation) too;
 
@@ -127,86 +331,6 @@ print(GearBox) ->
     Schema = erlmachine_assembly:schema(GearBox),
     [{erlmachine_schema:vertex(Schema, V1), erlmachine_schema:vertex(Schema, V2), L}
      || {_, V1, V2, L} <- erlmachine_schema:edges(Schema)].
-
--spec install(GearBox::assembly()) -> 
-                     success(assembly()) | failure(term(), term(), assembly()).
-install(GearBox) ->
-    Label = erlmachine_assembly:label(GearBox),
-
-    Env = erlmachine_gearbox:env(GearBox), 
-    Opt = erlmachine_assembly:model_options(GearBox),
-
-    Parts = erlmachine_assembly:parts(GearBox),
-    Ids = [erlmachine_assembly:label(Part)|| Part <- Parts],
-    ModelName = erlmachine_assembly:model_name(GearBox),
-
-    {ok, State} = ModelName:install(Label, Ids, state(GearBox), Opt, Env),
-    %% We are going to add error handling later;
-    Rel = state(GearBox, State),
-    {ok, Rel}.
-
--spec attach(GearBox::assembly(), Reg::term(), Ext::assembly()) ->
-                    success(assembly()) | failure(term(), term(), assembly()).
-attach(GearBox, Reg, Ext) ->
-    ModelName = erlmachine_assembly:model_name(GearBox),
-    Label = erlmachine_assembly:label(GearBox), Id = erlmachine_assembly:label(Ext),
- 
-    {ok, State} = ModelName:attach(Label, Reg, Id, state(GearBox)),
-    
-    Part = erlmachine_assembly:mounted(Ext, GearBox),
-    Rel = erlmachine_assembly:add(state(GearBox, State), Part),
-    %% At that place we don't issue any events (cause is gearbox issue level);
-    {ok, Part, Rel}. %% TODO
-
--spec detach(GearBox::assembly(), Id::term()) ->
-                    success(assembly()) | failure(term(), term(), assembly()).
-detach(GearBox, Id) ->
-    Label = erlmachine_assembly:label(GearBox),
-    ModelName = erlmachine_assembly:model_name(GearBox),
-
-    {ok, State} = ModelName:detach(Label, Id, state(GearBox)),
-
-    Rel = erlmachine_assembly:remove(state(GearBox, State), Id),
-    {ok, Rel}. %% TODO
-
--spec accept(GearBox::assembly(), Criteria::term()) ->
-                    success()| failure(term(), term(), term()).
-accept(GearBox, Criteria) ->
-    Label = erlmachine_assembly:label(GearBox),
-    ModelName = erlmachine_assembly:model_name(GearBox),
-
-    {ok, Res, State} = ModelName:accept(Label, Criteria, state(GearBox)),
-    Rel = state(GearBox, State),
-    {ok, Res, Rel}.
-
--spec uninstall(GearBox::assembly(), Reason::term()) -> 
-                       ok.
-uninstall(GearBox, Reason) ->
-    Label = erlmachine_assembly:label(GearBox),
-    ModelName = erlmachine_assembly:model_name(GearBox),
-
-    ModelName:uninstall(Label, Reason, state(GearBox)).
-
--spec form(GearBox::assembly()) ->
-                  success(term(), assembly()) | failure(term(), term(), term()).
-form(GearBox) ->
-    Label = erlmachine_assembly:label(GearBox),
-    ModelName = erlmachine_assembly:model_name(GearBox),
-
-    Mod = ModelName, Fun = form, Args = [Label, state(GearBox)],
-    Def = erlmachine:success([], state(GearBox)),
-
-    {ok, Form, State} = erlmachine:optional_callback(Mod, Fun, Args, Def),
-    {ok, Form, state(GearBox, State)}.
-
--spec submit(GearBox::assembly(), Form::term()) ->
-                    success(term(), assembly()) | failure(term(), term(), term()).
-submit(GearBox, Form) ->
-    Label = erlmachine_assembly:label(GearBox),
-    ModelName = erlmachine_assembly:model_name(GearBox),
-
-    {ok, Res, State} = ModelName:submit(Label, Form, state(GearBox)),
-    {ok, Res, state(GearBox, State)}.
 
 -spec rotate(GearBox::assembly(), Motion::term()) ->
                     Motion::term().
@@ -282,6 +406,16 @@ parts(GearBox, Input, Parts) ->
                    assembly().
 parts(GearBox, Input, Parts, Output) ->
     output(input(parts(GearBox, Parts), Input), Output).
+
+-spec gearbox(Env::term()) -> gearbox().
+gearbox(Env) ->
+    #gearbox{ env=Env }.
+
+-spec mounted(GearBox::assembly(), Parts::list(assembly())) -> Release::assembly().
+mounted(GearBox, Parts) ->
+    Mounted = [erlmachine_assembly:mounted(Part, GearBox)|| Part <- Parts],
+    Release = erlmachine_assembly:parts(GearBox, Mounted),
+    Release.
 
 %% processes need to be instantiated by builder before;
 

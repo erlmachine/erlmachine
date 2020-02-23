@@ -1,4 +1,5 @@
  -module(erlmachine_system).
+
 -behaviour(gen_server).
 
 %% API.
@@ -6,6 +7,8 @@
 
 -export([form/1, form/2]).
 -export([submit/2, submit/3]).
+
+-export([overloaded/3, blocked/4]).
 
 %% gen_server.
 -export([
@@ -66,6 +69,23 @@ submit(GearBox, Label, Form) ->
     ProtName = erlmachine_assembly:prototype_name(Part),
 
     ProtName:submit(SN, GearBox, Part, Form).
+
+-spec overloaded(GearBox::assembly(), Assembly::assembly(), Load::term()) -> 
+                        ok.
+overloaded(GearBox, Assembly, Load) ->
+    SN = erlmachine_assembly:serial_no(GearBox),
+    ProtName = erlmachine_assembly:prototype_name(GearBox),
+
+    ProtName:overloaded(SN, GearBox, Assembly, Load).
+
+-spec blocked(GearBox::assembly(), Part::assembly(), E::term(), R::term()) -> 
+                     ok.
+blocked(GearBox, Part, E, R) ->
+    %% TODO we can mark promem edges on graph by specific tags;
+    SN = erlmachine_assembly:serial_no(GearBox),
+    ProtName = erlmachine_assembly:prototype_name(GearBox),
+
+    ProtName:blocked(SN, GearBox, Part, E, R).
 
 -spec failure(E::term(), R::term()) -> 
                      failure(E::term(), R::term()).

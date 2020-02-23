@@ -18,8 +18,6 @@
          uninstall/4
         ]).
 
--export([installed/4, uninstalled/5]).
-
 -export([form/3, submit/4]).
 
 -export([tag/1]).
@@ -40,20 +38,6 @@ tag(Axle) ->
     Model = erlmachine_assembly:model_name(Axle),
     ID = atom_to_binary(Model, latin1),
     ID.
-
--spec installed(Name::serial_no(), GearBox::assembly(), Axle::assembly(), Part::assembly()) ->
-                      success().
-installed(_Name, _GearBox, Axle, Part) ->
-    SN = erlmachine_assembly:serial_no(Axle),
-    to_track(SN, #{ installed => erlmachine_assembly:serial_no(Part) }),
-    ok.
-
--spec uninstalled(Name::serial_no(), GearBox::assembly(), Axle::assembly(), Part::assembly(), Reason::term()) -> 
-                         success().
-uninstalled(_Name, _GearBox, Axle, Part, Reason) ->
-    SN = erlmachine_assembly:serial_no(Axle),
-    to_track(SN, #{uninstalled => erlmachine_assembly:serial_no(Part), reason => Reason}),
-    ok.
 
 -spec attach(Name::serial_no(), GearBox::assembly(), Axle::assembly(), Reg::term(), Ext::assembly()) ->
                     success(assembly()) | failure(term(), term()).

@@ -33,7 +33,7 @@
 
 -export([accept/2, accept/3, accept/4]).
 
--export([accepted/3, rejected/4]).
+-export([accepted/3, rejected/3]).
 
 -export([serial_no/0]).
 
@@ -233,43 +233,31 @@ format_status(_Opt, [_PDict, _State]) ->
     [].
 
 -spec accept(GearBox::assembly(), Criteria::criteria()) -> 
-                    success() | failure(E::term(), R::term(), S::term()).
+                    success(assembly()) | failure(term(), term(), assembly()).
 accept(GearBox, Criteria) ->
     SN = erlmachine_assembly:serial_no(GearBox),
     Name = erlmachine_assembly:prototype_name(GearBox),
-    
-    Result = 
-        try 
-            erlmachine_assembly:install(GearBox),
-            Status = Name:accept(SN, GearBox, Criteria),
-            erlmachine_assembly:uninstall(GearBox, normal),
-            Status
-        catch E:R:S ->
-                erlmachine:failure(E, R, S) 
-        end,
-    Result.
+
+    erlmachine_assembly:install(GearBox),
+    Status = Name:accept(SN, GearBox, Criteria),
+    erlmachine_assembly:uninstall(GearBox, normal),
+    Status.
 
 -spec accept(GearBox::assembly(), Assembly::assembly(), Criteria::criteria()) -> 
-                    success(term()) | failure(term(), term()).
+                    success(term()) | failure(term(), term(), assembly()).
 accept(GearBox, Assembly, Criteria) ->
     accept(GearBox, undefined, Assembly, Criteria).
 
--spec accept(GearBox::assembly(), Register::term(), Assembly::assembly(), Criteria::criteria()) -> 
-                    success(term()) | failure(term(), term()).
-accept(GearBox, Register, Assembly, Criteria) ->
+-spec accept(GearBox::assembly(), Reg::term(), Assembly::assembly(), Criteria::criteria()) -> 
+                    success(term()) | failure(term(), term(), assembly()).
+accept(GearBox, Reg, Assembly, Criteria) ->
     SN = erlmachine_assembly:serial_no(Assembly),
     Name = erlmachine_assembly:prototype_name(Assembly),
-    
-    Result = 
-        try 
-            erlmachine_assembly:attach(GearBox, Register, Assembly),
-            Status = Name:accept(SN, GearBox, Assembly, Criteria),
-            erlmachine_assembly:detach(GearBox, SN),
-            Status
-        catch E:R:S ->
-                erlmachine:failure(E, R, S) 
-        end,
-    Result.
+
+    erlmachine_assembly:attach(GearBox, Reg, Assembly),
+    Status = Name:accept(SN, GearBox, Assembly, Criteria),
+    erlmachine_assembly:detach(GearBox, SN),
+    Status.
 
 -spec accepted(GearBox::assembly(), Assembly::assembly(), Criteria::criteria()) -> 
                       ok.
@@ -279,10 +267,10 @@ accepted(GearBox, Assembly, Criteria) ->
 
     Name:accepted(SN, GearBox, Assembly, Criteria).
 
--spec rejected(GearBox::assembly(), Assembly::assembly(), Criteria::criteria(), Result::term()) -> 
+-spec rejected(GearBox::assembly(), Assembly::assembly(), Criteria::criteria()) -> 
                       ok.
-rejected(GearBox, Assembly, Criteria, Result) ->
+rejected(GearBox, Assembly, Criteria) ->
     SN = erlmachine_assembly:serial_no(GearBox),
     Name = erlmachine_assembly:prototype_name(GearBox),
 
-    Name:rejected(SN, GearBox, Assembly, Criteria, Result).
+    Name:rejected(SN, GearBox, Assembly, Criteria).
