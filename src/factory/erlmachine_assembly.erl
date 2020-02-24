@@ -140,13 +140,13 @@ attach(GearBox, Label, Reg, Ext) ->
     erlmachine_schema:add_edge(schema(GearBox), Label, Ext),
     Res.
 
--spec detach(GearBox::assembly(), ID::serial_no()) -> 
+-spec detach(GearBox::assembly(), Id::term()) -> 
                     success(term()) | failure(term(), term()).
-detach(GearBox, ID) ->
+detach(GearBox, Id) ->
     SN = serial_no(GearBox),
-    Res = (prototype_name(GearBox)):detach(SN, GearBox, ID),
+    Res = (prototype_name(GearBox)):detach(SN, GearBox, Id),
     %% Remove vertex with all edges (GearBox -> Part);
-    ok = erlmachine_schema:del_vertex(schema(GearBox), ID),
+    ok = erlmachine_schema:del_vertex(schema(GearBox), Id),
     Res.
 
 -spec detach(GearBox::assembly(), Label::term(), ID::term()) -> 

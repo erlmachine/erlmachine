@@ -14,7 +14,7 @@
 
 -export([rotate/2]).
 -export([transmit/2]).
--export([connect/2, disconnect/2]).
+-export([connect/3, disconnect/2]).
 
 %% erlmachine_assembly
 -export([install/1, uninstall/2, attach/3, detach/2]).
@@ -104,12 +104,11 @@
 -callback overloaded(GearBox::assembly(), Part::assembly(), Load::term()) ->
     success().
 
-%%-optional_callbacks([attach/4, detach/3, installed/2, uninstalled/3, attached/3, detached/3]).
+-optional_callbacks([attach/4, detach/3, installed/2, uninstalled/3, attached/3, detached/3]).
 
-%%-optional_callbacks([accepted/3, rejected/3]).
+-optional_callbacks([accepted/3, rejected/3]).
 
-%%-optional_callbacks([form/2, submit/3, blocked/4, overloaded/3]).
--optional_callbacks([form/2, submit/3]).
+-optional_callbacks([form/2, submit/3, blocked/4, overloaded/3]).
 
 -record(gearbox, {
                   input::serial_no(),
@@ -335,30 +334,32 @@ print(GearBox) ->
 -spec rotate(GearBox::assembly(), Motion::term()) ->
                     Motion::term().
 rotate(GearBox, Motion) ->
-    erlmachine_transmission:rotation(GearBox, input(GearBox), Motion).
+    erlmachine_transmission:rotate(GearBox, input(GearBox), Motion).
 
 -spec transmit(GearBox::assembly(), Motion::term()) ->
                       success(term()) | failure(term(), term()).
 transmit(GearBox, Motion) ->
-    erlmachine_transmission:transmission(GearBox, input(GearBox), Motion).
+    erlmachine_transmission:transmit(GearBox, input(GearBox), Motion).
 
--spec connect(GearBox::assembly(), Part::assembly()) ->
-                    success(term()) | failure(term(), term()).
-connect(GearBox, Part) ->
-    Output = output(GearBox), Assembly = find(GearBox, Output),
-    erlmachine_transmission:attach(Assembly, Part).
+-spec connect(GearBox::assembly(), Reg::term(), Part::assembly()) ->
+                    success(term(), term()) | failure(term(), term()).
+connect(GearBox, Reg, Part) ->
+    Output = output(GearBox), 
 
--spec disconnect(GearBox::assembly(), Id::serial_no()) -> 
+    erlmachine_assembly:attach(GearBox, Output, Reg, Part).
+
+-spec disconnect(GearBox::assembly(), Id::term()) -> 
                     success(term()) | failure(term(), term()).
 disconnect(GearBox, Id) ->
-    Output = output(GearBox), Assembly = find(GearBox, Output),
-    erlmachine_transmission:detach(Assembly, Id).
+    Output = output(GearBox),
+    erlmachine_assembly:detach(GearBox, Output, Id).
 
 -spec state(Axle::assembly()) -> term().
 state(Axle) ->
     erlmachine_assembly:schema(Axle).
 
--spec state(Axle::assembly(), Schema::term()) -> assembly().
+-spec state(Axle::assembly(), Schema::term()) -> 
+                   assembly().
 state(Axle, Schema) ->
     erlmachine_assembly:schema(Axle, Schema).
 
@@ -367,19 +368,22 @@ input(GearBox) ->
     Product = erlmachine_assembly:product(GearBox),
     Product#gearbox.input.
 
--spec input(GearBox::assembly(), Part::assembly()) -> assembly().
-input(GearBox, Part) ->
+-spec input(GearBox::assembly(), Id::term()) ->
+                   assembly().
+input(GearBox, Id) ->
     Product = erlmachine_assembly:product(GearBox),
-    erlmachine_assembly:product(GearBox, Product#gearbox{ input=Part }).
+    erlmachine_assembly:product(GearBox, Product#gearbox{ input=Id }).
 
--spec output(GearBox::assembly()) -> assembly().
+-spec output(GearBox::assembly()) -> 
+                    assembly().
 output(GearBox) ->
     GearBox#gearbox.output.
 
--spec output(GearBox::assembly(), Part::assembly()) -> assembly().
-output(GearBox, Part) ->
+-spec output(GearBox::assembly(), Id::term()) -> 
+                    assembly().
+output(GearBox, Id) ->
     Product = erlmachine_assembly:product(GearBox),
-    erlmachine_assembly:product(GearBox, Product#gearbox{ output=Part }).
+    erlmachine_assembly:product(GearBox, Product#gearbox{ output=Id }).
 
 -spec env(GearBox::assembly()) -> term().
 env(GearBox) ->
@@ -400,12 +404,14 @@ parts(GearBox, Parts) ->
 -spec parts(GearBox::assembly(), Input::assembly(), Parts::list(assembly())) ->
                    Release::assembly().
 parts(GearBox, Input, Parts) ->
-    input(parts(GearBox, Parts), Input).
+    Rel = parts(GearBox, Parts),
+    input(Rel, erlmachine:serial_no(Input)).
 
 -spec parts(GearBox::assembly(), Input::assembly(), Parts::list(assembly()), Output::assembly()) ->
                    assembly().
 parts(GearBox, Input, Parts, Output) ->
-    output(input(parts(GearBox, Parts), Input), Output).
+    Rel = parts(GearBox, Parts),
+    output(input(Rel, erlmachine:serial_no(Input)), erlmachine:serial_no(Output)).
 
 -spec gearbox(Env::term()) -> gearbox().
 gearbox(Env) ->

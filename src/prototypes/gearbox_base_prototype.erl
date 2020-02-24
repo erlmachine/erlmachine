@@ -98,35 +98,29 @@ install(Name, GearBox, Opt) ->
 
 init(#install{ gearbox=GearBox, options=Opt }) ->
     Strategy = proplists:get_value(strategy, Opt, one_for_one),
-
-    {ok, Rel} = erlmachine_gearbox:install(GearBox),
-
-    Specs = specs(Rel),
     Int = proplists:get_value(intensity, Opt, 1),
     Per = proplists:get_value(period, Opt, 5),
-    erlmachine:success({#{strategy => Strategy, intensity => Int, period => Per}, Specs}).
+
+    {ok, Rel} = erlmachine_gearbox:install(GearBox),
+    erlmachine:success({#{strategy => Strategy, intensity => Int, period => Per}, specs(Rel)}).
 
 -spec attach(Name::serial_no(), GearBox::assembly(), Reg::term(), Ext::assembly()) ->
                     success(assembly()) | failure(term(), term()).
 attach(Name, GearBox, Reg, Ext) ->
     {ok, Part, Rel} = erlmachine_gearbox:attach(GearBox, Reg, Ext),
-
     %% TODO Conditional case for Result needs to be processed;
-    Spec = spec(Rel, Part),
     %% Mount time will be determined by prototype;
-    SupRef = format_name(Name),
-
-    {ok, _PID} = supervisor:start_child(SupRef, Spec),
+    {ok, _PID} = supervisor:start_child(format_name(Name), spec(Rel, Part)),
     erlmachine:success(Part, Rel).
 
--spec detach(Name::serial_no(), GearBox::assembly(), ID::serial_no()) ->
-                    success() | success(term(), term()) | failure(term()).
-detach(Name, GearBox, ID) ->
-    {ok, Rel} = erlmachine_gearbox:detach(GearBox, ID),
+-spec detach(Name::serial_no(), GearBox::assembly(), Id::term()) ->
+                    success(term()).
+detach(Name, GearBox, Id) ->
+    {ok, Rel} = erlmachine_gearbox:detach(GearBox, Id),
 
     SupRef = format_name(Name),
-    ok = supervisor:terminate_child(SupRef, ID),
-    ok = supervisor:delete_child(SupRef, ID), %% ID the same for chield and SN
+    ok = supervisor:terminate_child(SupRef, Id),
+    ok = supervisor:delete_child(SupRef, Id),
     erlmachine:success(Rel).
 
 -spec uninstall(Name::serial_no(), GearBox::assembly(), Reason::term()) ->

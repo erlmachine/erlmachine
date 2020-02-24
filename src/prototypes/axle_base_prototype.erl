@@ -50,9 +50,6 @@ attach(Name, GearBox, Axle, Reg, Ext) ->
     SupRef = format_name(Name),
 
     {ok, _PID} = supervisor:start_child(SupRef, Spec),
-
-    SN = erlmachine_assembly:serial_no(Axle),
-    to_track(SN, #{ attach => erlmachine_assembly:serial_no(Ext) }),
     erlmachine:success(Rel).
     
 -spec detach(Name::serial_no(), GearBox::assembly(), Axle::assembly(), ID::serial_no()) ->
@@ -64,9 +61,6 @@ detach(Name, GearBox, Axle, ID) ->
 
     ok = supervisor:terminate_child(SupRef, ID),
     ok = supervisor:delete_child(SupRef, ID), %% ID the same for chield and SN
-
-    SN = erlmachine_assembly:serial_no(Axle),
-    to_track(SN, #{ detach => ID }),
     erlmachine:success(Rel).
 
 -record(install, {gearbox::assembly(), axle::assembly(), options::list(tuple)}).
@@ -74,14 +68,10 @@ detach(Name, GearBox, Axle, ID) ->
 -spec install(Name::serial_no(), GearBox::assembly(), Axle::assembly(), Options::list(tuple())) -> 
                      success(pid()) | ingnore | failure(term()).
 install(Name, GearBox, Axle, Opt) ->
-    SN = erlmachine_assembly:serial_no(Axle),
-
     ID = {local, format_name(Name)},
     Command = #install{ gearbox=GearBox, axle=Axle, options=Opt },
 
     Res = supervisor:start_link(ID, ?MODULE, Command),
- 
-    to_track(SN, #{ install => ts() }),
     Res.
 
 init(#install{gearbox=GearBox, axle=Axle, options=Opt}) ->
@@ -105,9 +95,6 @@ uninstall(Name, GearBox, Axle, Reason) ->
     exit(whereis(format_name(Name)), Reason),
 
     {ok, _} = erlmachine_axle:uninstall(GearBox, Axle, Reason),
-
-    SN = erlmachine_assembly:serial_no(Axle),
-    to_track(SN, #{uninstall => ts()}),
     erlmachine:success().
 
 -spec accept(Name::serial_no(), GearBox::assembly(), Axle::assembly(), Criteria::criteria()) ->
@@ -115,8 +102,6 @@ uninstall(Name, GearBox, Axle, Reason) ->
 accept(_Name, GearBox, Axle, Criteria) ->
     {ok, Res, _} = erlmachine_axle:accept(GearBox, Axle, Criteria),
 
-    SN = erlmachine_assembly:serial_no(Axle),
-    to_track(SN, #{ accept => Res }),
     erlmachine:success(Res).
 
 -spec form(Name::serial_no(), GearBox::assembly(), Axle::assembly()) ->
@@ -163,12 +148,3 @@ specs(GearBox, Axle) ->
     Parts = erlmachine_assembly:parts(Axle),
     Specs = [spec(GearBox, Axle, Part)|| Part <- Parts],
     Specs.
-
--spec to_track(TN::serial_no(), Package::map()) -> success().
-to_track(TN, Package) ->
-    erlmachine_tracker:track(TN, Package), 
-    ok.
-
--spec ts() -> integer().
-ts() ->
-    erlmachine:timestamp().

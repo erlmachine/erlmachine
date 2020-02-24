@@ -21,149 +21,128 @@
          code_change/3
         ]).
 
--export([
-         install/4, 
-         attach/5, detach/4,
-         overload/4, block/5, 
-         replace/4,
-         transmit/4, rotate/4,
-         uninstall/4,
-         accept/4
-        ]).
+%% erlmachine_assembly
+-export([install/4, uninstall/4, attach/5, detach/4]).
 
--export([form/3, submit/4]).
+%% erlmachine_factory
+-export([accept/4]).
+
+%% erlmachine_system
+-export([form/3, submit/4, overload/4]).
+
+%% erlmachine_transmission
+-export([rotate/4, transmit/4]).
 
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
 
 %% API.
 
--spec name() -> Name::atom().
+-spec name() -> atom().
 name() ->
     ?MODULE.
 
-format_name(SerialNumber) ->
-    ID = erlang:binary_to_atom(SerialNumber, latin1),
-    ID.
+-spec format_name(SN::serial_no()) -> 
+                         atom().
+format_name(SN) ->
+    erlang:binary_to_atom(SN, latin1).
 
--record(install, {gearbox::assembly(), shaft::assembly(), options::list(tuple())}).
+-record(install, { gearbox::assembly(), shaft::assembly(), options::list() }).
 
--spec install(Name::serial_no(), GearBox::assembly(), Shaft::assembly(), Options::list(tuple())) -> 
+-spec install(Name::serial_no(), GearBox::assembly(), Shaft::assembly(), Opt::list()) -> 
                      success(pid()) | ingnore | failure(E::term()).
 install(Name, GearBox, Shaft, Opt) ->
-    ID = {local, format_name(Name)},
-    Command = #install{ gearbox=GearBox, shaft=Shaft, options=Opt },
+    Com = #install{ gearbox=GearBox, shaft=Shaft, options=Opt },
 
-    gen_server:start_link(ID, ?MODULE, Command, []).
+    gen_server:start_link({local, format_name(Name)}, ?MODULE, Com, []).
 
 %% I think about ability to reflect both kind of switching - manual and automated;
 -record(attach, { extension::assembly(), register::term() }).
 
 -spec attach(Name::serial_no(), GearBox::assembly(), Shaft::assembly(), Reg::term(), Ext::assembly()) -> 
                     success(assembly()) | failure(term(), term()).
-attach(Name, _GearBox, _Shaft, Reg, Ext) ->
-    Command = #attach{ extension=Ext, register=Reg },
+attach(Name, _, _, Reg, Ext) ->
+    Com = #attach{ extension=Ext, register=Reg },
 
-    gen_server:call(format_name(Name), Command).
+    gen_server:call(format_name(Name), Com).
 
 %% I think about ability to reflect both kind of switching - manual and automated;
--record(detach, {id::serial_no()}).
+-record(detach, { id::term() }).
 
--spec detach(Name::serial_no(), GearBox::assembly(), Shaft::assembly(), ID::serial_no()) -> 
+-spec detach(Name::serial_no(), GearBox::assembly(), Shaft::assembly(), Id::term()) -> 
                     success() | failure(term(), term()).
-detach(Name, _GearBox, _Shaft, ID) ->
-    Command = #detach{ id=ID },
+detach(Name, _, _, Id) ->
+    Com = #detach{ id=Id },
 
-    gen_server:call(format_name(Name), Command).
+    gen_server:call(format_name(Name), Com).
 
--record(transmit, {motion::term()}).
-
--spec transmit(Name::serial_no(), GearBox::assembly(), Shaft::assembly(), Motion::term()) ->
-                      success(term()) | failure(term(), term(), term()).
-transmit(Name, _GearBox, _Shaft, Motion) ->
-    Command = #transmit{ motion=Motion },
-
-    gen_server:call(format_name(Name), Command).
-
--record(overload, {load::term()}).
+-record(overload, { load::term() }).
 
 -spec overload(Name::serial_no(), GearBox::assembly(), Shaft::assembly(), Load::term()) ->
                       Load::term().
-overload(Name, _GearBox, _Shaft, Load) ->
-    Command = #overload{ load=Load },
+overload(Name, _, _, Load) ->
+    Com = #overload{ load=Load },
 
-    erlang:send(format_name(Name), Command),
+    erlang:send(format_name(Name), Com),
     Load.
 
--record(block, {part::assembly(), failure::term()}).
-
--spec block(Name::serial_no(), GearBox::assembly(), Shaft::assembly(), Part::assembly(), Failure::term()) -> 
-                   Failure::term().
-block(Name, _GearBox, _Shaft, Part, Failure) ->
-    Command = #block{ part=Part, failure=Failure },
-
-    erlang:send(format_name(Name), Command), 
-    Failure.
-
--record(replace, {repair::assembly()}).
-
--spec replace(Name::serial_no(), GearBox::assembly(), Shaft::assembly(), Repair::assembly()) -> 
-                     success() | failure(term(), term()).
-replace(Name, _GearBox, _Shaft, Repair) ->
-    Command = #replace{ repair=Repair },
-
-    gen_server:call(format_name(Name), Command).
-
--record(rotate, {motion::term()}).
+-record(rotate, { motion::term() }).
 
 -spec rotate(Name::serial_no(), GearBox::assembly(), Shaft::assembly(), Motion::term()) -> 
                     Motion::term().
-rotate(Name, _GearBox, _Shaft, Motion) ->
-    Command = #rotate{ motion=Motion },
+rotate(Name, _, _, Motion) ->
+    Com = #rotate{ motion=Motion },
 
-    erlang:send(format_name(Name), Command), 
+    erlang:send(format_name(Name), Com), 
     Motion.
 
--record(accept, {criteria::acceptance_criteria()}).
+-record(transmit, { motion::term() }).
+
+-spec transmit(Name::serial_no(), GearBox::assembly(), Shaft::assembly(), Motion::term()) ->
+                      success(term()) | failure(term(), term(), term()).
+transmit(Name, _, _, Motion) ->
+    Com = #transmit{ motion=Motion },
+
+    gen_server:call(format_name(Name), Com).
+
+-record(accept, { criteria::acceptance_criteria() }).
 
 -spec accept(Name::serial_no(), GearBox::assembly(), Shaft::assembly(), Criteria::criteria()) ->
                     success(term()) | failure(term(), term(), term()).
-accept(Name, _GearBox, _Shaft, Criteria) -> 
-    Command = #accept{ criteria=Criteria },
+accept(Name, _, _, Criteria) -> 
+    Com = #accept{ criteria=Criteria },
 
-    gen_server:call(format_name(Name), Command).
+    gen_server:call(format_name(Name), Com).
 
 -spec uninstall(Name::serial_no(), GearBox::assembly(), Shaft::assembly(), Reason::term()) ->
                        success().
-uninstall(Name, _GearBox, _Shaft, Reason) ->
+uninstall(Name, _, _, Reason) ->
     gen_server:stop(format_name(Name), Reason).
 
 -record(form, {}).
 
 -spec form(Name::serial_no(), GearBox::assembly(), Shaft::assembly()) -> 
                   success(term()) | failure(term(), term(), term()).
-form(Name, _GearBox, _Shaft) ->
-    Command = #form{},
+form(Name, _, _) ->
+    Com = #form{},
 
-    gen_server:call(format_name(Name), Command).
+    gen_server:call(format_name(Name), Com).
 
 -record(submit, { form::term() }).
 
 -spec submit(Name::serial_no(), GearBox::assembly(), Shaft::assembly(), Form::term()) -> 
                     success(term()) | failure(term(), term(), term()).
-submit(Name, _GearBox, _Shaft, Form) ->
-    Command = #submit{ form=Form },
+submit(Name, _, _, Form) ->
+    Com = #submit{ form=Form },
 
-    gen_server:call(format_name(Name), Command).
+    gen_server:call(format_name(Name), Com).
 
 %% gen_server.
--record(state, {gearbox::assembly(), shaft::assembly()}).
+-record(state, { gearbox::assembly(), shaft::assembly() }).
 
-init(#install{gearbox=GearBox, shaft=Shaft, options=Opt}) ->
+init(#install{ gearbox=GearBox, shaft=Shaft, options=Opt }) ->
     Flags = proplists:get_value(process_flags, Opt, []),
     [process_flag(ID, Param)|| {ID, Param} <- [{trap_exit, true}|Flags]],
-    %% process_flag(trap_exit, true), Needs to be passed by default;
-    %% Gearbox is intended to use like specification of destination point (it's not about persistence);
     {ok, Rel} = erlmachine_shaft:install(GearBox, Shaft),
     erlmachine:success(#state{ gearbox=GearBox, shaft=Rel }).
 
@@ -171,25 +150,21 @@ handle_call(#attach{extension = Ext, register = Reg}, _From, #state{gearbox=Gear
     {ok, Part, Rel} = erlmachine_shaft:attach(GearBox, Shaft, Reg, Ext),
     {reply, erlmachine:success(Part, Rel), State#state{ shaft=Rel }};
 
-handle_call(#detach{id = ID}, _From, #state{gearbox=GearBox, shaft=Shaft} = State) ->
-    {ok, Rel} = erlmachine_shaft:detach(GearBox, Shaft, ID),
+handle_call(#detach{id = Id}, _From, #state{gearbox=GearBox, shaft=Shaft} = State) ->
+    {ok, Rel} = erlmachine_shaft:detach(GearBox, Shaft, Id),
     {reply, erlmachine:success(Rel), State#state{ shaft=Rel }};
 
 handle_call(#transmit{motion = Motion}, _From, #state{gearbox=GearBox, shaft=Shaft} = State) ->
-    {ok, Res, Rel} = erlmachine_shaft:transmit(GearBox, Shaft, Motion),
-    {reply, erlmachine:success(Res), State#state{ shaft=Rel }};
+    {ok, Rel} = erlmachine_shaft:transmit(GearBox, Shaft, Motion),
+    {reply, erlmachine:success(), State#state{ shaft=Rel }};
 
 handle_call(#accept{criteria = Criteria}, _From, #state{gearbox=GearBox, shaft=Shaft} = State) ->
-    {ok, Res, _} = erlmachine_shaft:accept(GearBox, Shaft, Criteria),
-    {reply, erlmachine:success(Res), State};
-
-handle_call(#replace{repair=Repair}, _From, #state{gearbox=GearBox, shaft=Shaft} = State) ->
-    {ok, Rel} = erlmachine_shaft:replace(GearBox, Shaft, Repair),
+    {ok, Rel} = erlmachine_shaft:accept(GearBox, Shaft, Criteria),
     {reply, erlmachine:success(), State#state{ shaft=Rel }};
 
 handle_call(#form{}, _From, #state{ gearbox=GearBox, shaft=Shaft } = State) ->
-    {ok, Res, _} = erlmachine_shaft:form(GearBox, Shaft),
-    {reply, erlmachine:success(Res), State};
+    {ok, Res, Rel} = erlmachine_shaft:form(GearBox, Shaft),
+    {reply, erlmachine:success(Res), State#state{ shaft=Rel }};
 
 handle_call(#submit{ form=Form }, _From, #state{ gearbox=GearBox, shaft=Shaft } = State) ->
     {ok, Res, Rel} = erlmachine_shaft:submit(GearBox, Shaft, Form),
@@ -207,20 +182,14 @@ handle_info(#rotate{motion = Motion}, #state{gearbox=GearBox, shaft=Shaft} = Sta
     %% At that place we can adress rotated part by SN; 
     %% In that case all parts will be rotated by default;
     %% If you need to provide measurements is's suitable place for that;
-    {ok, Release} = erlmachine_shaft:rotate(GearBox, Shaft, Motion),
+    {ok, Rel} = erlmachine_shaft:rotate(GearBox, Shaft, Motion),
     %% Potentially clients can provide sync delivery inside this call;
     %% It can work a very similar to job queue);
-    {noreply, State#state{shaft=Release}};
+    {noreply, State#state{shaft=Rel}};
 
 handle_info(#overload{load = Load}, #state{gearbox=GearBox, shaft=Shaft} = State) ->
-    {ok, Release} = erlmachine_shaft:overload(GearBox, Shaft, Load),
-    {noreply, State#state{shaft=Release}};
-
-handle_info(#block{part=Part, failure = Failure}, #state{gearbox=GearBox, shaft=Shaft} = State) ->
-    %% Damage, Crash and Failure will be translated to specialized system gears;
-    %% This produced stream can be consumed by custom components which can be able to provide repair;
-    {ok, Release} = erlmachine_shaft:block(GearBox, Shaft, Part, Failure),
-    {noreply, State#state{shaft=Release}};
+    {ok, Rel} = erlmachine_shaft:overload(GearBox, Shaft, Load),
+    {noreply, State#state{shaft=Rel}};
 
 handle_info(Load, #state{gearbox=GearBox, shaft=Shaft} = State) ->
     %% We need to provide logging at that place;

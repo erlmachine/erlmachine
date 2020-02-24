@@ -2,7 +2,7 @@
 
 -folder(<<"erlmachine">>).
 
--export([serial_no/1, label/1]).
+-export([serial_no/1, label/1, model_name/1]).
 
 -export([start/0, stop/0]).
 
@@ -57,6 +57,10 @@ serial_no(Assembly) ->
 -spec label(Assembly::assembly()) -> term().
 label(Assembly) ->
     erlmachine_assembly:label(Assembly).
+
+-spec model_name(Assembly::assembly()) -> atom().
+model_name(Assembly) ->
+    erlmachine_assembly:model_name(Assembly).
 
 -spec start() -> success().
 start() ->
