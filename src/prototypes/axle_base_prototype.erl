@@ -1,7 +1,5 @@
 -module(axle_base_prototype).
 
--folder(<<"erlmachine/prototypes/axle_base_prototype">>).
-%% We need to provide the specialized prototype behaviour;
 -behaviour(erlmachine_tracker).
 
 -behaviour(supervisor).
@@ -11,13 +9,13 @@
 %% supervisor.
 -export([init/1]).
 
--export([
-         install/4,
-         attach/5, detach/4, 
-         accept/4,
-         uninstall/4
-        ]).
+%% erlmachine_assembly
+-export([install/4, uninstall/4, attach/5, detach/4]).
 
+%% erlmachine_factory
+-export([accept/4]).
+
+%% erlmachine_system
 -export([form/3, submit/4]).
 
 -export([tag/1]).
@@ -29,73 +27,63 @@
 name() ->
     ?MODULE.
 
-format_name(SerialNumber) ->
-    ID = erlang:binary_to_atom(SerialNumber, latin1),
-    ID.
+-spec format_name(SN::serial_no()) -> 
+                         atom().
+format_name(SN) ->
+    erlang:binary_to_atom(SN, latin1).
 
 -spec tag(Axle::assembly()) -> Tag::binary().
 tag(Axle) ->
     Model = erlmachine_assembly:model_name(Axle),
-    ID = atom_to_binary(Model, latin1),
-    ID.
+    atom_to_binary(Model, latin1).
 
--spec attach(Name::serial_no(), GearBox::assembly(), Axle::assembly(), Reg::term(), Ext::assembly()) ->
-                    success(assembly()) | failure(term(), term()).
-attach(Name, GearBox, Axle, Reg, Ext) ->
-    {ok, Part, Rel} = erlmachine_axle:attach(GearBox, Axle, Reg, Ext),
+-record(install, { gearbox::assembly(), axle::assembly(), options::list() }).
 
-    %% TODO Conditional case for Result needs to be processed;
-    Spec = spec(GearBox, Rel, Part),
-    %% Mount time will be determined by prototype;
-    SupRef = format_name(Name),
-
-    {ok, _PID} = supervisor:start_child(SupRef, Spec),
-    erlmachine:success(Rel).
-    
--spec detach(Name::serial_no(), GearBox::assembly(), Axle::assembly(), ID::serial_no()) ->
-                    success() | success(term(), term()) | failure(term()).
-detach(Name, GearBox, Axle, ID) ->
-    SupRef = format_name(Name),
-
-    {ok, Rel} = erlmachine_axle:detach(GearBox, Axle, ID),
-
-    ok = supervisor:terminate_child(SupRef, ID),
-    ok = supervisor:delete_child(SupRef, ID), %% ID the same for chield and SN
-    erlmachine:success(Rel).
-
--record(install, {gearbox::assembly(), axle::assembly(), options::list(tuple)}).
-
--spec install(Name::serial_no(), GearBox::assembly(), Axle::assembly(), Options::list(tuple())) -> 
+-spec install(Name::serial_no(), GearBox::assembly(), Axle::assembly(), Opt::list()) -> 
                      success(pid()) | ingnore | failure(term()).
 install(Name, GearBox, Axle, Opt) ->
-    ID = {local, format_name(Name)},
-    Command = #install{ gearbox=GearBox, axle=Axle, options=Opt },
+    Com = #install{ gearbox=GearBox, axle=Axle, options=Opt },
 
-    Res = supervisor:start_link(ID, ?MODULE, Command),
-    Res.
+    supervisor:start_link({local, format_name(Name)}, ?MODULE, Com).
 
-init(#install{gearbox=GearBox, axle=Axle, options=Opt}) ->
+init(#install{ gearbox=GearBox, axle=Axle, options=Opt }) ->
     Strategy = proplists:get_value(strategy, Opt, one_for_all),
-
-    {ok, Release} = erlmachine_axle:install(GearBox, Axle),
-
-    Specs = specs(GearBox, Release),
     Int = proplists:get_value(intensity, Opt, 1),
     Per = proplists:get_value(period, Opt, 5),
 
-    erlmachine:success({#{strategy => Strategy, intensity => Int, period => Per}, Specs}).
+    {ok, Rel} = erlmachine_axle:install(GearBox, Axle),
+    erlmachine:success({#{strategy => Strategy, intensity => Int, period => Per}, specs(GearBox, Rel)}).
 
 %% I guess later we need some way to adress axle instance inside gearbox;
 %% Cause persistence only gearbox and the direction can look like gerabox -> SN -> SN (axle);
 %% This approach can also be used to walk through topology;
 
+-spec attach(Name::serial_no(), GearBox::assembly(), Axle::assembly(), Reg::term(), Ext::assembly()) ->
+                    success(assembly(), assembly()) | failure(term(), term()).
+attach(Name, GearBox, Axle, Reg, Ext) ->
+    {ok, Part, Rel} = erlmachine_axle:attach(GearBox, Axle, Reg, Ext),
+    %% TODO Conditional case for Result needs to be processed;
+    %% Mount time will be determined by prototype;
+    {ok, _PID} = supervisor:start_child(format_name(Name), spec(GearBox, Rel, Part)),
+    erlmachine:success(Part, Rel).
+
+-spec detach(Name::serial_no(), GearBox::assembly(), Axle::assembly(), Id::term()) ->
+                    success() | success(term(), term()) | failure(term()).
+detach(Name, GearBox, Axle, Id) ->
+    {ok, Rel} = erlmachine_axle:detach(GearBox, Axle, Id),
+
+    SupRef = format_name(Name),
+    ok = supervisor:terminate_child(SupRef, Id),
+    ok = supervisor:delete_child(SupRef, Id),
+    erlmachine:success(Rel).
+
 -spec uninstall(Name::serial_no(), GearBox::assembly(), Axle::assembly(), Reason::term()) ->
-                       success().
+                       success(assembly()).
 uninstall(Name, GearBox, Axle, Reason) ->
     exit(whereis(format_name(Name)), Reason),
 
-    {ok, _} = erlmachine_axle:uninstall(GearBox, Axle, Reason),
-    erlmachine:success().
+    {ok, Rel} = erlmachine_axle:uninstall(GearBox, Axle, Reason),
+    erlmachine:success(Rel).
 
 -spec accept(Name::serial_no(), GearBox::assembly(), Axle::assembly(), Criteria::criteria()) ->
                     success(term()) | failure(term(), term(), term()).

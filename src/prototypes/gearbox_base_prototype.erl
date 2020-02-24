@@ -37,8 +37,7 @@
 
 -spec tag(Package::map()) -> Tag::binary().
 tag(#{model := Model}) ->
-    ID = atom_to_binary(Model, latin1),
-    ID.
+    atom_to_binary(Model, latin1).
 
 -spec installed(Name::serial_no(), GearBox::assembly(), Part::assembly()) ->
                       success().
@@ -84,17 +83,18 @@ rejected(_Name, GearBox, Ext, Criteria) ->
 name() ->
     ?MODULE.
 
-format_name(SerialNumber) ->
-    ID = erlang:binary_to_atom(SerialNumber, latin1),
-    ID.
+-spec format_name(SN::serial_no()) -> 
+                         atom().
+format_name(SN) ->
+    erlang:binary_to_atom(SN, latin1).
 
--record(install, {gearbox::assembly(), options::list(tuple)}).
+-record(install, { gearbox::assembly(), options::list() }).
 
--spec install(Name::serial_no(), GearBox::assembly(), Opt::list(tuple())) -> 
+-spec install(Name::serial_no(), GearBox::assembly(), Opt::list()) -> 
                      success(pid()) | ingnore | failure(term()).
 install(Name, GearBox, Opt) ->
-    Command = #install{ gearbox=GearBox, options=Opt },
-    supervisor:start_link({local, format_name(Name)}, ?MODULE, Command).
+    Com = #install{ gearbox=GearBox, options=Opt },
+    supervisor:start_link({local, format_name(Name)}, ?MODULE, Com).
 
 init(#install{ gearbox=GearBox, options=Opt }) ->
     Strategy = proplists:get_value(strategy, Opt, one_for_one),
@@ -105,7 +105,7 @@ init(#install{ gearbox=GearBox, options=Opt }) ->
     erlmachine:success({#{strategy => Strategy, intensity => Int, period => Per}, specs(Rel)}).
 
 -spec attach(Name::serial_no(), GearBox::assembly(), Reg::term(), Ext::assembly()) ->
-                    success(assembly()) | failure(term(), term()).
+                    success(assembly(), assembly()) | failure(term(), term()).
 attach(Name, GearBox, Reg, Ext) ->
     {ok, Part, Rel} = erlmachine_gearbox:attach(GearBox, Reg, Ext),
     %% TODO Conditional case for Result needs to be processed;
