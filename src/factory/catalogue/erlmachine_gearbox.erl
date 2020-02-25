@@ -405,13 +405,13 @@ parts(GearBox, Parts) ->
                    Release::assembly().
 parts(GearBox, Input, Parts) ->
     Rel = parts(GearBox, Parts),
-    input(Rel, erlmachine:serial_no(Input)).
+    input(Rel, erlmachine:label(Input)).
 
 -spec parts(GearBox::assembly(), Input::assembly(), Parts::list(assembly()), Output::assembly()) ->
                    assembly().
 parts(GearBox, Input, Parts, Output) ->
     Rel = parts(GearBox, Parts),
-    output(input(Rel, erlmachine:serial_no(Input)), erlmachine:serial_no(Output)).
+    output(input(Rel, erlmachine:label(Input)), erlmachine:label(Output)).
 
 -spec gearbox(Env::term()) -> gearbox().
 gearbox(Env) ->
