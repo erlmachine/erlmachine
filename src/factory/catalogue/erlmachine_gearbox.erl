@@ -363,7 +363,8 @@ state(Axle) ->
 state(Axle, Schema) ->
     erlmachine_assembly:schema(Axle, Schema).
 
--spec input(GearBox::assembly()) -> assembly().
+-spec input(GearBox::assembly()) -> 
+                   term().
 input(GearBox) ->
     Product = erlmachine_assembly:product(GearBox),
     Product#gearbox.input.
@@ -375,9 +376,10 @@ input(GearBox, Id) ->
     erlmachine_assembly:product(GearBox, Product#gearbox{ input=Id }).
 
 -spec output(GearBox::assembly()) -> 
-                    assembly().
+                    term().
 output(GearBox) ->
-    GearBox#gearbox.output.
+    Product = erlmachine_assembly:product(GearBox),
+    Product#gearbox.output.
 
 -spec output(GearBox::assembly(), Id::term()) -> 
                     assembly().
