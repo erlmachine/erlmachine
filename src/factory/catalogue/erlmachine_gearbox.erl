@@ -1,5 +1,4 @@
 -module(erlmachine_gearbox).
-
 %% The main puprouse of a product module is to provide API between client's part and system; 
 
 %% Gearbox is a component which is responsible for reliable spatial placement for all processes (parts);
@@ -11,6 +10,9 @@
 %% The most convinient way to implement input and output like a shafts;
 %% This agreement allows to us attach gearboxes together and with other parts by attach call;
 %% This can evolve messaging systems reusage;
+-export([gearbox/1]).
+
+-export([master/1]).
 
 -export([rotate/2]).
 -export([transmit/2]).
@@ -28,22 +30,20 @@
 -export([form/1, submit/2]).
 -export([blocked/4, overloaded/3]).
 
--export([gearbox/1]).
-
 -export([
          input/1, input/2,
          env/1, env/2,
          output/1, output/2
         ]).
 
--export([master/1]).
-
 -export([mounted/2]).
-
 -export([parts/2, parts/3, parts/4]).
 
--export([find/1, find/2]).
--export([print/1]).
+-export([find/2]).
+-export([in/2, out/2]).
+
+-export([components/1]).
+-export([attachments/1]).
 
 -export([record_name/0, attributes/0]).
 
@@ -131,6 +131,11 @@ record_name() ->
 -spec attributes() -> list(atom()).
 attributes() ->
     record_info(fields, gearbox).
+
+-spec master(GearBox::assembly()) -> Release::assembly().
+master(GearBox) ->
+    Schema = erlmachine_assembly:schema(),
+    erlmachine_assembly:schema(GearBox, Schema).
 
 -spec installed(GearBox::assembly(), Part::assembly()) ->
                        success().
@@ -306,31 +311,6 @@ submit(GearBox, Form) ->
             {error, E, R, state(GearBox, State)} 
     end.
 
--spec master(GearBox::assembly()) -> Release::assembly().
-master(GearBox) ->
-    Schema = erlmachine_assembly:schema(),
-    erlmachine_assembly:schema(GearBox, Schema).
-
-%% We are going to provide access by path gearbox.shaft.# (like rabbitmq notation) too;
-
--spec find(GearBox::assembly(), Label::term()) -> 
-                  assembly() | false.
-find(GearBox, Label) ->
-    Schema = erlmachine_assembly:schema(GearBox),
-    erlmachine_schema:vertex(Schema, Label).
-
--spec find(GearBox::assembly()) -> list().
-find(GearBox) ->
-    Label = erlmachine_assembly:label(GearBox),
-    Schema = erlmachine_assembly:schema(GearBox),
-    [erlmachine_schema:vertex(Schema, V)|| V <- erlmachine_schema:vertices(Schema), V /= Label].
-
--spec print(GearBox::assembly()) -> list().
-print(GearBox) ->
-    Schema = erlmachine_assembly:schema(GearBox),
-    [{erlmachine_schema:vertex(Schema, V1), erlmachine_schema:vertex(Schema, V2), L}
-     || {_, V1, V2, L} <- erlmachine_schema:edges(Schema)].
-
 -spec rotate(GearBox::assembly(), Motion::term()) ->
                     Motion::term().
 rotate(GearBox, Motion) ->
@@ -353,6 +333,34 @@ connect(GearBox, Reg, Part) ->
 disconnect(GearBox, Id) ->
     Output = output(GearBox),
     erlmachine_assembly:detach(GearBox, Output, Id).
+
+%% We are going to provide access by path gearbox.shaft.# (like rabbitmq notation) too;
+
+-spec find(GearBox::assembly(), Label::term()) -> 
+                  assembly() | false.
+find(GearBox, Label) ->
+    Schema = erlmachine_assembly:schema(GearBox),
+    erlmachine_schema:vertex(Schema, Label).
+
+-spec in(GearBox::assembly(), Label::term()) -> list().
+in(GearBox, Label) ->
+    Schema = erlmachine_assembly:schema(GearBox),
+    erlmachine_schema:in_edges(Schema, Label).
+
+-spec out(GearBox::assembly(), Label::term()) -> list().
+out(GearBox, Label) ->
+    Schema = erlmachine_assembly:schema(GearBox),
+    erlmachine_schema:out_edges(Schema, Label).
+
+-spec components(GearBox::assembly()) -> list().
+components(GearBox) ->
+    Schema = erlmachine_assembly:schema(GearBox),
+    erlmachine_schema:vertices(Schema).
+
+-spec attachments(GearBox::assembly()) -> list().
+attachments(GearBox) ->
+    Schema = erlmachine_assembly:schema(GearBox),
+    erlmachine_schema:edges(Schema).
 
 -spec state(Axle::assembly()) -> term().
 state(Axle) ->
@@ -422,12 +430,9 @@ gearbox(Env) ->
 -spec mounted(GearBox::assembly(), Parts::list(assembly())) -> Release::assembly().
 mounted(GearBox, Parts) ->
     Mounted = [erlmachine_assembly:mounted(Part, GearBox)|| Part <- Parts],
-    Release = erlmachine_assembly:parts(GearBox, Mounted),
-    Release.
+    erlmachine_assembly:parts(GearBox, Mounted).
 
 %% processes need to be instantiated by builder before;
 
 %% detached;
 %% (Reason == normal) orelse erlmachine_system:crash(Assembly, Reason),
-
-%% erlmachine_system:damage(Assembly, Failure).

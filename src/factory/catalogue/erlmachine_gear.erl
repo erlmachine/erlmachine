@@ -115,7 +115,7 @@ attach(GearBox, Gear, Reg, Ext) ->
         {ok, State} ->
             Part = Ext,
             %% TODO At this place we can provide modification layer over attach;
-            Rel = erlmachine_assembly:parts(state(Gear, State), [Part]),
+            Rel = erlmachine_assembly:add(state(Gear, State), Part),
             erlmachine_assembly:attached(GearBox, Rel, Part),
             {ok, Part, Rel};
         {error, E, R, State} ->
@@ -131,7 +131,7 @@ detach(GearBox, Gear, Id) ->
     Mod = ModelName, Fun = detach, Args = [Label, Id, state(Gear)],
     case erlmachine:optional_callback(Mod, Fun, Args, erlmachine:success(state(Gear))) of
         {ok, State} ->
-            Rel = erlmachine_assembly:parts(state(Gear, State), []),
+            Rel = erlmachine_assembly:remove(state(Gear, State), Id),
             erlmachine_assembly:detached(GearBox, Rel, Id),
             {ok, Rel};
         {error, E, R, State} ->

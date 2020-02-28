@@ -3,7 +3,7 @@
 -export([vertices/1]).
 -export([vertex/2]).
 
--export([edges/1]).
+-export([in_edges/2, edges/1, out_edges/2]).
 -export([edge/2]).
 
 -export([add_edges/2, add_edge/3]).
@@ -57,7 +57,7 @@ add_edges(Schema, V1, [Part|T]) ->
 
 -spec vertices(Schema::term()) -> list().
 vertices(Schema) ->
-    digraph:vertices(Schema).
+    [vertex(Schema, V) || V <- digraph:vertices(Schema)].
 
 -spec vertex(Schema::term(), V::term()) -> 
                   assembly() | false.
@@ -69,10 +69,19 @@ vertex(Schema, V) ->
             false
     end.
 
+-spec in_edges(Schema::term(), V::term()) -> list().
+in_edges(Schema, V) ->
+    [edge(Schema, E)|| E <- digraph:in_edges(Schema, V)].
+
 -spec edges(Schema::term()) -> list().
 edges(Schema) ->
-    [digraph:edge(Schema, E)|| E <- digraph:edges(Schema)].
+    [edge(Schema, E)|| E <- digraph:edges(Schema)].
+
+-spec out_edges(Schema::term(), V::term()) -> list().
+out_edges(Schema, V) ->
+    [edge(Schema, E)|| E <- digraph:out_edges(Schema, V)].
 
 -spec edge(Schema::term(), E::term()) -> term().
 edge(Schema, E) ->
-    digraph:edge(Schema, E).
+    {_, V1, V2, L} = digraph:edge(Schema, E),
+    {vertex(Schema, V1), vertex(Schema, V2), L}.
