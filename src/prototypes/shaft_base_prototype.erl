@@ -182,10 +182,23 @@ handle_info(#rotate{motion = Motion}, #state{gearbox=GearBox, shaft=Shaft} = Sta
     %% At that place we can adress rotated part by SN; 
     %% In that case all parts will be rotated by default;
     %% If you need to provide measurements is's suitable place for that;
-    {ok, Rel} = erlmachine_shaft:rotate(GearBox, Shaft, Motion),
+    Fun = 
+        fun (Part, Acc) ->
+                case erlmachine_shaft:rotate(GearBox, Acc, Part, Motion) of
+                    {ok, Res, Ret}  ->
+                        erlmachine_shaft:rotation(GearBox, Part, Res),
+                        Ret;
+                    {ok, Ret} ->
+                        Ret;
+                    {error, _, _, Ret} ->
+                        %% TODO place for logging here;
+                        Ret
+                end
+        end,
+    Rel = lists:foldl(Fun, Shaft, erlmachine_shaft:parts(Shaft)),
     %% Potentially clients can provide sync delivery inside this call;
     %% It can work a very similar to job queue);
-    {noreply, State#state{shaft=Rel}};
+    {noreply, State#state{ shaft=Rel }};
 
 handle_info(#overload{load = Load}, #state{gearbox=GearBox, shaft=Shaft} = State) ->
     {ok, Rel} = erlmachine_shaft:overload(GearBox, Shaft, Load),
@@ -193,7 +206,20 @@ handle_info(#overload{load = Load}, #state{gearbox=GearBox, shaft=Shaft} = State
 
 handle_info(Load, #state{gearbox=GearBox, shaft=Shaft} = State) ->
     %% We need to provide logging at that place;
-    {ok, Rel} = erlmachine_shaft:load(GearBox, Shaft, Load),
+    Fun = 
+        fun (Part, Acc) ->
+                case erlmachine_shaft:load(GearBox, Acc, Part, Load) of
+                    {ok, Res, Ret}  ->
+                        erlmachine_shaft:rotation(GearBox, Part, Res),
+                        Ret;
+                    {ok, Ret} ->
+                        Ret;
+                    {error, _, _, Ret} ->
+                        %% TODO place for logging here;
+                        Ret
+                end
+        end,
+    Rel = lists:foldl(Fun, Shaft, erlmachine_shaft:parts(Shaft)),
     {noreply, State#state{ shaft=Rel }}.
 
 %% When reason is different from normal, or stop - the broken part event is occured;

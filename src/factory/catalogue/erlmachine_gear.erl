@@ -10,11 +10,11 @@
 -export([form/2, submit/3, overload/3]).
 
 %% erlmachine_transmission
--export([transmit/3, load/3, rotate/3]).
+-export([transmit/3, load/3, rotate/3, rotation/3]).
 
 -export([gear/0]).
 
--export([parts/2]).
+-export([parts/1, parts/2]).
 
 -export([record_name/0, attributes/0]).
 
@@ -162,10 +162,8 @@ rotate(GearBox, Gear, Motion) ->
     Label = erlmachine_assembly:label(Gear),
 
     case ModelName:rotate(Label, Motion, state(Gear)) of 
-        {ok, Res, State} -> 
-            Parts = erlmachine_assembly:parts(Gear),
-            [erlmachine_transmission:rotation(GearBox, Part, Res) || Part <- Parts],
-            {ok, state(Gear, State)};
+        {ok, Res, State} ->
+            {ok, Res, state(Gear, State)};
         {ok, State} ->
             {ok, state(Gear, State)};
         {error, E, R, State} ->
@@ -208,12 +206,10 @@ overload(GearBox, Gear, Load) ->
 load(GearBox, Gear, Load) ->
     ModelName = erlmachine_assembly:model_name(Gear),
     Label = erlmachine_assembly:label(Gear),
-    Parts = erlmachine_assembly:parts(Gear),
 
     case ModelName:load(Label, Load, state(Gear)) of 
         {ok, Res, State} -> 
-            [erlmachine_transmission:rotation(GearBox, Part, Res) || Part <- Parts], 
-            {ok, state(Gear, State)};
+            {ok, Res, state(Gear, State)};
         {ok, State} -> 
             {ok, state(Gear, State)};
         {error, E, R, State} ->
@@ -274,3 +270,13 @@ state(Gear, State) ->
 -spec parts(Gear::assembly(), Parts::list(assembly())) -> assembly().
 parts(Gear, [_]=Parts) ->
     erlmachine_assembly:parts(Gear, Parts).
+
+-spec parts(Gear::assembly()) -> list().
+parts(Gear) ->
+    erlmachine_assembly:parts(Gear).
+
+-spec rotation(GearBox::assembly(), Part::assembly(), Motion::term()) ->
+                      term().
+rotation(GearBox, Part, Motion) ->
+    erlmachine_transmission:rotation(GearBox, Part, Motion).
+

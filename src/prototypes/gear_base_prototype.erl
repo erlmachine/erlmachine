@@ -172,7 +172,17 @@ handle_cast(Message, #state{gearbox=GearBox, gear=Gear}=State) ->
     {noreply, State}.
 
 handle_info(#rotate{motion = Motion}, #state{gearbox=GearBox, gear=Gear}=State) ->
-    {ok, Rel} = erlmachine_gear:rotate(GearBox, Gear, Motion),
+    Rel = 
+        case erlmachine_gear:rotate(GearBox, Gear, Motion) of
+            {ok, Res, Ret}  ->
+                Parts = erlmachine_gear:parts(Ret),
+                [erlmachine_gear:rotation(GearBox, Part, Res) || Part <- Parts],
+                Ret;
+            {ok, Ret} ->
+                Ret;
+            {error, _, _, Ret} ->
+                Ret
+        end,
     %% Potentially clients can provide sync delivery inside this call;
     %% It can work a very similar to job queue);
     {noreply, State#state{gear=Rel}};
@@ -183,7 +193,17 @@ handle_info(#overload{load = Load}, #state{gearbox=GearBox, gear=Gear}=State) ->
 
 handle_info(Load, #state{gearbox=GearBox, gear=Gear}=State) ->
     %% At that place load capacity control can be achived;
-    {ok, Rel} = erlmachine_gear:load(GearBox, Gear, Load),
+    Rel = 
+        case erlmachine_gear:load(GearBox, Gear, Load) of
+            {ok, Res, Ret}  ->
+                Parts = erlmachine_gear:parts(Ret),
+                [erlmachine_gear:rotation(GearBox, Part, Res) || Part <- Parts],
+                Ret;
+            {ok, Ret} ->
+                Ret;
+            {error, _, _, Ret} ->
+                Ret
+        end,
     {noreply, State#state{gear=Rel}}.
 
 %% When reason is different from normal, or stop - the broken part event is occured;

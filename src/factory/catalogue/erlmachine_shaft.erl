@@ -10,11 +10,11 @@
 -export([form/2, submit/3, overload/3]).
 
 %% erlmachine_transmission
--export([transmit/3, load/3, rotate/4, rotate/3]).
+-export([transmit/3, load/3, rotate/4, rotation/3]).
 
 -export([shaft/0]).
 
--export([parts/2]).
+-export([parts/1, parts/2]).
 
 -export([record_name/0, attributes/0]).
 
@@ -152,17 +152,15 @@ accept(GearBox, Shaft, Criteria) ->
             {error, E, R, Rel}
     end.
 
--spec rotate(GearBox::assembly(), Shaft::assembly(), Id::term(), Motion::term()) ->
+-spec rotate(GearBox::assembly(), Shaft::assembly(), Ext::assembly(), Motion::term()) ->
                     success(assembly()) | failure(term(), term(), term()).
-rotate(GearBox, Shaft, Id, Motion) ->
+rotate(GearBox, Shaft, Ext, Motion) ->
     ModelName = erlmachine_assembly:model_name(Shaft),
-    Label = erlmachine_assembly:label(Shaft),
-    Part = erlmachine_assembly:part(Shaft, Id),
+    Label = erlmachine:label(Shaft),
 
-    case ModelName:rotate(Label, Id, Motion, state(Shaft)) of 
+    case ModelName:rotate(Label, erlmachine:label(Ext), Motion, state(Shaft)) of 
         {ok, Res, State} ->
-            erlmachine_transmission:rotation(GearBox, Part, Res),
-            {ok, state(Shaft, State)};
+            {ok, Res, state(Shaft, State)};
         {ok, State} ->
             {ok, state(Shaft, State)};
         {error, E, R, State} ->
@@ -170,15 +168,6 @@ rotate(GearBox, Shaft, Id, Motion) ->
             erlmachine_system:blocked(GearBox, Rel, E, R),
             {error, E, R, Rel}
     end.
-
--spec rotate(GearBox::assembly(), Shaft::assembly(), Motion::term()) ->
-                    success(assembly()) | failure(term(), term(), term()).
-rotate(GearBox, Shaft, Motion) ->
-    Fun = fun (Part, {ok, Acc}) -> 
-                  Id = erlmachine_assembly:label(Part),
-                  rotate(GearBox, Acc, Id, Motion)
-          end,
-    lists:foldl(Fun, {ok, Shaft}, erlmachine_assembly:parts(Shaft)).
 
 -spec load(GearBox::assembly(), Shaft::assembly(), Load::term()) ->
                   success(assembly()) | failure(term(), term(), term()).
@@ -188,7 +177,7 @@ load(GearBox, Shaft, Load) ->
 
     case ModelName:load(Label, Load, state(Shaft)) of 
         {ok, Res, State} -> 
-            rotate(GearBox, state(Shaft, State), Res);
+            {ok, Res, state(Shaft, State)};
         {ok, State} -> 
             {ok, state(Shaft, State)};
         {error, E, R, State} ->
@@ -276,3 +265,12 @@ state(Shaft, State) ->
 -spec parts(Shaft::assembly(), Parts::list(assembly())) -> assembly().
 parts(Shaft, Parts) ->
     erlmachine_assembly:parts(Shaft, Parts).
+
+-spec parts(Shaft::assembly()) -> list().
+parts(Shaft) ->
+    erlmachine_assembly:parts(Shaft).
+
+-spec rotation(GearBox::assembly(), Part::assembly(), Motion::term()) -> term().
+rotation(GearBox, Part, Motion) ->
+    erlmachine_transmission:rotation(GearBox, Part, Motion).
+
