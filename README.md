@@ -1,6 +1,6 @@
 
 <p align="center">
-  <img src="https://upload.wikimedia.org/wikipedia/commons/8/8a/Gear_reducer.gif" width="350" title="Logo">
+  <img src="https://w7.pngwing.com/pngs/951/671/png-transparent-machine-industry-manufacturing-transport-others.png" width="350" title="Logo">
 </p>
 
 # Erlmachine
