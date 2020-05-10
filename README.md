@@ -1,6 +1,6 @@
 
 <p align="center">
-  <img src="https://w7.pngwing.com/pngs/951/671/png-transparent-machine-industry-manufacturing-transport-others.png" width="350" title="Logo">
+  <img src="" width="350" title="Logo">
 </p>
 
 # Erlmachine
