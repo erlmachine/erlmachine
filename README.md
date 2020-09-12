@@ -1,9 +1,4 @@
-
-<p align="center">
-  <img src="" width="350" title="Logo">
-</p>
-
-# Erlmachine
+# Erlmachine ⚙️
 
 Erlmachine - is an application level virtual machine based on Erlang/OTP. It provides a real-time allocation and allows to control hundreds, thousands low cost resource consuming and isolated code engines. You can set a wide range of rules, permissions, allocated resources (processor, memory, network, application data etc.). 
 Erlmachine is used as high load, capacity emulation testing framework and also as an external programmable API engine. 
