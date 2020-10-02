@@ -1,2 +1,0 @@
--module(shaft_sample).
--export([]).

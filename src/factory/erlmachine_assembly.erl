@@ -2,227 +2,161 @@
 
 %% API.
 
--export([assembly/4]).
+-export([assembly/3, assembly/4]).
 
--export([model/0, prototype/0]).
-
--export([
-         install/1, install/2,
-         attach/3, attach/4,
-         detach/2, detach/3,
-         uninstall/2, uninstall/3
-        ]).
+-export([install/1, install/2]).
+-export([uninstall/1, uninstall/2]).
 
 -export([
-         installed/2, 
-         attached/3, detached/3,
-         uninstalled/3
-        ]).
-
--export([
-         serial_no/0, serial_no/1, serial_no/2,
-
+         serial_no/1, serial_no/2,
+         name/1, name/2,
+         fixed/1, fixed/2,
          body/1, body/2,
-
-         schema/0, schema/1, schema/2,
-
-         model/1, model/2, 
-         product/1, product/2,
-         prototype/1, prototype/2, 
-
-         model_name/1, model_name/2,
-         model_options/1, model_options/2,
-         model_no/1, model_no/2,
-         model_digest/1, model_digest/2,
-
-         prototype_name/1, prototype_name/2,
-         prototype_body/1, prototype_body/2,
-         prototype_options/1, prototype_options/2,
-
-         parts/1, parts/2,
-         mounted/1, mounted/2,
-         is_mounted/1,
-
-         part_no/1, part_no/2,
-
+         socket/1, socket/2,
+         schema/1, schema/2,
+         model/1, model/2,
+         extensions/1, extensions/2,
          tags/1, tags/2,
-         label/0, label/1, label/2
+         label/0, label/1, label/2,
+         part_no/1, part_no/2,
+         env/1, env/2,
+         desc/1, desc/2
         ]).
 
--export([add/2, remove/2, part/2]).%% TODO can be relocated;
+-export([store/2, delete/2, find/2]).
 
--export([tabname/0, record_name/0, attributes/0]).
-
-%% CRUD
--export([create/1, read/1, update/1, delete/1]).
+-export([tag/2, untag/2]).
 
 -include("erlmachine_system.hrl").
 
-%% The main purpose of this module is to instantiate proceses accordingly to design file;
-%% In this module will be provided incapsulation around building of independent parts and whole transmission too;
-%% We consider Module as implementation point (like class) and serial number as instance - (like object); 
-%% We can support polymorphism by different ways - by overriding prototype or by changing topology itself;
-
--type serial_no() :: erlmachine_factory:serial_no().
-
--type model_no() :: erlmachine_factory:model_no().
--type part_no() :: erlmachine_factory:part_no().
+%% Here is implemented incapsulation across independent parts and the whole transmission too;
+%% We consider Name as implementation point (like class) and serial number as instance - (like object);
+%% We can support polymorphism by different ways - by overriding prototype or by changing model itself;
 
 -type model() :: erlmachine_factory:model().
--type prototype() :: erlmachine_factory:prototype().
--type product() :: erlmachine_factory:product().
 
 %% I am thinking about two kinds of assembly manual and automated;
-%% The main difference between them is manual needs to be stored with body, and any changes need to be persisted;
-%% Automated exists in code but manual doesn't;
 
-%% The model is a key, all other parts and assembly itself can be restored;
+%% a) Manual applies through the canvas;
+%% b) The assembly itself and any potential future changes should be persisted;
+
 -record (assembly, {
-                    %% We can get build info (ts, etc..) by serial number from db;
                     serial_no::serial_no(),
+                    %% Name contains: erlmachine_axle, erlmachine_shaft, erlmachine_gearbox, erlmachine_gear;
+                    name::atom(),
+                    fixed::serial_no(),
+                    %% Body stores the current state of an extension;
                     body::term(),
+                    %% Connection interface (is passed to the rotate call);
+                    socket::term(),
+                    %% The build topology of the current gearbox (is inherited through the all extensions);
                     schema::term(),
-                    model::model() | model_no(),
-                    mounted::assembly() | serial_no(),
-                    parts=[]::list(assembly() | serial_no()),
+                    %% The assembly setup;
+                    model::model(),
+                    %% Build configuration;
+                    extensions=[]::list(assembly()),
+                    %% Tags can be used as selection criteria ([supervisor, overloaded, etc.]);
                     tags=[]::list(term()),
-                    label::label(),
-                    %% By part_no we can be able to track quality of component through release period;
-                    part_no::part_no()
+                    %% Label is unique access id within gearbox (serial_no by default);
+                    label::term(),
+                    %% By part_no we can track quality of component through release period, etc.;
+                    part_no::term(),
+                    %% The defined context of the current gearbox (is inherited through the all extensions);
+                    env::term(),
+                    %% Textual description of the component;
+                    desc::binary()
                    }
         ).
 
 -type assembly() :: #assembly{}.
 
--type label() :: term().
-
 -export_type([assembly/0]).
 
--spec install(GearBox::assembly()) ->
-                     success(pid()) | ingnore | failure(term()).
-install(GearBox) ->
-    SN = serial_no(GearBox),
-    Opt = prototype_options(GearBox),
-    %% TODO at that place we can register information about scheme in persistence storage;
-    Res = (prototype_name(GearBox)):install(SN, GearBox, Opt), 
-    %% Build whole schema;
-    Schema = schema(GearBox),
-    erlmachine_schema:add_edges(Schema, GearBox),
-    Res.
+-spec assembly() -> assembly().
+assembly() ->
+    #assembly{}.
 
--spec install(GearBox::assembly(), Part::assembly()) ->
-                     success(pid()) | ingnore | failure(E::term()).
-install(GearBox, Part) ->
-    SN = serial_no(Part),
-    Opt = prototype_options(Part),
-    Res = (prototype_name(Part)):install(SN, GearBox, Part, Opt),
-    %% Build part schema;
-    Schema = schema(GearBox),
-    erlmachine_schema:add_edges(Schema, Part),
-    Res.
+-spec assembly(Name::atom(), Body::term(), Model::model()) -> 
+                      assembly().
+assembly(Name, Body, Model) ->
+    Assembly = body(assembly(), Body),
+    name(model(Assembly, Model), Name).
 
--spec attach(GearBox::assembly(), Reg::term(), Ext::assembly()) -> 
-                    success(term(), term()) | failure(term(), term()).
-attach(GearBox, Reg, Ext) ->
-    SN = serial_no(GearBox),
-    Res = (prototype_name(GearBox)):attach(SN, GearBox, Reg, Ext),
-    %% Build edge (GearBox -> Part);
-    erlmachine_schema:add_edge(schema(GearBox), label(GearBox), Ext), 
-    Res.
+-spec assembly(Name::atom(), Schema::term(), Body::term(), Model::model(), Env::term()) -> 
+                      assembly().
+assembly(Name, Schema, Body, Model, Env) ->
+    Assembly = assembly(Name, Body, Model),
+    schema(env(Assembly, Env), Schema).
 
--spec attach(GearBox::assembly(), Label::term(), Reg::term(), Ext::assembly()) -> 
-                    success(term(), term()) | failure(term(), term()).
-attach(GearBox, Label, Reg, Ext) ->
-    Part = erlmachine_gearbox:find(GearBox, Label),
-    SN = serial_no(Part),
-    Res = (prototype_name(Part)):attach(SN, GearBox, Part, Reg, Ext),
-    %% Build edge (Part -> Ext);
-    erlmachine_schema:add_edge(schema(GearBox), Label, Ext),
-    Res.
+%% TODO: To operate only via schema;
+%% Schema has to be extracted and operated via independent way (to be able to manage gearbox you have to store it);
+-spec install(Assembly::assembly()) ->
+                     success(pid()) | failure(term(), term()).
+install(Assembly) ->
+    Name = name(Assembly),
+    try 
+        {ok, Pid} = Name:install(Assembly), true = is_pid(Pid),
+        %% Build gearbox schema;
+        init(Assembly),
+        erlmachine:success(Pid)
+    catch E:R ->
+            erlmachine:failure(E, R)
+    end.
 
--spec detach(GearBox::assembly(), Id::term()) -> 
-                    success(term()) | failure(term(), term()).
-detach(GearBox, Id) ->
-    SN = serial_no(GearBox),
-    Res = (prototype_name(GearBox)):detach(SN, GearBox, Id),
+-spec install(Assembly::assembly(), Ext::assembly()) ->
+                    success(pid()) | failure(term(), term()).
+install(Assembly, Ext) ->
+    Name = name(Assembly), Label = label(Assembly),
+    try
+        {ok, Pid} = Name:install(Assembly, Ext), true = is_pid(Pid),
+        %% Build edge (Assembly -> Ext);
+        %% Each ext stores schema within;
+        erlmachine_schema:add_edge(Assembly, Label, Ext),
+        erlmachine:success(Pid)
+    catch E:R ->
+            erlmachine:failure(E, R)
+    end.
+
+-spec uninstall(Assembly::assembly(), Id::term()) -> 
+                       success(term()) | failure(term(), term()).
+uninstall(Assembly, Id) ->
+    SN = serial_no(Assembly),
+    Res = (prototype_name(Assembly)):detach(SN, Assembly, Id),
     %% Remove vertex with all edges (GearBox -> Part);
-    ok = erlmachine_schema:del_vertex(schema(GearBox), Id),
+    ok = erlmachine_schema:del_vertex(Assembly, Id),
     Res.
 
--spec detach(GearBox::assembly(), Label::term(), ID::term()) -> 
-                    success(term()) | failure(term(), term()).
-detach(GearBox, Label, ID) ->
-    Part = erlmachine_gearbox:find(GearBox, Label),
-    SN = serial_no(Part),
-    Res = (prototype_name(Part)):detach(SN, GearBox, Part, ID),
-    %% Remove edge (Part -> Ext);
-    ok = erlmachine_schema:del_path(schema(GearBox), Label, ID),
-    Res.
+-spec uninstall(Assembly::assembly()) ->
+                       success().
+uninstall(Assembly) ->
+    Name = name(Assembly), Label = label(Assembly),
+    Res = Name:uninstall(Assembly), ok = Res,
+    ok = erlmachine_schema:del_vertex(Assembly, Label),
+    erlmachine:success().
 
--spec uninstall(GearBox::assembly(), Reason::term()) ->
-                     ok.
-uninstall(GearBox, Reason) ->
-    SN = serial_no(GearBox),
-    Res = (prototype_name(GearBox)):uninstall(SN, GearBox, Reason),
-    %% Remove vertex with all edges (GearBox);
-    ok = erlmachine_schema:del_vertex(schema(GearBox), label(GearBox)),
-    Res.
+-spec init(Assembly::assembly()) -> success().
+init(Assembly) ->
+    Schema = erlmachine_assembly:schema(Assembly),
 
--spec uninstall(GearBox::assembly(), Label::term(), Reason::term()) ->
-                       ok.
-uninstall(GearBox, Label, Reason) ->
-    Part = erlmachine_gearbox:find(GearBox, Label),
-    SN = serial_no(Part),
-    Res = (prototype_name(Part)):uninstall(SN, GearBox, Part, Reason),
-    %% Remove vertex with all edges (Part);
-    ok = erlmachine_schema:del_vertex(schema(GearBox), Label),
-    Res.
-
--spec installed(GearBox::assembly(), Assembly::assembly()) -> 
-                         ok.
-installed(GearBox, Assembly) ->
-    SN = serial_no(GearBox),
-    (prototype_name(GearBox)):installed(SN, GearBox, Assembly),
-    %% NOTE Instead of access from external process we are going to provide
-    %% notification and update monitoring copy with suitable tags, etc.;
+    V = erlmachine_schema:add_vertex(Schema, Assembly),
+    init(Schema, V, erlmachine_assembly:parts(Assembly)), 
     ok.
 
--spec attached(GearBox::assembly(), Part::assembly(), Extension::assembly()) -> 
-                       ok.
-attached(GearBox, Part, Extension) ->
-    SN = serial_no(GearBox),
-    (prototype_name(GearBox)):attached(SN, GearBox, Part, Extension).
+-spec init(Schema::term(), V1::vertex(), Parts::list(assembly())) -> 
+                  vertex().
+init(_Schema, V1, []) ->
+    V1;
+init(Schema, V1, [Part|T]) ->
+    V2 = add_edge(Schema, V1, Part),
 
--spec detached(GearBox::assembly(), Part::assembly(), ID::serial_no()) -> 
-                      ok.
-detached(GearBox, Part, ID) ->
-    SN = serial_no(GearBox),
-    (prototype_name(GearBox)):detached(SN, GearBox, Part, ID).
+    init(Schema, V2, erlmachine_assembly:parts(Part)),
+    init(Schema, V1, T),
+    V1.
 
--spec uninstalled(GearBox::assembly(), Part::assembly(), Reason::term()) -> 
-                       ok.
-uninstalled(GearBox, Part, Reason) ->
-    SN = serial_no(GearBox),
-    (prototype_name(GearBox)):uninstalled(SN, GearBox, Part, Reason),
-    %% NOTE Instead of access from external process we are going to provide
-    %% notification and update monitoring copy with suitable tags, etc.;
-    ok.
-
--spec assembly(SN::serial_no(), Body::term(), Model::model(), Label::term()) -> assembly().
-assembly(SN, Body, Model, Label) ->
-    #assembly{ serial_no=SN, body=Body, model=Model, label=Label }.
-
--spec is_mounted(Assembly::assembly()) -> boolean().
-is_mounted(Assembly) -> 
-    mounted(Assembly) /= undefined.
-
+%% Accessors;
 -spec serial_no() -> integer().
 serial_no() ->
     #assembly.serial_no.
-
--spec label() -> integer().
-label() ->
-    #assembly.label.
 
 -spec serial_no(Assembly::assembly()) -> serial_no().
 serial_no(Assembly) ->
@@ -241,21 +175,21 @@ body(Assembly) ->
 body(Assembly, Body) ->
     Assembly#assembly{ body=Body }.
 
--spec schema() -> term().
-schema() ->
-    digraph:new().
+-spec socket(Assembly::assembly()) -> term().
+socket(Assembly) -> 
+    Assembly#assembly.socket.
+
+-spec socket(Assembly::assembly(), Socket::term()) -> assembly().
+socket(Assembly, Socket) ->
+    Assembly#assembly{ socket = Socket }.
 
 -spec schema(Assembly::assembly()) -> term().
 schema(Assembly) ->
     Assembly#assembly.schema.
 
 -spec schema(Assembly::assembly(), Schema::term()) -> assembly().
-schema(Assembly, Schema) ->
+schema(Assembly, Body) ->
     Assembly#assembly{ schema=Schema }.
-
--spec model() -> model().
-model() ->
-    erlmachine_model:model().
 
 -spec model(Assembly::assembly()) -> model().
 model(Assembly) ->
@@ -263,7 +197,7 @@ model(Assembly) ->
 
 -spec model(Assembly::assembly(), Model::model()) -> assembly().
 model(Assembly, Model) ->
-    Assembly#assembly{model = Model}.
+    Assembly#assembly{ model = Model }.
 
 -spec prototype(Assembly::assembly()) -> prototype().
 prototype(Assembly) ->
@@ -275,112 +209,21 @@ prototype(Assembly, Prototype) ->
     Model = model(Assembly),
     model(Assembly, erlmachine_model:prototype(Model, Prototype)).
 
--spec model_no(Assembly::assembly()) -> MN::term().
-model_no(Assembly) ->
-    Model = model(Assembly),
-    erlmachine_model:model_no(Model).
+-spec extensions(Assembly::assembly()) -> list(assembly()).
+extensions(Assembly) ->
+    Assembly#assembly.extensions.
 
--spec model_no(Assembly::assembly(), MN::term()) -> assembly().
-model_no(Assembly, MN) ->
-    Model = model(Assembly),
-    model(Assembly, erlmachine_model:model_no(Model, MN)).
+-spec extensions(Assembly::assembly(), Exts::list(assembly())) -> assembly().
+extensions(Assembly, Exts) ->
+    Assembly#assembly{ extensions=Exts }.
 
--spec model_name(Assembly::assembly()) -> atom().
-model_name(Assembly) ->
-    Model = model(Assembly),
-    erlmachine_model:name(Model).
+-spec fixed(Assembly::assembly()) -> assembly().
+fixed(Assembly) ->
+    Assembly#assembly.fixed.
 
--spec model_name(Assembly::assembly(), Name::atom()) -> assembly().
-model_name(Assembly, Name) ->
-    Model = model(Assembly),
-    model(Assembly, erlmachine_model:name(Model, Name)).
-
--spec model_options(Assembly::assembly()) -> list().
-model_options(Assembly) ->
-    Model = model(Assembly),
-    erlmachine_model:options(Model).
-
--spec model_options(Assembly::assembly(), Opt::list()) -> assembly().
-model_options(Assembly, Opt) ->
-    Model = model(Assembly),
-    model(Assembly, erlmachine_model:options(Model, Opt)).
-
--spec model_digest(Assembly::assembly()) -> binary().
-model_digest(Assembly) ->
-    Model = model(Assembly),
-    erlmachine_model:digest(Model).
-
--spec model_digest(Assembly::assembly(), Digest::binary()) -> assembly().
-model_digest(Assembly, Digest) ->
-    Model = model(Assembly),
-    model(Assembly, erlmachine_model:digest(Model, Digest)).
-
-
--spec product(Assembly::assembly()) -> product().
-product(Assembly) ->
-    Model = model(Assembly),
-    erlmachine_model:product(Model).
-
--spec product(Assembly::assembly(), Product::product()) -> assembly().
-product(Assembly, Product) ->
-    Model = model(Assembly),
-    model(Assembly, erlmachine_model:product(Model, Product)).
-
--spec prototype() -> prototype().
-prototype() ->
-    erlmachine_prototype:prototype().
-
--spec prototype_name(Assembly::assembly()) -> Name::atom().
-prototype_name(Assembly) ->
-    Model = model(Assembly),
-    Prototype = erlmachine_model:prototype(Model),
-    erlmachine_prototype:name(Prototype).
-
--spec prototype_name(Assembly::assembly(), Name::atom()) -> Release::assembly().
-prototype_name(Assembly, Name) ->
-    Model = model(Assembly),
-    Prototype = erlmachine_model:prototype(Model),
-    prototype(Assembly, erlmachine_prototype:name(Prototype, Name)).
-
--spec prototype_body(Assembly::assembly()) -> term().
-prototype_body(Assembly) ->
-    Model = model(Assembly),
-    Prototype = erlmachine_model:prototype(Model),
-    erlmachine_prototype:body(Prototype).
-
--spec prototype_body(Assembly::assembly(), Body::term()) -> Release::assembly().
-prototype_body(Assembly, Body) ->
-    Model = model(Assembly),
-    Prototype = erlmachine_model:prototype(Model),
-    prototype(Assembly, erlmachine_prototype:body(Prototype, Body)).
-
--spec prototype_options(Assembly::assembly()) -> list().
-prototype_options(Assembly) ->
-    Model = model(Assembly),
-    Prototype = erlmachine_model:prototype(Model),
-    erlmachine_prototype:options(Prototype).
-
--spec prototype_options(Assembly::assembly(), Opt::list()) -> assembly().
-prototype_options(Assembly, Opt) ->
-    Model = model(Assembly),
-    Prototype = erlmachine_model:prototype(Model),
-    prototype(Assembly, erlmachine_prototype:options(Prototype, Opt)).
-
--spec parts(Assembly::assembly()) -> list(assembly()).
-parts(Assembly) ->
-    Assembly#assembly.parts.
-
--spec parts(Assembly::assembly(), Parts::list(assembly())) -> assembly().
-parts(Assembly, Parts) ->
-    Assembly#assembly{ parts=Parts }.
-
--spec mounted(Assembly::assembly()) -> assembly().
-mounted(Assembly) ->
-    Assembly#assembly.mounted.
-
--spec mounted(Assembly::assembly(), Mount::assembly()) -> assembly().
-mounted(Assembly, Mount) ->
-    Assembly#assembly{ mounted=parts(Mount, []) }.
+-spec fixed(Assembly::assembly(), SN::serial_no()) -> assembly().
+fixed(Assembly, SN) ->
+    Assembly#assembly{ fixed=SN }.
 
 -spec part_no(Assembly::assembly()) -> term().
 part_no(Assembly) ->
@@ -404,53 +247,45 @@ label(Assembly) ->
 
 -spec label(Assembly::assembly(), Label::label()) -> assembly().
 label(Assembly, Label) ->
-    Assembly#assembly{label = Label}.
+    Assembly#assembly{ label = Label }.
 
--spec add(Assembly::assembly(), Part::assembly()) -> assembly().
-add(Assembly, Part) ->
-    Parts = lists:keystore(label(Part), label(), parts(Assembly), Part),
-    parts(Assembly, Parts).
+-spec env(Assembly::assembly()) -> term().
+env(Assembly) ->
+    Assembly#assembly.env.
 
--spec remove(Assembly::assembly(), Label::term()) -> assembly().
-remove(Assembly, Label) ->
-    Parts = lists:keydelete(Label, #assembly.label, parts(Assembly)),
-    parts(Assembly, Parts).
+-spec env(Assembly::assembly(), Env::term()) -> assembly().
+env(Assembly, Env) ->
+    Assembly#assembly{ env = Env }.
 
--spec part(Assembly::assembly(), Label::term()) -> assembly().
-part(Assembly, Label) ->
-    lists:keyfind(Label, #assembly.label, parts(Assembly)).
+-spec desc(Assembly::assembly()) -> binary().
+desc(Assembly) ->
+    Assembly#assembly.desc.
 
--spec tabname() -> atom().
-tabname() -> 
-    ?MODULE.
+-spec desc(Assembly::assembly(), Desc::binary()) -> assembly().
+desc(Assembly, Desc) ->
+    Assembly#assembly{ desc = Desc }.
 
--spec record_name() -> atom().
-record_name() ->
-    assembly.
+%% Misc
+-spec store(Assembly::assembly(), Ext::assembly()) -> assembly().
+store(Assembly, Ext) ->
+    Exts = lists:keystore(label(Extension), label(), extensions(Assembly), Ext),
+    extensions(Assembly, Exts).
 
--spec attributes() -> list(atom()).
-attributes() ->
-    record_info(fields, assembly).
+-spec delete(Assembly::assembly(), Label::term()) -> assembly().
+delete(Assembly, Label) ->
+    Exts = lists:keydelete(Label, label(), extensions(Assembly)),
+    extensions(Assembly, Exts).
 
--spec create(Assembly::assembly()) ->
-                    success(serial_no()).
-create(Assembly) ->
-    ID = serial_no(Assembly),
-    ok = mnesia:dirty_write(tabname(), Assembly),
-    {ok, ID}.
+-spec find(Assembly::assembly(), Label::term()) -> assembly().
+find(Assembly, Label) ->
+    lists:keyfind(Label, label(), extensions(Assembly)).
 
--spec read(ID::serial_no()) -> 
-                  success(assembly()).
-read(ID) ->
-    [Assembly] = mnesia:dirty_read(tabname(), ID),
-    {ok, Assembly}.
+-spec tag(Assembly::assembly(), Tag::term()) -> assembly().
+tag(Assembly, Tag) ->
+    Tags = tags(Assembly),
+    tags(Assembly, [Tag|Tags]).
 
--spec update(Assembly::assembly()) -> 
-                    success().
-update(Assembly) ->
-    ok = mnesia:dirty_write(tabname(), Assembly).
-
--spec delete(ID::serial_no()) -> 
-                    success().
-delete(ID) ->
-    ok = mnesia:dirty_delete(tabname(), ID).
+-spec untag(Assembly::assembly(), Tag::term()) -> assembly().
+untag(Assembly, Tag) ->
+    Tags = tags(Assembly),
+    tags(Assembly, lists:delete(Tag, Tags)).

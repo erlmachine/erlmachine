@@ -9,206 +9,150 @@
 -export([start_link/0]).
 
 %% We assume that factory will also provide production of all components and their registration too;
-%% My assumption is that factory can be driven from production capacity perspective; 
-%% Measurements over manufactures production activity needs to be satisfied too;
+%% My assumption is that factory can be driven from production capacity perspective;
+%% Measurements over manufactures production activities has to be satisfied too;
 
-%% I guess factory needs to have the specialized, predefined parts with reserved serial_no;
+%% Factory itself consists of prebuild parts (without build call and assigned serial_no);
 
 %% gen_server.
 -export([init/1]).
 -export([handle_call/3]).
 -export([handle_cast/2]).
 -export([handle_info/2]).
--export([handle_continue/2]).
 -export([terminate/2]).
--export([code_change/3]).
--export([format_status/2]).
 
--export([assembly/2, assembly/4]).
+-export([gear/2, gear/3, gear/4, gear/5]).
+-export([shaft/3, shaft/5]).
+-export([axle/3, axle/5]).
+-export([gearbox/4, gearbox/6]).
 
--export([gear/3, gear/4, gear/5]).
--export([shaft/3, shaft/4, shaft/5]).
--export([axle/3, axle/4, axle/5]).
--export([gearbox/3, gearbox/4, gearbox/5]).
-
--export([accept/2, accept/3, accept/4]).
-
--export([accepted/3, rejected/3]).
-
--export([serial_no/0]).
+-export([serial_no/1]).
 
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
--include("erlmachine_filesystem.hrl").
 
-%% Here are different kind of builders can be provided;
-%% For example - YAML builder;
-%% But from begining we are going to build directly from code;
+%% The main purpouse of the factory is to provide production planing;
+%% We can control available capacity of the all individual parts;
+%% We can utilize different kind of pools for that purpouse;
 
-%% The main purpouse of the factory is to provide product planing;
-%% We can control available capacity of all individual parts;
-%% We can utilize different pools for that purpouse;
+%% I think about two the most important cases for acceptance procedure:
+%% The first one is ability to check prototype with default test model;
+%% And the next one is an acceptance test within a specific model implementation;
 
-%% I am thinking about two kind of acceptance test;
-%% The first one is ability to check prototype with default test models;
-%% The second one is acceptance test accordingly to a specific model
-%% which can be accomplished by specific implementation;
+%% TODO: To implement capacity limits over production cycle;
 
-%% I am thinking about two kind of methods: 
-%% SN = warhouse:store(Assembly), warhouse:load(SN) and MN = factory:register(Model), factory:build(MN); 
-%% All system elements will be stored by default;
-%% We can check the whole list of registered models to provide accept call to each of them;
-
-%% I think about catalog concept for models storage;
-
--spec assembly(Body::term(), Model::model()) -> 
-                      assembly().
-assembly(Body, Model) ->
-    SN = serial_no(),
-    assembly(SN, Body, Model, SN).
-
--spec assembly(SN::serial_no(), Body::term(), Model::model(), Label::term()) -> 
-                      assembly().
-assembly(SN, Body, Model, Label) ->
-    erlmachine_assembly:assembly(SN, Body, Model, Label).
-
--spec gear(GearBox::assembly(), Name::atom(), Opt::term()) -> 
+%% TODO: To provide ability to override default prototypes;
+-spec gear(Name::atom(), Opt::term()) -> 
                   assembly().
-gear(GearBox, Name, Opt) ->
-    SN = serial_no(),
-    gear(SN, GearBox, Name, Opt, SN).
+gear(Name, Opt) ->
+    ProtName = erlmachine_worker_sample_prototype:name(), ProtOpt = [],
+    gear(Name, Opt, ProtName, ProtOpt).
 
--spec gear(GearBox::assembly(), Name::atom(), Opt::term(), Label::term()) -> 
+-spec gear(Name::atom(), Opt::term(), Ext::assembly()) -> 
                   assembly().
-gear(GearBox, Name, Opt, Label) ->
-    gear(serial_no(), GearBox, Name, Opt, Label).
+gear(Name, Opt, Ext) when is_record(Ext, assembly) ->
+    Gear = gear(Name, Opt),
+    erlmachine_assembly:extensions(Gear, [Ext]).
 
--spec gear(SN::serial_no(), GearBox::assembly(), Name::atom(), Opt::term(), Label::term()) -> 
+-spec gear(Name::atom(), Opt::term(), ProtName::atom(), ProtOpt::list()) -> 
                   assembly().
-gear(SN, _GearBox, Name, Opt, Label) ->
-    Product = erlmachine_gear:gear(),
-
-    ProtName = gear_base_prototype:name(), ProtOpt = [],
-    Prot = erlmachine_prototype:prototype(ProtName, [{type, worker}|ProtOpt]),
-
-    Model = erlmachine_model:model(Name, Opt, Prot, Product),
+gear(Name, Opt, ProtName, ProtOpt) ->
+    Prot = erlmachine_prototype:prototype(ProtName, ProtOpt),
+    Model = erlmachine_model:model(Name, Opt, Prot),
     Body = #{},
+    Gear = erlmachine_gear:gear(Body, Model),
+    serial_no(Gear).
 
-    assembly(SN, Body, Model, Label).
+%% TODO To think about test env param;
+-spec gear(Name::atom(), Opt::term(), ProtName::atom(), ProtOpt::list(), Ext::assembly()) -> 
+                  assembly().
+gear(Name, Opt, ProtName, ProtOpt, Ext) when is_record(Ext, assembly) ->
+    Gear = gear(Name, Opt, ProtName, ProtOpt),
+    erlmachine_assembly:extensions(Gear, [Ext]).
 
--spec shaft(GearBox::assembly(), Name::atom(), Opt::term()) -> 
-                   assembly().
-shaft(GearBox, Name, Opt) ->
-    SN = serial_no(),
-    shaft(SN, GearBox, Name, Opt, SN).
+-spec shaft(Name::atom(), Opt::term(), Exts::list()) -> 
+                  assembly().
+shaft(Name, Opt, Exts) when is_list(Exts) ->
+    ProtName = erlmachine_worker_sample_prototype:name(), ProtOpt = [],
+    shaft(Name, Opt, ProtName, ProtOpt, Exts).
 
--spec shaft(GearBox::assembly(), Name::atom(), Opt::term(), Label::term()) -> 
-                   assembly().
-shaft(GearBox, Name, Opt, Label) ->
-    shaft(serial_no(), GearBox, Name, Opt, Label).
-
--spec shaft(SN::serial_no(), GearBox::assembly(), Name::atom(), Opt::term(), Label::term()) -> 
-                   assembly().
-shaft(SN, _GearBox, Name, Opt, Label) ->
-    Product = erlmachine_shaft:shaft(),
-
-    ProtName = shaft_base_prototype:name(), ProtOpt = [],
-    Prot = erlmachine_prototype:prototype(ProtName, [{type, worker}|ProtOpt]),
-
-    Model = erlmachine_model:model(Name, Opt, Prot, Product),
+-spec shaft(Name::atom(), Opt::term(), ProtName::atom(), ProtOpt::list(), Exts::list()) ->
+                  assembly().
+shaft(Name, Opt, ProtName, ProtOpt, Exts) when is_list(Exts) ->
+    Prot = erlmachine_prototype:prototype(ProtName, ProtOpt),
+    Model = erlmachine_model:model(Name, Opt, Prot),
     Body = [],
+    Shaft = serial_no(erlmachine_shaft:shaft(Body, Model)),
+    erlmachine_assembly:extensions(Shaft, Exts).
 
-    assembly(SN, Body, Model, Label).
-
--spec axle(GearBox::assembly(), Name::atom(), Opt::term()) -> 
+-spec axle(Name::atom(), Opt::term(), Exts::list()) ->
                    assembly().
-axle(GearBox, Name, Opt) ->
-    SN = serial_no(),
-    axle(SN, GearBox, Name, Opt, SN).
+axle(Name, Opt, Exts) when is_list(Exts) ->
+    ProtName = erlmachine_supervisor_sample_prototype:name(), ProtOpt = [],
+    axle(Name, Opt, ProtName, ProtOpt, Exts).
 
--spec axle(GearBox::assembly(), Name::atom(), Opt::term(), Label::term()) -> 
+-spec axle(Name::atom(), Opt::term(), ProtName::atom(), ProtOpt::list(), Exts::list()) -> 
                    assembly().
-axle(GearBox, Name, Opt, Label) ->
-    axle(serial_no(), GearBox, Name, Opt, Label).
+axle(Name, Opt, ProtName, ProtOpt, Exts) when is_list(Exts) ->
+    Prot = erlmachine_prototype:prototype(ProtName, ProtOpt),
+    Model = erlmachine_model:model(Name, Opt, Prot),
+    Body = [],
+    Axle = serial_no(erlmachine_axle:axle(Body, Model)),
+    erlmachine_assembly:extensions(Axle, Exts).
 
--spec axle(SN::serial_no(), GearBox::assembly(), Name::atom(), Opt::term(), Label::term()) -> 
+%% Gearbox should be responsible to pass env context through the each model;
+%% Each extension inherites this context as execution scope;
+-spec gearbox(Name::atom(), Opt::term(), Env::term(), Exts::list()) -> 
                   assembly().
-axle(SN, _GearBox, Name, Opt, Label) ->
-    Schema = erlmachine_assembly:schema(),
-    Product = erlmachine_axle:axle(),
+gearbox(Name, Opt, Env, Exts) when is_list(Exts) ->
+    ProtName = erlmachine_supervisor_sample_prototype:name(), ProtOpt = [],
+    gearbox(Name, Opt, ProtName, ProtOpt, Env, Exts).
 
-    ProtName = axle_base_prototype:name(), ProtOpt = [],
-    Prot = erlmachine_prototype:prototype(ProtName, [{type, supervisor}|ProtOpt]),
-
-    Model = erlmachine_model:model(Name, Opt, Prot, Product),
-
-    erlmachine_assembly:schema(assembly(SN, Schema, Model, Label), Schema).
-
--spec gearbox(Name::atom(), Opt::term(), Env::term()) -> 
+-spec gearbox(Name::atom(), Opt::term(), ProtName::atom(), ProtOpt::list(), Env::term(), Exts::list()) -> 
                   assembly().
-gearbox(Name, Opt, Env) ->
-    SN = serial_no(),
-    gearbox(SN, Name, Opt, Env, SN).
-
--spec gearbox(Name::atom(), Opt::term(), Env::term(), Label::term()) -> 
-                  assembly().
-gearbox(Name, Opt, Env, Label) ->
-    gearbox(serial_no(), Name, Opt, Env, Label).
-
--spec gearbox(SN::serial_no(), Name::atom(), Opt::term(), Env::term(), Label::term()) ->
-                     assembly().
-gearbox(SN, Name, Opt, Env, Label) ->
-    Schema = erlmachine_assembly:schema(),
-    Product = erlmachine_gearbox:gearbox(Env),
-
-    ProtName = gearbox_base_prototype:name(), ProtOpt = [],
-    Prot = erlmachine_prototype:prototype(ProtName, [{type, supervisor}|ProtOpt]),
-
-    Model = erlmachine_model:model(Name, Opt, Prot, Product),
-
-    erlmachine_assembly:schema(assembly(SN, Schema, Model, Label), Schema).
+gearbox(Name, Opt, ProtName, ProtOpt, Env, Exts) when is_list(Exts) ->
+    Prot = erlmachine_prototype:prototype(ProtName, ProtOpt),
+    Model = erlmachine_model:model(Name, Opt, Prot),
+    Schema = erlmachine_assembly:schema(), Body = [],
+    GearBox = serial_no(erlmachine_gearbox:gearbox(Schema, Body, Model, Env)),
+    erlmachine_assembly:extensions(GearBox, Exts).
 
 %% API.
 
 id() -> 
     ?MODULE.
 
--spec start_link() -> 
-                        success(pid()) | ingnore | failure(E::term()).
+-spec start_link() ->
+                        success(pid()) | ingnore | failure(term()).
 start_link() ->
     Id = id(),
     gen_server:start_link({local, Id}, ?MODULE, [], []).
 
--record (serial_no, {}).
+-record(build, { assembly::assembly() }).
 
--spec serial_no() -> serial_no().
-serial_no() ->
-    %% Just default timeout for the first time;
-    Id = id(),
-    SN = gen_server:call(Id, #serial_no{}),
-    erlmachine:base64url(SN).
+-spec build(Assembly::assembly()) ->
+                  success(term()) | failure(term(), term()).
+build(Assembly) ->
+    gen_server:call(id(), #build{ assembly=Assembly }).
 
 %% gen_server.
 
--record(state, { serial_no::serial_no() }).
--record(accept, { }).
-%% Factory will be responsible for the model's, assemblies, storing and management;
+-record(state, { }).
+
 init([]) ->
-    {ok, Serial} = erlmachine_serial:update(?MODULE),
-    SN = erlmachine_serial_no:serial_no(Serial),
+    {ok, #state{}}.
 
-    {ok, #state{ serial_no=SN }}.
+handle_call(#build{ assembly=Assembly }, From, #state{ gearbox=GearBox }=State) ->
+    Command = erlmachine:command(#{}, build, Assembly),
 
-handle_call(#serial_no{}, _From, #state{ serial_no=SN }=State) ->
-    {ok, Serial} = erlmachine_serial:update(?MODULE),
-    Rotate = erlmachine_serial_no:serial_no(Serial, SN),
-
-    {reply, SN, State#state{ serial_no=Rotate }};
+    erlmachine_gearbox:rotate(GearBox, 'build', erlmachine:request_reply(Command, From)),
+    {noreply, State};
 
 handle_call(_Request, _From, State) ->
     {reply, ignored, State}.
 
-handle_cast(_Msg, State) ->	{noreply, State}.
+handle_cast(_Msg, State) ->
+    {noreply, State}.
 
 handle_info(_Info, State) ->
 	{noreply, State}.
@@ -216,61 +160,82 @@ handle_info(_Info, State) ->
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
-handle_continue(#accept{}, #state{}=State) ->
-    try
-        %% TODO acceptance test over SN can be satisfied;
-        {noreply, State}
-    catch E:R ->
-            {stop, {E, R}, State}
-    end;
-handle_continue(_, State) ->
-    {noreply, State}.
-
 terminate(_Reason, _State) ->
     ok.
 
-format_status(_Opt, [_PDict, _State]) ->
-    [].
+%% TODO:
 
--spec accept(GearBox::assembly(), Criteria::criteria()) -> 
-                    success(assembly()) | failure(term(), term(), assembly()).
-accept(GearBox, Criteria) ->
-    SN = erlmachine_assembly:serial_no(GearBox),
-    Name = erlmachine_assembly:prototype_name(GearBox),
+-type serial()::integer().
 
-    erlmachine_assembly:install(GearBox),
-    Status = Name:accept(SN, GearBox, Criteria),
-    erlmachine_assembly:uninstall(GearBox, normal),
-    Status.
+-record (serial, { id::atom(), count::integer() }).
 
--spec accept(GearBox::assembly(), Assembly::assembly(), Criteria::criteria()) -> 
-                    success(term()) | failure(term(), term(), assembly()).
-accept(GearBox, Assembly, Criteria) ->
-    accept(GearBox, undefined, Assembly, Criteria).
+%erlmachine:md5(SN).
 
--spec accept(GearBox::assembly(), Reg::term(), Assembly::assembly(), Criteria::criteria()) -> 
-                    success(term()) | failure(term(), term(), assembly()).
-accept(GearBox, Reg, Assembly, Criteria) ->
-    SN = erlmachine_assembly:serial_no(Assembly),
-    Name = erlmachine_assembly:prototype_name(Assembly),
+-spec install(Label::term(), Id::serial_no(), State::map(), Opt::term(), Env::list()) ->
+                     success(term()) | failure(term(), term(), term()).
+install(_, _, State, _, _) ->
+    _TabRes = mnesia:create_table(tabname(), [attributes(attributes()), record_name(record_name())]),
 
-    erlmachine_assembly:attach(GearBox, Reg, Assembly),
-    Status = Name:accept(SN, GearBox, Assembly, Criteria),
-    erlmachine_assembly:detach(GearBox, SN),
-    Status.
+    {ok, State}.
 
--spec accepted(GearBox::assembly(), Assembly::assembly(), Criteria::criteria()) -> 
-                      ok.
-accepted(GearBox, Assembly, Criteria) ->
-    SN = erlmachine_assembly:serial_no(GearBox),
-    Name = erlmachine_assembly:prototype_name(GearBox),
+-spec rotate(Label::term(), Motion::map(), State::map()) ->
+                     success(term(), term()) | failure(term(), term(), term()).
+rotate(_, Motion, State) ->
+    Body = erlmachine:body(Motion),
+    try
+        SN = serial_no(),
+        Res = erlmachine_assembly:serial_no(Args, SN),
+        {ok, erlmachine:document(Header, Res), State}
+    catch E:R ->
+            erlmachine:failure(E, R, State)
+    end.
 
-    Name:accepted(SN, GearBox, Assembly, Criteria).
+{ok, Serial} = erlmachine_serial:update(?MODULE),
+SN = erlmachine_serial_no:serial_no(Serial),
 
--spec rejected(GearBox::assembly(), Assembly::assembly(), Criteria::criteria()) -> 
-                      ok.
-rejected(GearBox, Assembly, Criteria) ->
-    SN = erlmachine_assembly:serial_no(GearBox),
-    Name = erlmachine_assembly:prototype_name(GearBox),
+{ok, Serial} = erlmachine_serial:update(?MODULE),
+Rotate = erlmachine_serial_no:serial_no(Serial, SN),
 
-    Name:rejected(SN, GearBox, Assembly, Criteria).
+-spec serial_no(Serial::serial()) -> serial_no().
+serial_no(Serial) ->
+    <<_:32, _:32, _:32, _:32>> = erlmachine:guid(Serial).
+
+-spec serial_no(Serial::serial(), SN::serial_no()) -> serial_no().
+serial_no(Serial, <<B1:32, B2:32, B3:32, B4:32>>) ->
+    B5 = erlang:phash2({B1, Serial}, 4294967296),
+    <<(B2 bxor B5):32, (B3 bxor B5):32, (B4 bxor B5):32, B5:32>>.
+
+
+-spec tabname() -> atom().
+tabname() ->
+    ?MODULE.
+
+-spec record_name() -> atom().
+record_name() ->
+    serial.
+
+-spec serial_no() -> atom().
+serial_no() ->
+    serial_no.
+
+-spec part_no() -> atom().
+part_no() ->
+    part_no.
+
+-spec attributes() -> list(atom()).
+attributes() ->
+    record_info(fields, serial).
+
+attributes(Attr) ->
+    {attributes, Attr}.
+
+record_name(Name) ->
+    {record_name, Name}.
+
+-spec update(Id::atom()) -> success(integer()).
+update(Id) ->
+    erlmachine:success(update(ID, 1)).
+
+-spec update(Id::atom(), Value::integer()) -> success(integer()).
+update(Id, Value) ->
+    mnesia:dirty_update_counter(tabname(), Id, Value).

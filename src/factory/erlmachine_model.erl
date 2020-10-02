@@ -8,7 +8,6 @@
          name/1, name/2,
          options/1, options/2,
          model_no/1, model_no/2,
-         product/1, product/2,
          prototype/1, prototype/2, 
          digest/1, digest/2
         ]).
@@ -21,18 +20,10 @@
 
 -type prototype() :: erlmachine_factory:prototype().
 
--type gear() :: erlmachine_gear:gear().
--type axle() :: erlmachine_axle:axle().
--type shaft() :: erlmachine_shaft:shaft().
--type gearbox() :: erlmachine_gearbox:gerbox().
-
--type product() :: gear() | axle() | gearbox() | shaft().
-
 -record(model, {
                 %% A modle_no can act as product configurator to generate a master production schedule;
                 model_no::model_no(),
                 name::atom(),
-                product::product(),
                 prototype::prototype(),
                 options::term(),
                 digest::binary()
@@ -51,14 +42,15 @@ record_name() ->
 attributes() ->
     record_info(fields, model).
 
--spec model(Name::atom(), Opt::list(), Prot::prototype(), Product::product()) ->
+-spec model(Name::atom(), Opt::list(), Prot::prototype()) ->
                   model().
-model(Name, Opt, Prot, Product) ->
-    Model = (model())#model{ name=Name, options=Opt, prototype=Prot, product=Product },
+model(Name, Opt, Prot) ->
+    Model = model(),
+    Rel = prototype(options(name(Model, Name), Opt), Prot),
 
-    MN = erlmachine:digest(Model, base64),
+    Digest = base64:encode(erlmachine:digest(Rel)), MN = Digest,
 
-    model_no(digest(Model, MN), MN).
+    model_no(digest(Rel, Digest), MN).
 
 -spec model() -> model().
 model() ->
@@ -95,14 +87,6 @@ options(Model) ->
 -spec options(Model::model(), Opt::list()) -> model().
 options(Model, Opt) ->
     Model#model{ options=Opt }.
-
--spec product(Model::model()) -> product().
-product(Model) ->
-    Model#model.product.
-
--spec product(Model::model(), Product::product()) -> model().
-product(Model, Product) ->
-    Model#model{ product=Product }.
 
 -spec digest(Model::model()) -> binary().
 digest(Model) ->

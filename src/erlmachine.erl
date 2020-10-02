@@ -2,21 +2,26 @@
 
 -folder(<<"erlmachine">>).
 
--export([serial_no/1, label/1, model_name/1]).
-
 -export([start/0, stop/0]).
 
--export([motion/1, motion/2]).
--export([envelope/1, header/1, body/1]).
+-export([find/1, find/2]).
 
--export([command/1, command/2]).
--export([document/1, document/2]).
--export([event/1, event/2]).
+-export([rotate/3, transmit/3]).
+-export([install/2, install/3]).
+-export([attach/3, attach/4]).
+-export([detach/2, detach/3]).
+-export([uninstall/2, uninstall/3]).
+
+-export([motion/2]).
+-export([header/1, header/2, body/1, body/2]).
+
+-export([command/3, document/3, event/3]).
+-export([command_name/1, document_meta/1, event_type/1]).
 
 -export([return_address/1, return_address/2]).
 -export([correlation_id/1, correlation_id/2]).
 
--export([request_reply/3]).
+-export([request_reply/2, request_reply/3]).
 
 -export([failure/1, failure/2, failure/3]).
 -export([success/0, success/1, success/2]).
@@ -24,43 +29,38 @@
 -export([attribute/3]).
 -export([optional_callback/4]).
 
+-export([serial_no/1]).
+-export([label/1]).
+-export([tags/1]).
+-export([part_no/1]).
+-export([description/1]).
+
 -export([guid/1]).
 
--export([digest/1, digest/2]).
+-export([md5/1]).
 -export([base64url/1]).
 
 -export([timestamp/0]).
 
 -include("erlmachine_system.hrl").
 -include("erlmachine_factory.hrl").
--include("erlmachine_filesystem.hrl").
 
+%% Erlmachine transmission types:
 -type motion() :: erlmachine_transmission:motion().
-
--type envelope() :: erlmachine_transmission:envelope().
 
 -type header() :: erlmachine_transmission:header().
 
 -type body() :: erlmachine_transmission:body().
 
--type serial() :: erlmachine_serial:serial().
+-type guid()::#guid{}.
 
--record(guid, {node::node(), reference::reference(), serial::serial()}).
+-export_type([guid/0]).
 
-%% The main purpouse of erlmachine project is providing a set of well designed behaviours which are accompanied with visualization tools as well.
-%%  Erlmachine doesn't restrict your workflow by the one possible way but instead provide to you ability to implement your own components. This ability is available under flexible mechanism of prototypes and overloading.  
+-record(guid, { node::node(), reference::reference(), serial::term() }).
 
--spec serial_no(Assembly::assembly()) -> serial_no().
-serial_no(Assembly) ->
-    erlmachine_assembly:serial_no(Assembly).
-
--spec label(Assembly::assembly()) -> term().
-label(Assembly) ->
-    erlmachine_assembly:label(Assembly).
-
--spec model_name(Assembly::assembly()) -> atom().
-model_name(Assembly) ->
-    erlmachine_assembly:model_name(Assembly).
+%% The main purpouse of erlmachine project is to provide a set of well designed behaviours which are accompanied with visualization tools as well.
+%%  Erlmachine doesn't restrict your design with the one possible way but instead provide you ability to implement your own components accordingly to your vison.
+%% This ability is available under flexible mechanism of prototypes and overloading (models).
 
 -spec start() -> success().
 start() ->
@@ -71,82 +71,144 @@ start() ->
 stop() ->
     application:stop(erlmachine).
 
--spec motion(Body::term()) -> 
-                    motion().
-motion(Body) ->
-    motion(#{}, Body).
+-spec find(Schema::term()) -> list(assembly()).
+find(Schema) ->
+    erlmachine_schema:vertices(Schema).
 
--spec motion(Header::header(), Body::body()) -> 
-                    motion().
+-spec find(Schema::term(), Label::term()) -> assembly() | false.
+find(Schema, Label) ->
+    erlmachine_schema:vertex(Schema, Label).
+
+-spec rotate(Schema::assembly(), Label::term(), Motion::term()) ->
+                    term().
+rotate(Schema, Label, Motion) ->
+    erlmachine_transmission:rotate(find(Schema, Label), Motion).
+
+-spec transmit(Schema::assembly(), Label::term(), Motion::term()) ->
+                      term().
+transmit(Schema, Label, Motion) ->
+    erlmachine_transmission:transmit(find(Schema, Label), Motion).
+
+-spec install(GearBox::assembly()) ->
+                     success(pid()) | ingnore | failure(term()).
+install(GearBox) ->
+    erlmachine_assembly:install(GearBox).
+
+-spec install(Schema::term(), Label::term(), Ext::assembly()) ->
+                     success(pid()) | ingnore | failure(term()).
+install(Schema, Label, Ext) ->
+    erlmachine_assembly:install(find(Schema, Label), Ext).
+
+%% TODO: Path can be specified #.reg, label.reg, etc..
+%% Model doesn't have to know about meshed parts;
+%% Model can skip rotation or to provide delivery path: #, #.reg, etc..
+%% Passed extensions list automatically subscribed on # (relation is determined by edge);
+%% Edge is described by reg.
+-spec mesh(Schema::assembly(), Label::term(), Socket::term(), Ext::assembly()) -> 
+                    success() | failure(term(), term()).
+mesh(Schema, Label, Socket, Ext) ->
+    Rel = erlmachine_assembly:socket(Ext, Socket),
+    erlmachine_transmission:mesh(find(Schema, Label), Rel).
+
+-spec unmesh(Schema::term(), Label::term(), Id::term()) -> 
+                    success() | failure(term(), term()).
+unmesh(Schema, Label, Id) ->
+    erlmachine_assembly:unmesh(find(Schema, Label), Id).
+
+-spec uninstall(GearBox::assembly()) ->
+                       success().
+uninstall(GearBox) ->
+    erlmachine_assembly:uninstall(GearBox).
+
+-spec uninstall(Schema::term(), Label::term(), Id::term()) ->
+                       success().
+uninstall(Schema, Label, Id) ->
+    erlmachine_assembly:uninstall(GearBox).
+
+-spec uninstall(GearBox::assembly(), Label::term(), Reason::term()) ->
+                       success().
+uninstall(GearBox, Label, Reason) ->
+    erlmachine_assembly:uninstall(GearBox, Label, Reason).
+
+-spec motion(Header::header(), Body::body()) -> motion().
 motion(Header, Body) ->
     erlmachine_transmission:motion(Header, Body).
 
--spec envelope(Motion::motion()) -> 
-                      envelope().
-envelope(Motion) ->
-    erlmachine_transmission:envelope(Motion).
-
--spec header(Motion::motion()) -> 
-                    header().
+-spec header(Motion::motion()) -> header().
 header(Motion) ->
     erlmachine_transmission:header(Motion).
 
--spec body(Motion::motion()) -> 
-                  body().
+-spec header(Motion::motion(), Header::header()) -> motion().
+header(Motion, Header) ->
+    erlmachine_transmission:header(Motion, Header).
+
+-spec body(Motion::motion()) -> body().
 body(Motion) ->
     erlmachine_transmission:body(Motion).
 
--spec command(Body::body()) ->
-                     motion(). 
-command(Body) ->
-    command(#{}, Body).
+-spec body(Motion::motion(), Body::body()) -> motion().
+body(Motion, Body) ->
+    erlmachine_transmission:body(Motion, Body).
 
--spec command(Header::header(), Body::body()) -> 
+-spec command(Header::header(), Name::term(), Args::body()) ->
                      motion().
-command(Header, Body) ->
-    erlmachine_transmission:command(Header, Body).
+command(Header, Name, Args) ->
+    erlmachine_transmission:motion(Header#{ command => Name }, Args).
 
--spec document(Body::body()) -> 
-                      motion(). 
-document(Body) ->
-    document(#{}, Body).
-
--spec document(Header::header(), Body::body()) -> 
+-spec document(Header::header(), Meta::term(), Body::body()) -> 
                       motion().
-document(Header, Body) ->
-    erlmachine_transmission:document(Header, Body).
+document(Header, Meta, Body) ->
+    erlmachine_transmission:motion(Header#{ document => Meta }, Body).
 
--spec event(Body::body()) -> 
+-spec event(Header::header(), Type::term(), Description::body()) -> 
                    motion(). 
-event(Body) ->
-    event(#{}, Body).
+event(Header, Type, Description) ->
+    erlmachine_transmission:motion(Header#{ event => Type }, Description).
 
--spec event(Header::header(), Body::body()) -> 
-                   motion().
-event(Header, Body) ->
-    erlmachine_transmission:event(Header, Body).
+-spec command_name(Motion::motion()) -> term().
+command_name(Motion) ->
+    Header = header(Motion),
+    maps:get(command, Header).
 
--spec return_address(Header::header(), Address::term()) -> header().
-return_address(Header, Address) ->
-    Header#{ return_address => Address }.
+-spec document_meta(Motion::motion()) -> term().
+document_meta(Motion) ->
+    Header = header(Motion),
+    maps:get(document, Header).
 
--spec return_address(Header::header()) -> term().
-return_address(Header) ->
-    maps:get(return_address, Header, undefined).
+-spec event_type(Motion::motion()) -> term().
+event_type(Motion) ->
+    Header = header(Motion),
+    maps:get(event, Header).
 
--spec correlation_id(Header::header()) -> term().
-correlation_id(Header) ->
-    maps:get(correlation_id, Header, undefined).
-
--spec correlation_id(Header::header(), Id::term()) -> header().
-correlation_id(Header, Id) ->
-    Header#{ correlation_id => Id }.
+-spec request_reply(Motion::motion(), Address::term()) -> 
+                           motion().
+request_reply(Motion, Address) ->
+    return_address(Motion, Address).
 
 -spec request_reply(Motion::motion(), Address::term(), Id::term()) -> 
                            motion().
 request_reply(Motion, Address, Id) ->
-    Header = correlation_id(return_address(header(Motion), Address), Id),
-    motion(Header, body(Motion)).
+    correlation_id(return_address(Motion, Address), Id).
+
+-spec return_address(Motion::motion()) -> term().
+return_address(Motion) ->
+    Header = header(Motion),
+    maps:get(return_address, Header, undefined).
+
+-spec return_address(Motion::motion(), Address::term()) -> motion().
+return_address(Motion, Address) ->
+    Header = header(Motion),
+    header(Motion, Header#{ return_address => Address }).
+
+-spec correlation_id(Motion::motion()) -> term().
+correlation_id(Motion) ->
+    Header = header(Motion),
+    maps:get(correlation_id, Header, undefined).
+
+-spec correlation_id(Motion::motion(), Id::term()) -> motion().
+correlation_id(Motion, Id) ->
+    Header = header(Motion),
+    header(Motion, Header#{ correlation_id => Id }).
 
 -spec failure(E::term(), R::term()) -> failure(E::term(), R::term()).
 failure(E, R) -> 
@@ -183,6 +245,11 @@ attribute(Module, Tag, Default) ->
             Data 
     end.
 
+-spec optional_callback(Mod::atom(), Fun::atom(), Args::list()) -> 
+                               term().
+optional_callback(Mod, Fun, Args) ->
+    optional_callback(Mod, Fun, Args, success()).
+
 -spec optional_callback(Mod::atom(), Fun::atom(), Args::list(), Def::term()) -> 
                                term().
 optional_callback(Mod, Fun, Args, Def) ->
@@ -193,25 +260,38 @@ optional_callback(Mod, Fun, Args, Def) ->
             Def 
     end.
 
-%% generate a readable string representation of a SN/MN/PN/TN.
+-spec serial_no(Assembly::assembly()) -> serial_no().
+serial_no(Assembly) ->
+    erlmachine_assembly:serial_no(Assembly).
+
+-spec label(Assembly::assembly()) -> term().
+label(Assembly) ->
+    erlmachine_assembly:label(Assembly).
+
+-spec tags(Assembly::assembly()) -> list(). 
+tags(Assembly) ->
+    erlmachine_assembly:tags(Assembly).
+
+-spec part_no(Assembly::assembly()) -> part_no().
+part_no(Assembly) ->
+    erlmachine_assembly:part_no(Assembly).
+
+-spec description(Assembly::assembly()) -> binary().
+description(Assembly) ->
+    erlmachine_assembly:description(Assembly).
+
+%% generate a readable string representation of a SN/MN/PN/TN;
 %%
 %% base64url encoding was provided; 
 %% This format is safer and more applicable by web (in comparison with base64);
 
 -spec guid(Serial::serial()) -> binary().
 guid(Serial) ->
-    GUID = #guid{node=node(), serial=Serial, reference=make_ref()},
-    digest(GUID).
+    GUID = #guid{ node=node(), serial=Serial, reference=make_ref() },
+    md5(GUID).
 
--spec digest(Data::term(), base64 | base64url) -> binary().
-digest(Data, base64) ->
-    base64:encode(digest(Data));
-
-digest(Data, base64url) ->
-    base64url(digest(Data)).
-
--spec digest(Data::term()) -> binary().
-digest(Data) ->
+-spec md5(Data::term()) -> binary().
+md5(Data) ->
     MD5 = erlang:md5(term_to_binary(Data)),
     MD5.
 

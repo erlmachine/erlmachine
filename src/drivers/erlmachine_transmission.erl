@@ -1,6 +1,10 @@
 -module(erlmachine_transmission).
 -behaviour(gen_server).
+%% In comparison to the common approach with global shared table for publish/subscribe interactions:
+%% 1) Each gearbox applies within it's own scope via constructed graph;
+%% 2) Graph structure represents a transmission vocabulary and incomming message router;
 
+%% TODO: Can we supply subscribe expressions like rabbitmq? #, *, etc..
 %% API.
 -export([start_link/0]).
  
@@ -13,10 +17,11 @@
         ]).
 
 -export([rotate/3, transmit/3]).
--export([rotation/3]).
--export([transmission/3]).
+-export([mesh/4, unmesh/3]).
 
--export([motion/1, motion/2, envelope/1, header/1, body/1]).
+-export([motion/3]).
+-export([header/1, header/2]).
+-export([body/1, body/2]).
 
 -export([command/2, document/2, event/2]).
 
@@ -26,9 +31,7 @@
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
 
--type motion() :: map().
-
--type envelope() :: map().
+-type motion() :: map(). %% envelope;
 
 -type header() :: map().
 
@@ -36,29 +39,53 @@
 
 -export_type([motion/0, envelope/0, header/0, body/0]).
 
--spec rotate(GearBox::assembly(), Label::term(), Motion::term()) ->
-                    term().
-rotate(GearBox, Label, Motion) ->
-    Part = erlmachine_gearbox:find(GearBox, Label),
-    rotation(GearBox, Part, Motion).
+%% TODO: To make via prototype call;
+-spec rotate(Assembly::assembly(), Motion::term()) -> 
+                    success() | failure(term(), term()).
+rotate(Assembly, Motion) -> 
+    Name = erlmachine_assembly:name(Assembly),
+    try
+        %% There is a place where statistics can be gathered;
+        %% TODO: To extract neighbor extenions list and to rotate them with result and socket as arg;
+        ok = Name:rotate(Assembly, Motion, Ext),
+        erlmachine:success()
+    catch E:R ->
+            erlmachine:failure(E, R)
+    end.
 
--spec transmit(GearBox::assembly(), Label::term(), Motion::term()) ->
+%% Transmit has designed to be synchronous. It can be used for direct API calls on the particular extension;
+-spec transmit(Assembly::assembly(), Motion::term()) ->
                       term().
-transmit(GearBox, Label, Motion) ->
-    Part = erlmachine_gearbox:find(GearBox, Label),
-    transmission(GearBox, Part, Motion).
+transmit(Assembly, Motion) ->
+    Name = erlmachine_assembly:name(Assembly),
+    try
+        %% There is a place where statistics can be gathered;
+        Name:transmit(Assembly, Motion)
+    catch E:R ->
+            erlmachine:failure(E, R) 
+    end.
 
--spec rotation(GearBox::assembly(), Part::assembly(), Motion::term()) -> 
-                         term().
-rotation(GearBox, Part, Motion) -> 
-    SN = erlmachine_assembly:serial_no(Part),
-    (erlmachine_assembly:prototype_name(Part)):rotate(SN, GearBox, Part, Motion).
 
--spec transmission(GearBox::assembly(), Part::assembly(), Motion::term()) ->
-                      term().
-transmission(GearBox, Part, Motion) ->
-    SN = erlmachine_assembly:serial_no(Part),
-    (erlmachine_assembly:prototype_name(Part)):transmit(SN, GearBox, Part, Motion).
+%% TODO: TO make via graph?
+%% We can supply subscription mechanism through the graph;
+-spec mesh(Assembly::assembly(), Ext::assembly()) -> 
+                  success() | failure(term(), term()).
+mesh(Assembly, Ext) ->
+    SN = serial_no(Assembly),
+    Res = (prototype_name(Part)):attach(SN, GearBox, Part, Reg, Ext),
+    %% Build edge (Part -> Ext);
+    erlmachine_schema:add_edge(GearBox, Label, Ext),
+    Res.
+
+-spec unmesh(Assembly::assembly(), Id::term()) -> 
+                    success().
+unmesh(Assembly, Id) ->
+    Part = erlmachine_gearbox:find(GearBox, AssemblyLabel),
+    SN = serial_no(Part),
+    Res = (prototype_name(Part)):detach(SN, Assembly, Part, Id),
+    %% Remove edge (Part -> Ext);
+    ok = erlmachine_schema:del_path(Assembly, Label, Id),
+    Res.
 
 
 -record(state, {
@@ -68,45 +95,26 @@ transmission(GearBox, Part, Motion) ->
 %% 1. Header – Information used by the messaging system that describes the data being transmitted, its origin, its destination, and so on.
 %% 2. Body – The data being transmitted; generally ignored by the messaging system and simply transmitted as-is.
 
--spec motion(Body::term()) -> motion().
-motion(Body) ->
-    motion(#{}, Body).
-
 -spec motion(Header::header(), Body::body()) -> motion().
-motion(Header, Body) when is_map(Header) ->
-    #{envelope => #{header => Header, body => Body}}.
-
--spec envelope(Motion::motion()) -> envelope().
-envelope(Motion) ->
-    #{envelope := Envelope} = Motion,
-    Envelope.
+motion(Header, Body) ->
+    Motion = #{},
+    body(header(Motion, Header), Body).
 
 -spec header(Motion::motion()) -> header().
 header(Motion) ->
-    Envelope = envelope(Motion),
-    #{header := Header} = Envelope,
-    Header.
+    maps:get(header, Motion).
+
+-spec header(Motion::motion(), Header::header()) -> motion().
+header(Motion, Header) ->
+    Motion#{ header => Header }.
 
 -spec body(Motion::motion()) -> body().
 body(Motion) ->
-    Envelope = envelope(Motion),
-    #{body := Body} = Envelope,
-    Body.
+    maps:get(body, Motion).
 
--spec command(Header::header(), Body::body()) -> 
-                     motion().
-command(Header, Body) ->
-    motion(Header#{type => command}, Body).
-
--spec document(Header::header(), Body::body()) -> 
-                      motion().
-document(Header, Body) ->
-    motion(Header#{type => document}, Body).
-
--spec event(Header::header(), Body::body()) -> 
-                   motion().
-event(Header, Body) ->
-    motion(Header#{type => event}, Body).
+-spec body(Motion::motion(), Body::body()) -> motion().
+body(Motion, Body) ->
+    Motion#{ body => Body }.
 
 %% API.
 

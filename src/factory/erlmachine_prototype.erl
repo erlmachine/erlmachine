@@ -29,7 +29,8 @@ attributes() ->
 
 -spec prototype(Name::atom(), Opt::list()) -> prototype().
 prototype(Name, Opt) ->
-    (prototype())#prototype{ name=Name, options=Opt }.
+    Prototype = #prototype{},
+    options(name(Prototype, Name), Opt).
 
 -spec prototype() -> prototype().
 prototype() ->
