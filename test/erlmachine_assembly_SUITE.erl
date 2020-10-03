@@ -1,0 +1,2 @@
+-module(erlmachine_assembly_SUITE).
+-export([]).
