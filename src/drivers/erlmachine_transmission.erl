@@ -47,7 +47,10 @@ rotate(Assembly, Motion) ->
     try
         %% There is a place where statistics can be gathered;
         %% TODO: To extract neighbor extenions list and to rotate them with result and socket as arg;
-        ok = Name:rotate(Assembly, Motion, Ext),
+        Schema = erlmachine_assembly:schema(Assembly),
+        Label = erlmachine_assembly:label(Assembly),
+        Exts = [Ext|| {_, Ext} <- erlmachine_schema:out_edges(Schema, Label)],
+        [Name:rotate(Assembly, Motion, Ext) || Ext <- Exts],
         erlmachine:success()
     catch E:R ->
             erlmachine:failure(E, R)
@@ -55,7 +58,7 @@ rotate(Assembly, Motion) ->
 
 %% Transmit has designed to be synchronous. It can be used for direct API calls on the particular extension;
 -spec transmit(Assembly::assembly(), Motion::term()) ->
-                      term().
+                      term() | failure(term(), term()).
 transmit(Assembly, Motion) ->
     Name = erlmachine_assembly:name(Assembly),
     try

@@ -10,7 +10,6 @@
 -export([
          serial_no/1, serial_no/2,
          name/1, name/2,
-         fixed/1, fixed/2,
          body/1, body/2,
          socket/1, socket/2,
          schema/1, schema/2,
@@ -29,41 +28,41 @@
 
 -include("erlmachine_system.hrl").
 
-%% Here is implemented incapsulation across independent parts and the whole transmission too;
+%% NOTE: Here is implemented incapsulation across independent parts and the whole transmission too;
 %% We consider Name as implementation point (like class) and serial number as instance - (like object);
 %% We can support polymorphism by different ways - by overriding prototype or by changing model itself;
 
 -type model() :: erlmachine_factory:model().
 
-%% I am thinking about two kinds of assembly manual and automated;
+%% NOTE: I am thinking about two kinds of assembly manual and automated;
 
 %% a) Manual applies through the canvas;
 %% b) The assembly itself and any potential future changes should be persisted;
 
 -record (assembly, {
+                    %% Runtime unique identifier (S/N);
                     serial_no::serial_no(),
-                    %% Name contains: erlmachine_axle, erlmachine_shaft, erlmachine_gearbox, erlmachine_gear;
+                    %% Decorating module: erlmachine_axle, erlmachine_shaft, erlmachine_gearbox, erlmachine_gear;
                     name::atom(),
-                    fixed::serial_no(),
-                    %% Body stores the current state of an extension;
+                    %% Body stores the current state;
                     body::term(),
-                    %% Connection interface (is passed to the rotate call);
+                    %% Interface (is passed into the rotate call);
                     socket::term(),
-                    %% The build topology of the current gearbox (is inherited through the all extensions);
+                    %% The build topology (is inherited through the all extensions);
                     schema::term(),
                     %% The assembly setup;
                     model::model(),
                     %% Build configuration;
                     extensions=[]::list(assembly()),
-                    %% Tags can be used as selection criteria ([supervisor, overloaded, etc.]);
+                    %% Tags are applied as selection criteria ([supervisor, overloaded, etc.]);
                     tags=[]::list(term()),
-                    %% Label is unique access id within gearbox (serial_no by default);
+                    %% Label is unique id within topology (serial_no by default);
                     label::term(),
-                    %% By part_no we can track quality of component through release period, etc.;
+                    %% By part_no we can track quality of component through release period;
                     part_no::term(),
-                    %% The defined context of the current gearbox (is inherited through the all extensions);
+                    %% The execution context within the current topology (is inherited through the all extensions);
                     env::term(),
-                    %% Textual description of the component;
+                    %% Textual description of the assembly;
                     desc::binary()
                    }
         ).
@@ -88,29 +87,28 @@ assembly(Name, Schema, Body, Model, Env) ->
     Assembly = assembly(Name, Body, Model),
     schema(env(Assembly, Env), Schema).
 
-%% TODO: To operate only via schema;
-%% Schema has to be extracted and operated via independent way (to be able to manage gearbox you have to store it);
+%% NOTE: To operate only via schema;
+%% Schema has to be extracted and managed by independent way;
+%% To be able to manage topology you have to store it;
+
 -spec install(Assembly::assembly()) ->
                      success(pid()) | failure(term(), term()).
 install(Assembly) ->
     Name = name(Assembly),
-    try 
+    try
         {ok, Pid} = Name:install(Assembly), true = is_pid(Pid),
-        %% Build gearbox schema;
         init(Assembly),
         erlmachine:success(Pid)
     catch E:R ->
             erlmachine:failure(E, R)
     end.
 
--spec install(Assembly::assembly(), Ext::assembly()) ->
-                    success(pid()) | failure(term(), term()).
+-spec install(Assembly::assembly(), Ext::assembly()) -> 
+                     success(pid()) | failure(term(), term()).
 install(Assembly, Ext) ->
     Name = name(Assembly), Label = label(Assembly),
     try
         {ok, Pid} = Name:install(Assembly, Ext), true = is_pid(Pid),
-        %% Build edge (Assembly -> Ext);
-        %% Each ext stores schema within;
         erlmachine_schema:add_edge(Assembly, Label, Ext),
         erlmachine:success(Pid)
     catch E:R ->
@@ -118,21 +116,18 @@ install(Assembly, Ext) ->
     end.
 
 -spec uninstall(Assembly::assembly(), Id::term()) -> 
-                       success(term()) | failure(term(), term()).
+                       success().
 uninstall(Assembly, Id) ->
-    SN = serial_no(Assembly),
-    Res = (prototype_name(Assembly)):detach(SN, Assembly, Id),
-    %% Remove vertex with all edges (GearBox -> Part);
-    ok = erlmachine_schema:del_vertex(Assembly, Id),
-    Res.
+    Name = name(Assembly),
+    ok = Name:uninstall(Assembly, Id),
+    ok = erlmachine_schema:del_vertex(Assembly, Id).
 
 -spec uninstall(Assembly::assembly()) ->
                        success().
 uninstall(Assembly) ->
     Name = name(Assembly), Label = label(Assembly),
-    Res = Name:uninstall(Assembly), ok = Res,
-    ok = erlmachine_schema:del_vertex(Assembly, Label),
-    erlmachine:success().
+    ok = Name:uninstall(Assembly),
+    ok = erlmachine_schema:del_vertex(Assembly, Label).
 
 -spec init(Assembly::assembly()) -> success().
 init(Assembly) ->
@@ -216,14 +211,6 @@ extensions(Assembly) ->
 -spec extensions(Assembly::assembly(), Exts::list(assembly())) -> assembly().
 extensions(Assembly, Exts) ->
     Assembly#assembly{ extensions=Exts }.
-
--spec fixed(Assembly::assembly()) -> assembly().
-fixed(Assembly) ->
-    Assembly#assembly.fixed.
-
--spec fixed(Assembly::assembly(), SN::serial_no()) -> assembly().
-fixed(Assembly, SN) ->
-    Assembly#assembly{ fixed=SN }.
 
 -spec part_no(Assembly::assembly()) -> term().
 part_no(Assembly) ->

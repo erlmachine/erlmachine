@@ -21,22 +21,21 @@ format_name(SN) ->
 %%%  erlmachine_supervisor_prototype behaviour
 %%%===================================================================
 
--spec prototype_init(SN::serial_no(), Context::term(), Specs::list(map()), Ids::list(), Opt::list()) ->
+-spec prototype_init(SN::serial_no(), Context::term(), Ids::list(), Specs::list(map()), Opts::list()) ->
                             success(pid()) | failure(term(), term()).
-prototype_init(SN, Context, Specs, Opt) ->
+prototype_init(SN, Context, Ids, Specs, Opts) ->
     Com = #install{ specs=Specs, opt=Opt },
-    ok = erlmachine_supervisor_prototype:init(Context),
+    ok = erlmachine_supervisor_prototype:init(Context, Ids),
     supervisor:start_link({local, format_name(SN)}, ?MODULE, Com).
 
--spec prototype_start_child(SN::serial_no(), Context::term(), Spec::map(), Id::term()) ->
+-spec prototype_start_child(SN::serial_no(), Context::term(), Id::term(), Spec::map()) ->
                                    success(pid()) | failure(term(), term()).
-prototype_start_child(SN, Context, Spec, Id) ->
+prototype_start_child(SN, Context, Id, Spec) ->
     ok = erlmachine_supervisor_prototype:start_child(Context, Id),
     supervisor:start_child(format_name(SN), Spec).
 
 -spec prototype_terminate_child(SN:serial_no(), Context::term(), Id::term()) ->
-
-    success() | failure(term(), term()).
+                                       success().
 prototype_terminate_child(SN, Context, Id) ->
     ok = erlmachine_supervisor_prototype:terminate_child(Context, Id),
     supervisor:terminate_child(format_name(SN), Id).

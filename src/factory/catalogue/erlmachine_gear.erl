@@ -1,282 +1,42 @@
 -module(erlmachine_gear).
+%% NOTE: This is a decoration module which enriches assembly by gear related data;
+%% Gear represents a worker which supplies a load through a transmission;
+%% Gear is called one time per message;
 
-%% erlmachine_assembly
--export([install/2, uninstall/3, attach/4, detach/3]).
+-export([gear/2]).
 
-%% erlmachine_factory
--export([accept/3]).
+-export([install/1, rotate/1, transmit/1,  uninstall/2]).
 
-%% erlmachine_system
--export([form/2, submit/3, overload/3]).
-
-%% erlmachine_transmission
--export([transmit/3, load/3, rotate/3, rotation/3]).
-
--export([gear/0]).
-
--export([parts/1, parts/2]).
-
--export([record_name/0, attributes/0]).
+-export([type/0]).
 
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
 
-%% erlmachine_assembly callbacks:
--callback install(Label::term(), Ids::list(), State::term(), Opt::term(), Env::list()) -> 
-    success(term()) | failure(term(), term(), term()).
+-spec gear(Body::term(), Model::model()) -> assembly(). %% Default representation;
+gear(Body, Model) ->
+    Assembly = erlmachine_assembly:assembly(?MODULE, Body, Model),
+    erlmachine_assembly:tag(Assembly, type()).
 
--callback uninstall(Label::term(), Reason::term(), State::term()) -> 
-    success(term()).
+-spec install(Gear::assembly()) -> 
+                     success(pid()) | failure(term(), term()).
+install(Gear) ->
+    erlmachine_worker_prototype:install(Gear).
 
--callback attach(Label::term(), Reg::term(), Id::term(), State::term()) -> 
-    success(term()) | failure(term(), term(), term()).
+-spec rotate(Gear::assembly(), Motion::term(), Ext::assembly()) ->
+                    success().
+rotate(Gear, Motion, Ext) ->
+    erlmachine_worker_prototype:rotate(Gear, Motion, Ext).
 
--callback detach(Label::term(), Id::term(), State::term()) -> 
-    success(term()) | failure(term(), term(), term()).
+-spec transmit(Gear::assembly(), Motion::term()) ->
+                      term() | failure(term(), term()).
+transmit(Gear, Motion) ->
+    erlmachine_worker_prototype:transmit(Gear, Motion).
 
-%% erlmachine_factory callbacks:
--callback accept(Label::term(), Params::term(), State::term()) -> 
-    success(term()) | failure(term(), term(), term()).
+-spec uninstall(Gear::assembly()) -> 
+                       success().
+uninstall(Gear) ->
+    erlmachine_worker_prototype:uninstall(Gear).
 
-%% erlmachine_system callbacks:
--callback overload(Label::term(), Load::term(), State::term()) -> 
-    success(term()).
-
--callback form(Label::term(), State::term()) ->
-    success(term(), term()) | failure(term(), term(), term()).
-
--callback submit(Label::term(), Form::term(), State::term()) ->
-    success(term()) | failure(term(), term(), term()).
-
-%% erlmachine_transmission callbacks:
--callback rotate(Label::term(), Motion::term(), State::term()) -> 
-    success(term()) | success(term(), term()) | failure(term(), term(), term()).
-
--callback transmit(Label::term(), Motion::term(), State::term()) -> 
-    success(term(), term()) | failure(term(), term(), term()).
-
--callback load(Label::term(), Load::term(), State::term()) ->
-    success(term()) |  success(term(), term()) | failure(term(), term(), term()).
-
-
--optional_callbacks([attach/4, detach/3]).
--optional_callbacks([form/2, submit/3, overload/3]).
-
-%% The main difference between gear and shaft in the next:
-%% Gear as working element, shaft is transmitter instead; 
-
--record(gear, {}). %% TODO Here is place with additional attributes discribed product itself;
-
--type gear() :: #gear{}.
-
--export_type([gear/0]).
-
--spec record_name() -> atom().
-record_name() ->
-    gear.
-
--spec attributes() -> list(atom()).
-attributes() ->
-    record_info(fields, gear).
-
--spec gear() -> gear(). %% Default representation;
-gear() ->
-    #gear{}.
-
--spec install(GearBox::assembly(), Gear::assembly()) -> 
-                     success(assembly()) | failure(term(), term(), term()).
-install(GearBox, Gear) ->
-    ModelName = erlmachine_assembly:model_name(Gear),
-    Label = erlmachine_assembly:label(Gear),
-    Env = erlmachine_gearbox:env(GearBox), 
-    Opt = erlmachine_assembly:model_options(Gear),
-    %% We can check exported functions accordingly to this kind of behaviour; 
-    %% We are going to add error handling later; 
-    Ids = [erlmachine_assembly:label(Part)|| Part <- erlmachine_assembly:parts(Gear)],
-
-    case ModelName:install(Label, Ids, state(Gear), Opt, Env) of
-        {ok, State} ->
-            Rel = state(Gear, State), 
-            erlmachine_assembly:installed(GearBox, Rel),
-            erlmachine:success(Rel);
-        {error, E, R, State} ->
-            erlmachine:failure(E, R, state(Gear, State))
-    end.
-
--spec attach(GearBox::assembly(), Gear::assembly(), Reg::term(), Ext::assembly()) ->
-                    success(assembly(), term()) | failure(term(), term(), term()).
-attach(GearBox, Gear, Reg, Ext) ->
-    ModelName= erlmachine_assembly:model_name(Gear),
-    Label = erlmachine_assembly:label(Gear), 
-    Id = erlmachine_assembly:label(Ext),
- 
-    Mod = ModelName, Fun = attach, Args = [Label, Reg, Id, state(Gear)],
-    case erlmachine:optional_callback(Mod, Fun, Args, erlmachine:success(state(Gear))) of
-        {ok, State} ->
-            Part = Ext,
-            %% TODO At this place we can provide modification layer over attach;
-            Rel = erlmachine_assembly:add(state(Gear, State), Part),
-            erlmachine_assembly:attached(GearBox, Rel, Part),
-            erlmachine:success(Part, Rel);
-        {error, E, R, State} ->
-            erlmachine:failure(E, R, state(Gear, State))
-    end.
-
--spec detach(GearBox::assembly(), Gear::assembly(), Id::serial_no()) ->
-                    success(term()) | failure(term(), term(), term()).
-detach(GearBox, Gear, Id) ->
-    ModelName= erlmachine_assembly:model_name(Gear),
-    Label = erlmachine_assembly:label(Gear),
-
-    Mod = ModelName, Fun = detach, Args = [Label, Id, state(Gear)],
-    case erlmachine:optional_callback(Mod, Fun, Args, erlmachine:success(state(Gear))) of
-        {ok, State} ->
-            Rel = erlmachine_assembly:remove(state(Gear, State), Id),
-            erlmachine_assembly:detached(GearBox, Rel, Id),
-            erlmachine:success(Rel);
-        {error, E, R, State} ->
-            erlmachine:failure(E, R, state(Gear, State))
-    end.
-
--spec accept(GearBox::assembly(), Gear::assembly(), Criteria::term()) ->
-                    success() | failure(term(), term(), term()).
-accept(GearBox, Gear, Criteria) ->
-    ModelName = erlmachine_assembly:model_name(Gear),
-    Label = erlmachine_assembly:label(Gear),
-
-    case ModelName:accept(Label, Criteria, state(Gear)) of
-        {ok, State} ->
-            Rel = state(Gear, State),
-            erlmachine_factory:accepted(GearBox, Rel, Criteria),
-            erlmachine:success(Rel);
-        {error, E, R, State} ->
-            Rel = state(Gear, State),
-            erlmachine_factory:rejected(GearBox, Rel, Criteria),
-            erlmachine:failure(E, R, Rel)
-    end.
-
--spec rotate(GearBox::assembly(), Gear::assembly(), Motion::term()) ->
-                    success(term(), term()) | success(term()) | failure(term(), term(), term()).
-rotate(GearBox, Gear, Motion) ->
-    ModelName = erlmachine_assembly:model_name(Gear),
-    Label = erlmachine_assembly:label(Gear),
-
-    case ModelName:rotate(Label, Motion, state(Gear)) of 
-        {ok, Res, State} ->
-            erlmachine:success(Res, state(Gear, State));
-        {ok, State} ->
-            erlmachine:success(state(Gear, State));
-        {error, E, R, State} ->
-            Rel = state(Gear, State),
-            erlmachine_system:blocked(GearBox, Rel, E, R),
-            erlmachine:failure(E, R, Rel)
-        end.
-
--spec transmit(GearBox::assembly(), Gear::assembly(), Motion::term()) ->
-                      success(term(), assembly()) | failure(term(), term(), term()).
-transmit(_GearBox, Gear, Motion) ->
-    ModelName = erlmachine_assembly:model_name(Gear),
-    Label = erlmachine_assembly:label(Gear),
-
-    case ModelName:transmit(Label, Motion, state(Gear)) of
-        {ok, Res, State} ->
-            Rel = state(Gear, State),
-            erlmachine:success(Res, Rel);
-        {error, E, R, State} ->
-            erlmachine:failure(E, R, state(Gear, State)) 
-    end.
-
-%% Can be issued from monitoring tool vendor (for example erlmachine itself);
-%% Load representation is determined by vendor and will pass to the model as is;
--spec overload(GearBox::assembly(), Gear::assembly(), Load::term()) ->
-                      success(assembly()) | failure(term(), term(), term()).
-overload(GearBox, Gear, Load) ->
-    ModelName = erlmachine_assembly:model_name(Gear),
-    Label = erlmachine_assembly:label(Gear),
-
-    Mod = ModelName, Fun = overload, Args = [Label, Load, state(Gear)],
-    {ok, State} = erlmachine:optional_callback(Mod, Fun, Args, erlmachine:success(state(Gear))),
-
-    Rel = state(Gear, State),
-    erlmachine_system:overloaded(GearBox, Rel, Load),
-    erlmachine:success(Rel).
-
--spec load(GearBox::assembly(), Gear::assembly(), Load::term()) ->
-                  success(term(), term()) | success(term()) | failure(term(), term(), term()).
-load(GearBox, Gear, Load) ->
-    ModelName = erlmachine_assembly:model_name(Gear),
-    Label = erlmachine_assembly:label(Gear),
-
-    case ModelName:load(Label, Load, state(Gear)) of 
-        {ok, Res, State} -> 
-            erlmachine:success(Res, state(Gear, State));
-        {ok, State} -> 
-            erlmachine:success(state(Gear, State));
-        {error, E, R, State} ->
-            Rel = state(Gear, State),
-            erlmachine_system:blocked(GearBox, Rel, E, R),
-            erlmachine:failure(E, R, Rel)
-    end.
-
--spec uninstall(GearBox::assembly(), Gear::assembly(), Reason::term()) -> 
-                       success(term()).
-uninstall(GearBox, Gear, Reason) ->
-    ModelName = erlmachine_assembly:model_name(Gear),
-    Label = erlmachine_assembly:label(Gear),
-
-    {ok, State} = ModelName:uninstall(Label, Reason, state(Gear)),
-
-    Rel = state(Gear, State),
-    erlmachine_assembly:uninstalled(GearBox, Rel, Reason),
-    erlmachine:success(Rel).
-
--spec form(GearBox::assembly(), Gear::assembly()) ->
-                  success(term(), assembly()) | failure(term(), term(), term()).
-form(_GearBox, Gear) ->
-    ModelName = erlmachine_assembly:model_name(Gear),
-    Label = erlmachine_assembly:label(Gear),
-
-    Mod = ModelName, Fun = form, Args = [Label, state(Gear)],
-    Def = erlmachine:success([], state(Gear)),
-
-    case erlmachine:optional_callback(Mod, Fun, Args, Def) of
-        {ok, Form, State} ->
-            erlmachine:success(Form, state(Gear, State));
-        {error, E, R, State} ->
-            erlmachine:failure(E, R, state(Gear, State))
-    end.
-
--spec submit(GearBox::assembly(), Gear::assembly(), Form::term()) ->
-                    success(term(), assembly()) | failure(term(), term(), term()).
-submit(_GearBox, Gear, Form) ->
-    ModelName = erlmachine_assembly:model_name(Gear),
-    Label = erlmachine_assembly:label(Gear),
-
-    case ModelName:submit(Label, Form, state(Gear)) of
-        {ok, Res, State} ->
-            erlmachine:success(Res, state(Gear, State));
-        {error, E, R, State} ->
-            erlmachine:failure(E, R, state(Gear, State))
-    end.
-
--spec state(Gear::assembly()) -> term().
-state(Gear) ->
-    erlmachine_assembly:body(Gear).
-
--spec state(Gear::assembly(), State::term()) -> assembly().
-state(Gear, State) ->
-    erlmachine_assembly:body(Gear, State).
-
--spec parts(Gear::assembly(), Parts::list(assembly())) -> assembly().
-parts(Gear, [_]=Parts) ->
-    erlmachine_assembly:parts(Gear, Parts).
-
--spec parts(Gear::assembly()) -> list().
-parts(Gear) ->
-    erlmachine_assembly:parts(Gear).
-
--spec rotation(GearBox::assembly(), Part::assembly(), Motion::term()) ->
-                      term().
-rotation(GearBox, Part, Motion) ->
-    erlmachine_transmission:rotation(GearBox, Part, Motion).
-
+-spec type() -> atom().
+type() ->
+    'worker'.

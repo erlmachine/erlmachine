@@ -1,62 +1,79 @@
 -module(erlmachine_supervisor_prototype).
-%% The main purpouse of the supervisour prototype is to support different supervisor implementations without affecting tracing/business layer of application;
--export([init/2, start_child/3, terminate/1, terminate_child/2]).
+%% NOTE: The main puprouse of the supervisor is the ability to change monitor layer without affecting business layer of service;
+%% NOTE: There are few examples:
+%% 1. erlang:monitor/2;
+%% 2. supervisor2;
+%% 3. mirrored_supervisor;
 
--export([ack/1]).
+%% NOTE: Supervisor prototype concerns: health check, recovery management;
+
+-export([install/1, install/2, uninstall/1, uninstall/2]).
+-export([init/2, start_child/2, terminate_child/2, terminate/1]).
 
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
 
-%% install(Assembly::assembly(), Exts::list(assembly()));
-%% erlmachine_supervisor_prototype:init(Args);
--callback prototype_init(SN::term(), Context::assembly(), Specs::list(map()), Ids::list(), Opt::list()) -> 
+-callback prototype_init(SN::term(), Context::assembly(), Ids::list(), Specs::list(map()), Opts::list()) -> 
     success(pid()) | failure(term(), term()).
 
--callback prototype_start_child(SN::term(), Context::assembly(), Spec::map(), Id::term()) ->
+-callback prototype_start_child(SN::term(), Context::assembly(), Id::term(), Spec::map()) ->
     success(pid()) | failure(term(), term()).
 
 -callback prototype_terminate_child(SN::term(), Context::assembly(), Id::term()) ->
-    success() | failure(term(), term()).
+    success().
 
 %% Assembly::assembly(), Reason::term()
 -callback prototype_terminate(SN::term(), Context::assembly()) ->
     success().
 
-%% TODO: We should provide assembly decode/encode format with ability to pass json data through a prototype;
+%%%===================================================================
+%%%  Assembly API layer
+%%%===================================================================
+
 -spec install(Assembly::assembly()) ->
                      success(pid()) | failure(term(), term()).
 install(Assembly) ->
     SN = erlmachine_assembly:serial_no(Assembly),
     Prot = erlmachine_assembly:prototype(Assembly),
+    Ids = [erlmachine_assembly:label(Ext)|| Ext <- erlmachine_assembly:parts(Assembly)],
     Specs = [spec(Assembly, Ext)|| Ext <- erlmachine_assembly:parts(Assembly)],
-    Opt = erlmachine_prototype:options(Prot),
-    Module = erlmachine_prototype:name(Prot),
-    Module:prototype_init(SN, Specs, Opt).
+    Opts = erlmachine_prototype:options(Prot),
+    Name = erlmachine_prototype:name(Prot),
+    Name:prototype_init(SN, Assembly, Ids, Specs, Opts).
 
 -spec install(Assembly::assembly(), Ext::assembly()) ->
                      success(pid()) | failure(term(), term()).
-install(Assembly, Ext, Args) ->
-    Module:prototype_start_child(SN, Spec).
+install(Assembly, Ext) ->
+    SN = erlmachine_assembly:serial_no(Assembly),
+    Prot = erlmachine_assembly:prototype(Assembly),
+    Id = erlmachine_assembly:label(Ext),
+    Spec = spec(Assembly, Ext),
+    Name = erlmachine_prototype:name(Prot),
+    Name:prototype_start_child(SN, Assembly, Id, Spec).
 
 -spec uninstall(Assembly::assembly(), Id::term()) ->
                        failure(term(), term()).
 uninstall(Assembly, Id) ->
-    Module:prototype_terminate_child(SN, Id).
+    SN = erlmachine_assembly:serial_no(Assembly),
+    Prot = erlmachine_assembly:prototype(Assembly),
+    Name = erlmachine_prototype:name(Prot),
+    Name:prototype_terminate_child(SN, Assembly, Id).
 
 -spec uninstall(Assembly::assembly()) ->
                        success().
 uninstall(Assembly) ->
     SN = erlmachine_assembly:serial_no(Assembly),
-    Model = erlmachine_assembly:model(Assembly), Prot = erlmachine_model:prototype(Model),
-    Module = erlmachine_prototype:name(Prot),
-    Module:prototype_terminate(SN).
+    Prot = erlmachine_assembly:prototype(Assembly),
+    Name = erlmachine_prototype:name(Prot),
+    Name:prototype_terminate(SN, Assembly).
 
 %% TODO erlmachine_supervisor:install() will be called from prototype;
 -spec spec(Assembly::assembly(), Ext::assembly()) -> Spec::map().
 spec(Assembly, Ext) ->
     SN = erlmachine_assembly:serial_no(Assembly),
+    Schema = erlmachine_assembly:schema(Assembly),
     Env = erlmachine_assembly:env(Assembly),
-    Rel = erlmachine_assembly:fixed(erlmachine_assembly:env(Ext, Env), SN),
+    Rel = erlmachine_assembly:schema(erlmachine_assembly:env(Ext, Env), Schema),
     Module = erlmachine_assembly:name(Rel),
     %% TODO Start arguments need to be formed outside;
     Start = {Module, install, [Rel]},
@@ -68,5 +85,28 @@ spec(Assembly, Ext) ->
       start => Start,
       type => Type
      }.
+
+%%%===================================================================
+%%% Prototype API layer
+%%%===================================================================
+
+-spec init(Context::assembly(), Ids::list()) -> 
+                  success() | failure(term(), term()).
+init(_Context, _Ids) ->
+    ok.
+
+-spec start_child(Context::assembly(), Id::term()) -> 
+                         success() | failure(term(), term()).
+start_child(_Context, _Id) -> 
+    ok.
+
+-spec terminate_child(Context::assembly(), Id::term()) -> 
+                             success().
+terminate_child(_Context, _Id) ->
+    ok.
+
+-spec terminate(Context::assembly()) -> success().
+terminate(_Context) ->
+    ok.
 
 %% TODO https://github.com/rabbitmq/rabbitmq-common/blob/master/src/supervisor2.erl
