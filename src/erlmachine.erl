@@ -38,6 +38,7 @@
 -export([guid/1]).
 
 -export([md5/1]).
+-export([phash2/1]).
 -export([base64url/1]).
 
 -export([timestamp/0]).
@@ -58,7 +59,7 @@
 
 -record(guid, { node::node(), reference::reference(), serial::term() }).
 
-%% The main purpouse of erlmachine project is to provide a set of well designed behaviours which are accompanied with visualization tools as well.
+%% The main purpouse of erlmachine project is to provide a set of well desikgned behaviours which are accompanied with visualization tools as well.
 %%  Erlmachine doesn't restrict your design with the one possible way but instead provide you ability to implement your own components accordingly to your vison.
 %% This ability is available under flexible mechanism of prototypes and overloading (models).
 
@@ -280,10 +281,10 @@ part_no(Assembly) ->
 description(Assembly) ->
     erlmachine_assembly:description(Assembly).
 
-%% generate a readable string representation of a SN/MN/PN/TN;
+%% NOTE: To produce a readable string representation of a SN/MN/PN/TN;
 %%
 %% base64url encoding was provided; 
-%% This format is safer and more applicable by web (in comparison with base64);
+%% This format is safer and more applicable by web applications (in comparison with base64);
 
 -spec guid(Serial::serial()) -> binary().
 guid(Serial) ->
@@ -294,6 +295,10 @@ guid(Serial) ->
 md5(Data) ->
     MD5 = erlang:md5(term_to_binary(Data)),
     MD5.
+
+-spec phash2(Term::term()) -> non_neg_integer().
+phash2(Term) ->
+    erlang:phash2(Term, 4294967296).
 
 -spec base64url(N::binary()) -> Base64::binary().
 base64url(N) when is_binary(N) ->

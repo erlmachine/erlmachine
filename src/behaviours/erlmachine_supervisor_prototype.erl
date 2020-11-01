@@ -35,21 +35,20 @@
 install(Assembly) ->
     SN = erlmachine_assembly:serial_no(Assembly),
     Prot = erlmachine_assembly:prototype(Assembly),
-    Ids = [erlmachine_assembly:label(Ext)|| Ext <- erlmachine_assembly:parts(Assembly)],
-    Specs = [spec(Assembly, Ext)|| Ext <- erlmachine_assembly:parts(Assembly)],
+    Exts = [Ext|| Ext <- erlmachine_assembly:parts(Assembly)],
+    Specs = [spec(Assembly, Ext)|| Ext <- Exts],
     Opts = erlmachine_prototype:options(Prot),
     Name = erlmachine_prototype:name(Prot),
-    Name:prototype_init(SN, Assembly, Ids, Specs, Opts).
+    Name:prototype_init(SN, Assembly, Exts, Specs, Opts).
 
 -spec install(Assembly::assembly(), Ext::assembly()) ->
                      success(pid()) | failure(term(), term()).
 install(Assembly, Ext) ->
     SN = erlmachine_assembly:serial_no(Assembly),
     Prot = erlmachine_assembly:prototype(Assembly),
-    Id = erlmachine_assembly:label(Ext),
     Spec = spec(Assembly, Ext),
     Name = erlmachine_prototype:name(Prot),
-    Name:prototype_start_child(SN, Assembly, Id, Spec).
+    Name:prototype_start_child(SN, Assembly, Ext, Spec).
 
 -spec uninstall(Assembly::assembly(), Id::term()) ->
                        failure(term(), term()).
@@ -90,14 +89,14 @@ spec(Assembly, Ext) ->
 %%% Prototype API layer
 %%%===================================================================
 
--spec init(Context::assembly(), Ids::list()) -> 
+-spec init(Context::assembly(), Exts::list(assembly())) -> 
                   success() | failure(term(), term()).
-init(_Context, _Ids) ->
+init(_Context, _Exts) ->
     ok.
 
--spec start_child(Context::assembly(), Id::term()) -> 
+-spec start_child(Context::assembly(), Ext::assembly()) -> 
                          success() | failure(term(), term()).
-start_child(_Context, _Id) -> 
+start_child(_Context, _Ext) -> 
     ok.
 
 -spec terminate_child(Context::assembly(), Id::term()) -> 
@@ -105,7 +104,8 @@ start_child(_Context, _Id) ->
 terminate_child(_Context, _Id) ->
     ok.
 
--spec terminate(Context::assembly()) -> success().
+-spec terminate(Context::assembly()) ->
+                       success().
 terminate(_Context) ->
     ok.
 

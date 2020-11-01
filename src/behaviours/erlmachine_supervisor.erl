@@ -1,7 +1,5 @@
 -module(erlmachine_supervisor).
 
--export([ack/1]).
-
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
 
@@ -16,7 +14,3 @@
 
 -callback uninstall(Label::term()) ->
     success(term()) | failure(term(), term(), term()).
-
--spec ack(MFArgs::mafargs()) -> success() | failure(term(), term()).
-ack(_MFArgs) ->
-    erlmachine:success().

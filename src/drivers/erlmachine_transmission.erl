@@ -1,10 +1,14 @@
 -module(erlmachine_transmission).
 -behaviour(gen_server).
-%% In comparison to the common approach with global shared table for publish/subscribe interactions:
-%% 1) Each gearbox applies within it's own scope via constructed graph;
-%% 2) Graph structure represents a transmission vocabulary and incomming message router;
+%% NOTE: The most popular approach to solve publish/subscribe interactions is to use shared hash table;
+%% This table is filled by routes and can be accesed within whole application via appropriate tags;
+%% NOTE: The transmission based design:
+%% 1) Each gearbox represents topology with it's own exectution context and routes vocabulary;
+%% 2) The data structure for incomming messages routing is based on graph;
 
-%% TODO: Can we supply subscribe expressions like rabbitmq? #, *, etc..
+%% NOTE: To supply topology visualization in admin panel;
+%% TODO: Can we supply subscribe expressions like rabbitmq? #, *, etc.
+
 %% API.
 -export([start_link/0]).
  

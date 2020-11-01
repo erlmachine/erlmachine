@@ -1,18 +1,15 @@
 -module(erlmachine_factory).
-
--folder(<<"erlmachine/factory">>).
+%% NOTE: The factory is responsible to produce and register component by it's own SN;
+%% TODO: The next features:
+%% 1. Capacity driven factory. Production planning via allocated pool;
+%% 2. Measurements and visualization of production activities in admin panel;
+%% 3. Acceptance procedure execution: prototype layer (supported by test model), model (business layer);
 
 -behaviour(gen_server).
 
 %% API.
 
 -export([start_link/0]).
-
-%% We assume that factory will also provide production of all components and their registration too;
-%% My assumption is that factory can be driven from production capacity perspective;
-%% Measurements over manufactures production activities has to be satisfied too;
-
-%% Factory itself consists of prebuild parts (without build call and assigned serial_no);
 
 %% gen_server.
 -export([init/1]).
@@ -31,17 +28,16 @@
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
 
-%% The main purpouse of the factory is to provide production planing;
-%% We can control available capacity of the all individual parts;
-%% We can utilize different kind of pools for that purpouse;
+-spec tabname() -> atom().
+tabname() ->
+    ?MODULE.
 
-%% I think about two the most important cases for acceptance procedure:
-%% The first one is ability to check prototype with default test model;
-%% And the next one is an acceptance test within a specific model implementation;
+-spec update_counter() -> non_neg_integer().
+update_counter() ->
+    mnesia:dirty_update_counter(tabname(), ?MODULE, 1).
 
-%% TODO: To implement capacity limits over production cycle;
+-record (erlmachine_factory, { id::atom(), count::integer() }).
 
-%% TODO: To provide ability to override default prototypes;
 -spec gear(Name::atom(), Opt::term()) -> 
                   assembly().
 gear(Name, Opt) ->
@@ -50,7 +46,7 @@ gear(Name, Opt) ->
 
 -spec gear(Name::atom(), Opt::term(), Ext::assembly()) -> 
                   assembly().
-gear(Name, Opt, Ext) when is_record(Ext, assembly) ->
+gear(Name, Opt, Ext) ->
     Gear = gear(Name, Opt),
     erlmachine_assembly:extensions(Gear, [Ext]).
 
@@ -59,14 +55,12 @@ gear(Name, Opt, Ext) when is_record(Ext, assembly) ->
 gear(Name, Opt, ProtName, ProtOpt) ->
     Prot = erlmachine_prototype:prototype(ProtName, ProtOpt),
     Model = erlmachine_model:model(Name, Opt, Prot),
-    Body = #{},
-    Gear = erlmachine_gear:gear(Body, Model),
-    serial_no(Gear).
+    {ok, Gear} = serial_no(erlmachine_gear:gear(Model)),
+    Gear.
 
-%% TODO To think about test env param;
 -spec gear(Name::atom(), Opt::term(), ProtName::atom(), ProtOpt::list(), Ext::assembly()) -> 
                   assembly().
-gear(Name, Opt, ProtName, ProtOpt, Ext) when is_record(Ext, assembly) ->
+gear(Name, Opt, ProtName, ProtOpt, Ext) ->
     Gear = gear(Name, Opt, ProtName, ProtOpt),
     erlmachine_assembly:extensions(Gear, [Ext]).
 
@@ -81,8 +75,7 @@ shaft(Name, Opt, Exts) when is_list(Exts) ->
 shaft(Name, Opt, ProtName, ProtOpt, Exts) when is_list(Exts) ->
     Prot = erlmachine_prototype:prototype(ProtName, ProtOpt),
     Model = erlmachine_model:model(Name, Opt, Prot),
-    Body = [],
-    Shaft = serial_no(erlmachine_shaft:shaft(Body, Model)),
+    {ok, Shaft} = serial_no(erlmachine_shaft:shaft(Model)),
     erlmachine_assembly:extensions(Shaft, Exts).
 
 -spec axle(Name::atom(), Opt::term(), Exts::list()) ->
@@ -96,8 +89,7 @@ axle(Name, Opt, Exts) when is_list(Exts) ->
 axle(Name, Opt, ProtName, ProtOpt, Exts) when is_list(Exts) ->
     Prot = erlmachine_prototype:prototype(ProtName, ProtOpt),
     Model = erlmachine_model:model(Name, Opt, Prot),
-    Body = [],
-    Axle = serial_no(erlmachine_axle:axle(Body, Model)),
+    {ok, Axle} = serial_no(erlmachine_axle:axle(Model)),
     erlmachine_assembly:extensions(Axle, Exts).
 
 %% Gearbox should be responsible to pass env context through the each model;
@@ -113,8 +105,8 @@ gearbox(Name, Opt, Env, Exts) when is_list(Exts) ->
 gearbox(Name, Opt, ProtName, ProtOpt, Env, Exts) when is_list(Exts) ->
     Prot = erlmachine_prototype:prototype(ProtName, ProtOpt),
     Model = erlmachine_model:model(Name, Opt, Prot),
-    Schema = erlmachine_assembly:schema(), Body = [],
-    GearBox = serial_no(erlmachine_gearbox:gearbox(Schema, Body, Model, Env)),
+    Schema = erlmachine_assembly:schema(),
+    {ok, GearBox} = serial_no(erlmachine_gearbox:gearbox(Schema, Model, Env)),
     erlmachine_assembly:extensions(GearBox, Exts).
 
 %% API.
@@ -122,31 +114,35 @@ gearbox(Name, Opt, ProtName, ProtOpt, Env, Exts) when is_list(Exts) ->
 id() -> 
     ?MODULE.
 
--spec start_link() ->
-                        success(pid()) | ingnore | failure(term()).
+-spec start_link() -> success(pid()) | ingnore | failure(term()).
+
 start_link() ->
     Id = id(),
     gen_server:start_link({local, Id}, ?MODULE, [], []).
 
--record(build, { assembly::assembly() }).
+-record(serial_no, { assembly::assembly() }).
 
--spec build(Assembly::assembly()) ->
-                  success(term()) | failure(term(), term()).
-build(Assembly) ->
-    gen_server:call(id(), #build{ assembly=Assembly }).
+-spec serial_no(Assembly::assembly()) ->
+                       success(assembly()) | failure(term(), term()).
+serial_no(Assembly) ->
+    gen_server:call(id(), #serial_no{ assembly=Assembly }).
 
 %% gen_server.
 
--record(state, { }).
+-record(state, { hash::binary() }).
 
 init([]) ->
-    {ok, #state{}}.
+    Attributes = {attributes, record_info(fields, ?MODULE)},
+    _TabRes = mnesia:create_table(tabname(), [Attributes]),
+    Hash = erlmachine:guid(update_counter()),
+    {ok, #state{ hash = Hash }}.
 
-handle_call(#build{ assembly=Assembly }, From, #state{ gearbox=GearBox }=State) ->
-    Command = erlmachine:command(#{}, build, Assembly),
-
-    erlmachine_gearbox:rotate(GearBox, 'build', erlmachine:request_reply(Command, From)),
-    {noreply, State};
+handle_call(#serial_no{ assembly=Assembly }, _From, #state{ hash = Hash } = State) ->
+    <<B1:32, B2:32, B3:32, B4:32>> = Hash,
+    B5 = erlmachine:phash2({B1, update_counter()}),
+    Rotated = <<(B2 bxor B5):32, (B3 bxor B5):32, (B4 bxor B5):32, B5:32>>,
+    Rel = erlmachine_assembly:serial_no(Assembly, Hash),
+    {reply, erlmachine:success(Rel), State#state{ hash = Rotated }};
 
 handle_call(_Request, _From, State) ->
     {reply, ignored, State}.
@@ -157,85 +153,5 @@ handle_cast(_Msg, State) ->
 handle_info(_Info, State) ->
 	{noreply, State}.
 
-code_change(_OldVsn, State, _Extra) ->
-    {ok, State}.
-
 terminate(_Reason, _State) ->
     ok.
-
-%% TODO:
-
--type serial()::integer().
-
--record (serial, { id::atom(), count::integer() }).
-
-%erlmachine:md5(SN).
-
--spec install(Label::term(), Id::serial_no(), State::map(), Opt::term(), Env::list()) ->
-                     success(term()) | failure(term(), term(), term()).
-install(_, _, State, _, _) ->
-    _TabRes = mnesia:create_table(tabname(), [attributes(attributes()), record_name(record_name())]),
-
-    {ok, State}.
-
--spec rotate(Label::term(), Motion::map(), State::map()) ->
-                     success(term(), term()) | failure(term(), term(), term()).
-rotate(_, Motion, State) ->
-    Body = erlmachine:body(Motion),
-    try
-        SN = serial_no(),
-        Res = erlmachine_assembly:serial_no(Args, SN),
-        {ok, erlmachine:document(Header, Res), State}
-    catch E:R ->
-            erlmachine:failure(E, R, State)
-    end.
-
-{ok, Serial} = erlmachine_serial:update(?MODULE),
-SN = erlmachine_serial_no:serial_no(Serial),
-
-{ok, Serial} = erlmachine_serial:update(?MODULE),
-Rotate = erlmachine_serial_no:serial_no(Serial, SN),
-
--spec serial_no(Serial::serial()) -> serial_no().
-serial_no(Serial) ->
-    <<_:32, _:32, _:32, _:32>> = erlmachine:guid(Serial).
-
--spec serial_no(Serial::serial(), SN::serial_no()) -> serial_no().
-serial_no(Serial, <<B1:32, B2:32, B3:32, B4:32>>) ->
-    B5 = erlang:phash2({B1, Serial}, 4294967296),
-    <<(B2 bxor B5):32, (B3 bxor B5):32, (B4 bxor B5):32, B5:32>>.
-
-
--spec tabname() -> atom().
-tabname() ->
-    ?MODULE.
-
--spec record_name() -> atom().
-record_name() ->
-    serial.
-
--spec serial_no() -> atom().
-serial_no() ->
-    serial_no.
-
--spec part_no() -> atom().
-part_no() ->
-    part_no.
-
--spec attributes() -> list(atom()).
-attributes() ->
-    record_info(fields, serial).
-
-attributes(Attr) ->
-    {attributes, Attr}.
-
-record_name(Name) ->
-    {record_name, Name}.
-
--spec update(Id::atom()) -> success(integer()).
-update(Id) ->
-    erlmachine:success(update(ID, 1)).
-
--spec update(Id::atom(), Value::integer()) -> success(integer()).
-update(Id, Value) ->
-    mnesia:dirty_update_counter(tabname(), Id, Value).

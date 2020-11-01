@@ -1,7 +1,7 @@
 -module(erlmachine_axle).
 %% NOTE: This is a decoration module which enriches assembly by axle related data;
 %% Axle is a component which is responsible for monitoring of the placed transmission parts;
--export([axle/2]).
+-export([axle/1]).
 
 -export([install/1, install/2, uninstall/1, uninstall/2]).
 
@@ -10,8 +10,10 @@
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
 
--spec axle(Body::term(), Model::model()) -> assembly().
-axle(Body, Model) ->
+-spec axle(Model::model()) -> assembly().
+axle(Model) ->
+    %% TODO; To decorate Body by additional data;
+    Body = [],
     Assembly = erlmachine_assembly:assembly(?MODULE, Body, Model),
     erlmachine_assembly:tag(Assembly, type()).
 

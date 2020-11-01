@@ -18,8 +18,10 @@
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
 
--spec gearbox(Schema::term(), Body::term(), Model::model(), Env::term()) -> assembly().
-gearbox(Schema, Body, Model, Env) ->
+-spec gearbox(Schema::term(), Model::model(), Env::term()) -> assembly().
+gearbox(Schema, Model, Env) ->
+    %% TODO: To support Body by additional metadata;
+    Body = [],
     Assembly = erlmachine_assembly:assembly(?MODULE, Schema, Body, Model, Env),
     erlmachine_assembly:tag(Assembly, type()).
 

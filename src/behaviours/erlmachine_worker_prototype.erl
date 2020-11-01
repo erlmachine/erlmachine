@@ -10,8 +10,8 @@
 
 %% NOTE: Worker prototype concerns: overloading, error handling, capacity management, etc..
 
-%% erlmachine_assembly
 -export([install/1, rotate/3, transmit/2, uninstall/1]).
+-export([init/1, call/2, cast/3, terminate/1]).
 
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
@@ -22,7 +22,7 @@
 -callback prototype_call(SN::serial_no(), Request::term()) ->
     term().
 
--callback prototype_cast(SN::serial_no(), Message::term(), Socket::term()) ->
+-callback prototype_cast(SN::serial_no(), Message::term(), Ext::term()) ->
     success().
 
 -callback prototype_terminate(SN::serial_no()) ->
@@ -75,21 +75,23 @@ transmit(Assembly, Motion) ->
 %%%===================================================================
 
 -spec init(Context::assembly()) -> 
-                  success() | failure(term(), term()).
-init(_Context) ->
-    ok.
+                  success(assembly()) | failure(term(), term(), assembly()).
+init(Context) ->
+    erlmachine:success(Context).
 
--spec call(Context::assembly(), Id::term()) -> 
-                         success() | failure(term(), term()).
-call(_Context, _Id) -> 
-    ok.
+-spec call(Context::assembly(), Request::term()) -> 
+                  success(assembly()) | failure(term(), term(), assembly()).
+call(Context, _Request) -> 
+    erlmachine:success(Context).
 
--spec cast(Context::assembly(), Id::term()) -> 
-                             success().
-cast(_Context, _Id) ->
-    %% Here is the place to convey messages further;
-    ok.
+-spec cast(Context::assembly(), Message::term(), Ext::assembly()) ->
+                  success(assembly()) | failure(term(), term(), assembly()).
+cast(Context, Motion, Ext) ->
+    %% The rotation is optional and depends on models return;
+    erlmachine_transmission:rotate(Ext, Motion),
+    erlmachine:success(Context).
 
--spec terminate(Context::assembly()) -> success().
-terminate(_Context) ->
-    ok.
+-spec terminate(Context::assembly()) -> 
+                       success(assembly()) | failure(term(), term(), assembly()).
+terminate(Context) ->
+    erlmachine:success(Context).
