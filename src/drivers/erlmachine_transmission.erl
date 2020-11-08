@@ -1,17 +1,18 @@
 -module(erlmachine_transmission).
 -behaviour(gen_server).
-%% NOTE: The most popular approach to solve publish/subscribe interactions is to use shared hash table;
-%% This table is filled by routes and can be accesed within whole application via appropriate tags;
+%% NOTE: The most popular approach to solve publish/subscribe interactions is about how to use shared hash table;
+%% This table is filled by routes and can be accesed within whole application with appropriate tags (keys);
 %% NOTE: The transmission based design:
-%% 1) Each gearbox represents topology with it's own exectution context and routes vocabulary;
-%% 2) The data structure for incomming messages routing is based on graph;
+%% 1) Each gearbox has topology with it's own exectution context and routes vocabulary;
+%% 2) The data structure for incomming messages routes is based on graph;
 
-%% NOTE: To supply topology visualization in admin panel;
-%% TODO: Can we supply subscribe expressions like rabbitmq? #, *, etc.
+%% TODO: To supply topology visualization in admin panel (errors, message history, throughput);
+%% TODO: To supply message history in headers:
+%% https://www.enterpriseintegrationpatterns.com/patterns/messaging/MessageHistory.html;
 
 %% API.
 -export([start_link/0]).
- 
+
 %% gen_server.
 -export([
          init/1, 
@@ -20,19 +21,13 @@
          code_change/3
         ]).
 
--export([rotate/3, transmit/3]).
--export([mesh/4, unmesh/3]).
+-export([rotate/2, transmit/2]).
 
--export([motion/3]).
+-export([motion/2]).
 -export([header/1, header/2]).
 -export([body/1, body/2]).
 
--export([command/2, document/2, event/2]).
-
-%% Transmission will be loaded directly by call where ID argument is provided; 
-%% Transmission can be represented by a lot of copies where each of them is marked by unique serial number;
-
--include("erlmachine_factory.hrl").
+-include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
 
 -type motion() :: map(). %% envelope;
@@ -41,7 +36,7 @@
 
 -type body() :: term().
 
--export_type([motion/0, envelope/0, header/0, body/0]).
+-export_type([motion/0, header/0, body/0]).
 
 %% TODO: To make via prototype call;
 -spec rotate(Assembly::assembly(), Motion::term()) -> 
@@ -50,7 +45,7 @@ rotate(Assembly, Motion) ->
     Name = erlmachine_assembly:name(Assembly),
     try
         %% There is a place where statistics can be gathered;
-        %% TODO: To extract neighbor extenions list and to rotate them with result and socket as arg;
+        %% TODO: To extract neighbor extenions list and to rotate them by passing the result through socket;
         Schema = erlmachine_assembly:schema(Assembly),
         Label = erlmachine_assembly:label(Assembly),
         Exts = [Ext|| {_, Ext} <- erlmachine_schema:out_edges(Schema, Label)],
@@ -72,35 +67,15 @@ transmit(Assembly, Motion) ->
             erlmachine:failure(E, R) 
     end.
 
-
-%% TODO: TO make via graph?
-%% We can supply subscription mechanism through the graph;
--spec mesh(Assembly::assembly(), Ext::assembly()) -> 
-                  success() | failure(term(), term()).
-mesh(Assembly, Ext) ->
-    SN = serial_no(Assembly),
-    Res = (prototype_name(Part)):attach(SN, GearBox, Part, Reg, Ext),
-    %% Build edge (Part -> Ext);
-    erlmachine_schema:add_edge(GearBox, Label, Ext),
-    Res.
-
--spec unmesh(Assembly::assembly(), Id::term()) -> 
-                    success().
-unmesh(Assembly, Id) ->
-    Part = erlmachine_gearbox:find(GearBox, AssemblyLabel),
-    SN = serial_no(Part),
-    Res = (prototype_name(Part)):detach(SN, Assembly, Part, Id),
-    %% Remove edge (Part -> Ext);
-    ok = erlmachine_schema:del_path(Assembly, Label, Id),
-    Res.
-
-
 -record(state, {
 }).
 
 %% A message consists of two basic parts:
 %% 1. Header – Information used by the messaging system that describes the data being transmitted, its origin, its destination, and so on.
 %% 2. Body – The data being transmitted; generally ignored by the messaging system and simply transmitted as-is.
+
+%% NOTE: See the message construction patterns:
+%% https://www.enterpriseintegrationpatterns.com/patterns/messaging/MessageConstructionIntro.html
 
 -spec motion(Header::header(), Body::body()) -> motion().
 motion(Header, Body) ->

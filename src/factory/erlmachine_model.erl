@@ -2,7 +2,7 @@
 
 %% API.
 
--export([model/0, model/4]).
+-export([model/0, model/3]).
 
 -export([
          name/1, name/2,
@@ -11,8 +11,6 @@
          prototype/1, prototype/2, 
          digest/1, digest/2
         ]).
-
--export([record_name/0, attributes/0]).
 
 -include("erlmachine_system.hrl").
 
@@ -32,29 +30,19 @@
 
 -type model() :: #model{}.
 
--export_type([model/0, product/0]).
+-export_type([model/0]).
 
--spec record_name() -> atom().
-record_name() ->
-    model.
-
--spec attributes() -> list(atom()).
-attributes() ->
-    record_info(fields, model).
+-spec model() -> model().
+model() ->
+    #model{}.
 
 -spec model(Name::atom(), Opt::list(), Prot::prototype()) ->
                   model().
 model(Name, Opt, Prot) ->
     Model = model(),
     Rel = prototype(options(name(Model, Name), Opt), Prot),
-
     Digest = base64:encode(erlmachine:digest(Rel)), MN = Digest,
-
     model_no(digest(Rel, Digest), MN).
-
--spec model() -> model().
-model() ->
-    #model{}.
 
 -spec prototype(Model::model()) -> prototype().
 prototype(Model) ->

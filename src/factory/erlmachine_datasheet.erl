@@ -1,89 +1,89 @@
 -module(erlmachine_datasheet).
 
 %% API.
--export([file/1]).
+-export([datasheet/1]).
+-export([is_datasheet/1]).
 
--export([gear/2, gear/3]).
--export([shaft/2, shaft/3]).
--export([axle/2, axle/3]).
--export([gearbox/3, gearbox/4]).
+-export([gear/1, gear/2]).
+-export([shaft/1, shaft/2]).
+-export([axle/1, axle/2]).
+-export([gearbox/2, gearbox/3]).
 
 %% We assume that this module can provide additional set of tools:
 %% 1) Navigation over document;
 %% 2) Validate document structure;
 
--include("erlmachine_datasheet.hrl").
+-type datasheet() :: list().
+-type path() :: list().
+
+-export_type([datasheet/0]).
+
 -include("erlmachine_factory.hrl").
+-include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
 
-%% I guess the specified module can provide endpoints (gear, shaft, etc..);
 
--spec file(File::list()) ->
-                       datasheet().
-file(File) ->
-    yamerl_constr:file(File).
+-spec is_datasheet(Term::term()) -> boolean().
+is_datasheet(Term) ->
+    %% TODO: To provide semantics check;
+    true = is_list(Term).
 
--spec gear(File::list(), Label::term(), Parts::list()) -> 
-                  assembly().
-gear(File, Label, Parts) -> 
-    erlmachine_assembly:label(gear(File, Parts), Label).
+-spec datasheet(Path::path()) ->
+                  success(datasheet()) | failure(term(), term()).
+datasheet(Path) ->
+    try
+        Res = yamerl_constr:file(Path), true = is_datasheet(Res),
+        erlmachine:success(Res)
+    catch E:R ->
+            erlmachine:failure(E, R)
+    end.
 
--spec gear(File::list(), Parts::list()) -> 
-                  assembly().
-gear(File, Parts) -> 
-    Datasheet = file(File), true = is_list(Datasheet),
+-spec gear(Datasheet::datasheet()) -> 
+                  success(assembly()) | failure(term(), term()).
+gear(Datasheet) ->
+    gear(Datasheet, []).
+
+-spec gear(Datasheet::datasheet(), Exts::list(assembly())) -> 
+                  success(assembly()) | failure(term(), term()).
+gear(Datasheet, Exts) ->
     io:format("~nDatasheet: ~p~n",[Datasheet]),
+    Name = test, Opt = [], ProtName = test, ProtOpt = [],
+    erlmachine_factory:gear(Name, Opt, ProtName, ProtOpt, Exts).
 
-    Assembly = erlmachine_factory:gear(Name, Opt, ProtName, ProtOpt, Parts),
-    erlmachine_factory:build(Assembly). %% TODO
+-spec shaft(Datasheet::datasheet()) ->
+                   success(assembly()) | failure(term(), term()).
+shaft(Datasheet) ->
+    shaft(Datasheet, []).
 
--spec shaft(File::list(), Label::term(), Parts::list()) -> 
-                   assembly().
-shaft(File, Label, Parts) -> 
-    erlmachine_assembly:label(shaft(File, Parts), Label).
+-spec shaft(Datasheet::datasheet(), Exts::list(assembly())) ->
+                   success(assembly()) | failure(term(), term()).
+shaft(Datasheet, Exts) ->
+    io:format("~nDatasheet: ~p~n",[Datasheet]),
+    Name = test, Opt = [], ProtName = test, ProtOpt = [],
+    erlmachine_factory:shaft(Name, Opt, ProtName, ProtOpt, Exts).
 
--spec shaft(File::list(), Parts::list()) -> 
-                   assembly().
-shaft(File, Parts) -> 
-    Datasheet = file(File), true = is_list(Datasheet),
+-spec axle(Datasheet::datasheet()) ->
+                  success(assembly()) | failure(term(), term()).
+axle(Datasheet) ->
+    axle(Datasheet, []).
 
-    Assembly = erlmachine_factory:shaft(Name, Opt, ProtName, ProtOpt, Parts),
-    erlmachine_factory:build(Assembly). %% TODO To decorate by tags, description, etc.;
+-spec axle(Datasheet::datasheet(), Exts::list(assembly())) -> 
+                  success(assembly()) | failure(term(), term()).
+axle(Datasheet, Exts) ->
+    io:format("~nDatasheet: ~p~n",[Datasheet]),
+    Name = test, Opt = [], ProtName = test, ProtOpt = [],
+    erlmachine_factory:axle(Name, Opt, ProtName, ProtOpt, Exts).
 
--spec axle(File::list(), Label::term(), Parts::list()) -> 
-                   assembly().
-axle(File, Label, Parts) -> 
-    erlmachine_assembly:label(axle(File, Parts), Label).
+-spec gearbox(Datasheet::datasheet(), Env::term()) ->
+                     success(assembly()) | failure(term(), term()).
+gearbox(Datasheet, Env) ->
+    gearbox(Datasheet, Env, []).
 
--spec axle(File::list(), Parts::list()) -> 
-                  assembly().
-axle(File, Parts) -> 
-    Datasheet = file(File), true = is_list(Datasheet),
-
-    Assembly = erlmachine_factory:axle(Name, Opt, ProtName, ProtOpt, Parts),
-    erlmachine_factory:build(Assembly). %% TODO To decorate by tags, description, etc.;
-
--spec gearbox(File::list(), Env::term(), Label::term(), Parts::list()) -> 
-                  assembly().
-gearbox(File, Env, Label, Parts) -> 
-    erlmachine_assembly:label(gearbox(File, Env, Parts), Label).
-
--spec gearbox(File::list(), Env::term(), Parts::list()) -> 
-                     assembly().
-gearbox(File, Env, Parts) -> 
-    Datasheet = file(File), true = is_list(Datasheet),
-
-    Assembly = erlmachine_factory:gearbox(Name, Opt, ProtName, ProtOpt, Env, Parts),
-    erlmachine_factory:build(Assembly). %% TODO To decorate by tags, description, etc.;
-
-%% TODO model options;
--spec model(Datasheet::datasheet()) -> model().
-model(Datasheet) ->
-    Prototype = erlmachine_prototype:prototype(Name, Opt),
-    erlmachine_model:model(Name, Opt, Prototype).
-
--spec assembly(Product, Datasheet::datasheet(), Parts::list()) -> assembly().
-assembly() ->
-    assembly(Product, Body, Model, Parts).
+-spec gearbox(Datasheet::datasheet(), Env::term(), Exts::list(assembly())) -> 
+                     success(assembly()) | failure(term(), term()).
+gearbox(Datasheet, Env, Exts) ->
+    io:format("~nDatasheet: ~p~n",[Datasheet]),
+    Name = test, Opt = [], ProtName = test, ProtOpt = [],
+    erlmachine_factory:gearbox(Name, Opt, ProtName, ProtOpt, Env, Exts).
 
 %% TODO to support Json based specification;

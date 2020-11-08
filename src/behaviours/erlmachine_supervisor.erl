@@ -1,6 +1,6 @@
 -module(erlmachine_supervisor).
 
--include("erlmachine_factory.hrl").
+-include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
 
 -callback install(Label::term(), Ids::list(term()), Opt::term(), Env::list()) -> 

@@ -1,0 +1,1 @@
+-type assembly() :: erlmachine_assembly:assembly().

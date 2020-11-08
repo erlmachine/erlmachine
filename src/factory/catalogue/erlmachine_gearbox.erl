@@ -15,7 +15,9 @@
 
 -export([type/0]).
 
--include("erlmachine_factory.hrl").
+-type model() :: erlmachine_model:model().
+
+-include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
 
 -spec gearbox(Schema::term(), Model::model(), Env::term()) -> assembly().

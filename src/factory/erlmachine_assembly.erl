@@ -2,7 +2,7 @@
 
 %% API.
 
--export([assembly/3, assembly/4]).
+-export([assembly/3, assembly/5]).
 
 -export([install/1, install/2]).
 -export([uninstall/1, uninstall/2]).
@@ -16,7 +16,7 @@
          model/1, model/2,
          extensions/1, extensions/2,
          tags/1, tags/2,
-         label/0, label/1, label/2,
+         label/1, label/2,
          part_no/1, part_no/2,
          env/1, env/2,
          desc/1, desc/2
@@ -24,15 +24,12 @@
 
 -export([store/2, delete/2, find/2]).
 
--export([tag/2, untag/2]).
-
+-include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
 
 %% NOTE: Here is implemented incapsulation across independent parts and the whole transmission too;
 %% We consider Name as implementation point (like class) and serial number as instance - (like object);
 %% We can support polymorphism by different ways - by overriding prototype or by changing model itself;
-
--type model() :: erlmachine_factory:model().
 
 %% NOTE: I am thinking about two kinds of assembly manual and automated;
 
@@ -60,7 +57,7 @@
                     label::term(),
                     %% By part_no we can track quality of component through release period;
                     part_no::term(),
-                    %% The execution context within the current topology (is inherited through the all extensions);
+                    %% The execution context within the current topology (is inherited through the extensions);
                     env::term(),
                     %% Textual description of the assembly;
                     desc::binary()
@@ -68,6 +65,8 @@
         ).
 
 -type assembly() :: #assembly{}.
+
+-type model() :: erlmachine_model:model().
 
 -export_type([assembly/0]).
 
@@ -129,38 +128,42 @@ uninstall(Assembly) ->
     ok = Name:uninstall(Assembly),
     ok = erlmachine_schema:del_vertex(Assembly, Label).
 
--spec init(Assembly::assembly()) -> success().
+-spec init(Assembly::assembly()) -> term().
 init(Assembly) ->
     Schema = erlmachine_assembly:schema(Assembly),
 
     V = erlmachine_schema:add_vertex(Schema, Assembly),
-    init(Schema, V, erlmachine_assembly:parts(Assembly)), 
-    ok.
+    init(Schema, V, erlmachine_assembly:parts(Assembly)).
 
--spec init(Schema::term(), V1::vertex(), Parts::list(assembly())) -> 
-                  vertex().
-init(_Schema, V1, []) ->
-    V1;
-init(Schema, V1, [Part|T]) ->
-    V2 = add_edge(Schema, V1, Part),
+-spec init(Schema::term(), Label::term(), Parts::list(assembly())) -> 
+                  term().
+init(_Schema, Label, []) ->
+    Label;
+init(Schema, Label, [Part|T]) ->
+    init(Schema, erlmachine_schema:add_edge(Schema, Label, Part), erlmachine_assembly:parts(Part)),
+    init(Schema, Label, T),
+    Label.
 
-    init(Schema, V2, erlmachine_assembly:parts(Part)),
-    init(Schema, V1, T),
-    V1.
-
-%% Accessors;
--spec serial_no() -> integer().
-serial_no() ->
-    #assembly.serial_no.
+%%%===================================================================
+%%% Access API
+%%%===================================================================
 
 -spec serial_no(Assembly::assembly()) -> serial_no().
 serial_no(Assembly) ->
     SN = Assembly#assembly.serial_no,
     SN.
 
--spec serial_no(Assembly::assembly(), SN::serial_no()) -> Release::assembly().
+-spec serial_no(Assembly::assembly(), SN::serial_no()) -> assembly().
 serial_no(Assembly, SN) ->
     Assembly#assembly{ serial_no=SN }.
+
+-spec name(Assembly::assembly()) -> atom().
+name(Assembly) ->
+    Assembly#assembly.name.
+
+-spec name(Assembly::assembly(), Name::atom()) -> assembly().
+name(Assembly, Name) ->
+    Assembly#assembly{ name=Name }.
 
 -spec body(Assembly::assembly()) -> term().
 body(Assembly) ->
@@ -183,7 +186,7 @@ schema(Assembly) ->
     Assembly#assembly.schema.
 
 -spec schema(Assembly::assembly(), Schema::term()) -> assembly().
-schema(Assembly, Body) ->
+schema(Assembly, Schema) ->
     Assembly#assembly{ schema=Schema }.
 
 -spec model(Assembly::assembly()) -> model().
@@ -193,16 +196,6 @@ model(Assembly) ->
 -spec model(Assembly::assembly(), Model::model()) -> assembly().
 model(Assembly, Model) ->
     Assembly#assembly{ model = Model }.
-
--spec prototype(Assembly::assembly()) -> prototype().
-prototype(Assembly) ->
-    Model = model(Assembly),
-    erlmachine_model:prototype(Model).
-
--spec prototype(Assembly::assembly(), Prototype::prototype()) -> assembly().
-prototype(Assembly, Prototype) ->
-    Model = model(Assembly),
-    model(Assembly, erlmachine_model:prototype(Model, Prototype)).
 
 -spec extensions(Assembly::assembly()) -> list(assembly()).
 extensions(Assembly) ->
@@ -228,11 +221,11 @@ tags(Assembly) ->
 tags(Assembly, Tags) ->
     Assembly#assembly{ tags=Tags }.
 
--spec label(Assembly::assembly()) -> label().
+-spec label(Assembly::assembly()) -> term().
 label(Assembly) ->
     Assembly#assembly.label.
 
--spec label(Assembly::assembly(), Label::label()) -> assembly().
+-spec label(Assembly::assembly(), Label::term()) -> assembly().
 label(Assembly, Label) ->
     Assembly#assembly{ label = Label }.
 
@@ -252,27 +245,16 @@ desc(Assembly) ->
 desc(Assembly, Desc) ->
     Assembly#assembly{ desc = Desc }.
 
-%% Misc
 -spec store(Assembly::assembly(), Ext::assembly()) -> assembly().
 store(Assembly, Ext) ->
-    Exts = lists:keystore(label(Extension), label(), extensions(Assembly), Ext),
+    Exts = lists:keystore(label(Ext), #assembly.label, extensions(Assembly), Ext),
     extensions(Assembly, Exts).
 
 -spec delete(Assembly::assembly(), Label::term()) -> assembly().
 delete(Assembly, Label) ->
-    Exts = lists:keydelete(Label, label(), extensions(Assembly)),
+    Exts = lists:keydelete(Label, #assembly.label, extensions(Assembly)),
     extensions(Assembly, Exts).
 
 -spec find(Assembly::assembly(), Label::term()) -> assembly().
 find(Assembly, Label) ->
-    lists:keyfind(Label, label(), extensions(Assembly)).
-
--spec tag(Assembly::assembly(), Tag::term()) -> assembly().
-tag(Assembly, Tag) ->
-    Tags = tags(Assembly),
-    tags(Assembly, [Tag|Tags]).
-
--spec untag(Assembly::assembly(), Tag::term()) -> assembly().
-untag(Assembly, Tag) ->
-    Tags = tags(Assembly),
-    tags(Assembly, lists:delete(Tag, Tags)).
+    lists:keyfind(Label, #assembly.label, extensions(Assembly)).

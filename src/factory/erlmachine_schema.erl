@@ -1,15 +1,21 @@
 -module(erlmachine_schema).
 %% This module is responsible to setup the schema for the whole transmittion and to manage it;
+%% TODO: To provide visualization of:
+%% a) Installation schema;
+%% b) Routing schema;
 
 -export([new/0]).
 
--export([add_edge/3]).
+-export([add_edge/4]).
 -export([add_vertex/2, del_vertex/2]).
 -export([in_edges/2, out_edges/2]).
 
+-export([vertices/1]).
+-export([edges/1]).
+
 -export([del_path/3]).
 
--include("erlmachine_factory.hrl").
+-include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
 
 -type vertex() :: term().
@@ -17,11 +23,19 @@
 
 -type schema() :: term().
 
+-export_type([schema/0]).
 %% Current implementation of a schema is digraph. But we are able to change it on demand;
 -spec new() -> term().
 new() ->
     digraph:new().
 
+%% TODO: Path can be specified #.reg, label.reg, etc..
+%% Model doesn't have to know about meshed parts;
+%% Model can skip rotation or to provide delivery path: #, #.reg, etc..
+%% Passed extensions list automatically subscribed on # (relation is determined by edge);
+%% Edge is described by reg.
+
+%% NOTE: The main purpouse of this call is to register a route;
 -spec add_edge(Schema::term(), V1::vertex(), Ext::assembly(), Label::term()) -> vertex().
 add_edge(Schema, V1, Ext, Label) ->
     V2 = add_vertex(Schema, Ext),
@@ -40,6 +54,7 @@ add_vertex(Schema, Ext) ->
     digraph:add_vertex(Schema, V, Ext),
     V.
 
+%% NOTE: The main purpouse of this call is to delete entry from the schema (routes also deleted);
 -spec del_vertex(Schema::term(), V::vertex()) -> success().
 del_vertex(Schema, V) ->
     true = digraph:del_vertex(Schema, V),

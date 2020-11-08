@@ -14,6 +14,7 @@
 -export([init/1, call/2, cast/3, terminate/1]).
 
 -include("erlmachine_factory.hrl").
+-include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
 
 -callback prototype_init(SN::serial_no(), Context::term(), Opt::list()) ->

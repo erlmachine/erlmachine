@@ -34,7 +34,7 @@ prototype_start_child(SN, Context, Ext, Spec) ->
     ok = erlmachine_supervisor_prototype:start_child(Context, Ext),
     supervisor:start_child(format_name(SN), Spec).
 
--spec prototype_terminate_child(SN:serial_no(), Context::term(), Id::term()) ->
+-spec prototype_terminate_child(SN::serial_no(), Context::term(), Id::term()) ->
                                        success().
 prototype_terminate_child(SN, Context, Id) ->
     ok = erlmachine_supervisor_prototype:terminate_child(Context, Id),

@@ -4,13 +4,8 @@
 
 -export([start/0, stop/0]).
 
--export([find/1, find/2]).
-
 -export([rotate/3, transmit/3]).
--export([install/2, install/3]).
--export([attach/3, attach/4]).
--export([detach/2, detach/3]).
--export([uninstall/2, uninstall/3]).
+-export([install/1, install/3, uninstall/1, uninstall/3]).
 
 -export([motion/2]).
 -export([header/1, header/2, body/1, body/2]).
@@ -27,9 +22,10 @@
 -export([success/0, success/1, success/2]).
 
 -export([attribute/3]).
--export([optional_callback/4]).
+-export([optional_callback/3, optional_callback/4]).
 
 -export([serial_no/1]).
+-export([prototype/1]).
 -export([label/1]).
 -export([tags/1]).
 -export([part_no/1]).
@@ -41,23 +37,27 @@
 -export([phash2/1]).
 -export([base64url/1]).
 
+-export([tag/2, untag/2]).
+
 -export([timestamp/0]).
 
 -include("erlmachine_system.hrl").
+-include("erlmachine_assembly.hrl").
 -include("erlmachine_factory.hrl").
 
-%% Erlmachine transmission types:
 -type motion() :: erlmachine_transmission:motion().
 
 -type header() :: erlmachine_transmission:header().
 
 -type body() :: erlmachine_transmission:body().
 
+-type prototype() :: erlmachine_prototype:prototype().
+
+-record(guid, { node::node(), reference::reference(), serial::term() }).
+
 -type guid()::#guid{}.
 
 -export_type([guid/0]).
-
--record(guid, { node::node(), reference::reference(), serial::term() }).
 
 %% The main purpouse of erlmachine project is to provide a set of well desikgned behaviours which are accompanied with visualization tools as well.
 %%  Erlmachine doesn't restrict your design with the one possible way but instead provide you ability to implement your own components accordingly to your vison.
@@ -72,23 +72,17 @@ start() ->
 stop() ->
     application:stop(erlmachine).
 
--spec find(Schema::term()) -> list(assembly()).
-find(Schema) ->
-    erlmachine_schema:vertices(Schema).
-
--spec find(Schema::term(), Label::term()) -> assembly() | false.
-find(Schema, Label) ->
-    erlmachine_schema:vertex(Schema, Label).
-
 -spec rotate(Schema::assembly(), Label::term(), Motion::term()) ->
                     term().
 rotate(Schema, Label, Motion) ->
-    erlmachine_transmission:rotate(find(Schema, Label), Motion).
+    Assembly = erlmachine_schema:vertex(Schema, Label),
+    erlmachine_transmission:rotate(Assembly, Motion).
 
 -spec transmit(Schema::assembly(), Label::term(), Motion::term()) ->
                       term().
 transmit(Schema, Label, Motion) ->
-    erlmachine_transmission:transmit(find(Schema, Label), Motion).
+    Assembly = erlmachine_schema:vertex(Schema, Label),
+    erlmachine_transmission:transmit(Assembly, Motion).
 
 -spec install(GearBox::assembly()) ->
                      success(pid()) | ingnore | failure(term()).
@@ -98,23 +92,8 @@ install(GearBox) ->
 -spec install(Schema::term(), Label::term(), Ext::assembly()) ->
                      success(pid()) | ingnore | failure(term()).
 install(Schema, Label, Ext) ->
-    erlmachine_assembly:install(find(Schema, Label), Ext).
-
-%% TODO: Path can be specified #.reg, label.reg, etc..
-%% Model doesn't have to know about meshed parts;
-%% Model can skip rotation or to provide delivery path: #, #.reg, etc..
-%% Passed extensions list automatically subscribed on # (relation is determined by edge);
-%% Edge is described by reg.
--spec mesh(Schema::assembly(), Label::term(), Socket::term(), Ext::assembly()) -> 
-                    success() | failure(term(), term()).
-mesh(Schema, Label, Socket, Ext) ->
-    Rel = erlmachine_assembly:socket(Ext, Socket),
-    erlmachine_transmission:mesh(find(Schema, Label), Rel).
-
--spec unmesh(Schema::term(), Label::term(), Id::term()) -> 
-                    success() | failure(term(), term()).
-unmesh(Schema, Label, Id) ->
-    erlmachine_assembly:unmesh(find(Schema, Label), Id).
+    Assembly = erlmachine_schema:vertex(Schema, Label),
+    erlmachine_assembly:install(Assembly, Ext).
 
 -spec uninstall(GearBox::assembly()) ->
                        success().
@@ -124,12 +103,8 @@ uninstall(GearBox) ->
 -spec uninstall(Schema::term(), Label::term(), Id::term()) ->
                        success().
 uninstall(Schema, Label, Id) ->
-    erlmachine_assembly:uninstall(GearBox).
-
--spec uninstall(GearBox::assembly(), Label::term(), Reason::term()) ->
-                       success().
-uninstall(GearBox, Label, Reason) ->
-    erlmachine_assembly:uninstall(GearBox, Label, Reason).
+    Assembly = erlmachine_schema:vertex(Schema, Label),
+    erlmachine_assembly:uninstall(Assembly, Id).
 
 -spec motion(Header::header(), Body::body()) -> motion().
 motion(Header, Body) ->
@@ -211,6 +186,10 @@ correlation_id(Motion, Id) ->
     Header = header(Motion),
     header(Motion, Header#{ correlation_id => Id }).
 
+%%%===================================================================
+%%% Reply API
+%%%===================================================================
+
 -spec failure(E::term(), R::term()) -> failure(E::term(), R::term()).
 failure(E, R) -> 
     erlmachine_system:failure(E, R).
@@ -265,6 +244,11 @@ optional_callback(Mod, Fun, Args, Def) ->
 serial_no(Assembly) ->
     erlmachine_assembly:serial_no(Assembly).
 
+-spec prototype(Assembly::assembly()) -> prototype().
+prototype(Assembly) ->
+    Model = erlmachine_assembly:model(Assembly),
+    erlmachine_model:prototype(Model).
+
 -spec label(Assembly::assembly()) -> term().
 label(Assembly) ->
     erlmachine_assembly:label(Assembly).
@@ -286,7 +270,7 @@ description(Assembly) ->
 %% base64url encoding was provided; 
 %% This format is safer and more applicable by web applications (in comparison with base64);
 
--spec guid(Serial::serial()) -> binary().
+-spec guid(Serial::term()) -> binary().
 guid(Serial) ->
     GUID = #guid{ node=node(), serial=Serial, reference=make_ref() },
     md5(GUID).
@@ -305,6 +289,16 @@ base64url(N) when is_binary(N) ->
     Base64 = base64:encode(N),
     Base64Url = [fun($+) -> <<"-">>; ($/) -> <<"_">>; (C) -> <<C>> end(Char)|| <<Char>> <= Base64],
     << <<X/binary>> || X <- Base64Url >>.
+
+-spec tag(Assembly::assembly(), Tag::term()) -> assembly().
+tag(Assembly, Tag) ->
+    Tags = erlmachine_assembly:tags(Assembly),
+    erlmachine_assembly:tags(Assembly, [Tag|Tags]).
+
+-spec untag(Assembly::assembly(), Tag::term()) -> assembly().
+untag(Assembly, Tag) ->
+    Tags = erlmachine_assembly:tags(Assembly),
+    erlmachine_assembly:tags(Assembly, lists:delete(Tag, Tags)).
 
 -spec timestamp() -> integer().
 timestamp() ->

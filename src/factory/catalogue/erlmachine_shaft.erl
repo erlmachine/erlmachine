@@ -5,11 +5,13 @@
 
 -export([shaft/1]).
 
--export([install/1, rotate/1, transmit/1,  uninstall/2]).
+-export([install/1, rotate/3, transmit/2,  uninstall/1]).
 
 -export([type/0]).
 
--include("erlmachine_factory.hrl").
+-type model() :: erlmachine_model:model().
+
+-include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
 
 -spec shaft(Model::model()) -> assembly().

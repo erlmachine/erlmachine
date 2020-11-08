@@ -9,8 +9,6 @@
          options/1, options/2
         ]).
 
--export([record_name/0, attributes/0]).
-
 -include("erlmachine_system.hrl").
 
 -record(prototype, { name::atom(), options::term() }).
@@ -19,22 +17,14 @@
 
 -export_type([prototype/0]).
 
--spec record_name() -> atom().
-record_name() ->
-    prototype.
-
--spec attributes() -> list(atom()).
-attributes() ->
-    record_info(fields, prototype).
-
--spec prototype(Name::atom(), Opt::list()) -> prototype().
-prototype(Name, Opt) ->
-    Prototype = #prototype{},
-    options(name(Prototype, Name), Opt).
-
 -spec prototype() -> prototype().
 prototype() ->
     #prototype{}.
+
+-spec prototype(Name::atom(), Opt::list()) -> prototype().
+prototype(Name, Opt) ->
+    Prototype = prototype(),
+    options(name(Prototype, Name), Opt).
 
 -spec name(Prototype::prototype()) -> atom().
 name(Prototype) ->

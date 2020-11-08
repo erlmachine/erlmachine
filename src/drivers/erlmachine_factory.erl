@@ -25,8 +25,13 @@
 
 -export([serial_no/1]).
 
--include("erlmachine_factory.hrl").
+-include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
+
+-type serial_no() :: binary().
+-type part_no() :: binary().
+
+-export_type([serial_no/0, part_no/0]).
 
 -spec tabname() -> atom().
 tabname() ->

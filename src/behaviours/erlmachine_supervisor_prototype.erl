@@ -11,19 +11,20 @@
 -export([init/2, start_child/2, terminate_child/2, terminate/1]).
 
 -include("erlmachine_factory.hrl").
+-include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
 
--callback prototype_init(SN::term(), Context::assembly(), Ids::list(), Specs::list(map()), Opts::list()) -> 
+-callback prototype_init(SN::serial_no(), Context::assembly(), Ids::list(), Specs::list(map()), Opts::list()) ->
     success(pid()) | failure(term(), term()).
 
--callback prototype_start_child(SN::term(), Context::assembly(), Id::term(), Spec::map()) ->
+-callback prototype_start_child(SN::serial_no(), Context::assembly(), Id::term(), Spec::map()) ->
     success(pid()) | failure(term(), term()).
 
--callback prototype_terminate_child(SN::term(), Context::assembly(), Id::term()) ->
+-callback prototype_terminate_child(SN::serial_no(), Context::assembly(), Id::term()) ->
     success().
 
 %% Assembly::assembly(), Reason::term()
--callback prototype_terminate(SN::term(), Context::assembly()) ->
+-callback prototype_terminate(SN::serial_no(), Context::assembly()) ->
     success().
 
 %%%===================================================================
@@ -107,6 +108,7 @@ terminate_child(_Context, _Id) ->
 -spec terminate(Context::assembly()) ->
                        success().
 terminate(_Context) ->
+%% TODO: To gather statistics into graph;
     ok.
 
 %% TODO https://github.com/rabbitmq/rabbitmq-common/blob/master/src/supervisor2.erl
