@@ -7,6 +7,10 @@
 
 %% NOTE: Supervisor prototype concerns: health check, recovery management;
 
+%% TODO:
+%% a) To simplify context for network transmission;
+%% b) To gather statistics into graph;
+
 -export([install/1, install/2, uninstall/1, uninstall/2]).
 -export([init/2, start_child/2, terminate_child/2, terminate/1]).
 
@@ -14,10 +18,10 @@
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
 
--callback prototype_init(SN::serial_no(), Context::assembly(), Ids::list(), Specs::list(map()), Opts::list()) ->
+-callback prototype_init(SN::serial_no(), Context::assembly(), Specs::list(map()), Opts::list()) ->
     success(pid()) | failure(term(), term()).
 
--callback prototype_start_child(SN::serial_no(), Context::assembly(), Id::term(), Spec::map()) ->
+-callback prototype_start_child(SN::serial_no(), Context::assembly(), Spec::map()) ->
     success(pid()) | failure(term(), term()).
 
 -callback prototype_terminate_child(SN::serial_no(), Context::assembly(), Id::term()) ->
@@ -40,7 +44,7 @@ install(Assembly) ->
     Specs = [spec(Assembly, Ext)|| Ext <- Exts],
     Opts = erlmachine_prototype:options(Prot),
     Name = erlmachine_prototype:name(Prot),
-    Name:prototype_init(SN, Assembly, Exts, Specs, Opts).
+    Name:prototype_init(SN, [Assembly, Exts], Specs, Opts).
 
 -spec install(Assembly::assembly(), Ext::assembly()) ->
                      success(pid()) | failure(term(), term()).
@@ -49,7 +53,7 @@ install(Assembly, Ext) ->
     Prot = erlmachine_assembly:prototype(Assembly),
     Spec = spec(Assembly, Ext),
     Name = erlmachine_prototype:name(Prot),
-    Name:prototype_start_child(SN, Assembly, Ext, Spec).
+    Name:prototype_start_child(SN, [Assembly, Ext], Spec).
 
 -spec uninstall(Assembly::assembly(), Id::term()) ->
                        failure(term(), term()).
@@ -57,7 +61,7 @@ uninstall(Assembly, Id) ->
     SN = erlmachine_assembly:serial_no(Assembly),
     Prot = erlmachine_assembly:prototype(Assembly),
     Name = erlmachine_prototype:name(Prot),
-    Name:prototype_terminate_child(SN, Assembly, Id).
+    Name:prototype_terminate_child(SN, [Assembly, Id], Id).
 
 -spec uninstall(Assembly::assembly()) ->
                        success().
@@ -90,25 +94,30 @@ spec(Assembly, Ext) ->
 %%% Prototype API layer
 %%%===================================================================
 
--spec init(Context::assembly(), Exts::list(assembly())) -> 
+-spec init(Context::term()) -> 
                   success() | failure(term(), term()).
-init(_Context, _Exts) ->
+init(Context) ->
+    [_Assembly, _Exts] = Context,
     ok.
 
--spec start_child(Context::assembly(), Ext::assembly()) -> 
+-spec start_child(Context::term()) -> 
                          success() | failure(term(), term()).
-start_child(_Context, _Ext) -> 
+start_child(Context) ->
+    [_Assembly, _Ext] = Context,
     ok.
 
--spec terminate_child(Context::assembly(), Id::term()) -> 
+-spec terminate_child(Context::term()) -> 
                              success().
-terminate_child(_Context, _Id) ->
+terminate_child(Context) ->
+    [_Assembly, _Id] = Context,
     ok.
 
--spec terminate(Context::assembly()) ->
+-spec terminate(Context::term()) ->
                        success().
-terminate(_Context) ->
-%% TODO: To gather statistics into graph;
+terminate(Context) ->
+    _Assembly = Context,
     ok.
 
 %% TODO https://github.com/rabbitmq/rabbitmq-common/blob/master/src/supervisor2.erl
+
+
