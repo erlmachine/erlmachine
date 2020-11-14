@@ -12,7 +12,7 @@
 %% b) To gather statistics into graph;
 
 -export([install/1, install/2, uninstall/1, uninstall/2]).
--export([init/2, start_child/2, terminate_child/2, terminate/1]).
+-export([init/1, start_child/1, terminate_child/1, terminate/1]).
 
 -include("erlmachine_factory.hrl").
 -include("erlmachine_assembly.hrl").

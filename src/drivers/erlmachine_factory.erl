@@ -10,6 +10,8 @@
 %% API.
 
 -export([start_link/0]).
+-export([start/0]).
+-export([stop/0]).
 
 %% gen_server.
 -export([init/1]).
@@ -119,11 +121,14 @@ gearbox(Name, Opt, ProtName, ProtOpt, Env, Exts) when is_list(Exts) ->
 id() -> 
     ?MODULE.
 
--spec start_link() -> success(pid()) | ingnore | failure(term()).
-
-start_link() ->
+-spec start() -> success(pid()) | ingnore | failure(term()).
+start() ->
     Id = id(),
-    gen_server:start_link({local, Id}, ?MODULE, [], []).
+    gen_server:start({local, Id}, ?MODULE, [], []).
+
+-spec start_link() -> success(pid()) | ingnore | failure(term()).
+start_link() ->
+    gen_server:start_link({local, id()}, ?MODULE, [], []).
 
 -record(serial_no, { assembly::assembly() }).
 
@@ -132,6 +137,9 @@ start_link() ->
 serial_no(Assembly) ->
     gen_server:call(id(), #serial_no{ assembly=Assembly }).
 
+-spec stop() -> success().
+stop() ->
+    gen_server:stop(id()).
 %% gen_server.
 
 -record(state, { hash::binary() }).
@@ -146,7 +154,7 @@ handle_call(#serial_no{ assembly=Assembly }, _From, #state{ hash = Hash } = Stat
     <<B1:32, B2:32, B3:32, B4:32>> = Hash,
     B5 = erlmachine:phash2({B1, update_counter()}),
     Rotated = <<(B2 bxor B5):32, (B3 bxor B5):32, (B4 bxor B5):32, B5:32>>,
-    Rel = erlmachine_assembly:serial_no(Assembly, Hash),
+    Rel = erlmachine_assembly:serial_no(Assembly, erlmachine:base64url(Hash)),
     {reply, erlmachine:success(Rel), State#state{ hash = Rotated }};
 
 handle_call(_Request, _From, State) ->

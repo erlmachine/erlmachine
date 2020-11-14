@@ -1,2 +1,2 @@
--module(erlmachine_supervisor_test).
+-module(erlmachine_supervisor_tests).
 -export([]).

@@ -1,3 +1,3 @@
--module(erlmachine_supervisor_prototype_test).
+-module(erlmachine_supervisor_prototype_tests).
 -include_lib("eunit/include/eunit.hrl").
 -export([]).

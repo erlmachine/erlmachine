@@ -1,10 +1,7 @@
-./beam
 .erlang.mk/
-botcw.d
-*.html
-Mnesia*
-src/erlmachine_leex_js.erl
-erl_crash.dump
+*.beam
 deps/
 ebin/
-log/
+logs/
+.DS_Store
+erlmachine.d

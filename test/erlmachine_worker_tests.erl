@@ -1,2 +1,2 @@
--module(erlmachine_worker_test).
+-module(erlmachine_worker_tests).
 -export([]).

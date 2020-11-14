@@ -1,4 +1,4 @@
--module(erlmachine_assembly_SUITE).
+-module(erlmachine_factory_SUITE).
 
 -export([suite/0]).
 -export([init_per_suite/1, end_per_suite/1]).
@@ -6,7 +6,7 @@
 -export([init_per_testcase/2, end_per_testcase/2]).
 -export([groups/0]).
 -export([all/0]).
--export([my_test_case/0, my_test_case/1]).
+-export([serial_no/0, serial_no/1]).
 
  -include_lib("common_test/include/ct.hrl").
 
@@ -15,13 +15,18 @@
 %%--------------------------------------------------------------------
 
 suite() -> 
-    [{timetrap,{minutes,10}}].
+    [{timetrap,{minutes,1}}].
 
 init_per_suite(Config) ->
+    Nodes = [node()],
+    mnesia:create_schema(Nodes), ok = mnesia:start(),
+
+    {ok, _Pid} = erlmachine_factory:start(),
     Config.
 
 end_per_suite(_Config) ->
-    ok.
+    mnesia:stop(),
+    ok = erlmachine_factory:stop().
 
 init_per_group(_GroupName, Config) ->
     Config.
@@ -57,7 +62,7 @@ end_per_testcase(_TestCase, _Config) ->
 %% Description: Returns a list of test case group definitions.
 %%--------------------------------------------------------------------
 groups() ->
-    [].
+    [{gear, [sequence], [serial_no]}].
 
 %%--------------------------------------------------------------------
 %% Function: all() -> GroupsAndTestCases | {skip,Reason}
@@ -74,14 +79,14 @@ groups() ->
 %%              are to be executed.
 %%--------------------------------------------------------------------
 all() ->
-    [my_test_case].
+    [{group, gear}].
 
 
 %%--------------------------------------------------------------------
 %% TEST CASES
 %%--------------------------------------------------------------------
 
-my_test_case() ->
+serial_no() ->
     [].
 
 %%--------------------------------------------------------------------
@@ -100,5 +105,9 @@ my_test_case() ->
 %%              the all/0 list or in a test case group for the test case
 %%              to be executed).
 %%--------------------------------------------------------------------
-my_test_case(_Config) ->
-    ok.
+serial_no(Config) ->
+    Assembly = erlmachine_assembly:assembly(),
+    {ok, Rel} = erlmachine_factory:serial_no(Assembly),
+    SN = erlmachine_assembly:serial_no(Rel), 
+    true = is_binary(SN),
+    {comment, {serial_no, SN}}.

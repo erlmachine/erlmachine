@@ -1,3 +1,3 @@
--module(erlmachine_worker_prototype_test).
+-module(erlmachine_worker_prototype_tests).
 -include_lib("eunit/include/eunit.hrl").
 -export([]).

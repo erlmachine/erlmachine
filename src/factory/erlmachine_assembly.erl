@@ -2,7 +2,7 @@
 
 %% API.
 
--export([assembly/3, assembly/5]).
+-export([assembly/0, assembly/3, assembly/5]).
 
 -export([install/1, install/2]).
 -export([uninstall/1, uninstall/2]).
