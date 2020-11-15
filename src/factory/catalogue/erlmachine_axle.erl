@@ -6,6 +6,7 @@
 -export([install/1, install/2, uninstall/1, uninstall/2]).
 
 -export([type/0]).
+-export([prefix/0]).
 
 -type model() :: erlmachine_model:model().
 
@@ -17,7 +18,7 @@ axle(Model) ->
     %% TODO; To decorate Body by additional data;
     Body = [],
     Assembly = erlmachine_assembly:assembly(?MODULE, Body, Model),
-    erlmachine_assembly:tag(Assembly, type()).
+    erlmachine:tag(Assembly, type()).
 
 -spec install(Axle::assembly()) -> 
                      success(pid()) | failure(term(), term()).
@@ -42,3 +43,7 @@ uninstall(Axle) ->
 -spec type() -> atom().
 type() ->
     'supervisor'.
+
+-spec prefix() -> binary().
+prefix() ->
+    <<"AE-">>.

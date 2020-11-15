@@ -8,6 +8,7 @@
 -export([install/1, rotate/3, transmit/2, uninstall/1]).
 
 -export([type/0]).
+-export([prefix/0]).
 
 -type model() :: erlmachine_model:model().
 
@@ -19,7 +20,7 @@ gear(Model) ->
     %% TODO: Additional decoration within body;
     Body = #{},
     Assembly = erlmachine_assembly:assembly(?MODULE, Body, Model),
-    erlmachine_assembly:tag(Assembly, type()).
+    erlmachine:tag(Assembly, type()).
 
 -spec install(Gear::assembly()) -> 
                      success(pid()) | failure(term(), term()).
@@ -44,3 +45,7 @@ uninstall(Gear) ->
 -spec type() -> atom().
 type() ->
     'worker'.
+
+-spec prefix() -> binary().
+prefix() ->
+    <<"GR-">>. 

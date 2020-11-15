@@ -8,6 +8,7 @@
 -export([install/1, rotate/3, transmit/2,  uninstall/1]).
 
 -export([type/0]).
+-export([prefix/0]).
 
 -type model() :: erlmachine_model:model().
 
@@ -19,7 +20,7 @@ shaft(Model) ->
     %% TODO: To decorate Body by additional metadata;
     Body = [],
     Assembly = erlmachine_assembly:assembly(?MODULE, Body, Model),
-    erlmachine_assembly:tag(Assembly, type()).
+    erlmachine:tag(Assembly, type()).
 
 -spec install(Shaft::assembly()) ->
                      success(term()) | failure(term(), term()).
@@ -44,3 +45,7 @@ uninstall(Shaft) ->
 -spec type() -> atom().
 type() ->
     'worker'.
+
+-spec prefix() -> binary().
+prefix() ->
+    <<"ST-">>.

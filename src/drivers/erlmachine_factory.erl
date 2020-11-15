@@ -112,7 +112,7 @@ gearbox(Name, Opt, Env, Exts) when is_list(Exts) ->
 gearbox(Name, Opt, ProtName, ProtOpt, Env, Exts) when is_list(Exts) ->
     Prot = erlmachine_prototype:prototype(ProtName, ProtOpt),
     Model = erlmachine_model:model(Name, Opt, Prot),
-    Schema = erlmachine_assembly:schema(),
+    Schema = erlmachine_schema:new(),
     {ok, GearBox} = serial_no(erlmachine_gearbox:gearbox(Schema, Model, Env)),
     erlmachine_assembly:extensions(GearBox, Exts).
 
@@ -152,9 +152,11 @@ init([]) ->
 
 handle_call(#serial_no{ assembly=Assembly }, _From, #state{ hash = Hash } = State) ->
     <<B1:32, B2:32, B3:32, B4:32>> = Hash,
+    Name = erlmachine_assembly:name(Assembly),
+    SN = <<(Name:prefix())/binary, (erlmachine:base64url(Hash))/binary>>,
+    Rel = erlmachine_assembly:serial_no(Assembly, SN),
     B5 = erlmachine:phash2({B1, update_counter()}),
     Rotated = <<(B2 bxor B5):32, (B3 bxor B5):32, (B4 bxor B5):32, B5:32>>,
-    Rel = erlmachine_assembly:serial_no(Assembly, erlmachine:base64url(Hash)),
     {reply, erlmachine:success(Rel), State#state{ hash = Rotated }};
 
 handle_call(_Request, _From, State) ->

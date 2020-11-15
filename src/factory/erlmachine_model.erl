@@ -8,8 +8,7 @@
          name/1, name/2,
          options/1, options/2,
          model_no/1, model_no/2,
-         prototype/1, prototype/2, 
-         digest/1, digest/2
+         prototype/1, prototype/2
         ]).
 
 -include("erlmachine_system.hrl").
@@ -41,8 +40,8 @@ model() ->
 model(Name, Opt, Prot) ->
     Model = model(),
     Rel = prototype(options(name(Model, Name), Opt), Prot),
-    Digest = base64:encode(erlmachine:digest(Rel)), MN = Digest,
-    model_no(digest(Rel, Digest), MN).
+    MN = erlmachine:base64url(erlmachine:md5(Rel)),
+    model_no(Rel, MN).
 
 -spec prototype(Model::model()) -> prototype().
 prototype(Model) ->
@@ -75,11 +74,3 @@ options(Model) ->
 -spec options(Model::model(), Opt::list()) -> model().
 options(Model, Opt) ->
     Model#model{ options=Opt }.
-
--spec digest(Model::model()) -> binary().
-digest(Model) ->
-    Model#model.digest.
-
--spec digest(Model::model(), Digest::binary()) -> model().
-digest(Model, Digest) ->
-    Model#model{ digest=Digest }.
