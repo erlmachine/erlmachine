@@ -37,7 +37,7 @@
                   success(pid()) | failure(term(), term()).
 install(Assembly) ->
     SN = erlmachine_assembly:serial_no(Assembly),
-    Prot = erlmachine_assembly:prototype(Assembly),
+    Model = erlmachine_assembly:model(Assembly), Prot = erlmachine_model:prototype(Model),
     Opt = erlmachine_prototype:options(Prot),
     Name = erlmachine_prototype:name(Prot),
     Name:prototype_init(SN, Assembly, Opt).
@@ -46,7 +46,7 @@ install(Assembly) ->
                        success().
 uninstall(Assembly) ->
     SN = erlmachine_assembly:serial_no(Assembly),
-    Prot = erlmachine_assembly:prototype(Assembly),
+    Model = erlmachine_assembly:model(Assembly), Prot = erlmachine_model:prototype(Model),
     Name = erlmachine_prototype:name(Prot),
     Name:prototype_terminate(SN).
 
@@ -58,7 +58,7 @@ uninstall(Assembly) ->
                     success().
 rotate(Assembly, Motion, Ext) ->
     SN = erlmachine_assembly:serial_no(Assembly),
-    Prot = erlmachine_assembly:prototype(Assembly),
+    Model = erlmachine_assembly:model(Assembly), Prot = erlmachine_model:prototype(Model),
     Id = erlmachine_assembly:label(Ext),
     Name = erlmachine_prototype:name(Prot),
     Name:prototype_cast(SN, Motion, Id).
@@ -67,7 +67,7 @@ rotate(Assembly, Motion, Ext) ->
                       term() | failure(term(), term()).
 transmit(Assembly, Motion) ->
     SN = erlmachine_assembly:serial_no(Assembly),
-    Prot = erlmachine_assembly:prototype(Assembly),
+    Model = erlmachine_assembly:model(Assembly), Prot = erlmachine_model:prototype(Model),
     Name = erlmachine_prototype:name(Prot),
     Name:prototype_call(SN, Motion).
 

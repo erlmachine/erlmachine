@@ -130,10 +130,9 @@ uninstall(Assembly) ->
 
 -spec init(Assembly::assembly()) -> term().
 init(Assembly) ->
-    Schema = erlmachine_assembly:schema(Assembly),
-
+    Schema = schema(Assembly),
     V = erlmachine_schema:add_vertex(Schema, Assembly),
-    init(Schema, V, erlmachine_assembly:parts(Assembly)).
+    init(Schema, V, extensions(Assembly)).
 
 -spec init(Schema::term(), Label::term(), Parts::list(assembly())) -> 
                   term().

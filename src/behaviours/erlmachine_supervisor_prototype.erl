@@ -39,8 +39,8 @@
                      success(pid()) | failure(term(), term()).
 install(Assembly) ->
     SN = erlmachine_assembly:serial_no(Assembly),
-    Prot = erlmachine_assembly:prototype(Assembly),
-    Exts = [Ext|| Ext <- erlmachine_assembly:parts(Assembly)],
+    Model = erlmachine_assembly:model(Assembly), Prot = erlmachine_model:prototype(Model),
+    Exts = [Ext|| Ext <- erlmachine_assembly:extensions(Assembly)],
     Specs = [spec(Assembly, Ext)|| Ext <- Exts],
     Opts = erlmachine_prototype:options(Prot),
     Name = erlmachine_prototype:name(Prot),
@@ -50,7 +50,7 @@ install(Assembly) ->
                      success(pid()) | failure(term(), term()).
 install(Assembly, Ext) ->
     SN = erlmachine_assembly:serial_no(Assembly),
-    Prot = erlmachine_assembly:prototype(Assembly),
+    Model = erlmachine_assembly:model(Assembly), Prot = erlmachine_model:prototype(Model),
     Spec = spec(Assembly, Ext),
     Name = erlmachine_prototype:name(Prot),
     Name:prototype_start_child(SN, [Assembly, Ext], Spec).
@@ -59,7 +59,7 @@ install(Assembly, Ext) ->
                        failure(term(), term()).
 uninstall(Assembly, Id) ->
     SN = erlmachine_assembly:serial_no(Assembly),
-    Prot = erlmachine_assembly:prototype(Assembly),
+    Model = erlmachine_assembly:model(Assembly), Prot = erlmachine_model:prototype(Model),
     Name = erlmachine_prototype:name(Prot),
     Name:prototype_terminate_child(SN, [Assembly, Id], Id).
 
@@ -67,7 +67,7 @@ uninstall(Assembly, Id) ->
                        success().
 uninstall(Assembly) ->
     SN = erlmachine_assembly:serial_no(Assembly),
-    Prot = erlmachine_assembly:prototype(Assembly),
+    Model = erlmachine_assembly:model(Assembly), Prot = erlmachine_model:prototype(Model),
     Name = erlmachine_prototype:name(Prot),
     Name:prototype_terminate(SN, Assembly).
 

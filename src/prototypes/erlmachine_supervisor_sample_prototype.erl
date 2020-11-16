@@ -1,7 +1,5 @@
 -module(erlmachine_supervisor_sample_prototype).
 
--export([name/0]).
-
 -export([init/1]).
 
 -export([prototype_init/4]).
@@ -14,10 +12,6 @@
 
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
-
--spec name() -> Name::atom().
-name() ->
-    ?MODULE.
 
 -spec format_name(SN::serial_no()) -> 
                          atom().

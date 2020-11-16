@@ -48,7 +48,7 @@ update_counter() ->
 -spec gear(Name::atom(), Opt::term()) -> 
                   assembly().
 gear(Name, Opt) ->
-    ProtName = erlmachine_worker_sample_prototype:name(), ProtOpt = [],
+    ProtName = erlmachine_sample:worker_prototype(), ProtOpt = [],
     gear(Name, Opt, ProtName, ProtOpt).
 
 -spec gear(Name::atom(), Opt::term(), Ext::assembly()) -> 
@@ -71,10 +71,10 @@ gear(Name, Opt, ProtName, ProtOpt, Ext) ->
     Gear = gear(Name, Opt, ProtName, ProtOpt),
     erlmachine_assembly:extensions(Gear, [Ext]).
 
--spec shaft(Name::atom(), Opt::term(), Exts::list()) -> 
+-spec shaft(Name::atom(), Opt::term(), Exts::list()) ->
                   assembly().
 shaft(Name, Opt, Exts) when is_list(Exts) ->
-    ProtName = erlmachine_worker_sample_prototype:name(), ProtOpt = [],
+    ProtName = erlmachine_sample:worker_prototype(), ProtOpt = [],
     shaft(Name, Opt, ProtName, ProtOpt, Exts).
 
 -spec shaft(Name::atom(), Opt::term(), ProtName::atom(), ProtOpt::list(), Exts::list()) ->
@@ -88,7 +88,7 @@ shaft(Name, Opt, ProtName, ProtOpt, Exts) when is_list(Exts) ->
 -spec axle(Name::atom(), Opt::term(), Exts::list()) ->
                    assembly().
 axle(Name, Opt, Exts) when is_list(Exts) ->
-    ProtName = erlmachine_supervisor_sample_prototype:name(), ProtOpt = [],
+    ProtName = erlmachine_sample:supervisor_prototype(), ProtOpt = [],
     axle(Name, Opt, ProtName, ProtOpt, Exts).
 
 -spec axle(Name::atom(), Opt::term(), ProtName::atom(), ProtOpt::list(), Exts::list()) -> 
@@ -104,7 +104,7 @@ axle(Name, Opt, ProtName, ProtOpt, Exts) when is_list(Exts) ->
 -spec gearbox(Name::atom(), Opt::term(), Env::term(), Exts::list()) -> 
                   assembly().
 gearbox(Name, Opt, Env, Exts) when is_list(Exts) ->
-    ProtName = erlmachine_supervisor_sample_prototype:name(), ProtOpt = [],
+    ProtName = erlmachine_sample:supervisor_prototype(), ProtOpt = [],
     gearbox(Name, Opt, ProtName, ProtOpt, Env, Exts).
 
 -spec gearbox(Name::atom(), Opt::term(), ProtName::atom(), ProtOpt::list(), Env::term(), Exts::list()) -> 

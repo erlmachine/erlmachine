@@ -68,7 +68,7 @@ end_per_testcase(_TestCase, _Config) ->
 %% Description: Returns a list of test case group definitions.
 %%--------------------------------------------------------------------
 groups() ->
-    [{conveyor, [], [gear, shaft, axle, gearbox]}].
+    [{catalogue, [shuffle], [gear, shaft, axle, gearbox]}].
 
 %%--------------------------------------------------------------------
 %% Function: all() -> GroupsAndTestCases | {skip,Reason}
@@ -85,7 +85,7 @@ groups() ->
 %%              are to be executed.
 %%--------------------------------------------------------------------
 all() ->
-    [{group, conveyor}].
+    [{group, catalogue}].
 
 
 %%--------------------------------------------------------------------
@@ -111,43 +111,31 @@ gear() ->
 %%              the all/0 list or in a test case group for the test case
 %%              to be executed).
 %%--------------------------------------------------------------------
-gear(Config) ->
-    Model = erlmachine_gear_sample,
-    Gear = erlmachine_factory:gear(Model, []),
-    {ok, Rel} = erlmachine_factory:serial_no(Gear),
-    SN = erlmachine_assembly:serial_no(Rel),
-    true = is_binary(SN),
+gear(_Config) ->
+    Gear = erlmachine_sample:gear(_Opt = []),
+    SN = erlmachine_assembly:serial_no(Gear), true = is_binary(SN),
     {comment, SN}.
 
 shaft() ->
     [].
 
-shaft(Config) ->
-    Model = erlmachine_shaft_sample,
-    Shaft = erlmachine_factory:shaft(Model, [], []),
-    {ok, Rel} = erlmachine_factory:serial_no(Shaft),
-    SN = erlmachine_assembly:serial_no(Rel),
-    true = is_binary(SN),
+shaft(_Config) ->
+    Shaft = erlmachine_sample:shaft(_Opt = [], _Exts = []),
+    SN = erlmachine_assembly:serial_no(Shaft), true = is_binary(SN),
     {comment, SN}.
 
 axle() ->
     [].
 
-axle(Config) ->
-    Model = erlmachine_axle_sample,
-    Axle = erlmachine_factory:axle(Model, [], []),
-    {ok, Rel} = erlmachine_factory:serial_no(Axle),
-    SN = erlmachine_assembly:serial_no(Rel),
-    true = is_binary(SN),
+axle(_Config) ->
+    Axle = erlmachine_sample:axle(_Opt = [], _Exts = []),
+    SN = erlmachine_assembly:serial_no(Axle), true = is_binary(SN),
     {comment, SN}.
 
 gearbox() ->
     [].
 
-gearbox(Config) ->
-    Model = erlmachine_gearbox_sample,
-    Gearbox = erlmachine_factory:gearbox(Model, [], [], []),
-    {ok, Rel} = erlmachine_factory:serial_no(Gearbox),
-    SN = erlmachine_assembly:serial_no(Rel),
-    true = is_binary(SN),
+gearbox(_Config) ->
+    Gearbox = erlmachine_sample:gearbox(_Opt = [], _Env = #{}, _Exts = []),
+    SN = erlmachine_assembly:serial_no(Gearbox), true = is_binary(SN),
     {comment, SN}.
