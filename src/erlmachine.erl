@@ -4,8 +4,12 @@
 
 -export([start/0, stop/0]).
 
+-export([start/1, start/2]).
+
 -export([rotate/3, transmit/3]).
--export([install/1, install/3, uninstall/1, uninstall/3]).
+-export([install/3, uninstall/3]).
+
+-export([stop/1, stop/2]).
 
 -export([motion/2]).
 -export([header/1, header/2, body/1, body/2]).
@@ -25,8 +29,8 @@
 -export([optional_callback/3, optional_callback/4]).
 
 -export([serial_no/1]).
--export([prototype/1]).
--export([label/1]).
+-export([schema/1]).
+-export([label/1, label/2]).
 -export([tags/1]).
 -export([part_no/1]).
 -export([description/1]).
@@ -51,60 +55,70 @@
 
 -type body() :: erlmachine_transmission:body().
 
--type prototype() :: erlmachine_prototype:prototype().
-
 -record(guid, { node::node(), reference::reference(), serial::term() }).
 
 -type guid()::#guid{}.
 
 -export_type([guid/0]).
 
-%% The main purpouse of erlmachine project is to provide a set of well desikgned behaviours which are accompanied with visualization tools as well.
-%%  Erlmachine doesn't restrict your design with the one possible way but instead provide you ability to implement your own components accordingly to your vison.
-%% This ability is available under flexible mechanism of prototypes and overloading (models).
-
 -spec start() -> success().
 start() ->
-    {ok, _} = application:ensure_all_started(erlmachine),
+    {ok, _} = application:ensure_all_started(?MODULE),
     success().
 
 -spec stop() -> success() | failure(Reason :: any()).
 stop() ->
-    application:stop(erlmachine).
+    application:stop(?MODULE).
 
--spec rotate(Schema::assembly(), Label::term(), Motion::term()) ->
+%% The main purpouse of erlmachine project is to provide a set of well desikgned behaviours which are accompanied with visualization tools as well.
+%%  Erlmachine doesn't restrict your design with the one possible way but instead provide you ability to implement your own components accordingly to your vison.
+%% This ability is available under flexible mechanism of prototypes and overloading (models).
+
+-spec start(Schema::assembly()) ->
+                   success(pid()) | ingnore | failure(term()).
+start(Schema) ->
+    start(Schema, 'root').
+
+-spec start(Schema::assembly(), Vertex::term()) ->
+                   success(pid()) | ingnore | failure(term()).
+start(Schema, Vertex) ->
+    Assembly = erlmachine_schema:vertex(Schema, Vertex),
+    erlmachine_transmission:start(Assembly).
+
+-spec rotate(Schema::assembly(), Vertex::term(), Motion::term()) ->
                     term().
-rotate(Schema, Label, Motion) ->
-    Assembly = erlmachine_schema:vertex(Schema, Label),
+rotate(Schema, Vertex, Motion) ->
+    Assembly = erlmachine_schema:vertex(Schema, Vertex),
     erlmachine_transmission:rotate(Assembly, Motion).
 
--spec transmit(Schema::assembly(), Label::term(), Motion::term()) ->
+-spec transmit(Schema::assembly(), Vertex::term(), Motion::term()) ->
                       term().
-transmit(Schema, Label, Motion) ->
-    Assembly = erlmachine_schema:vertex(Schema, Label),
+transmit(Schema, Vertex, Motion) ->
+    Assembly = erlmachine_schema:vertex(Schema, Vertex),
     erlmachine_transmission:transmit(Assembly, Motion).
 
--spec install(GearBox::assembly()) ->
+-spec install(Schema::term(), Vertex::term(), Ext::assembly()) ->
                      success(pid()) | ingnore | failure(term()).
-install(GearBox) ->
-    erlmachine_assembly:install(GearBox).
+install(Schema, Vertex, Ext) ->
+    Assembly = erlmachine_schema:vertex(Schema, Vertex),
+    erlmachine_transmission:install(Assembly, Ext).
 
--spec install(Schema::term(), Label::term(), Ext::assembly()) ->
-                     success(pid()) | ingnore | failure(term()).
-install(Schema, Label, Ext) ->
-    Assembly = erlmachine_schema:vertex(Schema, Label),
-    erlmachine_assembly:install(Assembly, Ext).
-
--spec uninstall(GearBox::assembly()) ->
+-spec uninstall(Schema::term(), Vertex::term(), Id::term()) ->
                        success().
-uninstall(GearBox) ->
-    erlmachine_assembly:uninstall(GearBox).
+uninstall(Schema, Vertex, Id) ->
+    Assembly = erlmachine_schema:vertex(Schema, Vertex),
+    erlmachine_transmission:uninstall(Assembly, Id).
 
--spec uninstall(Schema::term(), Label::term(), Id::term()) ->
+-spec stop(Schema::assembly()) ->
                        success().
-uninstall(Schema, Label, Id) ->
-    Assembly = erlmachine_schema:vertex(Schema, Label),
-    erlmachine_assembly:uninstall(Assembly, Id).
+stop(Schema) ->
+    stop(Schema, 'root').
+
+-spec stop(Schema::assembly(), Vertex::term()) ->
+                  success().
+stop(Schema, Vertex) ->
+    Assembly = erlmachine_schema:vertex(Schema, Vertex),
+    erlmachine_transmission:stop(Assembly).
 
 -spec motion(Header::header(), Body::body()) -> motion().
 motion(Header, Body) ->
@@ -244,14 +258,17 @@ optional_callback(Mod, Fun, Args, Def) ->
 serial_no(Assembly) ->
     erlmachine_assembly:serial_no(Assembly).
 
--spec prototype(Assembly::assembly()) -> prototype().
-prototype(Assembly) ->
-    Model = erlmachine_assembly:model(Assembly),
-    erlmachine_model:prototype(Model).
+-spec schema(Assembly::assembly()) -> term().
+schema(Assembly) ->
+    erlmachine_assembly:schema(Assembly).
 
 -spec label(Assembly::assembly()) -> term().
 label(Assembly) ->
     erlmachine_assembly:label(Assembly).
+
+-spec label(Assembly::assembly(), Label::term()) -> assembly().
+label(Assembly, Label) ->
+    erlmachine_assembly:label(Assembly, Label).
 
 -spec tags(Assembly::assembly()) -> list(). 
 tags(Assembly) ->
@@ -290,6 +307,10 @@ base64url(N) when is_binary(N) ->
     Base64Url = [fun($+) -> <<"-">>; ($/) -> <<"_">>; (C) -> <<C>> end(Char)|| <<Char>> <= Base64],
     << <<X/binary>> || X <- Base64Url >>.
 
+-spec timestamp() -> integer().
+timestamp() ->
+    erlang:system_time(seconds).
+
 -spec tag(Assembly::assembly(), Tag::term()) -> assembly().
 tag(Assembly, Tag) ->
     Tags = erlmachine_assembly:tags(Assembly),
@@ -299,7 +320,3 @@ tag(Assembly, Tag) ->
 untag(Assembly, Tag) ->
     Tags = erlmachine_assembly:tags(Assembly),
     erlmachine_assembly:tags(Assembly, lists:delete(Tag, Tags)).
-
--spec timestamp() -> integer().
-timestamp() ->
-    erlang:system_time(seconds).

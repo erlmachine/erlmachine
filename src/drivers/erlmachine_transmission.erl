@@ -5,6 +5,7 @@
 %% NOTE: The transmission based design:
 %% 1) Each gearbox has topology with it's own exectution context and routes vocabulary;
 %% 2) The data structure for incomming messages routes is based on graph;
+%% 3) The transmission has responsibility to manage the schema;
 
 %% TODO: To supply topology visualization in admin panel (errors, message history, throughput);
 %% TODO: To supply message history in headers:
@@ -21,11 +22,16 @@
          code_change/3
         ]).
 
+-export([start/1, start/2]).
+
+-export([install/2, uninstall/2]).
 -export([rotate/2, transmit/2]).
 
 -export([motion/2]).
 -export([header/1, header/2]).
 -export([body/1, body/2]).
+
+-export([stop/1]).
 
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
@@ -37,6 +43,49 @@
 -type body() :: term().
 
 -export_type([motion/0, header/0, body/0]).
+
+%% NOTE: To operate only via schema;
+%% Schema has to be extracted and managed by independent way;
+%% To be able to manage topology you have to store it;
+
+-spec start(Assembly::assembly()) -> 
+                   success(pid()) | failure(term(), term()).
+start(Assembly) ->
+    Schema = erlmachine_schema:new(),
+    start(Schema, Assembly).
+
+-spec start(Schema::term(), Assembly::assembly()) ->
+                     success(pid()) | failure(term(), term()).
+start(Schema, Assembly) ->
+    Rel = erlmachine_assembly:schema(Assembly, Schema),
+    Name = erlmachine_assembly:name(Rel),
+    try
+        {ok, Pid} = Name:start(Rel), true = is_pid(Pid),
+        schema(Schema, Rel),
+        erlmachine:success(Pid)
+    catch E:R ->
+            erlmachine:failure(E, R)
+    end.
+
+-spec install(Assembly::assembly(), Ext::assembly()) -> 
+                     success(pid()) | failure(term(), term()).
+install(Assembly, Ext) ->
+    Name = erlmachine_assembly:name(Assembly), 
+    Label = erlmachine_assembly:label(Assembly),
+    try
+        {ok, Pid} = Name:install(Assembly, Ext), true = is_pid(Pid),
+        erlmachine_schema:add_edge(Assembly, Label, Ext),
+        erlmachine:success(Pid)
+    catch E:R ->
+            erlmachine:failure(E, R)
+    end.
+
+-spec uninstall(Assembly::assembly(), Id::term()) -> 
+                       success().
+uninstall(Assembly, Id) ->
+    Name = erlmachine_assembly:name(Assembly),
+    ok = Name:uninstall(Assembly, Id),
+    ok = erlmachine_schema:del_vertex(Assembly, Id).
 
 %% TODO: To make via prototype call;
 -spec rotate(Assembly::assembly(), Motion::term()) -> 
@@ -66,6 +115,14 @@ transmit(Assembly, Motion) ->
     catch E:R ->
             erlmachine:failure(E, R) 
     end.
+
+-spec stop(Assembly::assembly()) ->
+                       success().
+stop(Assembly) ->
+    Name = erlmachine_assembly:name(Assembly), 
+    Label = erlmachine_assembly:label(Assembly),
+    ok = Name:stop(Assembly),
+    ok = erlmachine_schema:del_vertex(Assembly, Label).
 
 -record(state, {
 }).
@@ -131,3 +188,22 @@ terminate(_Reason, _State) ->
 
 code_change(_OldVsn, State, _Extra) ->
 	{ok, State}.
+
+%%%===================================================================
+%%% schema access
+%%%===================================================================
+
+-spec schema(Schema::term(), Assembly::assembly()) -> term().
+schema(Schema, Assembly) ->
+    V = erlmachine_schema:add_vertex(Schema, Assembly),
+    Exts = erlmachine_assembly:extensions(Assembly),
+    schema(Schema, V, Exts).
+
+-spec schema(Schema::term(), Label::term(), Exts::list(assembly())) -> 
+                  term().
+schema(Schema, _Label, []) ->
+    Schema;
+schema(Schema, Label, [Assembly|T]) ->
+    Exts = erlmachine_assembly:extensions(Assembly),
+    schema(Schema, erlmachine_schema:add_edge(Schema, Label, Assembly), Exts),
+    schema(Schema, Label, T).

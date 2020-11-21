@@ -2,10 +2,7 @@
 
 %% API.
 
--export([assembly/0, assembly/3, assembly/5]).
-
--export([install/1, install/2]).
--export([uninstall/1, uninstall/2]).
+-export([assembly/0, assembly/3, assembly/4]).
 
 -export([
          serial_no/1, serial_no/2,
@@ -80,72 +77,11 @@ assembly(Name, Body, Model) ->
     Assembly = body(assembly(), Body),
     name(model(Assembly, Model), Name).
 
--spec assembly(Name::atom(), Schema::term(), Body::term(), Model::model(), Env::term()) -> 
+-spec assembly(Name::atom(), Body::term(), Model::model(), Env::term()) -> 
                       assembly().
-assembly(Name, Schema, Body, Model, Env) ->
+assembly(Name, Body, Model, Env) ->
     Assembly = assembly(Name, Body, Model),
-    schema(env(Assembly, Env), Schema).
-
-%% NOTE: To operate only via schema;
-%% Schema has to be extracted and managed by independent way;
-%% To be able to manage topology you have to store it;
-
--spec install(Assembly::assembly()) ->
-                     success(pid()) | failure(term(), term()).
-install(Assembly) ->
-    Name = name(Assembly),
-    try
-        {ok, Pid} = Name:install(Assembly), true = is_pid(Pid),
-        init(Assembly),
-        erlmachine:success(Pid)
-    catch E:R ->
-            erlmachine:failure(E, R)
-    end.
-
--spec install(Assembly::assembly(), Ext::assembly()) -> 
-                     success(pid()) | failure(term(), term()).
-install(Assembly, Ext) ->
-    Name = name(Assembly), Label = label(Assembly),
-    try
-        {ok, Pid} = Name:install(Assembly, Ext), true = is_pid(Pid),
-        erlmachine_schema:add_edge(Assembly, Label, Ext),
-        erlmachine:success(Pid)
-    catch E:R ->
-            erlmachine:failure(E, R)
-    end.
-
--spec uninstall(Assembly::assembly(), Id::term()) -> 
-                       success().
-uninstall(Assembly, Id) ->
-    Name = name(Assembly),
-    ok = Name:uninstall(Assembly, Id),
-    ok = erlmachine_schema:del_vertex(Assembly, Id).
-
--spec uninstall(Assembly::assembly()) ->
-                       success().
-uninstall(Assembly) ->
-    Name = name(Assembly), Label = label(Assembly),
-    ok = Name:uninstall(Assembly),
-    ok = erlmachine_schema:del_vertex(Assembly, Label).
-
--spec init(Assembly::assembly()) -> term().
-init(Assembly) ->
-    Schema = schema(Assembly),
-    V = erlmachine_schema:add_vertex(Schema, Assembly),
-    init(Schema, V, extensions(Assembly)).
-
--spec init(Schema::term(), Label::term(), Parts::list(assembly())) -> 
-                  term().
-init(_Schema, Label, []) ->
-    Label;
-init(Schema, Label, [Part|T]) ->
-    init(Schema, erlmachine_schema:add_edge(Schema, Label, Part), erlmachine_assembly:parts(Part)),
-    init(Schema, Label, T),
-    Label.
-
-%%%===================================================================
-%%% Access API
-%%%===================================================================
+    env(Assembly, Env).
 
 -spec serial_no(Assembly::assembly()) -> serial_no().
 serial_no(Assembly) ->

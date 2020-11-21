@@ -18,7 +18,7 @@
 format_name(SN) ->
     erlang:binary_to_atom(SN, latin1).
 
--record(install, { specs::[map()], opts::[] }).
+-record(init, { specs::[map()], opts::[] }).
 
 %%%===================================================================
 %%%  erlmachine_supervisor_prototype behaviour
@@ -27,7 +27,7 @@ format_name(SN) ->
 -spec prototype_init(SN::serial_no(), Context::term(), Specs::list(map()), Opts::list()) ->
                             success(pid()) | failure(term(), term()).
 prototype_init(SN, Context, Specs, Opts) ->
-    Com = #install{ specs=Specs, opts=Opts },
+    Com = #init{ specs=Specs, opts=Opts },
     ok = erlmachine_supervisor_prototype:init(Context),
     supervisor:start_link({local, format_name(SN)}, ?MODULE, Com).
 
@@ -55,7 +55,7 @@ prototype_terminate(SN, Context) ->
 %%%  supervisor behaviour
 %%%===================================================================
 
-init(#install{ specs=Specs, opts=Opts }) ->
+init(#init{ specs=Specs, opts=Opts }) ->
     Strategy = proplists:get_value(strategy, Opts, one_for_one),
     Int = proplists:get_value(intensity, Opts, 1),
     Per = proplists:get_value(period, Opts, 5),

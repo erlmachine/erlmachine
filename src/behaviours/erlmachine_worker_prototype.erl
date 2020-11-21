@@ -10,7 +10,10 @@
 
 %% NOTE: Worker prototype concerns: overloading, error handling, capacity management, etc..
 
--export([install/1, rotate/3, transmit/2, uninstall/1]).
+-export([start/1]).
+-export([rotate/3, transmit/2]).
+-export([stop/1]).
+
 -export([init/1, call/2, cast/3, terminate/1]).
 
 -include("erlmachine_factory.hrl").
@@ -30,29 +33,25 @@
     success().
 
 %%%===================================================================
-%%%  Assembly API layer
+%%%  Transmission API
 %%%===================================================================
 
--spec install(Assembly::assembly()) ->
+-spec start(Assembly::assembly()) ->
                   success(pid()) | failure(term(), term()).
-install(Assembly) ->
+start(Assembly) ->
     SN = erlmachine_assembly:serial_no(Assembly),
     Model = erlmachine_assembly:model(Assembly), Prot = erlmachine_model:prototype(Model),
     Opt = erlmachine_prototype:options(Prot),
     Name = erlmachine_prototype:name(Prot),
     Name:prototype_init(SN, Assembly, Opt).
 
--spec uninstall(Assembly::assembly()) ->
+-spec stop(Assembly::assembly()) ->
                        success().
-uninstall(Assembly) ->
+stop(Assembly) ->
     SN = erlmachine_assembly:serial_no(Assembly),
     Model = erlmachine_assembly:model(Assembly), Prot = erlmachine_model:prototype(Model),
     Name = erlmachine_prototype:name(Prot),
     Name:prototype_terminate(SN).
-
-%%%===================================================================
-%%%  Transmission API layer
-%%%===================================================================
 
 -spec rotate(Assembly::assembly(), Motion::term(), Ext::assembly()) -> 
                     success().
@@ -72,7 +71,7 @@ transmit(Assembly, Motion) ->
     Name:prototype_call(SN, Motion).
 
 %%%===================================================================
-%%% Prototype API layer
+%%% Prototype API
 %%%===================================================================
 
 -spec init(Context::assembly()) -> 

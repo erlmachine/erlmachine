@@ -5,11 +5,12 @@
 %% This module is the main container around the whole transmission;
 %% The gearbox is divided on so called stages;
 %% NOTE Only process (driver) that created gearbox is allowed to manage internal schema;
+%% NOTE: GearBox is labeled by 'root' by default;
 
 %% That's all very similar to the modern orchestration approach like k8s, swarm, etc..
 %% Where each contained assembly represensts microservice and gearbox acts as orchestration env;
 
--export([gearbox/3]).
+-export([gearbox/2]).
 
 -export([install/1, install/2, uninstall/1, uninstall/2]).
 
@@ -21,12 +22,12 @@
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
 
--spec gearbox(Schema::term(), Model::model(), Env::term()) -> assembly().
-gearbox(Schema, Model, Env) ->
+-spec gearbox(Model::model(), Env::term()) -> assembly().
+gearbox(Model, Env) ->
     %% TODO: To support Body by additional metadata;
     Body = [],
-    Assembly = erlmachine_assembly:assembly(?MODULE, Schema, Body, Model, Env),
-    erlmachine:tag(Assembly, type()).
+    Assembly = erlmachine_assembly:assembly(?MODULE, Body, Model, Env),
+    erlmachine:label(erlmachine:tag(Assembly, type()), 'root').
 
 -spec install(GearBox::assembly()) ->
                      success(pid()) | failure(term(), term()).

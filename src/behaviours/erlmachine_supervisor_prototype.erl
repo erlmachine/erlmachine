@@ -11,7 +11,10 @@
 %% a) To simplify context for network transmission;
 %% b) To gather statistics into graph;
 
--export([install/1, install/2, uninstall/1, uninstall/2]).
+-export([start/1]).
+-export([install/2, uninstall/2]).
+-export([stop/1]).
+
 -export([init/1, start_child/1, terminate_child/1, terminate/1]).
 
 -include("erlmachine_factory.hrl").
@@ -27,17 +30,16 @@
 -callback prototype_terminate_child(SN::serial_no(), Context::assembly(), Id::term()) ->
     success().
 
-%% Assembly::assembly(), Reason::term()
 -callback prototype_terminate(SN::serial_no(), Context::assembly()) ->
     success().
 
 %%%===================================================================
-%%%  Assembly API layer
+%%%  Transmission API
 %%%===================================================================
 
--spec install(Assembly::assembly()) ->
+-spec start(Assembly::assembly()) ->
                      success(pid()) | failure(term(), term()).
-install(Assembly) ->
+start(Assembly) ->
     SN = erlmachine_assembly:serial_no(Assembly),
     Model = erlmachine_assembly:model(Assembly), Prot = erlmachine_model:prototype(Model),
     Exts = [Ext|| Ext <- erlmachine_assembly:extensions(Assembly)],
@@ -63,9 +65,9 @@ uninstall(Assembly, Id) ->
     Name = erlmachine_prototype:name(Prot),
     Name:prototype_terminate_child(SN, [Assembly, Id], Id).
 
--spec uninstall(Assembly::assembly()) ->
+-spec stop(Assembly::assembly()) ->
                        success().
-uninstall(Assembly) ->
+stop(Assembly) ->
     SN = erlmachine_assembly:serial_no(Assembly),
     Model = erlmachine_assembly:model(Assembly), Prot = erlmachine_model:prototype(Model),
     Name = erlmachine_prototype:name(Prot),
@@ -91,7 +93,7 @@ spec(Assembly, Ext) ->
      }.
 
 %%%===================================================================
-%%% Prototype API layer
+%%% Prototype API
 %%%===================================================================
 
 -spec init(Context::term()) -> 

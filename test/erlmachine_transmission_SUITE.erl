@@ -1,12 +1,17 @@
 -module(erlmachine_transmission_SUITE).
 
 -export([suite/0]).
+
 -export([init_per_suite/1, end_per_suite/1]).
 -export([init_per_group/2, end_per_group/2]).
 -export([init_per_testcase/2, end_per_testcase/2]).
 -export([groups/0]).
+
 -export([all/0]).
--export([my_test_case/0, my_test_case/1]).
+
+-export([install/0, install/1]).
+-export([uninstall/0, uninstall/1]).
+-export([stop/0, stop/1]).
 
  -include_lib("common_test/include/ct.hrl").
 
@@ -15,13 +20,27 @@
 %%--------------------------------------------------------------------
 
 suite() -> 
-    [{timetrap,{minutes,10}}].
+    [{timetrap,{minutes,1}}].
 
 init_per_suite(Config) ->
-    Config.
+    Nodes = [node()],
+    mnesia:create_schema(Nodes), ok = mnesia:start(),
+    ok = mnesia:wait_for_tables([erlmachine_factory:tabname()], 1000),
+    {ok, _} = erlmachine_factory:start(),
 
-end_per_suite(_Config) ->
-    ok.
+    Gear = erlmachine_sample:gear([]),
+    Opt = [],
+    Env = #{},
+    Exts = [Gear],
+    GearBox = erlmachine_sample:gearbox(Opt, Env, Exts),
+    {ok, Pid} = erlmachine_sample:start(GearBox),
+
+    Setup = [{pid, Pid}],
+    lists:concat([Setup, Config]).
+
+end_per_suite(Config) ->
+    mnesia:stop(),
+    ok = erlmachine_factory:stop().
 
 init_per_group(_GroupName, Config) ->
     Config.
@@ -57,7 +76,7 @@ end_per_testcase(_TestCase, _Config) ->
 %% Description: Returns a list of test case group definitions.
 %%--------------------------------------------------------------------
 groups() ->
-    [].
+    [{sample, [sequence], [install, uninstall, stop]}].
 
 %%--------------------------------------------------------------------
 %% Function: all() -> GroupsAndTestCases | {skip,Reason}
@@ -74,14 +93,13 @@ groups() ->
 %%              are to be executed.
 %%--------------------------------------------------------------------
 all() ->
-    [my_test_case].
-
+    [{group, sample}].
 
 %%--------------------------------------------------------------------
 %% TEST CASES
 %%--------------------------------------------------------------------
 
-my_test_case() ->
+start() ->
     [].
 
 %%--------------------------------------------------------------------
@@ -100,5 +118,24 @@ my_test_case() ->
 %%              the all/0 list or in a test case group for the test case
 %%              to be executed).
 %%--------------------------------------------------------------------
-my_test_case(_Config) ->
+install() ->
+    [].
+
+install(Config) ->
+    SN = ?config(serial_no, Config),
+    Ext = ?config(extension, Config),
+    erlmachine_sample:install(SN, 'root', Ext),
     ok.
+
+uninstall() ->
+    [].
+
+uninstall(_Config) ->
+    ok.
+
+stop() ->
+    [].
+
+stop(Config) ->
+    Pid = ?config(pid, Config),
+    ok = erlmachine_sample:stop(Pid).

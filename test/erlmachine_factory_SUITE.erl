@@ -1,5 +1,5 @@
 -module(erlmachine_factory_SUITE).
-
+%% NOTE: The suite is also responsible for production capacity measurements;
 -export([suite/0]).
 
 -export([init_per_suite/1, end_per_suite/1]).

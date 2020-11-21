@@ -10,6 +10,6 @@
   {applications,[kernel, stdlib]},
   {env,[]},
   {mod,{application_starter,[erlmachine_app,[]]}},
-  {start_phases,[]},
+  {start_phases,[{wait_for_tables, 1000}]},
   {runtime_dependencies,[]}
  ]}.
