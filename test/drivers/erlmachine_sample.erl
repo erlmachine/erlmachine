@@ -20,8 +20,6 @@
 -export([axle/2]).
 -export([gearbox/3]).
 
--export([supervisor_prototype/0, worker_prototype/0]).
-
 -include("erlmachine_factory.hrl").
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
@@ -114,8 +112,3 @@ gearbox(Opt, Env, Exts) ->
     Model = erlmachine_gearbox_sample,
     erlmachine_factory:gearbox(Model, Opt, Env, Exts).
 
-supervisor_prototype() ->
-    erlmachine_supervisor_sample_prototype.
-
-worker_prototype() ->
-    erlmachine_worker_sample_prototype.

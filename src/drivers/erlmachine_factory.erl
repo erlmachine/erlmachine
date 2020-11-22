@@ -112,7 +112,7 @@ terminate(_Reason, _State) ->
 -spec gear(ModelName::atom(), ModelOpt::term()) -> 
                   assembly().
 gear(ModelName, ModelOpt) ->
-    ProtName = erlmachine_sample:worker_prototype(), ProtOpt = [],
+    ProtName = erlmachine_prototype:worker(), ProtOpt = [],
     gear(ModelName, ModelOpt, ProtName, ProtOpt).
 
 -spec gear(ModelName::atom(), ModelOpt::term(), Ext::assembly()) -> 
@@ -138,7 +138,7 @@ gear(ModelName, ModelOpt, ProtName, ProtOpt, Ext) ->
 -spec shaft(ModelName::atom(), ModelOpt::term(), Exts::list()) ->
                   assembly().
 shaft(ModelName, ModelOpt, Exts) when is_list(Exts) ->
-    ProtName = erlmachine_sample:worker_prototype(), ProtOpt = [],
+    ProtName = erlmachine_prototype:worker(), ProtOpt = [],
     shaft(ModelName, ModelOpt, ProtName, ProtOpt, Exts).
 
 -spec shaft(ModelName::atom(), ModelOpt::term(), ProtName::atom(), ProtOpt::list(), Exts::list()) ->
@@ -152,7 +152,7 @@ shaft(ModelName, ModelOpt, ProtName, ProtOpt, Exts) when is_list(Exts) ->
 -spec axle(ModelName::atom(), ModelOpt::term(), Exts::list()) ->
                    assembly().
 axle(ModelName, ModelOpt, Exts) when is_list(Exts) ->
-    ProtName = erlmachine_sample:supervisor_prototype(), ProtOpt = [],
+    ProtName = erlmachine_prototype:supervisor(), ProtOpt = [],
     axle(ModelName, ModelOpt, ProtName, ProtOpt, Exts).
 
 -spec axle(ModelName::atom(), ModelOpt::term(), ProtName::atom(), ProtOpt::list(), Exts::list()) -> 
@@ -168,7 +168,7 @@ axle(ModelName, ModelOpt, ProtName, ProtOpt, Exts) when is_list(Exts) ->
 -spec gearbox(ModelName::atom(), ModelOpt::term(), Env::term(), Exts::list()) -> 
                   assembly().
 gearbox(ModelName, ModelOpt, Env, Exts) when is_list(Exts) ->
-    ProtName = erlmachine_sample:supervisor_prototype(), ProtOpt = [],
+    ProtName = erlmachine_prototype:supervisor(), ProtOpt = [],
     gearbox(ModelName, ModelOpt, ProtName, ProtOpt, Env, Exts).
 
 -spec gearbox(ModelName::atom(), ModelOpt::term(), ProtName::atom(), ProtOpt::list(), Env::term(), Exts::list()) -> 

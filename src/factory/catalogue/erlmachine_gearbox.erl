@@ -12,7 +12,9 @@
 
 -export([gearbox/2]).
 
--export([install/1, install/2, uninstall/1, uninstall/2]).
+-export([start/1]).
+-export([install/2, uninstall/2]).
+-export([stop/1]).
 
 -export([type/0]).
 -export([prefix/0]).
@@ -29,10 +31,10 @@ gearbox(Model, Env) ->
     Assembly = erlmachine_assembly:assembly(?MODULE, Body, Model, Env),
     erlmachine:label(erlmachine:tag(Assembly, type()), 'root').
 
--spec install(GearBox::assembly()) ->
+-spec start(GearBox::assembly()) ->
                      success(pid()) | failure(term(), term()).
-install(GearBox) ->
-    erlmachine_supervisor_prototype:install(GearBox).
+start(GearBox) ->
+    erlmachine_supervisor_prototype:start(GearBox).
 
 -spec install(GearBox::assembly(), Ext::assembly()) ->
                      success(pid()) | failure(term(), term()).
@@ -44,10 +46,10 @@ install(GearBox, Ext) ->
 uninstall(Assembly, Id) ->
     erlmachine_supervisor_prototype:uninstall(Assembly, Id).
 
--spec uninstall(GearBox::assembly()) -> 
+-spec stop(GearBox::assembly()) -> 
                        success().
-uninstall(GearBox) ->
-    erlmachine_supervisor_prototype:uninstall(GearBox).
+stop(GearBox) ->
+    erlmachine_supervisor_prototype:stop(GearBox).
 
 -spec type() -> atom().
 type() ->

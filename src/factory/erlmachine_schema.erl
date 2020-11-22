@@ -6,6 +6,8 @@
 
 -export([new/0]).
 
+-export([vertex/2]).
+
 -export([add_edge/4]).
 -export([add_vertex/2, del_vertex/2]).
 -export([in_edges/2, out_edges/2]).

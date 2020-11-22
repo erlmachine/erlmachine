@@ -3,7 +3,9 @@
 %% Axle is a component which is responsible for monitoring of the placed transmission parts;
 -export([axle/1]).
 
--export([install/1, install/2, uninstall/1, uninstall/2]).
+-export([start/1]).
+-export([install/2, uninstall/2]).
+-export([stop/1]).
 
 -export([type/0]).
 -export([prefix/0]).
@@ -20,10 +22,10 @@ axle(Model) ->
     Assembly = erlmachine_assembly:assembly(?MODULE, Body, Model),
     erlmachine:tag(Assembly, type()).
 
--spec install(Axle::assembly()) -> 
+-spec start(Axle::assembly()) -> 
                      success(pid()) | failure(term(), term()).
-install(Axle) ->
-    erlmachine_supervisor_prototype:install(Axle).
+start(Axle) ->
+    erlmachine_supervisor_prototype:start(Axle).
 
 -spec install(Axle::assembly(), Ext::assembly()) ->
                     success(pid()) | failure(term(), term()).
@@ -35,10 +37,10 @@ install(Axle, Ext) ->
 uninstall(Axle, Id) ->
     erlmachine_supervisor_prototype:uninstall(Axle, Id).
 
--spec uninstall(Axle::assembly()) -> 
+-spec stop(Axle::assembly()) -> 
                        success().
-uninstall(Axle) ->
-    erlmachine_supervisor_prototype:uninstall(Axle).
+stop(Axle) ->
+    erlmachine_supervisor_prototype:stop(Axle).
 
 -spec type() -> atom().
 type() ->

@@ -52,12 +52,14 @@
                    success(pid()) | failure(term(), term()).
 start(Assembly) ->
     Schema = erlmachine_schema:new(),
+
     start(Schema, Assembly).
 
 -spec start(Schema::term(), Assembly::assembly()) ->
                      success(pid()) | failure(term(), term()).
 start(Schema, Assembly) ->
     Rel = erlmachine_assembly:schema(Assembly, Schema),
+
     Name = erlmachine_assembly:name(Rel),
     try
         {ok, Pid} = Name:start(Rel), true = is_pid(Pid),
@@ -70,34 +72,44 @@ start(Schema, Assembly) ->
 -spec install(Assembly::assembly(), Ext::assembly()) -> 
                      success(pid()) | failure(term(), term()).
 install(Assembly, Ext) ->
-    Name = erlmachine_assembly:name(Assembly), 
-    Label = erlmachine_assembly:label(Assembly),
+    install(Assembly, Ext, []).
+
+-spec install(Assembly::assembly(), Ext::assembly(), Label::term()) -> 
+                     success(pid()) | failure(term(), term()).
+install(Assembly, Ext, Label) ->
+    Schema = erlmachine_assembly:schema(Assembly),
+
+    Name = erlmachine_assembly:name(Assembly),
+    Vertex = erlmachine_assembly:label(Assembly),
     try
         {ok, Pid} = Name:install(Assembly, Ext), true = is_pid(Pid),
-        erlmachine_schema:add_edge(Assembly, Label, Ext),
+        erlmachine_schema:add_edge(Schema, Vertex, Ext, Label),
         erlmachine:success(Pid)
     catch E:R ->
             erlmachine:failure(E, R)
     end.
 
--spec uninstall(Assembly::assembly(), Id::term()) -> 
+-spec uninstall(Assembly::assembly(), Vertex::term()) -> 
                        success().
-uninstall(Assembly, Id) ->
+uninstall(Assembly, Vertex) ->
+    Schema = erlmachine_assembly:schema(Assembly),
+
     Name = erlmachine_assembly:name(Assembly),
-    ok = Name:uninstall(Assembly, Id),
-    ok = erlmachine_schema:del_vertex(Assembly, Id).
+    ok = Name:uninstall(Assembly, Vertex),
+    ok = erlmachine_schema:del_vertex(Schema, Vertex).
 
 %% TODO: To make via prototype call;
 -spec rotate(Assembly::assembly(), Motion::term()) -> 
                     success() | failure(term(), term()).
 rotate(Assembly, Motion) -> 
+    Schema = erlmachine_assembly:schema(Assembly),
+
     Name = erlmachine_assembly:name(Assembly),
     try
         %% There is a place where statistics can be gathered;
         %% TODO: To extract neighbor extenions list and to rotate them by passing the result through socket;
-        Schema = erlmachine_assembly:schema(Assembly),
-        Label = erlmachine_assembly:label(Assembly),
-        Exts = [Ext|| {_, Ext} <- erlmachine_schema:out_edges(Schema, Label)],
+        Vertex = erlmachine_assembly:label(Assembly),
+        Exts = [Ext|| {_, Ext} <- erlmachine_schema:out_edges(Schema, Vertex)],
         [Name:rotate(Assembly, Motion, Ext) || Ext <- Exts],
         erlmachine:success()
     catch E:R ->
@@ -119,10 +131,14 @@ transmit(Assembly, Motion) ->
 -spec stop(Assembly::assembly()) ->
                        success().
 stop(Assembly) ->
-    Name = erlmachine_assembly:name(Assembly), 
-    Label = erlmachine_assembly:label(Assembly),
+    Schema = erlmachine_assembly:schema(Assembly),
+
+    Name = erlmachine_assembly:name(Assembly),
+    Vertex = erlmachine_assembly:label(Assembly),
     ok = Name:stop(Assembly),
-    ok = erlmachine_schema:del_vertex(Assembly, Label).
+    ok = erlmachine_schema:del_vertex(Schema, Vertex).
+
+%% TODO: To supply mesh/unmesh calls with Edge label args;
 
 -record(state, {
 }).

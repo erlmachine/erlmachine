@@ -5,7 +5,9 @@
 
 -export([gear/1]).
 
--export([install/1, rotate/3, transmit/2, uninstall/1]).
+-export([start/1]).
+-export([rotate/3, transmit/2]).
+-export([stop/1]).
 
 -export([type/0]).
 -export([prefix/0]).
@@ -22,10 +24,10 @@ gear(Model) ->
     Assembly = erlmachine_assembly:assembly(?MODULE, Body, Model),
     erlmachine:tag(Assembly, type()).
 
--spec install(Gear::assembly()) -> 
+-spec start(Gear::assembly()) -> 
                      success(pid()) | failure(term(), term()).
-install(Gear) ->
-    erlmachine_worker_prototype:install(Gear).
+start(Gear) ->
+    erlmachine_worker_prototype:start(Gear).
 
 -spec rotate(Gear::assembly(), Motion::term(), Ext::assembly()) ->
                     success().
@@ -37,10 +39,10 @@ rotate(Gear, Motion, Ext) ->
 transmit(Gear, Motion) ->
     erlmachine_worker_prototype:transmit(Gear, Motion).
 
--spec uninstall(Gear::assembly()) -> 
+-spec stop(Gear::assembly()) -> 
                        success().
-uninstall(Gear) ->
-    erlmachine_worker_prototype:uninstall(Gear).
+stop(Gear) ->
+    erlmachine_worker_prototype:stop(Gear).
 
 -spec type() -> atom().
 type() ->

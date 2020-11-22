@@ -28,11 +28,8 @@ init_per_suite(Config) ->
     ok = mnesia:wait_for_tables([erlmachine_factory:tabname()], 1000),
     {ok, _} = erlmachine_factory:start(),
 
-    Gear = erlmachine_sample:gear([]),
-    Opt = [],
-    Env = #{},
-    Exts = [Gear],
-    GearBox = erlmachine_sample:gearbox(Opt, Env, Exts),
+    Gear = erlmachine_sample:axle(_Opt = [], _Exts = []),
+    GearBox = erlmachine_sample:gearbox(_Opt = [], _Env = #{}, _Exts = []),
     {ok, Pid} = erlmachine_sample:start(GearBox),
 
     Setup = [{pid, Pid}],
@@ -122,9 +119,9 @@ install() ->
     [].
 
 install(Config) ->
-    SN = ?config(serial_no, Config),
-    Ext = ?config(extension, Config),
-    erlmachine_sample:install(SN, 'root', Ext),
+    Pid = ?config(pid, Config),
+    Ext = erlmachine_sample:gear([]),
+    {ok, _} = erlmachine_sample:install(Pid, 'root', Ext),
     ok.
 
 uninstall() ->
