@@ -1,0 +1,39 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Datasheet",
+    "description": "A document that summarizes characteristics of an extension",
+    "type": "object",
+    "properties":{
+        "serial_no":{
+            "type": "string"
+        },
+        "name":{
+            "type": "string",
+            "enum": [ "erlmachine_gearbox", "erlmachine_gear", "erlmachine_shaft", "erlmachine_axle" ],
+            "description": "Product type"
+        },
+        "body":{
+            "type": [ "object", "array" ],
+            "description": "The initial state of the extension"
+        },
+        "socket":{
+            "description": ""
+        },
+        "model":{
+
+        },
+        "extensions":{
+            "type": "array"
+        },
+        "tags":{
+            "type": "array"
+        },
+        "label":{
+        },
+        "part_no":{
+        },
+        "desc":{
+            "type": "string"
+        }
+    }
+}

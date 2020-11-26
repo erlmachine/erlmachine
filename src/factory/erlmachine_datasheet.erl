@@ -1,4 +1,9 @@
 -module(erlmachine_datasheet).
+%% We assume that this module can provide additional set of tools:
+%% 1) Navigation over document;
+%% 2) Validate document structure;
+
+%% NOTE: The module is validated via https://json-schema.org
 
 %% API.
 -export([datasheet/1]).
@@ -9,10 +14,6 @@
 -export([axle/1, axle/2]).
 -export([gearbox/2, gearbox/3]).
 
-%% We assume that this module can provide additional set of tools:
-%% 1) Navigation over document;
-%% 2) Validate document structure;
-
 -type datasheet() :: list().
 -type path() :: list().
 
@@ -22,7 +23,7 @@
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
 
-
+%% TODO: To make validation via https://json-schema.org;
 -spec is_datasheet(Term::term()) -> boolean().
 is_datasheet(Term) ->
     %% TODO: To provide semantics check;

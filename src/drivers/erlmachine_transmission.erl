@@ -48,6 +48,10 @@
 %% Schema has to be extracted and managed by independent way;
 %% To be able to manage topology you have to store it;
 
+%% TODO: To decouple schema from assembly;
+%% TODO: To pass schema arg each time when transmission invoked;
+%% TODO: To mark each schema edge after extension is running;
+
 -spec start(Assembly::assembly()) -> 
                    success(pid()) | failure(term(), term()).
 start(Assembly) ->
@@ -139,6 +143,7 @@ stop(Assembly) ->
     ok = erlmachine_schema:del_vertex(Schema, Vertex).
 
 %% TODO: To supply mesh/unmesh calls with Edge label args;
+%% NOTE: They must be graphically displayed
 
 -record(state, {
 }).
