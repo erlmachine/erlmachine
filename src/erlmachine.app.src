@@ -1,5 +1,5 @@
 {application,erlmachine,
- [{description, "The first flow-based Erlang OTP programming framework."},
+ [{description, "The first flow-based Erlang OTP programming framework"},
   {id,"erlmachine"},
   {vsn,"2.0.0"},
   {modules,[]},
@@ -7,9 +7,9 @@
   {maxT,infinity},
   {registered,[]},
   {included_applications,[]},
-  {applications,[kernel, stdlib]},
+  {applications,[kernel, stdlib, jsx, yamerl, jessy]},
   {env,[]},
   {mod,{application_starter,[erlmachine_app,[]]}},
-  {start_phases,[{wait_for_tables, 1000}]},
+  {start_phases,[{wait_for_tables, 1000}, {add_schema, "datasheet.json"}]},
   {runtime_dependencies,[]}
  ]}.

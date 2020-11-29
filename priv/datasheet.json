@@ -1,39 +1,76 @@
 {
-    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Datasheet",
     "description": "A document that summarizes characteristics of an extension",
     "type": "object",
     "properties":{
         "serial_no":{
-            "type": "string"
+            "type": "string",
+            "description": "The unique runtime id assigned incrementally or sequentially"
         },
         "name":{
             "type": "string",
             "enum": [ "erlmachine_gearbox", "erlmachine_gear", "erlmachine_shaft", "erlmachine_axle" ],
-            "description": "Product type"
+            "description": "The product type"
         },
         "body":{
             "type": [ "object", "array" ],
-            "description": "The initial state of the extension"
+            "description": "The initial state"
         },
         "socket":{
-            "description": ""
+            "description": "Connection interface specification"
         },
         "model":{
-
+            "type": "object",
+            "properties":{
+                "model_no":{
+                    "description": ""
+                },
+                "name":{
+                    "type": "string",
+                    "description": ""
+                },
+                "prototype":{
+                    "type": "object",
+                    "properties":{
+                        "name": {
+                            "type": "string",
+                            "description": ""
+                        },
+                        "options": {
+                        }
+                    },
+                    "required": [ "name", "options" ],
+                    "description": ""
+                },
+                "options":{
+                    "description": ""
+                }
+            },
+            "required": [ "name", "options" ],
+            "description": ""
         },
         "extensions":{
-            "type": "array"
+            "type": "array",
+            "items":{
+                "ref": "#"
+            },
+            "description": ""
         },
         "tags":{
-            "type": "array"
+            "type": "array",
+            "description": ""
         },
         "label":{
+            "description": ""
         },
         "part_no":{
+            "description": ""
         },
         "desc":{
-            "type": "string"
+            "type": "string",
+            "description": "Short overview of the exrtension's role within overall system"
         }
-    }
+    },
+    "required": [ "name", "model" ]
 }

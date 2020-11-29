@@ -1,5 +1,6 @@
 .erlang.mk/
 *.beam
+Mnesia*
 deps/
 ebin/
 logs/

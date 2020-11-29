@@ -1,21 +1,22 @@
 -module(erlmachine_datasheet).
-%% We assume that this module can provide additional set of tools:
-%% 1) Navigation over document;
-%% 2) Validate document structure;
 
-%% NOTE: The module is validated via https://json-schema.org
+%% This module is responsible to:
+%% a) To read technical specifications (datasheets);
+%% b) To validate datasheet content via https://json-schema.org;
+%% c) To build extensions accordingly to datasheets;
 
 %% API.
 -export([datasheet/1]).
--export([is_datasheet/1]).
+-export([schema/0]).
 
 -export([gear/1, gear/2]).
 -export([shaft/1, shaft/2]).
 -export([axle/1, axle/2]).
 -export([gearbox/2, gearbox/3]).
 
--type datasheet() :: list().
--type path() :: list().
+-export([validate/1]).
+
+-type datasheet() :: map().
 
 -export_type([datasheet/0]).
 
@@ -23,22 +24,25 @@
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
 
-%% TODO: To make validation via https://json-schema.org;
--spec is_datasheet(Term::term()) -> boolean().
-is_datasheet(Term) ->
-    %% TODO: To provide semantics check;
-    true = is_list(Term).
+-spec schema() -> list().
+schema() ->
+    "datasheet".
 
--spec datasheet(Path::path()) ->
+-spec validate(Datasheet::map()) -> success(map()) | failure(term()).
+validate(Datasheet) ->
+    jesse:validate(schema(), Datasheet).
+
+-spec datasheet(Path::list()) ->
                   success(datasheet()) | failure(term(), term()).
 datasheet(Path) ->
     try
-        Res = yamerl_constr:file(Path), true = is_datasheet(Res),
-        erlmachine:success(Res)
+        Opt = [{str_node_as_binary, true}, {map_node_format, map}],
+        [Res] = yamerl:decode_file(Path, Opt), {ok, _} = validate(Res)
     catch E:R ->
             erlmachine:failure(E, R)
     end.
 
+%% Datasheet has to be preloaded and passed as argument;
 -spec gear(Datasheet::datasheet()) -> 
                   success(assembly()) | failure(term(), term()).
 gear(Datasheet) ->

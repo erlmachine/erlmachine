@@ -2,7 +2,7 @@
 
 -folder(<<"erlmachine">>).
 
--export([start/0, stop/0]).
+-export([start/0, stop/0, priv_dir/0]).
 
 -export([start/1, start/2]).
 
@@ -69,6 +69,10 @@ start() ->
 -spec stop() -> success() | failure(Reason :: any()).
 stop() ->
     application:stop(?MODULE).
+
+-spec priv_dir() -> file:filename().
+priv_dir() ->
+    code:priv_dir(?MODULE).
 
 %% The main purpouse of erlmachine project is to provide a set of well desikgned behaviours which are accompanied with visualization tools as well.
 %%  Erlmachine doesn't restrict your design with the one possible way but instead provide you ability to implement your own components accordingly to your vison.

@@ -1,8 +1,14 @@
 PROJECT = erlmachine
-PROJECT_DESCRIPTION = An application level virtual machine based on erlang OTP
-PROJECT_VERSION = 0.0.1
+PROJECT_DESCRIPTION = The first flow-based Erlang OTP programming framework
+PROJECT_VERSION = 2.0.0
 
-TEST_DEPS = meck
+DEPS = jsx yamerl jessy
+
+TEST_DEPS = meck jsx yamerl jessy
+
+dep_jsx = git https://github.com/talentdeficit/jsx.git main 3.0.0
+dep_yamerl = git https://github.com/yakaz/yamerl.git v0.8.0
+dep_jessy = git https://github.com/for-GET/jesse.git 1.5.6
 
 dep_meck = git https://github.com/eproxus/meck.git 0.9.0
 
