@@ -1,0 +1,20 @@
+serial_no: GR-test
+body:
+  key: value
+#Socket should be passed into rotate (worker) call and to be reflected on workers schema; 
+socket: "#"
+model:
+  model_no: GR-0
+  name: erlmachine_worker_sample
+  prototype:
+    name: erlmachine_worker_default_prototype
+    options:
+      - key: value
+  options:
+    - key: value
+extensions: []
+tags:
+  - test
+label: test
+part_no: 1
+desc: Sample of worker datasheet

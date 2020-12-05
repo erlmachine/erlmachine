@@ -1,24 +1,19 @@
 {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Datasheet",
-    "description": "A document that summarizes characteristics of an extension",
+    "description": "A document that specifies characteristics of an extension",
     "type": "object",
     "properties":{
         "serial_no":{
             "type": "string",
-            "description": "The unique runtime id assigned incrementally or sequentially"
-        },
-        "name":{
-            "type": "string",
-            "enum": [ "erlmachine_gearbox", "erlmachine_gear", "erlmachine_shaft", "erlmachine_axle" ],
-            "description": "The product type"
+            "description": "The unique assembly runtime identifier which is assigned incrementally"
         },
         "body":{
             "type": [ "object", "array" ],
-            "description": "The initial state"
+            "description": "The initial state of an extension"
         },
         "socket":{
-            "description": "Connection interface specification"
+            "description": "Rotation interface"
         },
         "model":{
             "type": "object",
@@ -28,23 +23,24 @@
                 },
                 "name":{
                     "type": "string",
-                    "description": ""
+                    "description": "Business tier module"
                 },
                 "prototype":{
                     "type": "object",
                     "properties":{
                         "name": {
                             "type": "string",
-                            "description": ""
+                            "description": "Service tier module"
                         },
                         "options": {
+                            "description": "Service options"
                         }
                     },
                     "required": [ "name", "options" ],
                     "description": ""
                 },
                 "options":{
-                    "description": ""
+                    "description": "Business options"
                 }
             },
             "required": [ "name", "options" ],
@@ -72,5 +68,5 @@
             "description": "Short overview of the exrtension's role within overall system"
         }
     },
-    "required": [ "name", "model" ]
+    "required": [ "model" ]
 }

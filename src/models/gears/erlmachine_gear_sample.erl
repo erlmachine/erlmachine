@@ -1,2 +1,0 @@
--module(erlmachine_gear_sample).
--export([]).

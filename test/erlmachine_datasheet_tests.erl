@@ -2,8 +2,6 @@
 
 -include_lib("eunit/include/eunit.hrl").
 
--export([]).
-
 erlmachine_datasheet_test_() ->
     {
      foreach,
@@ -16,7 +14,6 @@ erlmachine_datasheet_test_() ->
 
              Priv = erlmachine:priv_dir(),
              [Schema] = jsx:consult(filename:join(Priv, "datasheet.json"), [return_maps]),
-             io:format(user, "~n~p~n",[Schema]),
              Key = erlmachine_datasheet:schema(),
              ok = jesse:add_schema(Key, Schema)
      end,
@@ -26,26 +23,15 @@ erlmachine_datasheet_test_() ->
              ok = application:stop(yamerl)
      end,
      [
-      {
-       "Load gear datasheet",
-       fun() ->
-               Priv = erlmachine:priv_dir(),
-               Path = filename:join(Priv, "datasheets/gear_sample.yaml"),
-               {ok, Datasheet} = erlmachine_datasheet:datasheet(Path),
-               io:format(user, "~n~p~n",[Datasheet])
-       end
-      },
-      {
-       "Load shaft datasheet",
-       fun() -> ok end
-      },
-      {
-       "Load axle datasheet",
-       fun() -> ok end
-      },
-      {
-       "Load gearbox datasheet",
-       fun() -> ok end
-      }
+      { "Load worker datasheet", fun() -> {ok, _} = datasheet("datasheets/worker_sample.yaml") end },
+      { "Load supervisor datasheet", fun() -> {ok, _} = datasheet("datasheets/supervisor_sample.yaml") end }
      ]
     }.
+
+
+datasheet(File) ->
+    Priv = erlmachine:priv_dir(),
+    Path = filename:join(Priv, File),
+    Res = {ok, Datasheet} = erlmachine_datasheet:datasheet(Path),
+    io:format(user, "~n~p~n",[Datasheet]),
+    Res.

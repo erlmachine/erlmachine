@@ -1,4 +1,4 @@
--module(erlmachine_worker_default_prototype).
+-module(erlmachine_worker_prototype_default).
 
 -export([name/0]).
 

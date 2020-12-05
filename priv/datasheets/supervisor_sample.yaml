@@ -1,0 +1,19 @@
+serial_no: GX-test
+body:
+  key: value
+socket:
+model:
+  model_no: GX-0
+  name: erlmachine_supervisor_sample
+  prototype:
+    name: erlmachine_supervisor_prototype_default
+    options:
+      - key: value
+  options:
+    - key: value
+extensions: []
+tags:
+  - test
+label: test
+part_no: 1
+desc: Sample of supervisor datasheet

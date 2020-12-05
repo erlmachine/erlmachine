@@ -34,29 +34,31 @@
 %% b) The assembly itself and any potential future changes should be persisted;
 
 -record (assembly, {
-                    %% Runtime unique identifier (S/N);
+                    %% Runtime unique identifier (S/N); 
+                    %% TODO: Don't forget to pass it as args list to the supervisor model;
+                    %% That is the right approach for supervsior (to have knowledge about runtime ID's);
                     serial_no::serial_no(),
-                    %% Decorating module: erlmachine_axle, erlmachine_shaft, erlmachine_gearbox, erlmachine_gear;
+                    %% Extension module: erlmachine_axle, erlmachine_shaft, erlmachine_gearbox, erlmachine_gear;
                     name::atom(),
-                    %% Body stores the current state;
+                    %% Body that stores the current state;
                     body::term(),
-                    %% Interface (is passed into the rotate call);
+                    %% Interface which is passed into the rotate call);
                     socket::term(),
-                    %% The build topology (is inherited through the all extensions);
+                    %% The build topology which is inherited through the all extensions;
                     schema::term(),
                     %% The assembly setup;
                     model::model(),
                     %% Build configuration;
                     extensions=[]::list(assembly()),
-                    %% Tags are applied as selection criteria ([supervisor, overloaded, etc.]);
+                    %% Tags are used as selection criteria ([supervisor, overloaded, etc.]);
                     tags=[]::list(term()),
-                    %% Label is unique id within topology (serial_no by default);
+                    %% Label is unique id within schema (by default serial_no);
                     label::term(),
                     %% By part_no we can track quality of component through release period;
                     part_no::term(),
-                    %% The execution context within the current topology (is inherited through the extensions);
+                    %% The execution context which is inherited through the extensions;
                     env::term(),
-                    %% Textual description of the assembly;
+                    %% Textual description of the extension;
                     desc::binary()
                    }
         ).
