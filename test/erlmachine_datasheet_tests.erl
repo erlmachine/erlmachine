@@ -23,8 +23,14 @@ erlmachine_datasheet_test_() ->
              ok = application:stop(yamerl)
      end,
      [
-      { "Load worker datasheet", fun() -> {ok, _} = datasheet("datasheets/worker_sample.yaml") end },
-      { "Load supervisor datasheet", fun() -> {ok, _} = datasheet("datasheets/supervisor_sample.yaml") end }
+      {
+        "Load worker datasheet",
+       fun() -> {ok, _} = datasheet("datasheets/worker_sample.yaml") end
+      },
+      {
+        "Load supervisor datasheet",
+        fun() -> {ok, _} = datasheet("datasheets/supervisor_sample.yaml") end
+      }
      ]
     }.
 
@@ -32,6 +38,6 @@ erlmachine_datasheet_test_() ->
 datasheet(File) ->
     Priv = erlmachine:priv_dir(),
     Path = filename:join(Priv, File),
-    Res = {ok, Datasheet} = erlmachine_datasheet:datasheet(Path),
+    Res = {ok, Datasheet} = erlmachine_factory:datasheet(Path),
     io:format(user, "~n~p~n",[Datasheet]),
     Res.

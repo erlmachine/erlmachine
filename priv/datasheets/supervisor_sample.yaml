@@ -1,9 +1,9 @@
-serial_no: GX-test
+serial_no: SN-test
 body:
   key: value
 socket:
 model:
-  model_no: GX-0
+  model_no: MN-0
   name: erlmachine_supervisor_sample
   prototype:
     name: erlmachine_supervisor_prototype_default

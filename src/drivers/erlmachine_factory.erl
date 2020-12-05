@@ -28,6 +28,9 @@
 -export([axle/3, axle/5]).
 -export([gearbox/4, gearbox/6]).
 
+%% datasheet
+-export([datasheet/1]).
+
 -export([tabname/0]).
 
 -include("erlmachine_assembly.hrl").
@@ -35,6 +38,8 @@
 
 -type serial_no() :: binary().
 -type part_no() :: binary().
+
+-type datasheet() :: erlmachine_datasheet:datasheet().
 
 -export_type([serial_no/0, part_no/0]).
 
@@ -71,10 +76,6 @@ serial_no(Assembly) ->
 stop() ->
     gen_server:stop(id()).
 
-%%%===================================================================
-%%% gen_server behaviour
-%%%===================================================================
-
 -record(state, { hash::binary() }).
 
 init([]) ->
@@ -108,7 +109,7 @@ terminate(_Reason, _State) ->
 %%%===================================================================
 %%% Extensions
 %%%===================================================================
-
+%% TODO: Factory is responsible to support datasheets; erlmachine_datasheet shouldn't know about assembly;
 -spec gear(ModelName::atom(), ModelOpt::term()) -> 
                   assembly().
 gear(ModelName, ModelOpt) ->
@@ -178,3 +179,8 @@ gearbox(ModelName, ModelOpt, ProtName, ProtOpt, Env, Exts) when is_list(Exts) ->
     Model = erlmachine_model:model(ModelName, ModelOpt, Prot),
     {ok, GearBox} = serial_no(erlmachine_gearbox:gearbox(Model, Env)),
     erlmachine_assembly:extensions(GearBox, Exts).
+
+-spec datasheet(Path::list()) ->
+                       success(datasheet()) | failure(term(), term()).
+datasheet(Path) ->
+    erlmachine_datasheet:file(Path).
