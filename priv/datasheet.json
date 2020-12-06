@@ -9,7 +9,7 @@
             "description": "The unique assembly runtime identifier which is assigned incrementally"
         },
         "body":{
-            "type": [ "object", "array" ],
+            "type": "object",
             "description": "The initial state of an extension"
         },
         "socket":{
@@ -33,24 +33,19 @@
                             "description": "Service tier module"
                         },
                         "options": {
-                            "description": "Service options"
+                            "type": "array",
+                            "description": "Service layer options"
                         }
                     },
                     "required": [ "name", "options" ],
                     "description": ""
                 },
                 "options":{
-                    "description": "Business options"
+                    "type": "array",
+                    "description": "Domain layer options"
                 }
             },
             "required": [ "name", "options" ],
-            "description": ""
-        },
-        "extensions":{
-            "type": "array",
-            "items":{
-                "ref": "#"
-            },
             "description": ""
         },
         "tags":{
@@ -62,6 +57,10 @@
         },
         "part_no":{
             "description": ""
+        },
+        "env":{
+            "type": "object",
+            "description": "Execution context"
         },
         "desc":{
             "type": "string",

@@ -9,8 +9,6 @@
          options/1, options/2
         ]).
 
--export([supervisor/0, worker/0]).
-
 -include("erlmachine_system.hrl").
 
 -record(prototype, { name::atom(), options::term() }).
@@ -43,12 +41,3 @@ options(Prototype) ->
 -spec options(Prototype::prototype(), Opt::list()) -> prototype().
 options(Prototype, Opt) ->
     Prototype#prototype{ options=Opt }.
-
-
--spec supervisor() -> module().
-supervisor() ->
-    erlmachine_supervisor_default_prototype:name().
-
--spec worker() -> module().
-worker() ->
-    erlmachine_worker_default_prototype:name().

@@ -12,9 +12,10 @@ model:
       - key: value
   options:
     - key: value
-extensions: []
 tags:
   - test
 label: test
 part_no: 1
+env:
+  key: value
 desc: Sample of worker datasheet

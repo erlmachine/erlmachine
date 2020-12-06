@@ -3,7 +3,7 @@
 %% Gear represents a worker which supplies a load through a transmission;
 %% Gear is called one time per message;
 
--export([gear/1]).
+-export([gear/0]).
 
 -export([start/1]).
 -export([rotate/3, transmit/2]).
@@ -12,19 +12,17 @@
 -export([type/0]).
 -export([prefix/0]).
 
--type model() :: erlmachine_model:model().
-
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
 
--spec gear(Model::model()) -> assembly(). %% Default representation;
-gear(Model) ->
+-spec gear() -> assembly(). %% Default representation;
+gear() ->
     %% TODO: Additional decoration within body;
     Body = #{},
-    Assembly = erlmachine_assembly:assembly(?MODULE, Body, Model),
-    erlmachine:tag(Assembly, type()).
+    Tags = [type()], Desc = <<"">>,
+    erlmachine_assembly:assembly(?MODULE, Body, Tags, Desc).
 
--spec start(Gear::assembly()) -> 
+-spec start(Gear::assembly()) ->
                      success(pid()) | failure(term(), term()).
 start(Gear) ->
     erlmachine_worker_prototype:start(Gear).

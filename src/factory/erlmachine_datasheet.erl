@@ -21,6 +21,9 @@
 
 -include("erlmachine_system.hrl").
 
+%% NOTE: This module should provide access  to the datasheet fields for factory;
+%% By the same way as assembly;
+
 -spec schema() -> list().
 schema() ->
     "datasheet".
@@ -30,11 +33,11 @@ validate(Datasheet) ->
     jesse:validate(schema(), Datasheet).
 
 
--spec decode(Spec::list(), Opts::list()) ->
+-spec decode(Spec::list(), Opt::list()) ->
                     success(datasheet()) | failure(term(), term()).
-decode(Spec, Opts) ->
+decode(Spec, Opt) ->
     try
-        [Res] = yamerl:decode(Spec, Opts), {ok, _} = validate(Res)
+        [Res] = yamerl:decode(Spec, Opt), {ok, _} = validate(Res)
     catch E:R ->
             erlmachine:failure(E, R)
     end.
@@ -48,4 +51,6 @@ file(Path) ->
     catch E:R ->
             erlmachine:failure(E, R)
     end.
+
+
 

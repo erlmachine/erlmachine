@@ -14,12 +14,6 @@
 -export([handle_info/2]).
 -export([terminate/2]).
 
-%% extensions
--export([gear/1, gear/2]).
--export([shaft/2]).
--export([axle/2]).
--export([gearbox/3]).
-
 -include("erlmachine_factory.hrl").
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
@@ -82,33 +76,3 @@ handle_info(_Info, State) ->
 
 terminate(_Reason, _State) ->
     ok.
-
-%%%===================================================================
-%%% Extensions
-%%%===================================================================
-
--spec gear(Opt::term()) -> assembly().
-gear(Opt) ->
-    Model = erlmachine_gear_sample,
-    erlmachine_factory:gear(Model, Opt).
-
--spec gear(Opt::term(), Ext::assembly()) -> assembly().
-gear(Opt, Ext) ->
-    Model = erlmachine_gear_sample,
-    erlmachine_factory:gear(Model, Opt, Ext).
-
--spec shaft(Opt::term(), Exts::list(assembly())) -> assembly().
-shaft(Opt, Exts) ->
-    Model = erlmachine_shaft_sample,
-    erlmachine_factory:shaft(Model, Opt, Exts).
-
--spec axle(Opt::term(), Exts::list(assembly())) -> assembly().
-axle(Opt, Exts) ->
-    Model = erlmachine_axle_sample,
-    erlmachine_factory:axle(Model, Opt, Exts).
-
--spec gearbox(Opt::term(), Env::term(), Exts::list(assembly())) -> assembly().
-gearbox(Opt, Env, Exts) ->
-    Model = erlmachine_gearbox_sample,
-    erlmachine_factory:gearbox(Model, Opt, Env, Exts).
-

@@ -3,24 +3,22 @@
 %% Shaft represents a worker which routes a load through a transmission;
 %% Shaft is called multiple times per message (extensions count);
 
--export([shaft/1]).
+-export([shaft/0]).
 
 -export([install/1, rotate/3, transmit/2,  uninstall/1]).
 
 -export([type/0]).
 -export([prefix/0]).
 
--type model() :: erlmachine_model:model().
-
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
 
--spec shaft(Model::model()) -> assembly().
-shaft(Model) ->
+-spec shaft() -> assembly().
+shaft() ->
     %% TODO: To decorate Body by additional metadata;
     Body = [],
-    Assembly = erlmachine_assembly:assembly(?MODULE, Body, Model),
-    erlmachine:tag(Assembly, type()).
+    Tags = [type()], Desc = <<"">>,
+    erlmachine_assembly:assembly(?MODULE, Body, Tags, Desc).
 
 -spec install(Shaft::assembly()) ->
                      success(term()) | failure(term(), term()).

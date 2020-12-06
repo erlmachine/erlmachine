@@ -7,8 +7,8 @@ erlmachine_datasheet_test_() ->
      foreach,
      fun() ->
              ok = application:start(yamerl),
-             Nodes = [node()],
-             mnesia:create_schema(Nodes), ok = mnesia:start(),
+
+             mnesia:create_schema([node()]), ok = mnesia:start(),
              ok = mnesia:wait_for_tables([erlmachine_factory:tabname()], 1000),
              {ok, _} = erlmachine_factory:start(),
 
@@ -25,19 +25,27 @@ erlmachine_datasheet_test_() ->
      [
       {
         "Load worker datasheet",
-       fun() -> {ok, _} = datasheet("datasheets/worker_sample.yaml") end
+       fun() ->
+               Path = filename:join(erlmachine:priv_dir(), "datasheets/worker_sample.yaml"),
+
+               {ok, Datasheet} = erlmachine_datasheet:file(Path), true = is_map(Datasheet)
+
+       end
       },
       {
         "Load supervisor datasheet",
-        fun() -> {ok, _} = datasheet("datasheets/supervisor_sample.yaml") end
+        fun() ->
+                Path = filename:join(erlmachine:priv_dir(), "datasheets/supervisor_sample.yaml"),
+
+                {ok, Datasheet} = erlmachine_datasheet:file(Path), true = is_map(Datasheet)
+        end
       }
      ]
     }.
 
 
 datasheet(File) ->
-    Priv = erlmachine:priv_dir(),
-    Path = filename:join(Priv, File),
-    Res = {ok, Datasheet} = erlmachine_factory:datasheet(Path),
-    io:format(user, "~n~p~n",[Datasheet]),
+    Priv = erlmachine:priv_dir(), Path = filename:join(Priv, File),
+    Res = {ok, Datasheet} = erlmachine_datasheet:file(Path),
+    ?debugFmt("~n~p~n",[Datasheet]),
     Res.

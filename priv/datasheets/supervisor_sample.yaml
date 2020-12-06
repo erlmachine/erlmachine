@@ -11,9 +11,10 @@ model:
       - key: value
   options:
     - key: value
-extensions: []
 tags:
   - test
 label: test
+env:
+  key: value
 part_no: 1
 desc: Sample of supervisor datasheet

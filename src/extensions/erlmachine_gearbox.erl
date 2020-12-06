@@ -10,7 +10,7 @@
 %% That's all very similar to the modern orchestration approach like k8s, swarm, etc..
 %% Where each contained assembly represensts microservice and gearbox acts as orchestration env;
 
--export([gearbox/2]).
+-export([gearbox/0]).
 
 -export([start/1]).
 -export([install/2, uninstall/2]).
@@ -19,17 +19,16 @@
 -export([type/0]).
 -export([prefix/0]).
 
--type model() :: erlmachine_model:model().
-
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
 
--spec gearbox(Model::model(), Env::term()) -> assembly().
-gearbox(Model, Env) ->
+-spec gearbox() -> assembly().
+gearbox() ->
     %% TODO: To support Body by additional metadata;
-    Body = [],
-    Assembly = erlmachine_assembly:assembly(?MODULE, Body, Model, Env),
-    erlmachine:label(erlmachine:tag(Assembly, type()), 'root').
+    Body = #{},
+    Label = 'root', Tags = [type()], Desc = <<"">>,
+    Assembly = erlmachine_assembly:assembly(?MODULE, Body, Tags, Desc),
+    erlmachine:label(Assembly, Label).
 
 -spec start(GearBox::assembly()) ->
                      success(pid()) | failure(term(), term()).
@@ -51,6 +50,7 @@ uninstall(Assembly, Id) ->
 stop(GearBox) ->
     erlmachine_supervisor_prototype:stop(GearBox).
 
+%% NOTE: We should check this call when schema is requested;
 -spec type() -> atom().
 type() ->
     'supervisor'.

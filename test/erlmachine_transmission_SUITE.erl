@@ -23,13 +23,12 @@ suite() ->
     [{timetrap,{minutes,1}}].
 
 init_per_suite(Config) ->
-    Nodes = [node()],
-    mnesia:create_schema(Nodes), ok = mnesia:start(),
+    mnesia:create_schema([node()]), ok = mnesia:start(),
     ok = mnesia:wait_for_tables([erlmachine_factory:tabname()], 1000),
+
     {ok, _} = erlmachine_factory:start(),
 
-    Gear = erlmachine_sample:axle(_Opt = [], _Exts = []),
-    GearBox = erlmachine_sample:gearbox(_Opt = [], _Env = #{}, _Exts = []),
+    GearBox = erlmachine_factory:gearbox(erlmachine_gearbox_sample, [], #{}, []),
     {ok, Pid} = erlmachine_sample:start(GearBox),
 
     Setup = [{pid, Pid}],
@@ -120,7 +119,7 @@ install() ->
 
 install(Config) ->
     Pid = ?config(pid, Config),
-    Ext = erlmachine_sample:gear([]),
+    Ext = erlmachine_factory:gear(erlmachine_gear_sample, []),
     {ok, _} = erlmachine_sample:install(Pid, 'root', Ext),
     ok.
 

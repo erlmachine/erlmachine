@@ -2,7 +2,7 @@
 
 %% API.
 
--export([assembly/0, assembly/3, assembly/4]).
+-export([assembly/0, assembly/4]).
 
 -export([
          serial_no/1, serial_no/2,
@@ -73,17 +73,11 @@
 assembly() ->
     #assembly{}.
 
--spec assembly(Name::atom(), Body::term(), Model::model()) -> 
+-spec assembly(Name::atom(), Body::term(), Tags::list(), Desc::binary()) -> 
                       assembly().
-assembly(Name, Body, Model) ->
-    Assembly = body(assembly(), Body),
-    name(model(Assembly, Model), Name).
-
--spec assembly(Name::atom(), Body::term(), Model::model(), Env::term()) -> 
-                      assembly().
-assembly(Name, Body, Model, Env) ->
-    Assembly = assembly(Name, Body, Model),
-    env(Assembly, Env).
+assembly(Name, Body, Tags, Desc) ->
+    Rel = name(body(assembly(), Body), Name),
+    desc(tags(Rel, Tags), Desc).
 
 -spec serial_no(Assembly::assembly()) -> serial_no().
 serial_no(Assembly) ->
