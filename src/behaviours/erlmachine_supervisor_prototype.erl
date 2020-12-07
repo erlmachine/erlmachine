@@ -46,36 +46,43 @@
                      success(pid()) | failure(term(), term()).
 start(Assembly) ->
     SN = erlmachine_assembly:serial_no(Assembly),
-    Model = erlmachine_assembly:model(Assembly), Prot = erlmachine_model:prototype(Model),
     Exts = [Ext|| Ext <- erlmachine_assembly:extensions(Assembly)],
     Specs = [spec(Assembly, Ext)|| Ext <- Exts],
-    Opts = erlmachine_prototype:options(Prot),
-    Name = erlmachine_prototype:name(Prot),
+
+    Prot = erlmachine_assembly:prototype(Assembly),
+    Name = erlmachine_prototype:name(Prot), Opts = erlmachine_prototype:options(Prot),
+
     Name:prototype_init(SN, Specs, [Assembly, Exts], Opts).
 
 -spec install(Assembly::assembly(), Ext::assembly()) ->
                      success(pid()) | failure(term(), term()).
 install(Assembly, Ext) ->
     SN = erlmachine_assembly:serial_no(Assembly),
-    Model = erlmachine_assembly:model(Assembly), Prot = erlmachine_model:prototype(Model),
     Spec = spec(Assembly, Ext),
+
+    Prot = erlmachine_assembly:prototype(Assembly),
     Name = erlmachine_prototype:name(Prot),
+
     Name:prototype_start_child(SN, Spec, [Assembly, Ext]).
 
 -spec uninstall(Assembly::assembly(), Id::term()) ->
                        failure(term(), term()).
 uninstall(Assembly, Id) ->
     SN = erlmachine_assembly:serial_no(Assembly),
-    Model = erlmachine_assembly:model(Assembly), Prot = erlmachine_model:prototype(Model),
+
+    Prot = erlmachine_assembly:prototype(Assembly),
     Name = erlmachine_prototype:name(Prot),
+
     Name:prototype_terminate_child(SN, Id, _Context = [Assembly, Id]).
 
 -spec stop(Assembly::assembly()) ->
                        success().
 stop(Assembly) ->
     SN = erlmachine_assembly:serial_no(Assembly),
-    Model = erlmachine_assembly:model(Assembly), Prot = erlmachine_model:prototype(Model),
+
+    Prot = erlmachine_assembly:prototype(Assembly),
     Name = erlmachine_prototype:name(Prot),
+
     Name:prototype_terminate(SN, Assembly).
 
 %% TODO erlmachine_supervisor:install() will be called from prototype;

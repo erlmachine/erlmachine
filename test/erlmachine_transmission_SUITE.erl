@@ -24,7 +24,7 @@ suite() ->
 
 init_per_suite(Config) ->
     mnesia:create_schema([node()]), ok = mnesia:start(),
-    ok = mnesia:wait_for_tables([erlmachine_factory:tabname()], 1000),
+%    ok = mnesia:wait_for_tables([erlmachine_factory:tabname()], 5000),
 
     {ok, _} = erlmachine_factory:start(),
 

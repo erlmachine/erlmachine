@@ -9,16 +9,22 @@
 %% But validate/1 call should be performed before usage; 
 
 %% API.
+-export([new/0]).
+
 -export([file/1]).
 -export([decode/2]).
 -export([schema/0]).
 
 -export([validate/1]).
 
+-export([iterator/1, next/1]).
+-export([get/2]).
+
 -type datasheet() :: map().
 
 -export_type([datasheet/0]).
 
+-include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
 
 %% NOTE: This module should provide access  to the datasheet fields for factory;
@@ -27,6 +33,14 @@
 -spec schema() -> list().
 schema() ->
     "datasheet".
+
+-spec new() -> datasheet().
+new() ->
+    maps:new().
+
+-spec get(Field::term(), Datasheet::datasheet()) -> term().
+get(Field, Datasheet) ->
+    maps:get(Field, Datasheet).
 
 -spec validate(Datasheet::map()) -> success(map()) | failure(term()).
 validate(Datasheet) ->
@@ -52,5 +66,10 @@ file(Path) ->
             erlmachine:failure(E, R)
     end.
 
+-spec iterator(Datasheet::datasheet()) -> term().
+iterator(Datasheet) ->
+    maps:iterator(Datasheet).
 
-
+-spec next(Iterator::term()) -> none | {Key::binary(), Value::term(), Iterator::term()}.
+next(Iterator) ->
+    maps:next(Iterator).

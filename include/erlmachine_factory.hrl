@@ -1,2 +1,3 @@
 -type serial_no() :: erlmachine_factory:serial_no().
 -type part_no() :: erlmachine_factory:part_no().
+-type model_no() :: erlmachine_factory:model_no().

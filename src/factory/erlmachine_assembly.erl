@@ -8,9 +8,11 @@
          serial_no/1, serial_no/2,
          name/1, name/2,
          body/1, body/2,
+         model_no/1, model_no/2,
          socket/1, socket/2,
          schema/1, schema/2,
          model/1, model/2,
+         prototype/1, prototype/2,
          extensions/1, extensions/2,
          tags/1, tags/2,
          label/1, label/2,
@@ -42,12 +44,16 @@
                     name::atom(),
                     %% Body that stores the current state;
                     body::term(),
+                    %% A model_no can be used by product configurator to generate a master production schedule;
+                    model_no::model_no(),
                     %% Interface which is passed into the rotate call);
                     socket::term(),
-                    %% The build topology which is inherited through the all extensions;
+                    %% Build topology which is inherited through the all extensions;
                     schema::term(),
-                    %% The assembly setup;
+                    %% Domain level specification;
                     model::model(),
+                    %% Service level specification;
+                    prototype::prototype(),
                     %% Build configuration;
                     extensions=[]::list(assembly()),
                     %% Tags are used as selection criteria ([supervisor, overloaded, etc.]);
@@ -55,7 +61,7 @@
                     %% Label is unique id within schema (by default serial_no);
                     label::term(),
                     %% By part_no we can track quality of component through release period;
-                    part_no::term(),
+                    part_no::part_no(),
                     %% The execution context which is inherited through the extensions;
                     env::term(),
                     %% Textual description of the extension;
@@ -66,6 +72,7 @@
 -type assembly() :: #assembly{}.
 
 -type model() :: erlmachine_model:model().
+-type prototype() :: erlmachine_prototype:prototype().
 
 -export_type([assembly/0]).
 
@@ -104,6 +111,14 @@ body(Assembly) ->
 body(Assembly, Body) ->
     Assembly#assembly{ body=Body }.
 
+-spec model_no(Assembly::assembly()) -> model_no().
+model_no(Assembly) ->
+    Assembly#assembly.model_no.
+
+-spec model_no(Assembly::assembly(), MN::model_no()) -> assembly().
+model_no(Assembly, MN) ->
+    Assembly#assembly{ model_no=MN }.
+
 -spec socket(Assembly::assembly()) -> term().
 socket(Assembly) -> 
     Assembly#assembly.socket.
@@ -127,6 +142,14 @@ model(Assembly) ->
 -spec model(Assembly::assembly(), Model::model()) -> assembly().
 model(Assembly, Model) ->
     Assembly#assembly{ model = Model }.
+
+-spec prototype(Assembly::assembly()) -> prototype().
+prototype(Assembly) ->
+    Assembly#assembly.prototype.
+
+-spec prototype(Assembly::assembly(), Prot::prototype()) -> assembly().
+prototype(Assembly, Prot) ->
+    Assembly#assembly{ prototype = Prot }.
 
 -spec extensions(Assembly::assembly()) -> list(assembly()).
 extensions(Assembly) ->

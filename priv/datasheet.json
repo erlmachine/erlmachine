@@ -12,37 +12,38 @@
             "type": "object",
             "description": "The initial state of an extension"
         },
+        "model_no":{
+            "type": "string",
+            "description": ""
+        },
         "socket":{
             "description": "Rotation interface"
         },
         "model":{
             "type": "object",
             "properties":{
-                "model_no":{
-                    "description": ""
-                },
                 "name":{
                     "type": "string",
-                    "description": "Business tier module"
-                },
-                "prototype":{
-                    "type": "object",
-                    "properties":{
-                        "name": {
-                            "type": "string",
-                            "description": "Service tier module"
-                        },
-                        "options": {
-                            "type": "array",
-                            "description": "Service layer options"
-                        }
-                    },
-                    "required": [ "name", "options" ],
-                    "description": ""
+                    "description": "Domain level implementation (module name)"
                 },
                 "options":{
                     "type": "array",
                     "description": "Domain layer options"
+                }
+            },
+            "required": [ "name", "options" ],
+            "description": ""
+        },
+        "prototype":{
+            "type": "object",
+            "properties":{
+                "name": {
+                    "type": "string",
+                    "description": "Service level implementation (module name)"
+                },
+                "options": {
+                    "type": "array",
+                    "description": "Service layer options"
                 }
             },
             "required": [ "name", "options" ],
@@ -56,6 +57,7 @@
             "description": ""
         },
         "part_no":{
+            "type": "string",
             "description": ""
         },
         "env":{

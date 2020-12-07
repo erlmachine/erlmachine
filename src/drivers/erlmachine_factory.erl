@@ -67,7 +67,8 @@ start_link() ->
 -spec process(Assembly::assembly()) ->
                      success(assembly()) | failure(term(), term()).
 process(Assembly) ->
-    process(Assembly, #{}).
+    Datasheet = erlmachine_datasheet:new(),
+    process(Assembly, Datasheet).
 
 -spec process(Assembly::assembly(), Datasheet::datasheet()) ->
                        success(assembly()) | failure(term(), term()).
@@ -86,15 +87,20 @@ init([]) ->
     Hash = erlmachine:guid(update_counter()),
     {ok, #state{ hash = Hash }}.
 
-handle_call(#process{ assembly = Assembly, datasheet = _Datasheet }, _From, #state{ hash = Hash } = State) ->
-    <<B1:32, B2:32, B3:32, B4:32>> = Hash,
-    SN = erlmachine:base64url(Hash),
+handle_call(#process{ assembly = Assembly, datasheet = Datasheet }, _From, #state{ hash = Hash } = State) ->
     Name = erlmachine_assembly:name(Assembly),
-    Rel = erlmachine_assembly:serial_no(Assembly, <<(Name:prefix())/binary, SN/binary>>),
+    SN =  <<(Name:prefix())/binary, (erlmachine:base64url(Hash))/binary>>,
+    MN = erlmachine:phash2(Assembly),
 
+    Rel = erlmachine_assembly:model_no(erlmachine_assembly:serial_no(Assembly, SN), MN),
+
+    I = erlmachine_datasheet:iterator(Datasheet), Next = erlmachine_datasheet:next(I),
+
+    <<B1:32, B2:32, B3:32, B4:32>> = Hash,
     B5 = erlmachine:phash2({B1, update_counter()}),
     Rotated = <<(B2 bxor B5):32, (B3 bxor B5):32, (B4 bxor B5):32, B5:32>>,
-    {reply, erlmachine:success(Rel), State#state{ hash = Rotated }};
+
+    {reply, erlmachine:success(next(Rel, Next)), State#state{ hash = Rotated }};
 
 handle_call(_Request, _From, State) ->
     {reply, ignored, State}.
@@ -107,6 +113,64 @@ handle_info(_Info, State) ->
 
 terminate(_Reason, _State) ->
     ok.
+ 
+-spec next(Assembly::assembly(), none | {Key::binary(), Value::term(), I::term()}) ->
+                  assembly().
+next(Assembly, none) ->
+    Assembly;
+
+next(Assembly, {<<"serial_no">>, SN, I}) ->
+    Rel = erlmachine_assembly:serial_no(Assembly, SN),
+    next(Rel, erlmachine_datasheet:next(I));
+
+next(Assembly, {<<"body">>, Body, I}) ->
+    Rel = erlmachine_assembly:body(Assembly, Body),
+    next(Rel, erlmachine_datasheet:next(I));
+
+next(Assembly, {<<"model_no">>, MN, I}) ->
+    Rel = erlmachine_assembly:model_no(Assembly, MN),
+    next(Rel, erlmachine_datasheet:next(I));
+
+next(Assembly, {<<"socket">>, Socket, I}) ->
+    Rel = erlmachine_assembly:socket(Assembly, Socket),
+    next(Rel, erlmachine_datasheet:next(I));
+
+next(Assembly, {<<"model">>, Model, I}) ->
+    Name = erlmachine_datasheet:get(<<"name">>, Model),
+    Opt = erlmachine_datasheet:get(<<"options">>, Model),
+
+    Rel = erlmachine_assembly:model(Assembly, erlmachine_model:model(Name, Opt)),
+    next(Rel, erlmachine_datasheet:next(I));
+
+next(Assembly, {<<"prototype">>, Prot, I}) ->
+    Name = erlmachine_datasheet:get(<<"name">>, Prot),
+    Opt = erlmachine_datasheet:get(<<"options">>, Prot),
+
+    Rel = erlmachine_assembly:prototype(Assembly, erlmachine_prototype:prototype(Name, Opt)),
+    next(Rel, erlmachine_datasheet:next(I));
+
+next(Assembly, {<<"tags">>, Tags, I}) ->
+    Rel = erlmachine_assembly:tags(Assembly, Tags),
+    next(Rel, erlmachine_datasheet:next(I));
+
+next(Assembly, {<<"label">>, Label, I}) ->
+    Rel = erlmachine_assembly:label(Assembly, Label),
+    next(Rel, erlmachine_datasheet:next(I));
+
+next(Assembly, {<<"part_no">>, PN, I}) ->
+    Rel = erlmachine_assembly:part_no(Assembly, PN),
+    next(Rel, erlmachine_datasheet:next(I));
+
+next(Assembly, {<<"env">>, Env, I}) ->
+    Rel = erlmachine_assembly:env(Assembly, Env),
+    next(Rel, erlmachine_datasheet:next(I));
+
+next(Assembly, {<<"desc">>, Desc, I}) ->
+    Rel = erlmachine_assembly:desc(Assembly, Desc),
+    next(Rel, erlmachine_datasheet:next(I));
+
+next(Assembly, {_, _, I}) ->
+    next(Assembly, erlmachine_datasheet:next(I)).
 
 %%%===================================================================
 %%% Extensions
@@ -139,9 +203,9 @@ gear(ModelName, ModelOpt, ProtName, ProtOpt) ->
     Gear = erlmachine_gear:gear(),
 
     Prot = erlmachine_prototype:prototype(ProtName, ProtOpt),
-    Model = erlmachine_model:model(ModelName, ModelOpt, Prot),
+    Model = erlmachine_model:model(ModelName, ModelOpt),
 
-    Assembly = erlmachine_assembly:model(Gear, Model),
+    Assembly = erlmachine_assembly:prototype(erlmachine_assembly:model(Gear, Model), Prot),
     {ok, Rel} = process(Assembly),
     Rel.
 
@@ -177,9 +241,9 @@ shaft(ModelName, ModelOpt, ProtName, ProtOpt, Exts) when is_list(Exts) ->
     Shaft = erlmachine_shaft:shaft(),
 
     Prot = erlmachine_prototype:prototype(ProtName, ProtOpt),
-    Model = erlmachine_model:model(ModelName, ModelOpt, Prot),
+    Model = erlmachine_model:model(ModelName, ModelOpt),
 
-    Assembly = erlmachine_assembly:model(Shaft, Model),
+    Assembly = erlmachine_assembly:prototype(erlmachine_assembly:model(Shaft, Model), Prot),
     {ok, Rel} = process(Assembly),
     erlmachine_assembly:extensions(Rel, Exts).
 
@@ -209,9 +273,9 @@ axle(ModelName, ModelOpt, ProtName, ProtOpt, Exts) when is_list(Exts) ->
     Axle = erlmachine_axle:axle(),
 
     Prot = erlmachine_prototype:prototype(ProtName, ProtOpt),
-    Model = erlmachine_model:model(ModelName, ModelOpt, Prot),
+    Model = erlmachine_model:model(ModelName, ModelOpt),
 
-    Assembly = erlmachine_assembly:model(Axle, Model),
+    Assembly = erlmachine_assembly:prototype(erlmachine_assembly:model(Axle, Model), Prot),
     {ok, Rel} = process(Assembly),
     erlmachine_assembly:extensions(Rel, Exts).
 
@@ -243,8 +307,8 @@ gearbox(ModelName, ModelOpt, ProtName, ProtOpt, Env, Exts) when is_list(Exts) ->
     GearBox = erlmachine_gearbox:gearbox(),
 
     Prot = erlmachine_prototype:prototype(ProtName, ProtOpt),
-    Model = erlmachine_model:model(ModelName, ModelOpt, Prot),
+    Model = erlmachine_model:model(ModelName, ModelOpt),
 
-    Assembly = erlmachine_assembly:env(erlmachine_assembly:model(GearBox, Model), Env),
-    {ok, Rel} = process(Assembly),
+    Assembly = erlmachine_assembly:prototype(erlmachine_assembly:model(GearBox, Model), Prot),
+    {ok, Rel} = process(erlmachine_assembly:env(Assembly, Env)),
     erlmachine_assembly:extensions(Rel, Exts).

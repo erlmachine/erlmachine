@@ -45,33 +45,40 @@
                   success(pid()) | failure(term(), term()).
 start(Assembly) ->
     SN = erlmachine_assembly:serial_no(Assembly),
-    Model = erlmachine_assembly:model(Assembly), Prot = erlmachine_model:prototype(Model),
-    Opt = erlmachine_prototype:options(Prot),
-    Name = erlmachine_prototype:name(Prot),
+
+    Prot = erlmachine_assembly:prototype(Assembly),
+    Name = erlmachine_prototype:name(Prot), Opt = erlmachine_prototype:options(Prot),
+
     Name:prototype_init(SN, Assembly, Opt).
 
 -spec rotate(Assembly::assembly(), Msg::term()) ->
                     success().
 rotate(Assembly, Msg) ->
     SN = erlmachine_assembly:serial_no(Assembly),
-    Model = erlmachine_assembly:model(Assembly), Prot = erlmachine_model:prototype(Model),
+
+    Prot = erlmachine_assembly:prototype(Assembly),
     Name = erlmachine_prototype:name(Prot),
+
     Name:prototype_cast(SN, Msg).
 
 -spec transmit(Assembly::assembly(), Req::term()) ->
                       term() | failure(term(), term()).
 transmit(Assembly, Req) ->
     SN = erlmachine_assembly:serial_no(Assembly),
-    Model = erlmachine_assembly:model(Assembly), Prot = erlmachine_model:prototype(Model),
+
+    Prot = erlmachine_assembly:prototype(Assembly),
     Name = erlmachine_prototype:name(Prot),
+
     Name:prototype_call(SN, Req).
 
 -spec stop(Assembly::assembly()) ->
                   success().
 stop(Assembly) ->
     SN = erlmachine_assembly:serial_no(Assembly),
-    Model = erlmachine_assembly:model(Assembly), Prot = erlmachine_model:prototype(Model),
+
+    Prot = erlmachine_assembly:prototype(Assembly),
     Name = erlmachine_prototype:name(Prot),
+
     Name:prototype_terminate(SN).
 
 
