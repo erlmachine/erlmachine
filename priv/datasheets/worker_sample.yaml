@@ -9,7 +9,7 @@ model:
   options:
     - key: value
 prototype:
-  name: erlmachine_worker_default_prototype
+  name: erlmachine_worker_prototype_default
   options:
     - key: value
 tags:
@@ -18,4 +18,4 @@ label: test
 part_no: PN-0
 env:
   key: value
-desc: Sample of worker datasheet
+desc: Worker datasheet sample

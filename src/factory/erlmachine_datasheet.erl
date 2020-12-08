@@ -18,7 +18,7 @@
 -export([validate/1]).
 
 -export([iterator/1, next/1]).
--export([get/2]).
+-export([find/2]).
 
 -type datasheet() :: map().
 
@@ -38,14 +38,9 @@ schema() ->
 new() ->
     maps:new().
 
--spec get(Field::term(), Datasheet::datasheet()) -> term().
-get(Field, Datasheet) ->
-    maps:get(Field, Datasheet).
-
 -spec validate(Datasheet::map()) -> success(map()) | failure(term()).
 validate(Datasheet) ->
     jesse:validate(schema(), Datasheet).
-
 
 -spec decode(Spec::list(), Opt::list()) ->
                     success(datasheet()) | failure(term(), term()).
@@ -73,3 +68,7 @@ iterator(Datasheet) ->
 -spec next(Iterator::term()) -> none | {Key::binary(), Value::term(), Iterator::term()}.
 next(Iterator) ->
     maps:next(Iterator).
+
+-spec find(Field::term(), Datasheet::datasheet()) -> success(term()) | failure().
+find(Field, Datasheet) ->
+    maps:find(Field, Datasheet).

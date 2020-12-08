@@ -142,8 +142,8 @@ stop(Assembly) ->
     ok = Name:stop(Assembly),
     ok = erlmachine_schema:del_vertex(Schema, Vertex).
 
-%% TODO: To supply mesh/unmesh calls with Edge label args;
-%% NOTE: They must be graphically displayed
+%% TODO: To supply connect/disconnect by edge label args (via graph API the all interaction through schema);
+%% NOTE: They must be graphically displayed;
 
 -record(state, {
 }).

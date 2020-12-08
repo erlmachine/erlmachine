@@ -3,6 +3,7 @@
 %% TODO: To provide visualization of:
 %% a) Installation schema;
 %% b) Routing schema;
+%% c) Extension vetices which are labeled, tagged and displayed with desc;
 
 -export([new/0]).
 

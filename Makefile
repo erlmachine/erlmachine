@@ -4,7 +4,7 @@ PROJECT_VERSION = 2.0.0
 
 DEPS = jsx yamerl jessy
 
-TEST_DEPS = meck jsx yamerl jessy
+TEST_DEPS = meck
 
 dep_jsx = git https://github.com/talentdeficit/jsx.git main 3.0.0
 dep_yamerl = git https://github.com/yakaz/yamerl.git v0.8.0

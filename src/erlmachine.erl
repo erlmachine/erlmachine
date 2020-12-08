@@ -22,7 +22,7 @@
 
 -export([request_reply/2, request_reply/3]).
 
--export([failure/1, failure/2, failure/3]).
+-export([failure/0, failure/1, failure/2, failure/3]).
 -export([success/0, success/1, success/2]).
 
 -export([attribute/3]).
@@ -208,13 +208,17 @@ correlation_id(Motion, Id) ->
 %%% Reply API
 %%%===================================================================
 
--spec failure(E::term(), R::term()) -> failure(E::term(), R::term()).
-failure(E, R) -> 
-    erlmachine_system:failure(E, R).
+-spec failure() -> failure().
+failure() ->
+    erlmachine_system:failure().
 
 -spec failure(E::term()) -> failure(E::term()).
 failure(E) ->
     erlmachine_system:failure(E).
+
+-spec failure(E::term(), R::term()) -> failure(E::term(), R::term()).
+failure(E, R) -> 
+    erlmachine_system:failure(E, R).
 
 -spec failure(E::term(), R::term(), S::term()) -> failure(E::term(), R::term(), S::term()).
 failure(E, R, S) -> 

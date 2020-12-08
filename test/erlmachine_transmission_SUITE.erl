@@ -28,7 +28,7 @@ init_per_suite(Config) ->
 
     {ok, _} = erlmachine_factory:start(),
 
-    GearBox = erlmachine_factory:gearbox(erlmachine_gearbox_sample, [], #{}, []),
+    GearBox = erlmachine_factory:gearbox(erlmachine_gearbox_sample, [], #{}, <<"Transmission SUITE">>, []),
     {ok, Pid} = erlmachine_sample:start(GearBox),
 
     Setup = [{pid, Pid}],
@@ -119,7 +119,7 @@ install() ->
 
 install(Config) ->
     Pid = ?config(pid, Config),
-    Ext = erlmachine_factory:gear(erlmachine_gear_sample, []),
+    Ext = erlmachine_factory:gear(erlmachine_gear_sample, [], <<"Install test case">>),
     {ok, _} = erlmachine_sample:install(Pid, 'root', Ext),
     ok.
 
