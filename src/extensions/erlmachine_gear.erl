@@ -6,7 +6,7 @@
 -export([gear/0]).
 
 -export([start/1]).
--export([rotate/3, transmit/2]).
+-export([rotate/2, transmit/2]).
 -export([stop/1]).
 
 -export([type/0]).
@@ -27,10 +27,10 @@ gear() ->
 start(Gear) ->
     erlmachine_worker_prototype:start(Gear).
 
--spec rotate(Gear::assembly(), Motion::term(), Ext::assembly()) ->
+-spec rotate(Gear::assembly(), Motion::term()) ->
                     success().
-rotate(Gear, Motion, Ext) ->
-    erlmachine_worker_prototype:rotate(Gear, Motion, Ext).
+rotate(Gear, Motion) ->
+    erlmachine_worker_prototype:rotate(Gear, Motion).
 
 -spec transmit(Gear::assembly(), Motion::term()) ->
                       term() | failure(term(), term()).

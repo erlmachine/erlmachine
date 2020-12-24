@@ -4,12 +4,13 @@
 
 -export([start/0, stop/0, priv_dir/0]).
 
--export([start/1, start/2]).
+-export([boot/1, boot/2]).
 
--export([rotate/3, transmit/3]).
+-export([process/3]).
+-export([execute/3]).
 -export([install/3, uninstall/3]).
 
--export([stop/1, stop/2]).
+-export([shutdown/1, shutdown/2, shutdown/3]).
 
 -export([motion/2]).
 -export([header/1, header/2, body/1, body/2]).
@@ -78,28 +79,28 @@ priv_dir() ->
 %%  Erlmachine doesn't restrict your design with the one possible way but instead provide you ability to implement your own components accordingly to your vison.
 %% This ability is available under flexible mechanism of prototypes and overloading (models).
 
--spec start(Schema::assembly()) ->
+-spec boot(Schema::assembly()) ->
                    success(pid()) | ingnore | failure(term()).
-start(Schema) ->
-    start(Schema, 'root').
+boot(Schema) ->
+    boot(Schema, 'root').
 
--spec start(Schema::assembly(), Vertex::term()) ->
+-spec boot(Schema::assembly(), Vertex::term()) ->
                    success(pid()) | ingnore | failure(term()).
-start(Schema, Vertex) ->
+boot(Schema, Vertex) ->
     Assembly = erlmachine_schema:vertex(Schema, Vertex),
-    erlmachine_transmission:start(Assembly).
+    erlmachine_transmission:boot(Assembly).
 
--spec rotate(Schema::assembly(), Vertex::term(), Motion::term()) ->
+-spec process(Schema::assembly(), Vertex::term(), Motion::term()) ->
                     term().
-rotate(Schema, Vertex, Motion) ->
+process(Schema, Vertex, Motion) ->
     Assembly = erlmachine_schema:vertex(Schema, Vertex),
-    erlmachine_transmission:rotate(Assembly, Motion).
+    erlmachine_transmission:process(Assembly, Motion).
 
--spec transmit(Schema::assembly(), Vertex::term(), Motion::term()) ->
+-spec execute(Schema::assembly(), Vertex::term(), Motion::term()) ->
                       term().
-transmit(Schema, Vertex, Motion) ->
+execute(Schema, Vertex, Motion) ->
     Assembly = erlmachine_schema:vertex(Schema, Vertex),
-    erlmachine_transmission:transmit(Assembly, Motion).
+    erlmachine_transmission:execute(Assembly, Motion).
 
 -spec install(Schema::term(), Vertex::term(), Ext::assembly()) ->
                      success(pid()) | ingnore | failure(term()).
@@ -113,16 +114,22 @@ uninstall(Schema, Vertex, Id) ->
     Assembly = erlmachine_schema:vertex(Schema, Vertex),
     erlmachine_transmission:uninstall(Assembly, Id).
 
--spec stop(Schema::assembly()) ->
+-spec shutdown(Schema::assembly()) ->
                        success().
-stop(Schema) ->
-    stop(Schema, 'root').
+shutdown(Schema) ->
+    shutdown(Schema, 'root').
 
--spec stop(Schema::assembly(), Vertex::term()) ->
+-spec shutdown(Schema::assembly(), Vertex::term()) ->
+                      success().
+shutdown(Assembly, Vertex) ->
+    Schema = erlmachine_assembly:schema(Assembly),
+    shutdown(Schema, Vertex, normal).
+
+-spec shutdown(Schema::assembly(), Vertex::term(), Reason::term()) ->
                   success().
-stop(Schema, Vertex) ->
+shutdown(Schema, Vertex, Reason) ->
     Assembly = erlmachine_schema:vertex(Schema, Vertex),
-    erlmachine_transmission:stop(Assembly).
+    erlmachine_transmission:shutdown(Assembly, Reason).
 
 -spec motion(Header::header(), Body::body()) -> motion().
 motion(Header, Body) ->

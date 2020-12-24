@@ -39,10 +39,12 @@ new() ->
 %% Edge is described by reg.
 
 %% NOTE: The main purpouse of this call is to register a route;
+%% vertex/2 allows to find extension within schema (via label);
+%% vertices/1 allows to query the full extensions list;
+
+
 -spec add_edge(Schema::term(), V1::vertex(), Ext::assembly(), Label::term()) -> vertex().
-add_edge(Schema, V1, Ext, Label) ->
-    V2 = add_vertex(Schema, Ext),
-    %% TODO: To determinate edge type (mesh or install);
+add_edge(Schema, V1, V2, Label) ->
     digraph:add_edge(Schema, V1, V2, Label),
     V2.
 
@@ -63,22 +65,15 @@ del_vertex(Schema, V) ->
     true = digraph:del_vertex(Schema, V),
     erlmachine:success().
 
-%% Can be used to retrive the full extensions list;
 -spec vertices(Schema::term()) -> [] | [vertex()].
 vertices(Schema) ->
     [vertex(Schema, V) || V <- digraph:vertices(Schema)].
 
-%% We are going to provide access by path gearbox.shaft.# (like rabbitmq notation) too;
-%% Can be used as find operation;
 -spec vertex(Schema::term(), V::vertex()) -> 
-                  assembly() | false.
+                  assembly().
 vertex(Schema, V) ->
-    case digraph:vertex(Schema, V) of 
-        {_, Assembly} ->
-            Assembly;
-        _ ->
-            false
-    end.
+    {_, Assembly} = digraph:vertex(Schema, V),
+    Assembly.
 
 -spec in_edges(Schema::term(), V::vertex()) -> [] | [edge()].
 in_edges(Schema, V) ->
@@ -94,7 +89,7 @@ edges(Schema) ->
 out_edges(Schema, V) ->
     [edge(Schema, E)|| E <- digraph:out_edges(Schema, V)].
 
--spec edge(Schema::term(), E::edge()) -> {assembly(), assembly()}.
+-spec edge(Schema::term(), E::edge()) -> {assembly(), assembly(), term()}.
 edge(Schema, E) ->
     {_E, V1, V2, Label} = digraph:edge(Schema, E),
     {vertex(Schema, V1), vertex(Schema, V2), Label}.

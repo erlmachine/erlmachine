@@ -26,10 +26,9 @@ init_per_suite(Config) ->
     mnesia:create_schema([node()]), ok = mnesia:start(),
 %    ok = mnesia:wait_for_tables([erlmachine_factory:tabname()], 5000),
 
+    Env = #{},
     {ok, _} = erlmachine_factory:start(),
-
-    GearBox = erlmachine_factory:gearbox(erlmachine_gearbox_sample, [], #{}, <<"Transmission SUITE">>, []),
-    {ok, Pid} = erlmachine_sample:start(GearBox),
+    {ok, Pid} = erlmachine_sample:start(Env),
 
     Setup = [{pid, Pid}],
     lists:concat([Setup, Config]).

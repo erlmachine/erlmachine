@@ -13,9 +13,9 @@
 %% b) To gather statistics into graph;
 
 %% API
--export([start/1]).
+-export([boot/1]).
 -export([install/2, uninstall/2]).
--export([stop/1]).
+-export([shutdown/1]).
 
 %% Context API
 -export([init/1, start_child/1, terminate_child/1, terminate/1]).
@@ -42,12 +42,12 @@
 %%%  Transmission API
 %%%===================================================================
 
--spec start(Assembly::assembly()) ->
+-spec boot(Assembly::assembly()) ->
                      success(pid()) | failure(term(), term()).
-start(Assembly) ->
+boot(Assembly) ->
     SN = erlmachine_assembly:serial_no(Assembly),
     Exts = [Ext|| Ext <- erlmachine_assembly:extensions(Assembly)],
-    Specs = [spec(Assembly, Ext)|| Ext <- Exts],
+    Specs = [erlmachine_transmission:spec(Assembly, Ext)|| Ext <- Exts],
 
     Prot = erlmachine_assembly:prototype(Assembly),
     Name = erlmachine_prototype:name(Prot), Opts = erlmachine_prototype:options(Prot),
@@ -58,7 +58,7 @@ start(Assembly) ->
                      success(pid()) | failure(term(), term()).
 install(Assembly, Ext) ->
     SN = erlmachine_assembly:serial_no(Assembly),
-    Spec = spec(Assembly, Ext),
+    Spec = erlmachine_transmission:spec(Assembly, Ext),
 
     Prot = erlmachine_assembly:prototype(Assembly),
     Name = erlmachine_prototype:name(Prot),
@@ -75,33 +75,15 @@ uninstall(Assembly, Id) ->
 
     Name:prototype_terminate_child(SN, Id, _Context = [Assembly, Id]).
 
--spec stop(Assembly::assembly()) ->
+-spec shutdown(Assembly::assembly()) ->
                        success().
-stop(Assembly) ->
+shutdown(Assembly) ->
     SN = erlmachine_assembly:serial_no(Assembly),
 
     Prot = erlmachine_assembly:prototype(Assembly),
     Name = erlmachine_prototype:name(Prot),
 
     Name:prototype_terminate(SN, Assembly).
-
-%% TODO erlmachine_supervisor:install() will be called from prototype;
--spec spec(Assembly::assembly(), Ext::assembly()) -> Spec::map().
-spec(Assembly, Ext) ->
-    SN = erlmachine_assembly:serial_no(Assembly),
-    Schema = erlmachine_assembly:schema(Assembly),
-    Env = erlmachine_assembly:env(Assembly),
-    Rel = erlmachine_assembly:schema(erlmachine_assembly:env(Ext, Env), Schema),
-    Module = erlmachine_assembly:name(Rel),
-    %% TODO Start arguments need to be formed outside;
-    Start = {Module, start, [Rel]},
-
-    Type = Module:type(), true = (Type == supervisor orelse Type == worker),
-    #{
-      id => SN,
-      start => Start,
-      type => Type
-     }.
 
 %%%===================================================================
 %%% Prototype API

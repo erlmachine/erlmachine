@@ -151,13 +151,13 @@ prototype(Assembly) ->
 prototype(Assembly, Prot) ->
     Assembly#assembly{ prototype = Prot }.
 
--spec extensions(Assembly::assembly()) -> list(assembly()).
+-spec extensions(Assembly::assembly()) -> [assembly()].
 extensions(Assembly) ->
     Assembly#assembly.extensions.
 
--spec extensions(Assembly::assembly(), Exts::list(assembly())) -> assembly().
+-spec extensions(Assembly::assembly(), Exts::[assembly()]) -> assembly().
 extensions(Assembly, Exts) ->
-    Assembly#assembly{ extensions=Exts }.
+    Assembly#assembly{ extensions = Exts }.
 
 -spec part_no(Assembly::assembly()) -> term().
 part_no(Assembly) ->

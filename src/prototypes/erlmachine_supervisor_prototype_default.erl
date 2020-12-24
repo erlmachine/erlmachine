@@ -52,7 +52,7 @@ prototype_terminate_child(SN, Id, Context) ->
 -spec prototype_terminate(SN::serial_no(), Context::term()) ->
                                  success().
 prototype_terminate(SN, Context) ->
-    ok = erlmachine_supervisor_prototype:terminate(Context),
+    erlmachine_supervisor_prototype:terminate(Context),
     Reason = normal,
     exit(whereis(id(SN)), Reason),
     erlmachine:success().

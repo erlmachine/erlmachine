@@ -5,7 +5,7 @@
 
 -export([shaft/0]).
 
--export([install/1, rotate/3, transmit/2,  uninstall/1]).
+-export([install/1, rotate/2, transmit/2,  uninstall/1]).
 
 -export([type/0]).
 -export([prefix/0]).
@@ -25,10 +25,10 @@ shaft() ->
 install(Shaft) ->
     erlmachine_worker_prototype:install(Shaft).
 
--spec rotate(Shaft::assembly(), Motion::term(), Ext::assembly()) ->
+-spec rotate(Shaft::assembly(), Motion::term()) ->
                     success().
-rotate(Shaft, Motion, Ext) ->
-    erlmachine_worker_prototype:rotate(Shaft, Motion, Ext).
+rotate(Shaft, Motion) ->
+    erlmachine_worker_prototype:rotate(Shaft, Motion).
 
 -spec transmit(Shaft::assembly(), Motion::term()) ->
                       success(term(), assembly()) | failure(term(), term(), term()).

@@ -18,10 +18,10 @@
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
 
--spec start(Assembly::assembly()) ->
+-spec start(Env::map()) ->
                    success(pid()) | ingnore | failure(term()).
-start(Assembly) ->
-    gen_server:start(?MODULE, Assembly, []).
+start(Env) ->
+    gen_server:start(?MODULE, Env, []).
 
 -record(install, { vertex::term(), extension::assembly() }).
 
@@ -49,9 +49,12 @@ stop(Pid) ->
 
 -record(state, { schema::term() }).
 
-init(Assembly) ->
-    Schema = erlmachine_schema:new(),
-    {ok, _Pid} = erlmachine_transmission:start(Schema, Assembly),
+init(Env) ->
+    GearBox = erlmachine_factory:gearbox(erlmachine_gearbox_sample, [], Env, <<"Sample schema">>, []),
+
+    Schema = erlmachine_assembly:schema(GearBox),
+
+    {ok, _Pid} = erlmachine:boot(GearBox),
     {ok, #state{ schema = Schema }}.
 
 handle_call(#install{ vertex = Vertex, extension = Ext }, _From, State) ->

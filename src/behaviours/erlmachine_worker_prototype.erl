@@ -1,5 +1,5 @@
 -module(erlmachine_worker_prototype).
-%% NOTE: The main puprouse of the worker prototype is the ability to impact transport layer without affecting business layer of service;
+%% NOTE: The main purpouse of the worker prototype is the ability to make impact on transport layer without affecting business layer of service;
 %% NOTE: There are few examples:
 %% 1. direct function call;
 %% 2. gen_server (via local, global, to use process registry, etc.);
@@ -9,12 +9,17 @@
 %% 6. via http server (within Kubernetes cluster or in the cloud like AWS, etc.);
 
 %% NOTE: Worker prototype concerns: overloading, error handling, capacity management, etc.;
-%% NOTE: In comparision to erlmachine_supervisor_prototype a worker prototype is statefull;
+%% NOTE: In comparision to erlmachine_supervisor_prototype a worker prototype is state-full;
+%% NOTE: The responsibility of worker prototype is to terminate running process after error status has returned;
+%% NOTE: The responsibility of worker prototype is to catch the all errors outside erlmachine scope;
 
 %% API
--export([start/1]).
--export([rotate/2, transmit/2]).
--export([stop/1]).
+-export([boot/1]).
+
+-export([process/2]).
+-export([execute/2]).
+
+-export([shutdown/1]).
 
 %% Context API
 -export([init/1, call/2, cast/2, info/2, terminate/2]).
@@ -41,9 +46,9 @@
 %%%  Transmission API
 %%%===================================================================
 
--spec start(Assembly::assembly()) ->
+-spec boot(Assembly::assembly()) ->
                   success(pid()) | failure(term(), term()).
-start(Assembly) ->
+boot(Assembly) ->
     SN = erlmachine_assembly:serial_no(Assembly),
 
     Prot = erlmachine_assembly:prototype(Assembly),
@@ -51,9 +56,9 @@ start(Assembly) ->
 
     Name:prototype_init(SN, Assembly, Opt).
 
--spec rotate(Assembly::assembly(), Msg::term()) ->
+-spec process(Assembly::assembly(), Msg::term()) ->
                     success().
-rotate(Assembly, Msg) ->
+process(Assembly, Msg) ->
     SN = erlmachine_assembly:serial_no(Assembly),
 
     Prot = erlmachine_assembly:prototype(Assembly),
@@ -61,9 +66,9 @@ rotate(Assembly, Msg) ->
 
     Name:prototype_cast(SN, Msg).
 
--spec transmit(Assembly::assembly(), Req::term()) ->
-                      term() | failure(term(), term()).
-transmit(Assembly, Req) ->
+-spec execute(Assembly::assembly(), Req::term()) ->
+                      term().
+execute(Assembly, Req) ->
     SN = erlmachine_assembly:serial_no(Assembly),
 
     Prot = erlmachine_assembly:prototype(Assembly),
@@ -71,9 +76,9 @@ transmit(Assembly, Req) ->
 
     Name:prototype_call(SN, Req).
 
--spec stop(Assembly::assembly()) ->
+-spec shutdown(Assembly::assembly()) ->
                   success().
-stop(Assembly) ->
+shutdown(Assembly) ->
     SN = erlmachine_assembly:serial_no(Assembly),
 
     Prot = erlmachine_assembly:prototype(Assembly),
@@ -81,41 +86,31 @@ stop(Assembly) ->
 
     Name:prototype_terminate(SN).
 
-
 %%%===================================================================
-%%% Prototype API
+%%% Context API
 %%%===================================================================
 
--spec init(Context::context()) -> 
+-spec init(Context::context()) ->
                   success(context()) | failure(term(), term(), context()).
 init(Context) ->
-    Assembly = Context,
-    erlmachine:success(Assembly).
-
--spec call(Context::context(), Req::term()) ->
-                  success(term(), context()) | failure(term(), term(), context()).
-call(Context, _Req) ->
-    Assembly = Context,
-    erlmachine:success(ok, Assembly).
+    erlmachine_worker:boot(Context).
 
 -spec cast(Context::context(), Msg::term()) ->
                   success(context()) | failure(term(), term(), context()).
-cast(Context, _Msg) ->
-    Assembly = Context,
-    %% The rotation is optional and depends on models return;
-    %erlmachine_transmission:rotate(Ext, Motion),
-    erlmachine:success(Assembly).
+cast(Context, Msg) ->
+    erlmachine_worker:process(Context, Msg).
+
+-spec call(Context::context(), Req::term()) ->
+                  success(term(), context()) | failure(term(), term(), context()).
+call(Context, Req) ->
+    erlmachine_worker:execute(Context, Req).
 
 -spec info(Context::context(), Info::term()) ->
                   success(context()) | failure(term(), term(), context()).
-info(Context, _Info) ->
-    Assembly = Context,
-    %% The rotation is optional and depends on models return;
-    %erlmachine_transmission:rotate(Ext, Motion),
-    erlmachine:success(Assembly).
+info(Context, Info) ->
+    erlmachine_worker:pressure(Context, Info).
 
--spec terminate(Context::assembly(), Reason::term()) -> 
-                       success() | failure(term(), term()).
-terminate(Context, _Reason) ->
-    _Assembly = Context,
-    erlmachine:success().
+-spec terminate(Context::context(), Reason::term()) ->
+                       success().
+terminate(Context, Reason) ->
+    erlmachine_worker:shutdown(Context, Reason).

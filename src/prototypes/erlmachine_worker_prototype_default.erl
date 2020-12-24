@@ -1,5 +1,4 @@
 -module(erlmachine_worker_prototype_default).
-
 -export([name/0]).
 
 %% API.
@@ -92,4 +91,5 @@ handle_info(Info, #state{ context = Context }) ->
     {noreply, #state{ context = Context2 }}.
 
 terminate(Reason, #state{ context = Context }) ->
-    ok = erlmachine_worker_prototype:terminate(Context, Reason).
+    erlmachine_worker_prototype:terminate(Context, Reason),
+    ok.
