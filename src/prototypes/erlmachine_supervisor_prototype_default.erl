@@ -28,31 +28,35 @@ id(SN) ->
 %%%  erlmachine_supervisor_prototype behaviour
 %%%===================================================================
 
--record(init, { specs::[map()], opts::[] }).
+-record(init, { specs::[map()], opt::[] }).
 
--spec prototype_init(SN::serial_no(), Specs::list(map()), Context::term(), Opts::list()) ->
+-spec prototype_init(SN::serial_no(), Specs::list(map()), Context::term(), Opt::list()) ->
                             success(pid()) | failure(term(), term()).
-prototype_init(SN, Specs, Context, Opts) ->
-    Com = #init{ specs=Specs, opts=Opts },
-    ok = erlmachine_supervisor_prototype:init(Context),
+prototype_init(SN, Specs, Context, Opt) ->
+    ok = erlmachine_supervisor_prototype:init(Context, Specs),
+
+    Com = #init{ specs = Specs, opt = Opt },
     supervisor:start_link({local, id(SN)}, ?MODULE, Com).
 
 -spec prototype_start_child(SN::serial_no(), Spec::map(), Context::term()) ->
                                    success(pid()) | failure(term(), term()).
 prototype_start_child(SN, Spec, Context) ->
-    ok = erlmachine_supervisor_prototype:start_child(Context),
+    ok = erlmachine_supervisor_prototype:start_child(Context, Spec),
+
     supervisor:start_child(id(SN), Spec).
 
--spec prototype_terminate_child(SN::serial_no(), Id::term(), Context::term()) ->
+-spec prototype_terminate_child(SN::serial_no(), ID::term(), Context::term()) ->
                                        success().
-prototype_terminate_child(SN, Id, Context) ->
-    ok = erlmachine_supervisor_prototype:terminate_child(Context),
-    supervisor:terminate_child(id(SN), Id).
+prototype_terminate_child(SN, ID, Context) ->
+    ok = erlmachine_supervisor_prototype:terminate_child(Context, ID),
+
+    supervisor:terminate_child(id(SN), ID).
 
 -spec prototype_terminate(SN::serial_no(), Context::term()) ->
                                  success().
 prototype_terminate(SN, Context) ->
     erlmachine_supervisor_prototype:terminate(Context),
+
     Reason = normal,
     exit(whereis(id(SN)), Reason),
     erlmachine:success().
@@ -61,8 +65,8 @@ prototype_terminate(SN, Context) ->
 %%%  supervisor behaviour
 %%%===================================================================
 
-init(#init{ specs=Specs, opts=Opts }) ->
-    Strategy = proplists:get_value(strategy, Opts, one_for_one),
-    Int = proplists:get_value(intensity, Opts, 1),
-    Per = proplists:get_value(period, Opts, 5),
+init(#init{ specs = Specs, opt = Opt }) ->
+    Strategy = proplists:get_value(strategy, Opt, one_for_one),
+    Int = proplists:get_value(intensity, Opt, 1),
+    Per = proplists:get_value(period, Opt, 5),
     erlmachine:success({#{strategy => Strategy, intensity => Int, period => Per}, Specs}).

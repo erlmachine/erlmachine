@@ -14,6 +14,8 @@
          model/1, model/2,
          prototype/1, prototype/2,
          extensions/1, extensions/2,
+         uid/1, uid/2,
+         gid/1, gid/2,
          tags/1, tags/2,
          label/1, label/2,
          part_no/1, part_no/2,
@@ -23,6 +25,7 @@
 
 -export([store/2, delete/2, find/2]).
 
+-include("erlmachine_user.hrl").
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
 
@@ -55,7 +58,11 @@
                     %% Service level specification;
                     prototype::prototype(),
                     %% Build configuration;
-                    extensions=[]::list(assembly()),
+                    extensions=[]::[assembly()],
+                    %% User id;
+                    uid::uid(),
+                    %% User group Id;
+                    gid::gid(),
                     %% Tags are used as selection criteria ([supervisor, overloaded, etc.]);
                     tags=[]::list(term()),
                     %% Label is unique id within schema (by default serial_no);
@@ -158,6 +165,22 @@ extensions(Assembly) ->
 -spec extensions(Assembly::assembly(), Exts::[assembly()]) -> assembly().
 extensions(Assembly, Exts) ->
     Assembly#assembly{ extensions = Exts }.
+
+-spec uid(Assembly::assembly()) -> uid().
+uid(Assembly) ->
+    Assembly#assembly.uid.
+
+-spec uid(Assembly::assembly(), UID::uid()) -> assembly().
+uid(Assembly, UID) ->
+    Assembly#assembly{ uid = UID }.
+
+-spec gid(Assembly::assembly()) -> gid().
+gid(Assembly) ->
+    Assembly#assembly.gid.
+
+-spec gid(Assembly::assembly(), GID::gid()) -> assembly().
+gid(Assembly, GID) ->
+    Assembly#assembly{ gid = GID }.
 
 -spec part_no(Assembly::assembly()) -> term().
 part_no(Assembly) ->

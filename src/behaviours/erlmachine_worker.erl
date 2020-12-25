@@ -2,6 +2,7 @@
 %% NOTE: The main purpouse of the worker model is the ability to make impact on domain layer without affecting transport layer of service;
 %% NOTE: Pressure callback was intentionally reduced to the "gear" mode with the idea to support readability of schemas (load balancing or routing facilities require to arrange additional component on a schema);
 
+%% NOTE: Worker model concerns: domain layer processing;
 %% API
 -export([boot/1]).
 
@@ -9,7 +10,7 @@
 -export([execute/2]).
 -export([pressure/2]).
 
--export([shutdown/2]).
+-export([shutdown/1]).
 
 -export([context/2]).
 
@@ -34,11 +35,11 @@
 -callback pressure(MN::model_no(), Load::term(), State::state()) ->
     success(state()) | success(term(), state()) | failure(term(), term(), state()).
 
--callback shutdown(MN::model_no(), Reason::term(), State::state()) ->
+-callback shutdown(MN::model_no(), State::state()) ->
     success().
 
 %% NOTE: Lazy callbacks are designed to reduce computational resources when extension is deadlocked;
--optional_callbacks([process/3, process/5, pressure/3, shutdown/3]).
+-optional_callbacks([process/3, process/5, pressure/3, shutdown/2]).
 
 -spec boot(Context::assembly()) ->
                    success(assembly()) | failure(term(), term(), assembly()).
@@ -74,15 +75,15 @@ execute(Context, Command) ->
 pressure(Context, Load) ->
     erlmachine_pressure:pressure(Context, Load).
 
--spec shutdown(Context::assembly(), Reason::term()) -> 
+-spec shutdown(Context::assembly()) -> 
                       success().
-shutdown(Context, Reason) ->
+shutdown(Context) ->
     MN = erlmachine_assembly:model_no(Context),
 
     Model = erlmachine_assembly:model(Context), Name = erlmachine_model:name(Model),
     Body = erlmachine_assembly:body(Context),
 
-    Name:shutdown(MN, Reason, Body).
+    Name:shutdown(MN, Body).
 
 %% NOTE: This function is responsible to control model output;
 %% TODO: To provide errors debug at this level;

@@ -31,7 +31,7 @@
 -export([process/2]).
 -export([execute/2]).
 
--export([shutdown/2]).
+-export([shutdown/1]).
 
 -export([mesh/3, pass/3]).
 
@@ -90,15 +90,15 @@ install(Assembly, Ext) ->
     ok = erlmachine_system:boot(Res, Assembly, Ext),
     Res.
 
--spec uninstall(Assembly::assembly(), Label::term()) ->
+-spec uninstall(Assembly::assembly(), ID::term()) ->
                        success().
-uninstall(Assembly, Label) ->
+uninstall(Assembly, ID) ->
     Schema = erlmachine_assembly:schema(Assembly),
 
-    Name = erlmachine_assembly:name(Assembly), V = erlmachine_assembly:label(Assembly),
-    Res = Name:uninstall(Assembly, Label),
-    ok = erlmachine_schema:del_vertex(Schema, V),
-    ok = erlmachine_system:shutdown(Res, Assembly, V),
+    Name = erlmachine_assembly:name(Assembly),
+    Res = Name:uninstall(Assembly, ID),
+    ok = erlmachine_schema:del_vertex(Schema, _V = ID),
+    ok = erlmachine_system:shutdown(Res, Assembly, ID),
     Res.
 
 %% TODO: To make via prototype call;
@@ -162,13 +162,14 @@ execute(Assembly, Command) ->
     Name = erlmachine_assembly:name(Assembly),
     Name:execute(Assembly, Command).
 
--spec shutdown(Assembly::assembly(), Reason::term()) ->
+-spec shutdown(Assembly::assembly()) ->
                        success().
-shutdown(Assembly, Reason) ->
+shutdown(Assembly) ->
     Schema = erlmachine_assembly:schema(Assembly), V = erlmachine_assembly:label(Assembly),
 
     Name = erlmachine_assembly:name(Assembly),
-    Res = Name:shutdown(Assembly, Reason),
+    Res = Name:shutdown(Assembly),
+
     erlmachine_schema:del_vertex(Schema, V),
     ok = erlmachine_system:shutdown(Res, Assembly, V),
     Res.

@@ -22,7 +22,7 @@
 -export([shutdown/1]).
 
 %% Context API
--export([init/1, call/2, cast/2, info/2, terminate/2]).
+-export([init/1, call/2, cast/2, info/2, terminate/1]).
 
 -type context() :: term().
 
@@ -54,7 +54,7 @@ boot(Assembly) ->
     Prot = erlmachine_assembly:prototype(Assembly),
     Name = erlmachine_prototype:name(Prot), Opt = erlmachine_prototype:options(Prot),
 
-    Name:prototype_init(SN, Assembly, Opt).
+    Name:prototype_init(SN, _Context = Assembly, Opt).
 
 -spec process(Assembly::assembly(), Msg::term()) ->
                     success().
@@ -110,7 +110,7 @@ call(Context, Req) ->
 info(Context, Info) ->
     erlmachine_worker:pressure(Context, Info).
 
--spec terminate(Context::context(), Reason::term()) ->
+-spec terminate(Context::context()) ->
                        success().
-terminate(Context, Reason) ->
-    erlmachine_worker:shutdown(Context, Reason).
+terminate(Context) ->
+    erlmachine_worker:shutdown(Context).

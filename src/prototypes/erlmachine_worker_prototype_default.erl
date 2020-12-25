@@ -42,7 +42,7 @@ prototype_init(SN, Context, Opts) ->
 
 -record(call, { request::term() }).
 
--spec prototype_call(SN::serial_no(), Req::term()) ->
+-spec prototype_call(SN::serial_no(), Req::term()) -> 
                             term().
 prototype_call(SN, Request) ->
     Com = #call{ request = Request },

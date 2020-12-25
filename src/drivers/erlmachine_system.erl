@@ -9,6 +9,7 @@
 
 -export([is_success/1, is_failure/1]).
 
+-include("erlmachine_assembly.hrl").
 -include("erlmachine_factory.hrl").
 
 -type failure() :: error.
@@ -72,35 +73,33 @@ is_failure(_) ->
 %%%===================================================================
 %%% Transmission hub
 %%%===================================================================
+%% TODO: TO supply restarts counter is an edge;
 
 boot({ok, Pid}, Assembly) when is_pid(Pid) ->
     Schema = erlmachine_assembly:schema(Assembly),
 
     Rel = erlmachine_tag:pid(Assembly, Pid),
-    erlmachine_schema:add_vertex(Schema, Rel),
-    ok;
+    ok = add_vertex(Schema, Rel);
 boot({error, {E, R}}, Assembly) ->
     Schema = erlmachine_assembly:schema(Assembly),
 
     Rel = erlmachine_tag:error(Assembly, E, R),
-    erlmachine_schema:add_vertex(Schema, Rel),
-    ok.
+    ok = add_vertex(Schema, Rel).
 
 boot(Res = {ok, Pid}, Assembly, Ext) when is_pid(Pid) ->
     Schema = erlmachine_assembly:schema(Assembly),
 
     Rel = erlmachine_tag:pid(Assembly, Pid),
-    erlmachine_schema:add_vertex(Schema, Rel),
+    ok = add_vertex(Schema, Rel),
 
     V1 = erlmachine_assembly:label(Assembly), V2 = erlmachine_assembly:label(Ext),
     erlmachine_schema:add_edge(Schema, V1, V2, Res),
-
     ok;
 boot(Res = {error, {E, R}}, Assembly, Ext) ->
     Schema = erlmachine_assembly:schema(Assembly),
 
     Rel = erlmachine_tag:error(Assembly, E, R),
-    erlmachine_schema:add_vertex(Schema, Rel),
+    ok = add_vertex(Schema, Rel),
 
     V1 = erlmachine_assembly:label(Assembly), V2 = erlmachine_assembly:label(Ext),
     erlmachine_schema:add_edge(Schema, V1, V2, Res),
@@ -116,7 +115,7 @@ process({error, {E, R}, Assembly}) ->
     Schema = erlmachine_assembly:schema(Assembly),
 
     Rel = erlmachine_tag:error(Assembly, E, R),
-    erlmachine_schema:add_vertex(Schema, Rel),
+    ok = add_vertex(Schema, Rel),
 
     %% NOTE: We should support DB indexing based on vertexes and edges;
     %% TODO: To create a separate in-memory datastore to store errors and invocations;
@@ -128,8 +127,11 @@ process({ok, _Assembly}, _Ext) ->
 process({ok, _Ret, _Assembly}, _Ext) ->
     %% TODO: Place for edge statistics gathering;
     ok;
-process(Res = {error, {_E, _R}, Assembly}, Ext) ->
+process(Res = {error, {E, R}, Assembly}, Ext) ->
     Schema = erlmachine_assembly:schema(Assembly),
+
+    Rel = erlmachine_tag:error(Assembly, E, R),
+    ok = add_vertex(Schema, Rel),
 
     V1 = erlmachine_assembly:label(Assembly), V2 = erlmachine_assembly:label(Ext),
     erlmachine_schema:add_edge(Schema, V1, V2, Res),
@@ -140,6 +142,9 @@ process(Res = {error, {_E, _R}, Assembly}, Ext) ->
 shutdown(ok, _Assembly, _V) ->
     ok.
 
-
-
+-spec add_vertex(Schema::term(), Assembly::assembly()) -> success().
+add_vertex(Schema, Assembly) ->
+    Rel = erlmachine_assembly:extensions(Assembly, []),
+    erlmachine_schema:add_vertex(Schema, Rel), 
+    ok.
 

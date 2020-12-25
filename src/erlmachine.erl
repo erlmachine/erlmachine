@@ -10,7 +10,7 @@
 -export([execute/3]).
 -export([install/3, uninstall/3]).
 
--export([shutdown/1, shutdown/2, shutdown/3]).
+-export([shutdown/1]).
 
 -export([motion/2]).
 -export([header/1, header/2, body/1, body/2]).
@@ -120,16 +120,10 @@ shutdown(Schema) ->
     shutdown(Schema, 'root').
 
 -spec shutdown(Schema::assembly(), Vertex::term()) ->
-                      success().
-shutdown(Assembly, Vertex) ->
-    Schema = erlmachine_assembly:schema(Assembly),
-    shutdown(Schema, Vertex, normal).
-
--spec shutdown(Schema::assembly(), Vertex::term(), Reason::term()) ->
                   success().
-shutdown(Schema, Vertex, Reason) ->
+shutdown(Schema, Vertex) ->
     Assembly = erlmachine_schema:vertex(Schema, Vertex),
-    erlmachine_transmission:shutdown(Assembly, Reason).
+    erlmachine_transmission:shutdown(Assembly).
 
 -spec motion(Header::header(), Body::body()) -> motion().
 motion(Header, Body) ->
