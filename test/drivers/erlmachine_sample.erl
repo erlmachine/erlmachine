@@ -53,8 +53,8 @@ init(Env) ->
     GearBox = erlmachine_factory:gearbox(erlmachine_gearbox_sample, [], Env, <<"Sample schema">>, []),
 
     Schema = erlmachine_assembly:schema(GearBox),
-
-    {ok, _Pid} = erlmachine:boot(GearBox),
+    ct:log("~nSChema is: ~p~n",[Schema]),
+    {ok, _Pid} = erlmachine:boot(Schema),
     {ok, #state{ schema = Schema }}.
 
 handle_call(#install{ vertex = Vertex, extension = Ext }, _From, State) ->

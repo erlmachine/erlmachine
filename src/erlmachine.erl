@@ -50,6 +50,8 @@
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_factory.hrl").
 
+-type schema() :: erlmachine_schema:schema().
+
 -type motion() :: erlmachine_transmission:motion().
 
 -type header() :: erlmachine_transmission:header().
@@ -79,10 +81,11 @@ priv_dir() ->
 %%  Erlmachine doesn't restrict your design with the one possible way but instead provide you ability to implement your own components accordingly to your vison.
 %% This ability is available under flexible mechanism of prototypes and overloading (models).
 
--spec boot(Schema::assembly()) ->
+-spec boot(Schema::schema()) ->
                    success(pid()) | ingnore | failure(term()).
 boot(Schema) ->
-    boot(Schema, 'root').
+    Root = erlmachine_schema:root(Schema),
+    boot(Schema, Root).
 
 -spec boot(Schema::assembly(), Vertex::term()) ->
                    success(pid()) | ingnore | failure(term()).
@@ -114,10 +117,11 @@ uninstall(Schema, Vertex, Id) ->
     Assembly = erlmachine_schema:vertex(Schema, Vertex),
     erlmachine_transmission:uninstall(Assembly, Id).
 
--spec shutdown(Schema::assembly()) ->
-                       success().
+-spec shutdown(Schema::schema()) ->
+                      success().
 shutdown(Schema) ->
-    shutdown(Schema, 'root').
+    Root = erlmachine_schema:root(Schema),
+    shutdown(Schema, Root).
 
 -spec shutdown(Schema::assembly(), Vertex::term()) ->
                   success().

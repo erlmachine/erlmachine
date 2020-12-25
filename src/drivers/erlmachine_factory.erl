@@ -284,10 +284,11 @@ axle(ModelName, ModelOpt, ProtName, ProtOpt, Desc, Exts) when is_list(Exts) ->
 -spec gearbox(Datasheet::datasheet(), Exts::list()) ->
                   assembly().
 gearbox(Datasheet, Exts) ->
-    GearBox = erlmachine_gearbox:gearbox(),
+    GearBox = erlmachine_gearbox:gearbox(), 
 
     {ok, Rel} = process(GearBox, Datasheet),
-    erlmachine_assembly:extensions(Rel, Exts).
+    Root = erlmachine:label(Rel), Schema = erlmachine_schema:new(Root),
+    erlmachine_assembly:extensions(erlmachine_assembly:schema(Rel, Schema), Exts).
 
 -spec gearbox(ModelName::atom(), ModelOpt::term(), Env::term(), Desc::binary(), Exts::list()) ->
                   assembly().
@@ -306,4 +307,6 @@ gearbox(ModelName, ModelOpt, ProtName, ProtOpt, Env, Desc, Exts) when is_list(Ex
 
     Assembly = erlmachine_assembly:prototype(erlmachine_assembly:model(GearBox, Model), Prot),
     {ok, Rel} = process(erlmachine_assembly:desc(erlmachine_assembly:env(Assembly, Env), Desc)),
-    erlmachine_assembly:extensions(Rel, Exts).
+
+    Root = erlmachine:label(Rel), Schema = erlmachine_schema:new(Root),
+    erlmachine_assembly:extensions(erlmachine_assembly:schema(Rel, Schema), Exts).
