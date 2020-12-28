@@ -27,11 +27,11 @@
 
 -export([boot/1, boot/2]).
 
--export([install/2, uninstall/2]).
--export([process/2]).
--export([execute/2]).
+-export([install/3, uninstall/3]).
+-export([process/3]).
+-export([execute/3]).
 
--export([shutdown/1]).
+-export([shutdown/4]).
 
 -export([mesh/3, pass/3]).
 
@@ -39,16 +39,19 @@
 -export([header/1, header/2]).
 -export([body/1, body/2]).
 
--export([spec/2]).
+-export([spec/1]).
 
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
 
+-type schema() :: erlmachine_schema:schema().
+-type vertex() :: erlmachine_schema:vertex().
+
 -type motion() :: map(). %% envelope;
-
 -type header() :: map().
-
 -type body() :: term().
+
+-type spec() :: map().
 
 -export_type([motion/0, header/0, body/0]).
 
@@ -60,50 +63,63 @@
 %% TODO: To pass schema arg each time when transmission invoked;
 %% TODO: To mark each schema edge after extension is running;
 
+-spec boot(Schema::schema(), V::term()) ->
+                  success(pid()) | failure(term(), term()).
+boot(Schema, V) ->
+    Assembly = erlmachine_schema:vertex(Schema, V), boot(Assembly).
+
 -spec boot(Assembly::assembly()) ->
                    success(pid()) | failure(term(), term()).
 boot(Assembly) ->
-    Schema = erlmachine_assembly:schema(Assembly), erlmachine_schema:add_vertex(Schema, Assembly),
-
-    Name = erlmachine_assembly:name(Assembly),
-    Res = Name:boot(Assembly),
+    Supervisor = erlmachine:is_supervisor(Assembly), Name = erlmachine_assembly:name(Assembly),
+    Res =
+        if Supervisor ->
+                Schema = erlmachine_assembly:schema(Assembly), V = erlmachine_assembly:label(Assembly),
+                Exts = erlmachine_schema:out_neighbours(Schema, V),
+                Name:boot(Assembly, Exts);
+           true ->
+                Name:boot(Assembly)
+        end,
     ok = erlmachine_system:boot(Res, Assembly),
     Res.
 
--spec boot(Assembly::assembly(), Ext::assembly()) ->
+%% NOTE: Schema and env params are inherited through thq all gearbox;
+-spec spec(Assembly::assembly()) -> spec().
+spec(Assembly) ->
+    SN = erlmachine_assembly:serial_no(Assembly),
+
+    Name = erlmachine_assembly:name(Assembly), Type = Name:type(),
+    Start = {?MODULE, boot, [Assembly]},
+    #{ id => SN, start => Start, type => Type }.
+
+-spec install(Schema::schema(), V::vertex(), Ext::assembly()) ->
                      success(pid()) | failure(term(), term()).
-boot(Assembly, Ext) ->
-    Schema = erlmachine_assembly:schema(Assembly), erlmachine_schema:add_vertex(Schema, Ext),
+install(Schema, V, Ext) ->
+    Assembly = erlmachine_schema:vertex(Schema, V), Name = erlmachine_assembly:name(Assembly),
+    erlmachine_schema:add_vertex(Schema, Ext),
 
-    Name = erlmachine_assembly:name(Ext),
-    Res = Name:boot(Ext),
-    ok = erlmachine_system:boot(Res, Assembly, Ext),
-    Res.
-
--spec install(Assembly::assembly(), Ext::assembly()) ->
-                     success(pid()) | failure(term(), term()).
-install(Assembly, Ext) ->
-    Schema = erlmachine_assembly:schema(Assembly), erlmachine_schema:add_vertex(Schema, Ext),
-
-    Name = erlmachine_assembly:name(Assembly),
     Res = Name:install(Assembly, Ext),
     ok = erlmachine_system:boot(Res, Assembly, Ext),
     Res.
 
--spec uninstall(Assembly::assembly(), ID::term()) ->
+-spec uninstall(Schema::schema(), V::vertex(), ID::term()) ->
                        success().
-uninstall(Assembly, ID) ->
-    Schema = erlmachine_assembly:schema(Assembly),
-
-    Name = erlmachine_assembly:name(Assembly),
+uninstall(Schema, V, ID) ->
+    Assembly = erlmachine_schema:vertex(Schema, V), Name = erlmachine_assembly:name(Assembly),
     Res = Name:uninstall(Assembly, ID),
-    ok = erlmachine_schema:del_vertex(Schema, _V = ID),
+
+    ok = erlmachine_schema:del_vertex(Schema, ID),
     ok = erlmachine_system:shutdown(Res, Assembly, ID),
     Res.
 
 %% TODO: To make via prototype call;
--spec process(Assembly::assembly(), Motion::term()) ->
+-spec process(Schema::schema(), V::vertex(), Motion::term()) ->
                     success().
+process(Schema, V, Motion) ->
+    Assembly = erlmachine_schema:vertex(Schema, V), ok = process(Assembly, Motion).
+
+-spec process(Assembly::assembly(), Motion::term()) ->
+                     success().
 process(Assembly, Motion) ->
     Name = erlmachine_assembly:name(Assembly),
     ok = Name:process(Assembly, Motion).
@@ -112,7 +128,7 @@ process(Assembly, Motion) ->
                   success(assembly()) | failure(term(), term(), assembly()).
 mesh(Module, Assembly, Motion) ->
     Schema = erlmachine_assembly:schema(Assembly), V = erlmachine_assembly:label(Assembly),
-    Exts = erlmachine_schema:out_edges(Schema, V),
+    Exts = erlmachine_schema:out_neighbours(Schema, V),
     if Exts == [] ->
             erlmachine:success(Assembly);
        true ->
@@ -133,7 +149,7 @@ mesh(Module, [Ext|Range], Assembly, Motion) ->
                   success(assembly()) | failure(term(), term(), assembly()).
 pass(Assembly, Motion, Action) ->
     Schema = erlmachine_assembly:schema(Assembly), V = erlmachine_assembly:label(Assembly),
-    Exts = erlmachine_schema:out_edges(Schema, V),
+    Exts = erlmachine_schema:out_neighbours(Schema, V),
     pass(Exts, Action, Assembly, Motion).
 
 pass(Exts, Module, Assembly, Motion) ->
@@ -156,21 +172,17 @@ rel({error, {_E, _R}, Assembly}) ->
     Assembly.
 
 %% Serve has designed to be synchronous. It can be used for direct API calls on the particular extension;
--spec execute(Assembly::assembly(), Command::term()) ->
+-spec execute(Schema::schema(), V::vertex(), Command::term()) ->
                       term().
-execute(Assembly, Command) ->
-    Name = erlmachine_assembly:name(Assembly),
+execute(Schema, V, Command) ->
+    Assembly = erlmachine_schema:vertex(Schema, V), Name = erlmachine_assembly:name(Assembly),
     Name:execute(Assembly, Command).
 
--spec shutdown(Assembly::assembly()) ->
+-spec shutdown(Schema::schema(), V::vertex(), Reason::term(), Timeout::term()) ->
                        success().
-shutdown(Assembly) ->
-    Schema = erlmachine_assembly:schema(Assembly), V = erlmachine_assembly:label(Assembly),
-
-    Name = erlmachine_assembly:name(Assembly),
-    Res = Name:shutdown(Assembly),
-
-    erlmachine_schema:del_vertex(Schema, V),
+shutdown(Schema, V, Reason, Timeout) ->
+    Assembly = erlmachine_schema:vertex(Schema, V), Name = erlmachine_assembly:name(Assembly),
+    Res = Name:shutdown(Assembly, Reason, Timeout),
     ok = erlmachine_system:shutdown(Res, Assembly, V),
     Res.
 
@@ -218,9 +230,12 @@ body(Motion, Body) ->
 %% Error handling will be implemented by product API parts instead;
 %% In generally term transmission is about processing algorithms over mechanical topology;
 
+id() ->
+    ?MODULE.
+
 -spec start_link() -> {ok, pid()}.
 start_link() ->
-    gen_server:start_link({local, ?MODULE}, [], []).
+    gen_server:start_link({local, id()}, ?MODULE, [], []).
 
 %%%===================================================================
 %%%  gen_server behaviour
@@ -244,21 +259,3 @@ terminate(_Reason, _State) ->
 code_change(_OldVsn, State, _Extra) ->
 	{ok, State}.
 
--spec spec(Assembly::assembly(), Ext::assembly()) -> Spec::map().
-spec(Assembly, Ext) ->
-    SN = erlmachine_assembly:serial_no(Assembly),
-
-    Schema = erlmachine_assembly:schema(Assembly), 
-    Env = erlmachine_assembly:env(Assembly),
-    %% Extension schema and env params are inherited from gearbox;
-    Rel = erlmachine_assembly:schema(erlmachine_assembly:env(Ext, Env), Schema),
-
-    Name = erlmachine_assembly:name(Rel),
-    Type = Name:type(), true = (Type == supervisor orelse Type == worker),
-
-    Start = {?MODULE, boot, [Assembly, Rel]},
-    #{
-      id => SN,
-      start => Start,
-      type => Type
-     }.

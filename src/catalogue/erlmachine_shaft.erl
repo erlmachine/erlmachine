@@ -5,7 +5,10 @@
 
 -export([shaft/0]).
 
--export([install/1, rotate/2, transmit/2,  uninstall/1]).
+-export([boot/1]).
+-export([process/2]).
+-export([execute/2]).
+-export([shutdown/3]).
 
 -export([type/0]).
 -export([prefix/0]).
@@ -20,25 +23,25 @@ shaft() ->
     Tags = [type()], Desc = <<"">>,
     erlmachine_assembly:assembly(?MODULE, Body, Tags, Desc).
 
--spec install(Shaft::assembly()) ->
+-spec boot(Shaft::assembly()) ->
                      success(term()) | failure(term(), term()).
-install(Shaft) ->
-    erlmachine_worker_prototype:install(Shaft).
+boot(Shaft) ->
+    erlmachine_worker_prototype:boot(Shaft).
 
--spec rotate(Shaft::assembly(), Motion::term()) ->
+-spec process(Shaft::assembly(), Motion::term()) ->
                     success().
-rotate(Shaft, Motion) ->
-    erlmachine_worker_prototype:rotate(Shaft, Motion).
+process(Shaft, Motion) ->
+    erlmachine_worker_prototype:process(Shaft, Motion).
 
--spec transmit(Shaft::assembly(), Motion::term()) ->
+-spec execute(Shaft::assembly(), Motion::term()) ->
                       success(term(), assembly()) | failure(term(), term(), term()).
-transmit(Shaft, Motion) ->
-    erlmachine_worker_prototype:transmit(Shaft, Motion).
+execute(Shaft, Motion) ->
+    erlmachine_worker_prototype:execute(Shaft, Motion).
 
--spec uninstall(Shaft::assembly()) ->
+-spec shutdown(Shaft::assembly(), Reason::term(), Timeout::term()) ->
                        success().
-uninstall(Shaft) ->
-    erlmachine_worker_prototype:uninstall(Shaft).
+shutdown(Shaft, Reason, Timeout) ->
+    erlmachine_worker_prototype:shutdown(Shaft, Reason, Timeout).
 
 -spec type() -> atom().
 type() ->

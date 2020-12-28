@@ -1,4 +1,4 @@
--module(erlmachine_transmission_SUITE).
+-module(erlmachine_SUITE).
 
 -export([suite/0]).
 
@@ -9,9 +9,10 @@
 
 -export([all/0]).
 
--export([install/0, install/1]).
--export([uninstall/0, uninstall/1]).
--export([stop/0, stop/1]).
+-export([boot/1]).
+-export([process/1, execute/1, pressure/1]).
+-export([install/1, uninstall/1]).
+-export([shutdown/1]).
 
  -include_lib("common_test/include/ct.hrl").
 
@@ -28,9 +29,8 @@ init_per_suite(Config) ->
 
     Env = #{},
     {ok, _} = erlmachine_factory:start(),
-    {ok, Pid} = erlmachine_sample:start(Env),
-
-    Setup = [{pid, Pid}],
+    {ok, Pid} = erlmachine_ct:start(Env), true = is_pid(Pid),
+    Setup = [], %%TODO: To provide test case args;
     lists:concat([Setup, Config]).
 
 end_per_suite(Config) ->
@@ -71,7 +71,7 @@ end_per_testcase(_TestCase, _Config) ->
 %% Description: Returns a list of test case group definitions.
 %%--------------------------------------------------------------------
 groups() ->
-    [{sample, [sequence], [install, uninstall, stop]}].
+    [{sample, [sequence], [boot, install, process, execute, pressure, uninstall, shutdown]}].
 
 %%--------------------------------------------------------------------
 %% Function: all() -> GroupsAndTestCases | {skip,Reason}
@@ -94,8 +94,9 @@ all() ->
 %% TEST CASES
 %%--------------------------------------------------------------------
 
-start() ->
-    [].
+boot(_Config) ->
+    {ok, Pid} = erlmachine_ct:boot(), true = is_pid(Pid),
+    {comment, Pid}.
 
 %%--------------------------------------------------------------------
 %% Function: TestCase(Config0) ->
@@ -113,24 +114,22 @@ start() ->
 %%              the all/0 list or in a test case group for the test case
 %%              to be executed).
 %%--------------------------------------------------------------------
-install() ->
-    [].
+install(_Config) ->
+    Ext = erlmachine_factory:gear(erlmachine_worker_ct, [], <<"Common test component">>),
+    {ok, Pid} = erlmachine_ct:install(Ext), true = is_pid(Pid),
+    {comment, Pid}.
 
-install(Config) ->
-    Pid = ?config(pid, Config),
-    Ext = erlmachine_factory:gear(erlmachine_gear_sample, [], <<"Install test case">>),
-    {ok, _} = erlmachine_sample:install(Pid, 'root', Ext),
+process(_Config) ->
     ok.
 
-uninstall() ->
-    [].
+execute(_Config) ->
+    ok.
+
+pressure(_Config) ->
+    ok.
 
 uninstall(_Config) ->
     ok.
 
-stop() ->
-    [].
-
-stop(Config) ->
-    Pid = ?config(pid, Config),
-    ok = erlmachine_sample:stop(Pid).
+shutdown(_Config) ->
+    ok = erlmachine_ct:shutdown().

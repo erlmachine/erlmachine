@@ -12,9 +12,9 @@
 
 -export([gearbox/0]).
 
--export([start/1]).
+-export([boot/2]).
 -export([install/2, uninstall/2]).
--export([stop/1]).
+-export([shutdown/3]).
 
 -export([type/0]).
 -export([prefix/0]).
@@ -26,14 +26,13 @@
 gearbox() ->
     %% TODO: To support Body by additional metadata;
     Body = #{},
-    Label = 'root', Tags = [type()], Desc = <<"">>,
-    Assembly = erlmachine_assembly:assembly(?MODULE, Body, Tags, Desc),
-    erlmachine:label(Assembly, Label).
+    Tags = [type()], Desc = <<"">>,
+    erlmachine_assembly:assembly(?MODULE, Body, Tags, Desc).
 
--spec start(GearBox::assembly()) ->
+-spec boot(GearBox::assembly(), Exts::[assembly()]) ->
                      success(pid()) | failure(term(), term()).
-start(GearBox) ->
-    erlmachine_supervisor_prototype:start(GearBox).
+boot(GearBox, Exts) ->
+    erlmachine_supervisor_prototype:boot(GearBox, Exts).
 
 -spec install(GearBox::assembly(), Ext::assembly()) ->
                      success(pid()) | failure(term(), term()).
@@ -45,10 +44,10 @@ install(GearBox, Ext) ->
 uninstall(Assembly, Id) ->
     erlmachine_supervisor_prototype:uninstall(Assembly, Id).
 
--spec stop(GearBox::assembly()) -> 
+-spec shutdown(GearBox::assembly(), Reason::term(), Timeout::term()) ->
                        success().
-stop(GearBox) ->
-    erlmachine_supervisor_prototype:stop(GearBox).
+shutdown(GearBox, Reason, Timeout) ->
+    erlmachine_supervisor_prototype:shutdown(GearBox, Reason, Timeout).
 
 %% NOTE: We should check this call when schema is requested;
 -spec type() -> atom().

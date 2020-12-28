@@ -7,7 +7,7 @@
 -export([prototype_init/4]).
 -export([prototype_start_child/3]).
 -export([prototype_terminate_child/3]).
--export([prototype_terminate/2]).
+-export([prototype_terminate/4]).
 
 -behaviour(supervisor).
 -behaviour(erlmachine_supervisor_prototype).
@@ -52,10 +52,10 @@ prototype_terminate_child(SN, ID, Context) ->
 
     supervisor:terminate_child(id(SN), ID).
 
--spec prototype_terminate(SN::serial_no(), Context::term()) ->
+-spec prototype_terminate(SN::serial_no(), Reason::term(), Timeout::term(), Context::term()) ->
                                  success().
-prototype_terminate(SN, Context) ->
-    erlmachine_supervisor_prototype:terminate(Context),
+prototype_terminate(SN, Reason, _Timeout, Context) ->
+    erlmachine_supervisor_prototype:terminate(Context, Reason),
 
     Reason = normal,
     exit(whereis(id(SN)), Reason),

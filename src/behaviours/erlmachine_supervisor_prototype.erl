@@ -12,17 +12,21 @@
 %% a) To simplify context for network transmission;
 %% b) To gather statistics into graph;
 
+%% TODO https://github.com/rabbitmq/rabbitmq-common/blob/master/src/supervisor2.erl
+
 %% API
--export([boot/1]).
+-export([boot/2]).
 
 -export([install/2, uninstall/2]).
 
--export([shutdown/2]).
+-export([shutdown/3]).
 
 %% Context API
--export([init/2, start_child/2, terminate_child/2, terminate/1]).
+-export([init/2, start_child/2, terminate_child/2, terminate/2]).
 
 -type context() :: term().
+
+-type spec() :: erlmachine_transmission:spec().
 
 -include("erlmachine_factory.hrl").
 -include("erlmachine_assembly.hrl").
@@ -37,32 +41,37 @@
 -callback prototype_terminate_child(SN::serial_no(), ID::term(), Context::context()) ->
     success().
 
--callback prototype_terminate(SN::serial_no(), Context::context()) ->
+-callback prototype_terminate(SN::serial_no(), Reason::term(), Timeout::term(), Context::context()) ->
     success().
 
 %%%===================================================================
 %%%  Transmission API
 %%%===================================================================
-
--spec boot(Assembly::assembly()) ->
+%% NOTE: There is responsibility of decorated module to provide the right entry on graph;
+-spec boot(Assembly::assembly(), Exts::[assembly()]) ->
                      success(pid()) | failure(term(), term()).
-boot(Assembly) ->
+boot(Assembly, Exts) ->
     SN = erlmachine_assembly:serial_no(Assembly),
-
-    Exts = erlmachine_assembly:extensions(Assembly),
-    Specs = [erlmachine_transmission:spec(Assembly, Ext)|| Ext <- Exts],
 
     Prot = erlmachine_assembly:prototype(Assembly),
     Name = erlmachine_prototype:name(Prot), Opt = erlmachine_prototype:options(Prot),
+    Specs = [spec(Assembly, Ext)|| Ext <- Exts],
 
     Name:prototype_init(SN, Specs, _Context = Assembly, Opt).
+
+-spec spec(Assembly::assembly(), Ext::assembly()) -> spec().
+spec(Assembly, Ext) ->
+    Schema = erlmachine_assembly:schema(Assembly),
+    Env = erlmachine_assembly:env(Assembly),
+    Rel = erlmachine_assembly:schema(erlmachine_assembly:env(Ext, Env), Schema),
+    erlmachine_transmission:spec(Rel).
 
 -spec install(Assembly::assembly(), Ext::assembly()) ->
                      success(pid()) | failure(term(), term()).
 install(Assembly, Ext) ->
     SN = erlmachine_assembly:serial_no(Assembly),
 
-    Spec = erlmachine_transmission:spec(Assembly, Ext),
+    Spec = spec(Assembly, Ext),
 
     Prot = erlmachine_assembly:prototype(Assembly),
     Name = erlmachine_prototype:name(Prot),
@@ -79,15 +88,15 @@ uninstall(Assembly, ID) ->
 
     Name:prototype_terminate_child(SN, ID, _Context = Assembly).
 
--spec shutdown(Assembly::assembly(), Reason::term()) ->
+-spec shutdown(Assembly::assembly(), Reason::term(), Timeout::term()) ->
                        success().
-shutdown(Assembly, Reason) ->
+shutdown(Assembly, Reason, Timeout) ->
     SN = erlmachine_assembly:serial_no(Assembly),
 
     Prot = erlmachine_assembly:prototype(Assembly),
     Name = erlmachine_prototype:name(Prot),
 
-    Name:prototype_terminate(SN, Reason, _Context = Assembly).
+    Name:prototype_terminate(SN, Reason, Timeout, _Context = Assembly).
 
 %%%===================================================================
 %%% Prototype API
@@ -108,11 +117,7 @@ start_child(Context, Spec) ->
 terminate_child(Context, ID) ->
     erlmachine_supervisor:uninstall(Context, ID).
 
--spec terminate(Context::context()) ->
+-spec terminate(Context::context(), Reason::term()) ->
                        success().
-terminate(Context) ->
-    erlmachine_supervisor:shutdown(Context).
-
-%% TODO https://github.com/rabbitmq/rabbitmq-common/blob/master/src/supervisor2.erl
-
-
+terminate(Context, Reason) ->
+    erlmachine_supervisor:shutdown(Context, Reason).

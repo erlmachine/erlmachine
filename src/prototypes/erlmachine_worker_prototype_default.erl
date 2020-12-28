@@ -5,7 +5,7 @@
 -export([prototype_init/3]).
 -export([prototype_call/2]).
 -export([prototype_cast/2]).
--export([prototype_terminate/1]).
+-export([prototype_terminate/3]).
 
 %% gen_server.
 -export([init/1]).
@@ -56,10 +56,10 @@ prototype_cast(SN, Msg) ->
     Com = #cast{ message = Msg },
     gen_server:cast(id(SN), Com).
 
--spec prototype_terminate(SN::serial_no()) ->
+-spec prototype_terminate(SN::serial_no(), Reason::term(), Timeout::term()) ->
                                  success().
-prototype_terminate(SN) ->
-    gen_server:stop(id(SN)).
+prototype_terminate(SN, Reason, Timeout) ->
+    gen_server:stop(id(SN), Reason, Timeout).
 
 %%%===================================================================
 %%%  gen_server behaviour
@@ -68,6 +68,7 @@ prototype_terminate(SN) ->
 -record(state, { context::term() }).
 
 init(#init{ context = Context, opts = _Opts }) ->
+    erlang:process_flag(trap_exit, true),
     {ok, Context2} = erlmachine_worker_prototype:init(Context),
 
     {ok, #state{ context = Context2 }}.

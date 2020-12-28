@@ -76,33 +76,34 @@ is_failure(_) ->
 %% TODO: TO supply restarts counter is an edge;
 
 boot({ok, Pid}, Assembly) when is_pid(Pid) ->
-    Schema = erlmachine_assembly:schema(Assembly),
-
-    Rel = erlmachine_tag:pid(Assembly, Pid),
-    ok = add_vertex(Schema, Rel);
-boot({error, {E, R}}, Assembly) ->
-    Schema = erlmachine_assembly:schema(Assembly),
-
-    Rel = erlmachine_tag:error(Assembly, E, R),
-    ok = add_vertex(Schema, Rel).
-
-boot(Res = {ok, Pid}, Assembly, Ext) when is_pid(Pid) ->
-    Schema = erlmachine_assembly:schema(Assembly),
-
-    Rel = erlmachine_tag:pid(Assembly, Pid),
-    ok = add_vertex(Schema, Rel),
-
-    V1 = erlmachine_assembly:label(Assembly), V2 = erlmachine_assembly:label(Ext),
-    erlmachine_schema:add_edge(Schema, V1, V2, Res),
+    _Schema = erlmachine_assembly:schema(Assembly),
+    _Rel = erlmachine_tag:pid(Assembly, Pid),
+    %ok = add_vertex(Schema, Rel),
     ok;
-boot(Res = {error, {E, R}}, Assembly, Ext) ->
-    Schema = erlmachine_assembly:schema(Assembly),
+boot({error, {E, R}}, Assembly) ->
+    _Schema = erlmachine_assembly:schema(Assembly),
 
-    Rel = erlmachine_tag:error(Assembly, E, R),
-    ok = add_vertex(Schema, Rel),
+    _Rel = erlmachine_tag:error(Assembly, E, R),
+    %ok = add_vertex(Schema, Rel), 
+    ok.
 
-    V1 = erlmachine_assembly:label(Assembly), V2 = erlmachine_assembly:label(Ext),
-    erlmachine_schema:add_edge(Schema, V1, V2, Res),
+boot(_Res = {ok, Pid}, Assembly, Ext) when is_pid(Pid) ->
+    _Schema = erlmachine_assembly:schema(Assembly),
+
+    _Rel = erlmachine_tag:pid(Assembly, Pid),
+    %ok = add_vertex(Schema, Rel),
+
+    _V1 = erlmachine_assembly:label(Assembly), _V2 = erlmachine_assembly:label(Ext),
+    %erlmachine_schema:add_edge(Schema, V1, V2, Res),
+    ok;
+boot(_Res = {error, {E, R}}, Assembly, Ext) ->
+    _Schema = erlmachine_assembly:schema(Assembly),
+
+    _Rel = erlmachine_tag:error(Assembly, E, R),
+    %ok = add_vertex(Schema, Rel),
+
+    _V1 = erlmachine_assembly:label(Assembly), _V2 = erlmachine_assembly:label(Ext),
+    %erlmachine_schema:add_edge(Schema, V1, V2, Res),
 
     ok.
 
@@ -112,10 +113,10 @@ process({ok, _Assembly}) ->
 process({ok, _Ret, _Assembly}) ->
     ok;
 process({error, {E, R}, Assembly}) ->
-    Schema = erlmachine_assembly:schema(Assembly),
+    _Schema = erlmachine_assembly:schema(Assembly),
 
-    Rel = erlmachine_tag:error(Assembly, E, R),
-    ok = add_vertex(Schema, Rel),
+    _Rel = erlmachine_tag:error(Assembly, E, R),
+    %ok = add_vertex(Schema, Rel),
 
     %% NOTE: We should support DB indexing based on vertexes and edges;
     %% TODO: To create a separate in-memory datastore to store errors and invocations;
@@ -127,14 +128,14 @@ process({ok, _Assembly}, _Ext) ->
 process({ok, _Ret, _Assembly}, _Ext) ->
     %% TODO: Place for edge statistics gathering;
     ok;
-process(Res = {error, {E, R}, Assembly}, Ext) ->
-    Schema = erlmachine_assembly:schema(Assembly),
+process(_Res = {error, {E, R}, Assembly}, Ext) ->
+    _Schema = erlmachine_assembly:schema(Assembly),
 
-    Rel = erlmachine_tag:error(Assembly, E, R),
-    ok = add_vertex(Schema, Rel),
+    _Rel = erlmachine_tag:error(Assembly, E, R),
+    %ok = add_vertex(Schema, Rel),
 
-    V1 = erlmachine_assembly:label(Assembly), V2 = erlmachine_assembly:label(Ext),
-    erlmachine_schema:add_edge(Schema, V1, V2, Res),
+    _V1 = erlmachine_assembly:label(Assembly), _V2 = erlmachine_assembly:label(Ext),
+    %erlmachine_schema:add_edge(Schema, V1, V2, Res),
 
     %% TODO: Place for errors statistics gathering (we can mark edge by red color);
     ok.
@@ -142,9 +143,9 @@ process(Res = {error, {E, R}, Assembly}, Ext) ->
 shutdown(ok, _Assembly, _V) ->
     ok.
 
--spec add_vertex(Schema::term(), Assembly::assembly()) -> success().
-add_vertex(Schema, Assembly) ->
-    Rel = erlmachine_assembly:extensions(Assembly, []),
-    erlmachine_schema:add_vertex(Schema, Rel), 
-    ok.
+%-spec add_vertex(Schema::term(), Assembly::assembly()) -> success().
+%add_vertex(_Schema, _Assembly) ->
+   % Rel = erlmachine_assembly:extensions(Assembly, []),
+    %erlmachine_schema:add_vertex(Schema, Assembly),
+ %   ok.
 

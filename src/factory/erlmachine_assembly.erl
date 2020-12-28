@@ -52,7 +52,7 @@
                     %% Interface which is passed into the rotate call);
                     socket::term(),
                     %% Build topology which is inherited through the all extensions;
-                    schema::term(),
+                    schema::schema(),
                     %% Domain level specification;
                     model::model(),
                     %% Service level specification;
@@ -76,10 +76,12 @@
                    }
         ).
 
--type assembly() :: #assembly{}.
+-type schema() :: erlmachine_schema:schema().
 
 -type model() :: erlmachine_model:model().
 -type prototype() :: erlmachine_prototype:prototype().
+
+-type assembly() :: #assembly{}.
 
 -export_type([assembly/0]).
 

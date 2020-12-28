@@ -5,9 +5,10 @@
 
 -export([gear/0]).
 
--export([start/1]).
--export([rotate/2, transmit/2]).
--export([stop/1]).
+-export([boot/1]).
+-export([process/2]).
+-export([execute/2]).
+-export([shutdown/3]).
 
 -export([type/0]).
 -export([prefix/0]).
@@ -22,25 +23,25 @@ gear() ->
     Tags = [type()], Desc = <<"">>,
     erlmachine_assembly:assembly(?MODULE, Body, Tags, Desc).
 
--spec start(Gear::assembly()) ->
+-spec boot(Gear::assembly()) ->
                      success(pid()) | failure(term(), term()).
-start(Gear) ->
-    erlmachine_worker_prototype:start(Gear).
+boot(Gear) ->
+    erlmachine_worker_prototype:boot(Gear).
 
--spec rotate(Gear::assembly(), Motion::term()) ->
+-spec process(Gear::assembly(), Motion::term()) ->
                     success().
-rotate(Gear, Motion) ->
-    erlmachine_worker_prototype:rotate(Gear, Motion).
+process(Gear, Motion) ->
+    erlmachine_worker_prototype:process(Gear, Motion).
 
--spec transmit(Gear::assembly(), Motion::term()) ->
+-spec execute(Gear::assembly(), Motion::term()) ->
                       term() | failure(term(), term()).
-transmit(Gear, Motion) ->
-    erlmachine_worker_prototype:transmit(Gear, Motion).
+execute(Gear, Motion) ->
+    erlmachine_worker_prototype:execute(Gear, Motion).
 
--spec stop(Gear::assembly()) -> 
+-spec shutdown(Gear::assembly(), Reason::term(), Timeout::term()) -> 
                        success().
-stop(Gear) ->
-    erlmachine_worker_prototype:stop(Gear).
+shutdown(Gear, Reason, Timeout) ->
+    erlmachine_worker_prototype:shutdown(Gear, Reason, Timeout).
 
 -spec type() -> atom().
 type() ->

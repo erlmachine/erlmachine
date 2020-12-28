@@ -25,14 +25,14 @@
 -export([install/2]).
 -export([uninstall/2]).
 
--export([shutdown/1]).
-
--type spec() :: map().
+-export([shutdown/2]).
 
 -include("erlmachine_user.hrl").
 -include("erlmachine_factory.hrl").
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
+-include("erlmachine_transmission.hrl").
+
 
 -callback boot(MN::model_no(), UID::uid(), GID::gid(), Specs::[spec()], Opt::list(), Env::list()) -> 
     success() | failure(term(), term()).
@@ -43,10 +43,10 @@
 -callback uninstall(MN::model_no(), UID::uid(), GID::gid(), ID::term()) ->
     success() | failure(term(), term()).
 
--callback shutdown(MN::model_no(), UID::uid(), GID::gid()) ->
+-callback shutdown(MN::model_no(), UID::uid(), GID::gid(), Reason::term()) ->
     success() | failure(term(), term()).
 
--optional_callbacks([install/4, uninstall/4, shutdown/3]).
+-optional_callbacks([install/4, uninstall/4, shutdown/4]).
 
 -spec boot(Context::assembly(), Specs::[spec()]) ->
                   success() | failure(term(), term()).
@@ -81,12 +81,14 @@ uninstall(Context, ID) ->
 
     Name:uninstall(MN, UID, GID, ID).
 
--spec shutdown(Context::assembly()) ->
+-spec shutdown(Context::assembly(), Reason::term()) ->
                       success() | failure(term(), term()).
-shutdown(Context) ->
+shutdown(Context, Reason) ->
     MN = erlmachine_assembly:model_no(Context),
 
     Model = erlmachine_assembly:model(Context), Name = erlmachine_model:name(Model),
     UID = erlmachine_assembly:uid(Context), GID = erlmachine_assembly:gid(Context),
 
-    Name:shutdown(MN, UID, GID).
+    Mod = Name, Fun = shutdown, Args = [MN, UID, GID, Reason],
+    Def = erlmachine:success(),
+    ok = erlmachine:optional_callback(Mod, Fun, Args, Def).

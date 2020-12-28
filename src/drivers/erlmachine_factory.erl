@@ -100,7 +100,8 @@ handle_call(#process{ assembly = Assembly, datasheet = Datasheet }, _From, #stat
     B5 = erlmachine:phash2({B1, update_counter()}),
     Rotated = <<(B2 bxor B5):32, (B3 bxor B5):32, (B4 bxor B5):32, B5:32>>,
 
-    {reply, erlmachine:success(next(Rel, Next)), State#state{ hash = Rotated }};
+    Res = next(erlmachine_assembly:label(Rel, SN), Next),
+    {reply, erlmachine:success(Res), State#state{ hash = Rotated }};
 
 handle_call(_Request, _From, State) ->
     {reply, ignored, State}.
@@ -284,11 +285,10 @@ axle(ModelName, ModelOpt, ProtName, ProtOpt, Desc, Exts) when is_list(Exts) ->
 -spec gearbox(Datasheet::datasheet(), Exts::list()) ->
                   assembly().
 gearbox(Datasheet, Exts) ->
-    GearBox = erlmachine_gearbox:gearbox(), 
+    GearBox = erlmachine_gearbox:gearbox(),
 
     {ok, Rel} = process(GearBox, Datasheet),
-    Root = erlmachine:label(Rel), Schema = erlmachine_schema:new(Root),
-    erlmachine_assembly:extensions(erlmachine_assembly:schema(Rel, Schema), Exts).
+    schema(erlmachine_assembly:extensions(Rel, Exts)).
 
 -spec gearbox(ModelName::atom(), ModelOpt::term(), Env::term(), Desc::binary(), Exts::list()) ->
                   assembly().
@@ -307,6 +307,32 @@ gearbox(ModelName, ModelOpt, ProtName, ProtOpt, Env, Desc, Exts) when is_list(Ex
 
     Assembly = erlmachine_assembly:prototype(erlmachine_assembly:model(GearBox, Model), Prot),
     {ok, Rel} = process(erlmachine_assembly:desc(erlmachine_assembly:env(Assembly, Env), Desc)),
+    schema(erlmachine_assembly:extensions(Rel, Exts)).
 
-    Root = erlmachine:label(Rel), Schema = erlmachine_schema:new(Root),
-    erlmachine_assembly:extensions(erlmachine_assembly:schema(Rel, Schema), Exts).
+-spec schema(GearBox::assembly()) -> 
+                    assembly().
+schema(GearBox) ->
+    Root = erlmachine:serial_no(GearBox), Schema = erlmachine_schema:new(Root),
+    Rel = erlmachine_assembly:schema(GearBox, Schema),
+    ok = add(Schema, [Rel]),
+    Rel.
+
+add(_Schema, []) ->
+    ok;
+add(Schema, [H|T]) ->
+    add_vertex(Schema, H),
+    Exts = erlmachine_assembly:extensions(H),
+    add(Schema, Exts), [add_edge(Schema, H, Ext) || Ext <- Exts],
+    add(Schema, T).
+
+
+add_vertex(Schema, Assembly) ->
+    Rel = erlmachine_assembly:extensions(Assembly, []),
+    erlmachine_schema:add_vertex(Schema, Rel),
+    ok.
+
+add_edge(Schema, Assembly, Ext) ->
+    V1 = erlmachine_assembly:label(Assembly), V2 = erlmachine_assembly:label(Ext),
+    erlmachine_schema:add_edge(Schema, V1, V2, []),
+    ok.
+

@@ -19,10 +19,10 @@
 -export([process/2]).
 -export([execute/2]).
 
--export([shutdown/1]).
+-export([shutdown/3]).
 
 %% Context API
--export([init/1, call/2, cast/2, info/2, terminate/1]).
+-export([init/1, call/2, cast/2, info/2, terminate/2]).
 
 -type context() :: term().
 
@@ -39,7 +39,7 @@
 -callback prototype_cast(SN::serial_no(), Msg::term()) ->
     success().
 
--callback prototype_terminate(SN::serial_no()) ->
+-callback prototype_terminate(SN::serial_no(), Reason::term(), Timeout::term()) ->
     success().
 
 %%%===================================================================
@@ -76,15 +76,15 @@ execute(Assembly, Req) ->
 
     Name:prototype_call(SN, Req).
 
--spec shutdown(Assembly::assembly()) ->
+-spec shutdown(Assembly::assembly(), Reason::term(), Timeout::term()) ->
                   success().
-shutdown(Assembly) ->
+shutdown(Assembly, Reason, Timeout) ->
     SN = erlmachine_assembly:serial_no(Assembly),
 
     Prot = erlmachine_assembly:prototype(Assembly),
     Name = erlmachine_prototype:name(Prot),
 
-    Name:prototype_terminate(SN).
+    Name:prototype_terminate(SN, Reason, Timeout).
 
 %%%===================================================================
 %%% Context API
@@ -110,7 +110,7 @@ call(Context, Req) ->
 info(Context, Info) ->
     erlmachine_worker:pressure(Context, Info).
 
--spec terminate(Context::context()) ->
+-spec terminate(Context::context(), Reason::term()) ->
                        success().
-terminate(Context) ->
-    erlmachine_worker:shutdown(Context).
+terminate(Context, Reason) ->
+    erlmachine_worker:shutdown(Context, Reason).
