@@ -18,7 +18,9 @@
 -export([motion/2]).
 -export([header/1, header/2, body/1, body/2]).
 
--export([command/3, document/3, event/3]).
+-export([command/2, command/3]).
+-export([document/2, document/3]).
+-export([event/2, event/3]).
 -export([command_name/1, document_meta/1, event_type/1]).
 
 -export([return_address/1, return_address/2]).
@@ -179,15 +181,33 @@ body(Motion) ->
 body(Motion, Body) ->
     erlmachine_transmission:body(Motion, Body).
 
+-spec command(Name::term(), Args::body()) ->
+                     motion().
+command(Name, Args) ->
+    Header = #{},
+    command(Header, Name, Args).
+
 -spec command(Header::header(), Name::term(), Args::body()) ->
                      motion().
 command(Header, Name, Args) ->
     erlmachine_transmission:motion(Header#{ command => Name }, Args).
 
+-spec document(Meta::term(), Body::body()) -> 
+                      motion().
+document(Meta, Body) ->
+    Header = #{},
+    document(Header, Meta, Body).
+
 -spec document(Header::header(), Meta::term(), Body::body()) -> 
                       motion().
 document(Header, Meta, Body) ->
     erlmachine_transmission:motion(Header#{ document => Meta }, Body).
+
+-spec event(Type::term(), Description::body()) -> 
+                   motion(). 
+event(Type, Description) ->
+    Header = #{},
+    event(Header, Type, Description).
 
 -spec event(Header::header(), Type::term(), Description::body()) -> 
                    motion(). 
