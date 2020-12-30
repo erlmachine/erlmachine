@@ -120,14 +120,15 @@ install(_Config) ->
     {comment, Pid}.
 
 process(_Config) ->
-    ok.
+    Event = erlmachine:event(#{}, 'ping', <<"ping">>),
+    ok = erlmachine_ct:process('test', Event).
 
 execute(_Config) ->
-    Command = erlmachine:command(#{}, 'test', []),
-    ok = erlmachine_ct:execute('test', Command).
+    Com = erlmachine:command(#{}, 'test', []),
+    ok = erlmachine_ct:execute('test', Com).
 
 pressure(_Config) ->
-    ok.
+    ok = erlmachine_ct:pressure('test', <<"load">>).
 
 uninstall(_Config) ->
     ok = erlmachine_ct:uninstall('test').

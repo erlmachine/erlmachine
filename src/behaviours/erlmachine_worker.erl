@@ -57,9 +57,10 @@ boot(Context) ->
 
 
 -spec process(Context::assembly(), Motion::term()) ->
-                    success(assembly()) | success(term(), assembly()) | failure(term(), term(), assembly()).
+                    success(assembly()) | failure(term(), term(), assembly()).
 process(Context, Motion) ->
-    erlmachine_process:process(Context, Motion).
+    Res = erlmachine_process:process(Context, Motion),
+    trim(Res).
 
 -spec execute(Context::assembly(), Command::term()) ->
                       success(term(), assembly()) | failure(term(), term(), assembly()).
@@ -72,9 +73,10 @@ execute(Context, Command) ->
     context(Res, Context).
 
 -spec pressure(Context::assembly(), Load::term()) ->
-                      success(assembly()) | success(term(), assembly()) | failure(term(), term(), assembly()).
+                      success(assembly()) | failure(term(), term(), assembly()).
 pressure(Context, Load) ->
-    erlmachine_pressure:pressure(Context, Load).
+    Res = erlmachine_pressure:pressure(Context, Load),
+    trim(Res).
 
 -spec shutdown(Context::assembly(), Reason::term()) -> 
                       success().
@@ -92,10 +94,16 @@ shutdown(Context, Reason) ->
 %% TODO: To provide errors debug at this level;
 context({ok, Body}, Context) ->
     Rel = erlmachine_assembly:body(Context, Body),
-    {ok, Rel};
+    erlmachine:success(Rel);
 context({ok, Res, Body}, Context) ->
     Rel = erlmachine_assembly:body(Context, Body),
-    {ok, Res, Rel};
+    erlmachine:success(Res, Rel);
 context({error, {E, R}, Body}, Context) ->
     Rel = erlmachine_assembly:body(Context, Body),
-    {error, {E, R}, Rel}.
+    erlmachine:failure(E, R, Rel).
+
+trim({ok, _, Context}) ->
+    erlmachine:success(Context);
+trim(Res) ->
+    Res.
+

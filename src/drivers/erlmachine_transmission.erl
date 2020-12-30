@@ -132,25 +132,25 @@ mesh(Module, Assembly, Motion) ->
     if Exts == [] ->
             erlmachine:success(Assembly);
        true ->
-            mesh(Module, Exts, Assembly, Motion)
+            mesh(Exts, Module, Assembly, Motion)
     end.
 
-mesh(Module, [Ext|Range], Assembly, Motion) ->
+mesh([Ext|Range], Module, Assembly, Motion) ->
     Res = Module:mesh(Assembly, Motion, Ext, Range), ok = transmit(Res, Ext),
     ok = erlmachine_system:process(Res, Ext),
     if Range == [] ->
             Res;
        true ->
             Rel = rel(Res),
-            mesh(Module, Range, Rel, Motion)
+            mesh(Range, Module, Rel, Motion)
     end.
 
--spec pass(Assembly::assembly(), Motion::term(), Action::function()) ->
+-spec pass(Module::atom(), Assembly::assembly(), Motion::term()) ->
                   success(assembly()) | failure(term(), term(), assembly()).
-pass(Assembly, Motion, Action) ->
+pass(Module, Assembly, Motion) ->
     Schema = erlmachine_assembly:schema(Assembly), V = erlmachine_assembly:vertex(Assembly),
     Exts = erlmachine_schema:out_neighbours(Schema, V),
-    pass(Exts, Action, Assembly, Motion).
+    pass(Exts, Module, Assembly, Motion).
 
 pass(Exts, Module, Assembly, Motion) ->
     Res = Module:pass(Assembly, Motion),

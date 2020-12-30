@@ -7,7 +7,9 @@
 
 -export([boot/0]).
 -export([install/1, uninstall/1]).
+-export([process/2]).
 -export([execute/2]).
+-export([pressure/2]).
 -export([shutdown/0]).
 
 %% gen_server.
@@ -51,6 +53,19 @@ uninstall(V) ->
 -spec execute(V::term(), Command::term()) -> term().
 execute(V, Command) ->
     gen_server:call(id(), #execute{ vertex = V, command = Command }).
+
+-record(process, { vertex::term(), motion::term() }).
+
+-spec process(V::term(), Motion::term()) -> success().
+process(V, Motion) ->
+    gen_server:cast(id(), #process{ vertex = V, motion = Motion }).
+
+-record(pressure, { vertex::term(), load::term() }).
+
+-spec pressure(V::term(), Load::term()) -> success().
+pressure(V, Load) ->
+    erlang:send(id(), #pressure{ vertex = V, load = Load }), 
+    ok.
 
 -record (shutdown, { }).
 
@@ -105,8 +120,16 @@ handle_call(#shutdown{}, _From, #state{ schema = Schema } = State) ->
 handle_call(_Request, _From, State) ->
     {reply, ignored, State}.
 
+handle_cast(#process{ vertex = V, motion = Motion }, #state{ schema = Schema } = State) ->
+    ok = erlmachine:process(Schema, V, Motion),
+    {noreply, State};
+
 handle_cast(_Msg, State) ->
     {noreply, State}.
+
+handle_info(#pressure{ vertex = V, load = Load }, #state{ schema = Schema } = State) ->
+    %% TODO
+    {noreply, State};
 
 handle_info(_Info, State) ->
 	{noreply, State}.

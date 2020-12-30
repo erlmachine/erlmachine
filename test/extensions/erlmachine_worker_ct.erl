@@ -22,7 +22,7 @@ boot(UID, State, Opt, Env) ->
 -spec process(UID::uid(), Motion::term(), State::state()) ->
                      success(state()) | success(term(), state()) | failure(term(), term(), state()).
 process(UID, Motion, State) ->
-    ct:log("~n~p:boot(~p, ~p, ~p)~n", [?MODULE, UID, Motion, State]),
+    ct:log("~n~p:process(~p, ~p, ~p)~n", [?MODULE, UID, Motion, State]),
     erlmachine:success(Motion, State).
 
 -spec execute(UID::uid(), Command::term(), State::state()) ->

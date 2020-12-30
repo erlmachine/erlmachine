@@ -47,5 +47,5 @@ pass(Context, Motion) ->
 
     Mod = Name, Fun = process, Args = [UID, Motion, Body],
     Def = erlmachine:success(Motion, Context),
-    Res = erlmachine:optional_callback(Mod, Fun, Args, Def), 
+    Res = erlmachine:optional_callback(Mod, Fun, Args, Def),
     erlmachine_worker:context(Res, Context).
