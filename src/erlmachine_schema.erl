@@ -13,7 +13,7 @@
 -export([vertex/2]).
 
 -export([add_edge/4]).
--export([add_vertex/2, del_vertex/2]).
+-export([add_vertex/3, del_vertex/2]).
 -export([in_neighbours/2, out_neighbours/2]).
 -export([in_edges/2, out_edges/2]).
 
@@ -63,7 +63,7 @@ graph(Schema) ->
 %% vertices/1 allows to query the full extensions list;
 
 
--spec add_edge(Schema::schema(), V1::vertex(), Ext::assembly(), Label::term()) -> success().
+-spec add_edge(Schema::schema(), V1::vertex(), V2::vertex(), Label::term()) -> success().
 add_edge(Schema, V1, V2, Label) ->
     Graph = graph(Schema),
     digraph:add_edge(Graph, V1, V2, Label),
@@ -75,10 +75,9 @@ del_path(Schema, V1, V2) ->
     true = digraph:del_path(Graph, V1, V2),
     ok.
 
--spec add_vertex(Schema::schema(), Ext::assembly()) -> vertex().
-add_vertex(Schema, Ext) ->
+-spec add_vertex(Schema::schema(), V::vertex(), Ext::assembly()) -> vertex().
+add_vertex(Schema, V, Ext) ->
     Graph = graph(Schema),
-    V = erlmachine_assembly:label(Ext),
     digraph:add_vertex(Graph, V, Ext),
     V.
 

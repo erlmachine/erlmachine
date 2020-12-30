@@ -94,7 +94,7 @@ boot(_Res = {ok, Pid}, Assembly, Ext) when is_pid(Pid) ->
     _Rel = erlmachine_tag:pid(Assembly, Pid),
     %ok = add_vertex(Schema, Rel),
 
-    _V1 = erlmachine_assembly:label(Assembly), _V2 = erlmachine_assembly:label(Ext),
+    _V1 = erlmachine_assembly:vertex(Assembly), _V2 = erlmachine_assembly:vertex(Ext),
     %erlmachine_schema:add_edge(Schema, V1, V2, Res),
     ok;
 boot(_Res = {error, {E, R}}, Assembly, Ext) ->
@@ -103,7 +103,7 @@ boot(_Res = {error, {E, R}}, Assembly, Ext) ->
     _Rel = erlmachine_tag:error(Assembly, E, R),
     %ok = add_vertex(Schema, Rel),
 
-    _V1 = erlmachine_assembly:label(Assembly), _V2 = erlmachine_assembly:label(Ext),
+    _V1 = erlmachine_assembly:vertex(Assembly), _V2 = erlmachine_assembly:vertex(Ext),
     %erlmachine_schema:add_edge(Schema, V1, V2, Res),
 
     ok.
@@ -135,7 +135,7 @@ process(_Res = {error, {E, R}, Assembly}, Ext) ->
     _Rel = erlmachine_tag:error(Assembly, E, R),
     %ok = add_vertex(Schema, Rel),
 
-    _V1 = erlmachine_assembly:label(Assembly), _V2 = erlmachine_assembly:label(Ext),
+    _V1 = erlmachine_assembly:vertex(Assembly), _V2 = erlmachine_assembly:vertex(Ext),
     %erlmachine_schema:add_edge(Schema, V1, V2, Res),
 
     %% TODO: Place for errors statistics gathering (we can mark edge by red color);

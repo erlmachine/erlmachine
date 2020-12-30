@@ -74,7 +74,7 @@ boot(Assembly) ->
     Supervisor = erlmachine:is_supervisor(Assembly), Name = erlmachine_assembly:name(Assembly),
     Res =
         if Supervisor ->
-                Schema = erlmachine_assembly:schema(Assembly), V = erlmachine_assembly:label(Assembly),
+                Schema = erlmachine_assembly:schema(Assembly), V = erlmachine_assembly:vertex(Assembly),
                 Exts = erlmachine_schema:out_neighbours(Schema, V),
                 Name:boot(Assembly, Exts);
            true ->
@@ -86,17 +86,17 @@ boot(Assembly) ->
 %% NOTE: Schema and env params are inherited through thq all gearbox;
 -spec spec(Assembly::assembly()) -> spec().
 spec(Assembly) ->
-    SN = erlmachine_assembly:serial_no(Assembly),
+    ID = erlmachine_assembly:vertex(Assembly),
 
     Name = erlmachine_assembly:name(Assembly), Type = Name:type(),
     Start = {?MODULE, boot, [Assembly]},
-    #{ id => SN, start => Start, type => Type }.
+    #{ id => ID, start => Start, type => Type }.
 
 -spec install(Schema::schema(), V::vertex(), Ext::assembly()) ->
                      success(pid()) | failure(term(), term()).
 install(Schema, V, Ext) ->
     Assembly = erlmachine_schema:vertex(Schema, V), Name = erlmachine_assembly:name(Assembly),
-    erlmachine_schema:add_vertex(Schema, Ext),
+    erlmachine_schema:add_vertex(Schema, erlmachine_assembly:vertex(Ext), Ext),
 
     Res = Name:install(Assembly, Ext),
     ok = erlmachine_system:boot(Res, Assembly, Ext),
@@ -127,7 +127,7 @@ process(Assembly, Motion) ->
 -spec mesh(Module::atom(), Assembly::assembly(), Motion::term()) ->
                   success(assembly()) | failure(term(), term(), assembly()).
 mesh(Module, Assembly, Motion) ->
-    Schema = erlmachine_assembly:schema(Assembly), V = erlmachine_assembly:label(Assembly),
+    Schema = erlmachine_assembly:schema(Assembly), V = erlmachine_assembly:vertex(Assembly),
     Exts = erlmachine_schema:out_neighbours(Schema, V),
     if Exts == [] ->
             erlmachine:success(Assembly);
@@ -148,7 +148,7 @@ mesh(Module, [Ext|Range], Assembly, Motion) ->
 -spec pass(Assembly::assembly(), Motion::term(), Action::function()) ->
                   success(assembly()) | failure(term(), term(), assembly()).
 pass(Assembly, Motion, Action) ->
-    Schema = erlmachine_assembly:schema(Assembly), V = erlmachine_assembly:label(Assembly),
+    Schema = erlmachine_assembly:schema(Assembly), V = erlmachine_assembly:vertex(Assembly),
     Exts = erlmachine_schema:out_neighbours(Schema, V),
     pass(Exts, Action, Assembly, Motion).
 

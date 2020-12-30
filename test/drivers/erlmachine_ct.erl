@@ -7,6 +7,7 @@
 
 -export([boot/0]).
 -export([install/1, uninstall/1]).
+-export([execute/2]).
 -export([shutdown/0]).
 
 %% gen_server.
@@ -39,11 +40,17 @@ boot() ->
 install(Ext) ->
     gen_server:call(id(), #install{ extension = Ext }).
 
--record(uninstall, { id::term() }).
+-record(uninstall, { vertex::term() }).
 
--spec uninstall(Id::term()) -> success().
-uninstall(Id) ->
-    gen_server:call(id(), #uninstall{ id = Id }).
+-spec uninstall(V::term()) -> success().
+uninstall(V) ->
+    gen_server:call(id(), #uninstall{ vertex = V }).
+
+-record(execute, { vertex::term(), command::term() }).
+
+-spec execute(V::term(), Command::term()) -> term().
+execute(V, Command) ->
+    gen_server:call(id(), #execute{ vertex = V, command = Command }).
 
 -record (shutdown, { }).
 
@@ -80,8 +87,13 @@ handle_call(#install{ extension = Ext }, _From, #state{ schema = Schema } = Stat
 
     {reply, Res, State};
 
-handle_call(#uninstall{ id = Id }, _From, #state{ schema = Schema } = State) ->
-    Res = erlmachine:uninstall(Schema, Id),
+handle_call(#uninstall{ vertex = V }, _From, #state{ schema = Schema } = State) ->
+    Res = erlmachine:uninstall(Schema, V),
+
+    {reply, Res, State};
+
+handle_call(#execute{ vertex = V, command = Command }, _From, #state{ schema = Schema } = State) ->
+    Res = erlmachine:execute(Schema, V, Command),
 
     {reply, Res, State};
 

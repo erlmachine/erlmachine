@@ -5,4 +5,5 @@ deps/
 ebin/
 logs/
 .DS_Store
+.erlmachine.plt
 erlmachine.d

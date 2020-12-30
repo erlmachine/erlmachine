@@ -121,8 +121,8 @@ erlmachine_factory_test_() ->
                {ok, Tags} = erlmachine_datasheet:find(<<"tags">>, Datasheet),
                Tags = erlmachine_assembly:tags(Gear),
 
-               {ok, Label} = erlmachine_datasheet:find(<<"label">>, Datasheet),
-               Label = erlmachine_assembly:label(Gear),
+               {ok, V} = erlmachine_datasheet:find(<<"vertex">>, Datasheet),
+               V = erlmachine_assembly:vertex(Gear),
 
                {ok, PN} = erlmachine_datasheet:find(<<"part_no">>, Datasheet),
                PN = erlmachine_assembly:part_no(Gear),

@@ -53,8 +53,8 @@
             "type": "array",
             "description": ""
         },
-        "label":{
-            "description": ""
+        "vertex":{
+            "description": "The extension Id on a graph"
         },
         "part_no":{
             "type": "string",

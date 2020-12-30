@@ -16,7 +16,7 @@
          extensions/1, extensions/2,
          uid/1, uid/2,
          tags/1, tags/2,
-         label/1, label/2,
+         vertex/1, vertex/2,
          part_no/1, part_no/2,
          env/1, env/2,
          description/1, description/2
@@ -62,8 +62,8 @@
                     uid::uid(),
                     %% Tags are used as selection criteria ([supervisor, overloaded, etc.])
                     tags=[]::list(term()),
-                    %% Label is unique id within schema (by default serial_no)
-                    label::term(),
+                    %% An alternative id within schema (by default serial_no)
+                    vertex::term(),
                     %% By part_no we can track quality of component through release period
                     part_no::part_no(),
                     %% The execution context which is inherited through the extensions
@@ -189,13 +189,13 @@ tags(Assembly) ->
 tags(Assembly, Tags) ->
     Assembly#assembly{ tags=Tags }.
 
--spec label(Assembly::assembly()) -> term().
-label(Assembly) ->
-    Assembly#assembly.label.
+-spec vertex(Assembly::assembly()) -> term().
+vertex(Assembly) ->
+    Assembly#assembly.vertex.
 
--spec label(Assembly::assembly(), Label::term()) -> assembly().
-label(Assembly, Label) ->
-    Assembly#assembly{ label = Label }.
+-spec vertex(Assembly::assembly(), Vertex::term()) -> assembly().
+vertex(Assembly, Vertex) ->
+    Assembly#assembly{ vertex = Vertex }.
 
 -spec env(Assembly::assembly()) -> term().
 env(Assembly) ->
@@ -215,14 +215,14 @@ description(Assembly, Desc) ->
 
 -spec store(Assembly::assembly(), Ext::assembly()) -> assembly().
 store(Assembly, Ext) ->
-    Exts = lists:keystore(label(Ext), #assembly.label, extensions(Assembly), Ext),
+    Exts = lists:keystore(vertex(Ext), #assembly.vertex, extensions(Assembly), Ext),
     extensions(Assembly, Exts).
 
--spec delete(Assembly::assembly(), Label::term()) -> assembly().
-delete(Assembly, Label) ->
-    Exts = lists:keydelete(Label, #assembly.label, extensions(Assembly)),
+-spec delete(Assembly::assembly(), Vertex::term()) -> assembly().
+delete(Assembly, Vertex) ->
+    Exts = lists:keydelete(Vertex, #assembly.vertex, extensions(Assembly)),
     extensions(Assembly, Exts).
 
--spec find(Assembly::assembly(), Label::term()) -> assembly().
-find(Assembly, Label) ->
-    lists:keyfind(Label, #assembly.label, extensions(Assembly)).
+-spec find(Assembly::assembly(), Vertex::term()) -> assembly().
+find(Assembly, Vertex) ->
+    lists:keyfind(Vertex, #assembly.vertex, extensions(Assembly)).

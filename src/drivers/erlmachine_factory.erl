@@ -11,6 +11,8 @@
 %% NOTE: PN (part_no) is an uptime id which is assigned after factory has restarted;
 %% NOTE: The all list can be defined via appropriate module tags: -serial_no(SN), -model_no(MN), -part_no(PN)
 
+%% NOTE: It's encouraged to use datasheet when there is requirement for description
+
 -behaviour(gen_server).
 
 %% API.
@@ -130,14 +132,12 @@ pipe([Step|T], Assembly, State) ->
     Rel = Step(Assembly, State),
     pipe(T, Rel, State).
 
-%% serial_no/2, label/2, datasheet/2, vsn/2, ...
-%% NOTE: We aren't going to support attributes - if I need a specification I use datasheet;
 -spec serial_no(Assembly::assembly(), State::state()) -> assembly().
 serial_no(Assembly, #state{ hash = Hash }) ->
     Name = erlmachine_assembly:name(Assembly),
     SN =  <<(Name:prefix())/binary, "-", (erlmachine:base64url(Hash))/binary>>,
     Rel = erlmachine_assembly:serial_no(Assembly, SN),
-    erlmachine_assembly:label(Rel, SN).
+    erlmachine_assembly:vertex(Rel, SN).
 
 -spec uid(Assembly::assembly(), State::state()) -> assembly().
 uid(Assembly, #state{ uid = UID }) ->
@@ -199,8 +199,8 @@ next(Assembly, {<<"tags">>, Tags, I}) ->
     Rel = erlmachine_assembly:tags(Assembly, Tags),
     next(Rel, erlmachine_datasheet:next(I));
 
-next(Assembly, {<<"label">>, Label, I}) ->
-    Rel = erlmachine_assembly:label(Assembly, Label),
+next(Assembly, {<<"vertex">>, V, I}) ->
+    Rel = erlmachine_assembly:vertex(Assembly, V),
     next(Rel, erlmachine_datasheet:next(I));
 
 next(Assembly, {<<"part_no">>, PN, I}) ->
@@ -366,14 +366,13 @@ add(Schema, [H|T]) ->
     add(Schema, Exts), [add_edge(Schema, H, Ext) || Ext <- Exts],
     add(Schema, T).
 
-
 add_vertex(Schema, Assembly) ->
-    Rel = erlmachine_assembly:extensions(Assembly, []),
-    erlmachine_schema:add_vertex(Schema, Rel),
+    Rel = erlmachine_assembly:extensions(Assembly, []), V = erlmachine_assembly:vertex(Rel),
+    erlmachine_schema:add_vertex(Schema, V, Rel),
     ok.
 
 add_edge(Schema, Assembly, Ext) ->
-    V1 = erlmachine_assembly:label(Assembly), V2 = erlmachine_assembly:label(Ext),
+    V1 = erlmachine_assembly:vertex(Assembly), V2 = erlmachine_assembly:vertex(Ext),
     erlmachine_schema:add_edge(Schema, V1, V2, []),
     ok.
 

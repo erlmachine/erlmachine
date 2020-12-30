@@ -35,7 +35,7 @@
 
 -export([serial_no/1]).
 -export([schema/1]).
--export([label/1, label/2]).
+-export([vertex/1, vertex/2]).
 -export([tags/1]).
 -export([part_no/1]).
 -export([description/1]).
@@ -130,7 +130,7 @@ install(Schema, V, Ext) ->
                        success().
 uninstall(Schema, Id) ->
     Root = erlmachine_schema:root(Schema),
-    erlmachine_transmission:uninstall(Schema, Root, Id).
+    uninstall(Schema, Root, Id).
 
 -spec uninstall(Schema::schema(), V::vertex(), Id::term()) ->
                        success().
@@ -317,13 +317,13 @@ serial_no(Assembly) ->
 schema(Assembly) ->
     erlmachine_assembly:schema(Assembly).
 
--spec label(Assembly::assembly()) -> term().
-label(Assembly) ->
-    erlmachine_assembly:label(Assembly).
+-spec vertex(Assembly::assembly()) -> term().
+vertex(Assembly) ->
+    erlmachine_assembly:vertex(Assembly).
 
--spec label(Assembly::assembly(), Label::term()) -> assembly().
-label(Assembly, Label) ->
-    erlmachine_assembly:label(Assembly, Label).
+-spec vertex(Assembly::assembly(), Vertex::term()) -> assembly().
+vertex(Assembly, Vertex) ->
+    erlmachine_assembly:vertex(Assembly, Vertex).
 
 -spec tags(Assembly::assembly()) -> list(). 
 tags(Assembly) ->

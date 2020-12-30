@@ -116,20 +116,21 @@ boot(_Config) ->
 %%--------------------------------------------------------------------
 install(_Config) ->
     Ext = erlmachine_factory:gear(erlmachine_worker_ct, [], ['install', 'test']),
-    {ok, Pid} = erlmachine_ct:install(Ext), true = is_pid(Pid),
+    {ok, Pid} = erlmachine_ct:install(erlmachine:vertex(Ext, 'test')), true = is_pid(Pid),
     {comment, Pid}.
 
 process(_Config) ->
     ok.
 
 execute(_Config) ->
-    ok.
+    Command = erlmachine:command(#{}, 'test', []),
+    ok = erlmachine_ct:execute('test', Command).
 
 pressure(_Config) ->
     ok.
 
 uninstall(_Config) ->
-    ok.
+    ok = erlmachine_ct:uninstall('test').
 
 shutdown(_Config) ->
     ok = erlmachine_ct:shutdown().

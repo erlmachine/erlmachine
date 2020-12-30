@@ -14,7 +14,7 @@ prototype:
     - key: value
 tags:
   - test
-label: test
+vertex: test
 part_no: PN-0
 env:
   key: value
