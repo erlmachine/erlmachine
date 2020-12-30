@@ -1,4 +1,5 @@
 -module(erlmachine_system).
+%% TODO: To provide automated system monitoring within predefined range of tags: system, log, etc.
 
 -export([failure/0, failure/1, failure/2, failure/3]).
 -export([success/0, success/1, success/2]).

@@ -16,9 +16,10 @@
 -spec axle() -> assembly().
 axle() ->
     %% TODO; To decorate Body by additional data;
+    Socket = <<"*">>,
     Body = [],
     Tags = [type()], Desc = <<"">>,
-    erlmachine_assembly:assembly(?MODULE, Body, Tags, Desc).
+    erlmachine_assembly:assembly(?MODULE, Socket, Body, Tags, Desc).
 
 -spec boot(Axle::assembly(), Exts::[assembly()]) -> 
                      success(pid()) | failure(term(), term()).
@@ -46,4 +47,4 @@ type() ->
 
 -spec prefix() -> binary().
 prefix() ->
-    <<"AE-">>.
+    <<"AE">>.

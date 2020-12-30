@@ -19,9 +19,10 @@
 -spec shaft() -> assembly().
 shaft() ->
     %% TODO: To decorate Body by additional metadata;
+    Socket = <<"#">>,
     Body = [],
     Tags = [type()], Desc = <<"">>,
-    erlmachine_assembly:assembly(?MODULE, Body, Tags, Desc).
+    erlmachine_assembly:assembly(?MODULE, Socket, Body, Tags, Desc).
 
 -spec boot(Shaft::assembly()) ->
                      success(term()) | failure(term(), term()).
@@ -49,4 +50,4 @@ type() ->
 
 -spec prefix() -> binary().
 prefix() ->
-    <<"ST-">>.
+    <<"ST">>.

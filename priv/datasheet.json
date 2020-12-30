@@ -64,7 +64,7 @@
             "type": "object",
             "description": "Execution context"
         },
-        "desc":{
+        "description":{
             "type": "string",
             "description": "Short overview of the exrtension's role within overall system"
         }

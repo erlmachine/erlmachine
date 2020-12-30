@@ -1,9 +1,10 @@
 -module(erlmachine_schema).
 %% This module is responsible to setup the schema for the whole transmittion and to manage it;
 %% TODO: To provide visualization of:
-%% a) Installation schema;
-%% b) Routing schema;
-%% c) Extension vetices which are labeled, tagged and displayed with desc;
+%% 1. Installation schema;
+%% 2. Routing schema;
+%% 3. Extension vetices which are labeled, tagged and displayed with desc;
+%% 4. System report about vertex and overall system in separate widjet (erlang:memory/0);
 
 -export([new/1]).
 -export([root/1, root/2]).

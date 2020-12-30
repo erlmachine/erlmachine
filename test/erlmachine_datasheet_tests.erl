@@ -1,5 +1,5 @@
 -module(erlmachine_datasheet_tests).
-
+%% NOTE: Datasheet test is responsible to inspect the next related concerns: load, read, validation.
 -include_lib("eunit/include/eunit.hrl").
 
 erlmachine_datasheet_test_() ->

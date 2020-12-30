@@ -30,7 +30,7 @@
 -export([success/0, success/1, success/2]).
 -export([is_success/1, is_failure/1]).
 
--export([attribute/3]).
+-export([attribute/2, attribute/3]).
 -export([optional_callback/3, optional_callback/4]).
 
 -export([serial_no/1]).
@@ -279,15 +279,19 @@ is_success(Res) ->
 is_failure(Res) ->
     erlmachine_system:is_failure(Res).
 
--spec attribute(Module::atom(), Tag::atom(), Default::term()) -> false | {Tag::atom(), Value::term()}.
-attribute(Module, Tag, Default) ->
+-spec attribute(Module::atom(), Tag::atom()) -> {term(), term()} | false.
+attribute(Module, Tag) ->
     Attributes = Module:module_info(attributes),
-    Result = lists:keyfind(Tag, 1, Attributes),
-    case Result of 
-        false -> 
-            Default;
-        {Tag, Data} -> 
-            Data 
+    lists:keyfind(Tag, 1, Attributes).
+
+-spec attribute(Module::atom(), Tag::atom(), Def::term()) -> {term(), term()}.
+attribute(Module, Tag, Def) ->
+    Res = attribute(Module, Tag),
+    case Res of
+        false ->
+            {Tag, Def};
+        {Tag, _} -> 
+            Res
     end.
 
 -spec optional_callback(Mod::atom(), Fun::atom(), Args::list()) -> 

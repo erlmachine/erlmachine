@@ -64,9 +64,8 @@ stop() ->
 -record(state, { schema::term() }).
 
 init(Env) ->
-    Ext = erlmachine_factory:gear(erlmachine_worker_ct, [], <<"Common test component">>),
-    GearBox = erlmachine_factory:gearbox(erlmachine_supervisor_ct, [], Env, <<"Common test setup ">>, [Ext]),
-
+    Ext = erlmachine_factory:gear(erlmachine_worker_ct, [], ['test', 'ct']),
+    GearBox = erlmachine_factory:gearbox(erlmachine_supervisor_ct, [], Env, ['ct'], [Ext]),
     Schema = erlmachine_assembly:schema(GearBox),
     {ok, #state{ schema = Schema }}.
 

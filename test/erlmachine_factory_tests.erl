@@ -1,5 +1,5 @@
 -module(erlmachine_factory_tests).
-
+%% NOTE: The factory test is responsible to inspect the next related concerns: gear, shaft, axle, gearbox, datasheet mapping;
 -include_lib("eunit/include/eunit.hrl").
 
 erlmachine_factory_test_() ->
@@ -26,7 +26,7 @@ erlmachine_factory_test_() ->
       {
         "Inspect gear",
        fun() ->
-               Gear = erlmachine_factory:gear(erlmachine_gear_sample, [], <<"Inspected gear">>),
+               Gear = erlmachine_factory:gear(erlmachine_worker_ct, [], ['eunit']),
                SN = erlmachine_assembly:serial_no(Gear), true = is_binary(SN),
 
                Path = filename:join(erlmachine:priv_dir(), "datasheets/worker_sample.yaml"),
@@ -41,7 +41,7 @@ erlmachine_factory_test_() ->
       {
        "Inspect shaft",
         fun() ->
-                Shaft0 = erlmachine_factory:shaft(erlmachine_shaft_sample, [], <<"Inspected shaft">>, []),
+                Shaft0 = erlmachine_factory:shaft(erlmachine_worker_ct, [], ['eunit'], []),
                 SN0 = erlmachine_assembly:serial_no(Shaft0), true = is_binary(SN0),
 
                 Path = filename:join(erlmachine:priv_dir(), "datasheets/worker_sample.yaml"),
@@ -55,7 +55,7 @@ erlmachine_factory_test_() ->
       {
        "Inspect axle",
        fun() ->
-               Axle0 = erlmachine_factory:axle(erlmachine_axle_sample, [], <<"Inspected axle">>, []),
+               Axle0 = erlmachine_factory:axle(erlmachine_supervisor_ct, [], ['eunit'], []),
                SN0 = erlmachine_assembly:serial_no(Axle0), true = is_binary(SN0),
 
                Path = filename:join(erlmachine:priv_dir(), "datasheets/supervisor_sample.yaml"),
@@ -69,7 +69,7 @@ erlmachine_factory_test_() ->
       {
        "Inspect gearbox",
        fun() ->
-               GearBox0 = erlmachine_factory:gearbox(erlmachine_gearbox_sample, [], #{}, <<"Inspected gearbox">>, []),
+               GearBox0 = erlmachine_factory:gearbox(erlmachine_supervisor_ct, [], #{}, ['eunit'], []),
                SN0 = erlmachine_assembly:serial_no(GearBox0), true = is_binary(SN0),
 
                Path = filename:join(erlmachine:priv_dir(), "datasheets/supervisor_sample.yaml"),
@@ -130,8 +130,8 @@ erlmachine_factory_test_() ->
                {ok, Env} = erlmachine_datasheet:find(<<"env">>, Datasheet),
                Env = erlmachine_assembly:env(Gear),
 
-               {ok, Desc} = erlmachine_datasheet:find(<<"desc">>, Datasheet),
-               Desc = erlmachine_assembly:desc(Gear)
+               {ok, Desc} = erlmachine_datasheet:find(<<"description">>, Datasheet),
+               Desc = erlmachine_assembly:description(Gear)
        end
       },
       {

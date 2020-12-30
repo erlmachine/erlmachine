@@ -16,26 +16,27 @@
 
 -type state() :: term().
 
+-include("erlmachine_user.hrl").
 -include("erlmachine_factory.hrl").
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
 
--callback boot(MN::model_no(), State::state(), Opt::list(), Env::map()) ->
+-callback boot(UID::uid(), State::state(), Opt::list(), Env::map()) ->
     success(state()) | failure(term(), term(), state()).
 
--callback process(MN::model_no(), Motion::term(), State::state()) ->
+-callback process(UID::uid(), Motion::term(), State::state()) ->
     success(state()) | success(term(), state()) | failure(term(), term(), state()).
 
--callback process(MN::model_no(), Motion::term(), Socket::term(), Range::[model_no()], State::state()) ->
+-callback process(UID::uid(), Motion::term(), Socket::term(), Range::[term()], State::state()) ->
     success(state()) | success(term(), state()) | failure(term(), term(), state()).
 
--callback execute(MN::model_no(), Command::term(), State::state()) ->
+-callback execute(UID::uid(), Command::term(), State::state()) ->
     success(term(), state()) | failure(term(), term(), state()).
 
--callback pressure(MN::model_no(), Load::term(), State::state()) ->
+-callback pressure(UID::uid(), Load::term(), State::state()) ->
     success(state()) | success(term(), state()) | failure(term(), term(), state()).
 
--callback shutdown(MN::model_no(), Reason::term(), State::state()) ->
+-callback shutdown(UID::uid(), Reason::term(), State::state()) ->
     success().
 
 %% NOTE: Lazy callbacks are designed to reduce computational resources when extension is deadlocked;
@@ -44,14 +45,14 @@
 -spec boot(Context::assembly()) ->
                    success(assembly()) | failure(term(), term(), assembly()).
 boot(Context) ->
-    MN = erlmachine_assembly:model_no(Context),
+    UID = erlmachine_assembly:uid(Context),
 
     Model = erlmachine_assembly:model(Context), Name = erlmachine_model:name(Model),
     Opt = erlmachine_model:options(Model),
     Body = erlmachine_assembly:body(Context),
     Env = erlmachine_assembly:env(Context),
 
-    Res = Name:boot(MN, Body, Opt, Env),
+    Res = Name:boot(UID, Body, Opt, Env),
     context(Res, Context).
 
 
@@ -63,11 +64,11 @@ process(Context, Motion) ->
 -spec execute(Context::assembly(), Command::term()) ->
                       success(term(), assembly()) | failure(term(), term(), assembly()).
 execute(Context, Command) ->
-    MN = erlmachine_assembly:model_no(Context),
+    UID = erlmachine_assembly:uid(Context),
 
     Model = erlmachine_assembly:model(Context), Name = erlmachine_model:name(Model),
     Body = erlmachine_assembly:body(Context),
-    Res = Name:execute(MN, Command, Body),
+    Res = Name:execute(UID, Command, Body),
     context(Res, Context).
 
 -spec pressure(Context::assembly(), Load::term()) ->
@@ -78,12 +79,12 @@ pressure(Context, Load) ->
 -spec shutdown(Context::assembly(), Reason::term()) -> 
                       success().
 shutdown(Context, Reason) ->
-    MN = erlmachine_assembly:model_no(Context),
+    UID = erlmachine_assembly:uid(Context),
 
     Model = erlmachine_assembly:model(Context), Name = erlmachine_model:name(Model),
     Body = erlmachine_assembly:body(Context),
 
-    Mod = Name, Fun = shutdown, Args = [MN, Reason, Body],
+    Mod = Name, Fun = shutdown, Args = [UID, Reason, Body],
     Def = erlmachine:success(),
     erlmachine:optional_callback(Mod, Fun, Args, Def).
 

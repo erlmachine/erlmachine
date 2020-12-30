@@ -25,9 +25,10 @@
 -spec gearbox() -> assembly().
 gearbox() ->
     %% TODO: To support Body by additional metadata;
+    Socket = <<"*">>,
     Body = #{},
     Tags = [type()], Desc = <<"">>,
-    erlmachine_assembly:assembly(?MODULE, Body, Tags, Desc).
+    erlmachine_assembly:assembly(?MODULE, Socket, Body, Tags, Desc).
 
 -spec boot(GearBox::assembly(), Exts::[assembly()]) ->
                      success(pid()) | failure(term(), term()).
@@ -56,4 +57,4 @@ type() ->
 
 -spec prefix() -> binary().
 prefix() ->
-    <<"GX-">>.
+    <<"GX">>.

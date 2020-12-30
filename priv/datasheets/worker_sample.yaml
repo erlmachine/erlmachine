@@ -5,7 +5,7 @@ model_no: MN-0
 #Socket should be passed into rotate (worker) call and to be reflected on workers schema; 
 socket: "#"
 model:
-  name: erlmachine_worker_sample
+  name: erlmachine_worker_ct
   options:
     - key: value
 prototype:
@@ -18,4 +18,4 @@ label: test
 part_no: PN-0
 env:
   key: value
-desc: Worker datasheet sample
+description: Worker datasheet sample

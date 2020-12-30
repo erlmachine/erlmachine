@@ -26,7 +26,7 @@ process(Context, Motion) ->
 -spec mesh(Context::assembly(), Motion::term(), Ext::assembly(), Range::[assembly()]) ->
                     success(assembly()) | success(term(), assembly()) | failure(term(), term(), assembly()).
 mesh(Context, Motion, Ext, Range) ->
-    MN = erlmachine_assembly:model_no(Context),
+    UID = erlmachine_assembly:uid(Context),
 
     Model = erlmachine_assembly:model(Context), Name = erlmachine_model:name(Model),
 
@@ -34,18 +34,18 @@ mesh(Context, Motion, Ext, Range) ->
     Socket = erlmachine_assembly:socket(Ext),
     MNs = [erlmachine_assembly:model_no(E) || E <- Range],
 
-    Res = Name:process(MN, Motion, Socket, MNs, Body),
+    Res = Name:process(UID, Motion, Socket, MNs, Body),
     erlmachine_worker:context(Res, Context).
 
 -spec pass(Context::assembly(), Motion::term()) ->
                   success(assembly()) | success(term(), assembly()) | failure(term(), term(), assembly()).
 pass(Context, Motion) ->
-    MN = erlmachine_assembly:model_no(Context),
+    UID = erlmachine_assembly:uid(Context),
 
     Model = erlmachine_assembly:model(Context), Name = erlmachine_model:name(Model),
     Body = erlmachine_assembly:body(Context),
 
-    Mod = Name, Fun = process, Args = [MN, Motion, Body],
+    Mod = Name, Fun = process, Args = [UID, Motion, Body],
     Def = erlmachine:success(Motion, Context),
     Res = erlmachine:optional_callback(Mod, Fun, Args, Def), 
     erlmachine_worker:context(Res, Context).

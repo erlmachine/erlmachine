@@ -2,7 +2,7 @@
 
 %% API.
 
--export([assembly/0, assembly/4]).
+-export([assembly/1, assembly/5]).
 
 -export([
          serial_no/1, serial_no/2,
@@ -15,12 +15,11 @@
          prototype/1, prototype/2,
          extensions/1, extensions/2,
          uid/1, uid/2,
-         gid/1, gid/2,
          tags/1, tags/2,
          label/1, label/2,
          part_no/1, part_no/2,
          env/1, env/2,
-         desc/1, desc/2
+         description/1, description/2
         ]).
 
 -export([store/2, delete/2, find/2]).
@@ -39,40 +38,38 @@
 %% b) The assembly itself and any potential future changes should be persisted;
 
 -record (assembly, {
-                    %% Runtime unique identifier (S/N); 
-                    %% TODO: Don't forget to pass it as args list to the supervisor model;
-                    %% That is the right approach for supervsior (to have knowledge about runtime ID's);
+                    %% Runtime unique identifier (S/N)
+                    %% TODO: Don't forget to pass it as args list to the supervisor model
+                    %% That is the right approach for supervsior (to have knowledge about runtime ID's)
                     serial_no::serial_no(),
-                    %% Extension module: erlmachine_axle, erlmachine_shaft, erlmachine_gearbox, erlmachine_gear;
+                    %% Extension module: erlmachine_axle, erlmachine_shaft, erlmachine_gearbox, erlmachine_gear
                     name::atom(),
-                    %% Body that stores the current state;
+                    %% Body that stores the current state
                     body::term(),
-                    %% A model_no can be used by product configurator to generate a master production schedule;
+                    %% A model_no can be used by product configurator to generate a master production schedule
                     model_no::model_no(),
-                    %% Interface which is passed into the rotate call);
+                    %% Interface which is passed into the rotate call)
                     socket::term(),
-                    %% Build topology which is inherited through the all extensions;
+                    %% Build topology which is inherited through the all extensions
                     schema::schema(),
-                    %% Domain level specification;
+                    %% Domain level specification
                     model::model(),
-                    %% Service level specification;
+                    %% Service level specification
                     prototype::prototype(),
-                    %% Build configuration;
+                    %% Build configuration
                     extensions=[]::[assembly()],
-                    %% User id;
+                    %% Machine operator
                     uid::uid(),
-                    %% User group Id;
-                    gid::gid(),
-                    %% Tags are used as selection criteria ([supervisor, overloaded, etc.]);
+                    %% Tags are used as selection criteria ([supervisor, overloaded, etc.])
                     tags=[]::list(term()),
-                    %% Label is unique id within schema (by default serial_no);
+                    %% Label is unique id within schema (by default serial_no)
                     label::term(),
-                    %% By part_no we can track quality of component through release period;
+                    %% By part_no we can track quality of component through release period
                     part_no::part_no(),
-                    %% The execution context which is inherited through the extensions;
+                    %% The execution context which is inherited through the extensions
                     env::term(),
-                    %% Textual description of the extension;
-                    desc::binary()
+                    %% Textual description of the extension
+                    description::binary()
                    }
         ).
 
@@ -85,15 +82,15 @@
 
 -export_type([assembly/0]).
 
--spec assembly() -> assembly().
-assembly() ->
-    #assembly{}.
+-spec assembly(Socket::term()) -> assembly().
+assembly(Socket) ->
+    #assembly{ socket = Socket }.
 
--spec assembly(Name::atom(), Body::term(), Tags::list(), Desc::binary()) -> 
+-spec assembly(Name::atom(), Socket::term(), Body::term(), Tags::list(), Desc::binary()) -> 
                       assembly().
-assembly(Name, Body, Tags, Desc) ->
-    Rel = name(body(assembly(), Body), Name),
-    desc(tags(Rel, Tags), Desc).
+assembly(Name, Socket, Body, Tags, Desc) ->
+    Rel = name(body(assembly(Socket), Body), Name),
+    description(tags(Rel, Tags), Desc).
 
 -spec serial_no(Assembly::assembly()) -> serial_no().
 serial_no(Assembly) ->
@@ -176,14 +173,6 @@ uid(Assembly) ->
 uid(Assembly, UID) ->
     Assembly#assembly{ uid = UID }.
 
--spec gid(Assembly::assembly()) -> gid().
-gid(Assembly) ->
-    Assembly#assembly.gid.
-
--spec gid(Assembly::assembly(), GID::gid()) -> assembly().
-gid(Assembly, GID) ->
-    Assembly#assembly{ gid = GID }.
-
 -spec part_no(Assembly::assembly()) -> term().
 part_no(Assembly) ->
     Assembly#assembly.part_no.
@@ -216,13 +205,13 @@ env(Assembly) ->
 env(Assembly, Env) ->
     Assembly#assembly{ env = Env }.
 
--spec desc(Assembly::assembly()) -> binary().
-desc(Assembly) ->
-    Assembly#assembly.desc.
+-spec description(Assembly::assembly()) -> binary().
+description(Assembly) ->
+    Assembly#assembly.description.
 
--spec desc(Assembly::assembly(), Desc::binary()) -> assembly().
-desc(Assembly, Desc) ->
-    Assembly#assembly{ desc = Desc }.
+-spec description(Assembly::assembly(), Desc::binary()) -> assembly().
+description(Assembly, Desc) ->
+    Assembly#assembly{ description = Desc }.
 
 -spec store(Assembly::assembly(), Ext::assembly()) -> assembly().
 store(Assembly, Ext) ->

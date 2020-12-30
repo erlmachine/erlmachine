@@ -19,9 +19,10 @@
 -spec gear() -> assembly(). %% Default representation;
 gear() ->
     %% TODO: Additional decoration within body;
+    Socket = <<"#">>,
     Body = #{},
     Tags = [type()], Desc = <<"">>,
-    erlmachine_assembly:assembly(?MODULE, Body, Tags, Desc).
+    erlmachine_assembly:assembly(?MODULE, Socket, Body, Tags, Desc).
 
 -spec boot(Gear::assembly()) ->
                      success(pid()) | failure(term(), term()).
@@ -49,4 +50,4 @@ type() ->
 
 -spec prefix() -> binary().
 prefix() ->
-    <<"GR-">>. 
+    <<"GR">>. 

@@ -4,7 +4,7 @@ body:
 model_no: MN-0
 socket:
 model:
-  name: erlmachine_supervisor_sample
+  name: erlmachine_supervisor_ct
   options:
     - key: value
 prototype:
@@ -17,4 +17,4 @@ label: test
 part_no: PN-0
 env:
   key: value
-desc: Sample of supervisor datasheet
+description: Sample of supervisor datasheet

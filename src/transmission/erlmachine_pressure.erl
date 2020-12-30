@@ -19,12 +19,12 @@ pressure(Context, Load) ->
 -spec pass(Context::assembly(), Motion::term()) ->
                     success(assembly()) | success(term(), assembly()) | failure(term(), term(), assembly()).
 pass(Context, Motion) ->
-    MN = erlmachine_assembly:model_no(Context),
+    UID = erlmachine_assembly:uid(Context),
 
     Model = erlmachine_assembly:model(Context), Name = erlmachine_model:name(Model),
     Body = erlmachine_assembly:body(Context),
 
-    Mod = Name, Fun = 'pressure', Args = [MN, Motion, Body],
+    Mod = Name, Fun = 'pressure', Args = [UID, Motion, Body],
     Def = erlmachine:success(Motion, Context),
     Res = erlmachine:optional_callback(Mod, Fun, Args, Def), 
     erlmachine_worker:context(Res, Context).

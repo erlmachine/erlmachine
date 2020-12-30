@@ -1,9 +1,11 @@
 -module(erlmachine_supervisor_ct).
+%% Can be widely used as service versioning;
+-vsn(['test']).
 
--export([boot/6]).
--export([install/4]).
--export([uninstall/4]).
--export([shutdown/4]).
+-export([boot/4]).
+-export([install/2]).
+-export([uninstall/2]).
+-export([shutdown/2]).
 
 -include("erlmachine_user.hrl").
 -include("erlmachine_factory.hrl").
@@ -11,30 +13,28 @@
 -include("erlmachine_system.hrl").
 -include("erlmachine_transmission.hrl").
 
--spec boot(MN::model_no(), UID::uid(), GID::gid(), Specs::[spec()], Opt::list(), Env::list()) -> 
+-spec boot(UID::uid(), Specs::[spec()], Opt::list(), Env::list()) -> 
     success() | failure(term(), term()).
-boot(MN, UID, GID, Specs, Opt, Env) ->
+boot(UID, Specs, Opt, Env) ->
 %% TODO: To provide test cases parametrization through Env;
-    ct:log("~n~p:boot(~p, ~p, ~p, ~p, ~p, ~p)~n", [?MODULE, MN, UID, GID, Specs, Opt, Env]),
+    ct:log("~n~p:boot(~p, ~p, ~p, ~p)~n", [?MODULE, UID, Specs, Opt, Env]),
     erlmachine:success().
 
--spec install(MN::model_no(), UID::uid(), GID::gid(), Spec::spec()) -> 
+-spec install(UID::uid(), Spec::spec()) -> 
     success() | failure(term(), term()).
-install(MN, UID, GID, Spec) ->
-    ct:log("~n~p:install(~p, ~p, ~p, ~p)~n", [?MODULE, MN, UID, GID, Spec]),
+install(UID, Spec) ->
+    ct:log("~n~p:install(~p, ~p)~n", [?MODULE, UID, Spec]),
     erlmachine:success().
 
--spec uninstall(MN::model_no(), UID::uid(), GID::gid(), ID::term()) ->
+-spec uninstall(UID::uid(), ID::term()) ->
     success() | failure(term(), term()).
-uninstall(MN, UID, GID, ID) ->
-    ct:log("~n~p:uninstall(~p, ~p, ~p, ~p)~n", [?MODULE, MN, UID, GID, ID]),
+uninstall(UID, ID) ->
+    ct:log("~n~p:uninstall(~p, ~p)~n", [?MODULE, UID, ID]),
     erlmachine:success().
 
--spec shutdown(MN::model_no(), UID::uid(), GID::gid(), Reason::term()) ->
+-spec shutdown(UID::uid(), Reason::term()) ->
     success() | failure(term(), term()).
-shutdown(MN, UID, GID, Reason) ->
-    ct:log("~n~p:shutdown(~p, ~p, ~p, ~p)~n", [?MODULE, MN, UID, GID, Reason]),
+shutdown(UID, Reason) ->
+    ct:log("~n~p:shutdown(~p, ~p)~n", [?MODULE, UID, Reason]),
     erlmachine:success().
-
-
 

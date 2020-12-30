@@ -34,61 +34,52 @@
 -include("erlmachine_transmission.hrl").
 
 
--callback boot(MN::model_no(), UID::uid(), GID::gid(), Specs::[spec()], Opt::list(), Env::list()) -> 
+-callback boot(UID::uid(), Specs::[spec()], Opt::list(), Env::list()) -> 
     success() | failure(term(), term()).
 
--callback install(MN::model_no(), UID::uid(), GID::gid(), Spec::spec()) -> 
+-callback install(UID::uid(), Spec::spec()) ->
     success() | failure(term(), term()).
 
--callback uninstall(MN::model_no(), UID::uid(), GID::gid(), ID::term()) ->
+-callback uninstall(UID::uid(), ID::term()) ->
     success() | failure(term(), term()).
 
--callback shutdown(MN::model_no(), UID::uid(), GID::gid(), Reason::term()) ->
+-callback shutdown(UID::uid(), Reason::term()) ->
     success() | failure(term(), term()).
 
--optional_callbacks([install/4, uninstall/4, shutdown/4]).
+-optional_callbacks([install/2, uninstall/2, shutdown/2]).
 
 -spec boot(Context::assembly(), Specs::[spec()]) ->
                   success() | failure(term(), term()).
 boot(Context, Specs) ->
-    MN = erlmachine_assembly:model_no(Context),
-
     Model = erlmachine_assembly:model(Context), Name = erlmachine_model:name(Model),
-    UID = erlmachine_assembly:uid(Context), GID = erlmachine_assembly:gid(Context),
+    UID = erlmachine_assembly:uid(Context),
 
-    Opt = erlmachine_model:options(Model),
-    Env = erlmachine_assembly:env(Context),
+    Opt = erlmachine_model:options(Model), Env = erlmachine_assembly:env(Context),
 
-    Name:boot(MN, UID, GID, Specs, Opt, Env).
+    Name:boot(UID, Specs, Opt, Env).
 
 -spec install(Context::assembly(), Spec::spec()) ->
                      success() | failure(term(), term()).
 install(Context, Spec) ->
-    MN = erlmachine_assembly:model_no(Context),
-
     Model = erlmachine_assembly:model(Context), Name = erlmachine_model:name(Model),
-    UID = erlmachine_assembly:uid(Context), GID = erlmachine_assembly:gid(Context),
+    UID = erlmachine_assembly:uid(Context), 
 
-    Name:install(MN, UID, GID, Spec).
+    Name:install(UID, Spec).
 
 -spec uninstall(Context::assembly(), ID::term()) ->
                        success() | failure(term(), term()).
 uninstall(Context, ID) ->
-    MN = erlmachine_assembly:model_no(Context),
-
     Model = erlmachine_assembly:model(Context), Name = erlmachine_model:name(Model),
-    UID = erlmachine_assembly:uid(Context), GID = erlmachine_assembly:gid(Context),
+    UID = erlmachine_assembly:uid(Context), 
 
-    Name:uninstall(MN, UID, GID, ID).
+    Name:uninstall(UID, ID).
 
 -spec shutdown(Context::assembly(), Reason::term()) ->
                       success() | failure(term(), term()).
 shutdown(Context, Reason) ->
-    MN = erlmachine_assembly:model_no(Context),
-
     Model = erlmachine_assembly:model(Context), Name = erlmachine_model:name(Model),
-    UID = erlmachine_assembly:uid(Context), GID = erlmachine_assembly:gid(Context),
+    UID = erlmachine_assembly:uid(Context),
 
-    Mod = Name, Fun = shutdown, Args = [MN, UID, GID, Reason],
+    Mod = Name, Fun = shutdown, Args = [UID, Reason],
     Def = erlmachine:success(),
     ok = erlmachine:optional_callback(Mod, Fun, Args, Def).

@@ -6,12 +6,18 @@
 
 -export([
          name/1, name/2,
-         options/1, options/2
+         options/1, options/2,
+         vsn/1, vsn/2
         ]).
 
 -include("erlmachine_system.hrl").
 
--record(prototype, { name::atom(), options::term() }).
+-record(prototype, {
+                    name::atom(),
+                    options::term(),
+                    vsn::term()
+                   }
+       ).
 
 -type prototype() :: #prototype{}.
 
@@ -26,18 +32,26 @@ prototype(Name, Opt) ->
     Prototype = prototype(),
     options(name(Prototype, Name), Opt).
 
--spec name(Prototype::prototype()) -> atom().
-name(Prototype) ->
-    Prototype#prototype.name.
+-spec name(Prot::prototype()) -> atom().
+name(Prot) ->
+    Prot#prototype.name.
 
--spec name(Prototype::prototype(), Name::atom()) -> prototype().
-name(Prototype, Name) ->
-    Prototype#prototype{ name=Name }.
+-spec name(Prot::prototype(), Name::atom()) -> prototype().
+name(Prot, Name) ->
+    Prot#prototype{ name=Name }.
 
--spec options(Prototype::prototype()) -> list().
-options(Prototype) ->
-    Prototype#prototype.options.
+-spec options(Prot::prototype()) -> list().
+options(Prot) ->
+    Prot#prototype.options.
 
--spec options(Prototype::prototype(), Opt::list()) -> prototype().
-options(Prototype, Opt) ->
-    Prototype#prototype{ options=Opt }.
+-spec options(Prot::prototype(), Opt::list()) -> prototype().
+options(Prot, Opt) ->
+    Prot#prototype{ options=Opt }.
+
+-spec vsn(Prot::prototype()) -> term().
+vsn(Prot) ->
+    Prot#prototype.vsn.
+
+-spec vsn(Prot::prototype(), Vsn::term()) -> prototype().
+vsn(Prot, Vsn) ->
+    Prot#prototype{ vsn = Vsn }.
