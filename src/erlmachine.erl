@@ -23,10 +23,12 @@
 -export([event/2, event/3]).
 -export([command_name/1, document_meta/1, event_type/1]).
 
+-export([request/2, request/3]).
+
 -export([return_address/1, return_address/2]).
 -export([correlation_id/1, correlation_id/2]).
 
--export([request_reply/2, request_reply/3]).
+-export([reply/2]).
 
 -export([failure/0, failure/1, failure/2, failure/3]).
 -export([success/0, success/1, success/2]).
@@ -164,7 +166,7 @@ shutdown(Schema, V, Reason) ->
 -spec motion(Header::header(), Body::body()) -> motion().
 motion(Header, Body) ->
     erlmachine_transmission:motion(Header, Body).
-
+%% NOTE: The assumtion is that header is exchenged in two way coordination (responder has to add extra fields);
 -spec header(Motion::motion()) -> header().
 header(Motion) ->
     erlmachine_transmission:header(Motion).
@@ -229,14 +231,14 @@ event_type(Motion) ->
     Header = header(Motion),
     maps:get(event, Header).
 
--spec request_reply(Motion::motion(), Address::term()) -> 
+-spec request(Motion::motion(), Address::term()) -> 
                            motion().
-request_reply(Motion, Address) ->
+request(Motion, Address) ->
     return_address(Motion, Address).
 
--spec request_reply(Motion::motion(), Address::term(), Id::term()) -> 
+-spec request(Motion::motion(), Address::term(), Id::term()) -> 
                            motion().
-request_reply(Motion, Address, Id) ->
+request(Motion, Address, Id) ->
     correlation_id(return_address(Motion, Address), Id).
 
 -spec return_address(Motion::motion()) -> term().
@@ -259,6 +261,10 @@ correlation_id(Motion, Id) ->
     Header = header(Motion),
     header(Motion, Header#{ correlation_id => Id }).
 
+-spec reply(Req::motion(), Res::motion()) -> motion().
+reply(Req, Res) ->
+    Header = maps:merge(header(Req), header(Res)),
+    header(Res, Header).
 %%%===================================================================
 %%% Reply API
 %%%===================================================================
