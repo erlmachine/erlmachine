@@ -28,14 +28,14 @@ id(SN) ->
 %%%  erlmachine_supervisor_prototype behaviour
 %%%===================================================================
 
--record(init, { specs::[map()], opt::[] }).
+-record(init, { specs::[map()], flags::map() }).
 
--spec prototype_init(SN::serial_no(), Specs::list(map()), Context::term(), Opt::list()) ->
+-spec prototype_init(SN::serial_no(), Specs::[map()], Context::term(), Opt::[term()]) ->
                             success(pid()) | failure(term(), term()).
 prototype_init(SN, Specs, Context, Opt) ->
     ok = erlmachine_supervisor_prototype:init(Context, Specs),
 
-    Com = #init{ specs = Specs, opt = Opt },
+    Com = #init{ specs = Specs, flags = flags(Opt) },
     supervisor:start_link({local, id(SN)}, ?MODULE, Com).
 
 -spec prototype_start_child(SN::serial_no(), Spec::map(), Context::term()) ->
@@ -65,8 +65,35 @@ prototype_terminate(SN, Reason, _Timeout, Context) ->
 %%%  supervisor behaviour
 %%%===================================================================
 
-init(#init{ specs = Specs, opt = Opt }) ->
-    Strategy = proplists:get_value(strategy, Opt, one_for_one),
-    Int = proplists:get_value(intensity, Opt, 1),
-    Per = proplists:get_value(period, Opt, 5),
-    erlmachine:success({#{strategy => Strategy, intensity => Int, period => Per}, Specs}).
+init(#init{ specs = Specs, flags = Flags }) ->
+    Strategy = maps:get(<<"strategy">>, Flags, one_for_one),
+    Int = maps:get(<<"intensity">>, Flags, 1),
+    Per = maps:get(<<"period">>, Flags, 5),
+    erlmachine:success({#{ strategy => Strategy, intensity => Int, period => Per }, Specs}).
+
+-spec flags(Opt::[term()]) -> map().
+flags(Opt) ->
+    case lists:filter(fun filter/1, Opt) of
+        [Flags] ->
+            maps:fold(fun fold/3, #{}, Flags);
+        _ ->
+            #{}
+    end.
+
+filter(#{ <<"flags">> := _ }) ->
+    true;
+filter(_) ->
+    false.
+
+fold(Key = <<"strategy">>, Value, Acc) when Value == <<"one_for_one">>;
+                                            Value == <<"one_for_all">>;
+                                            Value == <<"rest_for_one">>;
+                                            Value == <<"simple_one_for_one">> ->
+    Acc#{ Key => binary_to_atom(Value, utf8) };
+fold(Key = <<"intensity">>, Value, Acc) when is_integer(Value) ->
+    Acc#{ Key => Value };
+fold(Key = <<"period">>, Value, Acc) when is_integer(Value) ->
+    Acc#{ Key => Value };
+fold(Key, Value, Acc) ->
+    Acc#{ Key => Value }.
+

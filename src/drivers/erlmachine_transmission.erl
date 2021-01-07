@@ -10,7 +10,7 @@
 %% 5) It monitors the quality of service through "mesh" call;
 
 
-%% TODO: To supply topology visualization in admin panel (errors, message history, throughput);
+%% TODO: To supply cluster topology visualization in admin panel (errors, message history, throughput);
 %% TODO: To supply message history in headers:
 %% https://www.enterpriseintegrationpatterns.com/patterns/messaging/MessageHistory.html;
 

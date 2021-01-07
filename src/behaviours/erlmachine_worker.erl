@@ -21,7 +21,7 @@
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
 
--callback boot(UID::uid(), State::state(), Opt::list(), Env::map()) ->
+-callback boot(UID::uid(), State::state(), Opt::[term()], Env::map()) ->
     success(state()) | failure(term(), term(), state()).
 
 -callback process(UID::uid(), Motion::term(), State::state()) ->

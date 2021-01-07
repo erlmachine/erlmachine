@@ -34,7 +34,7 @@
 -include("erlmachine_transmission.hrl").
 
 
--callback boot(UID::uid(), Specs::[spec()], Opt::list(), Env::list()) -> 
+-callback boot(UID::uid(), Specs::[spec()], Opt::[term()], Env::map()) -> 
     success() | failure(term(), term()).
 
 -callback install(UID::uid(), Spec::spec()) ->

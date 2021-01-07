@@ -236,22 +236,23 @@ gear(Datasheet, Ext) ->
     Gear = gear(Datasheet),
     erlmachine_assembly:extensions(Gear, [Ext]).
 
--spec gear(ModelName::atom(), ModelOpt::term(), Tags::[term()]) ->
+-spec gear(ModelName::atom(), ModelOpt::[term()], Tags::[term()]) ->
                   assembly().
 gear(ModelName, ModelOpt, Tags) ->
     ProtName = erlmachine_worker_prototype_default:name(),
     ProtOpt = [],
     gear(ModelName, ModelOpt, ProtName, ProtOpt, Tags).
 
--spec gear(ModelName::atom(), ModelOpt::term(), Tags::[term()], Ext::assembly()) ->
+-spec gear(ModelName::atom(), ModelOpt::[term()], Tags::[term()], Ext::assembly()) ->
                   assembly().
 gear(ModelName, ModelOpt, Tags, Ext) ->
     Gear = gear(ModelName, ModelOpt, Tags),
     erlmachine_assembly:extensions(Gear, [Ext]).
 
--spec gear(ModelName::atom(), ModelOpt::term(), ProtName::atom(), ProtOpt::list(), Tags::[term()]) -> 
+-spec gear(ModelName::atom(), ModelOpt::[term()], ProtName::atom(), ProtOpt::[term()], Tags::[term()]) -> 
                   assembly().
-gear(ModelName, ModelOpt, ProtName, ProtOpt, Tags) ->
+gear(ModelName, ModelOpt, ProtName, ProtOpt, Tags) when is_list(ModelOpt),
+                                                        is_list(ProtOpt) ->
     Gear = erlmachine_gear:gear(),
 
     Prot = erlmachine_prototype:prototype(ProtName, ProtOpt),
@@ -261,13 +262,13 @@ gear(ModelName, ModelOpt, ProtName, ProtOpt, Tags) ->
     {ok, Rel} = process(erlmachine_assembly:tags(Assembly, Tags)),
     Rel.
 
--spec gear(ModelName::atom(), ModelOpt::term(), ProtName::atom(), ProtOpt::list(), Tags::[term()], Ext::assembly()) ->
+-spec gear(ModelName::atom(), ModelOpt::[term()], ProtName::atom(), ProtOpt::[term()], Tags::[term()], Ext::assembly()) ->
                   assembly().
 gear(ModelName, ModelOpt, ProtName, ProtOpt, Tags, Ext) ->
     Gear = gear(ModelName, ModelOpt, ProtName, ProtOpt, Tags),
     erlmachine_assembly:extensions(Gear, [Ext]).
 
--spec shaft(Datasheet::datasheet(), Exts::list()) ->
+-spec shaft(Datasheet::datasheet(), Exts::[assembly()]) ->
                   assembly().
 shaft(Datasheet, Exts) when is_list(Exts) ->
     Shaft = erlmachine_shaft:shaft(),
@@ -275,16 +276,18 @@ shaft(Datasheet, Exts) when is_list(Exts) ->
     {ok, Rel} = process(Shaft, Datasheet),
     erlmachine_assembly:extensions(Rel, Exts).
 
--spec shaft(ModelName::atom(), ModelOpt::term(), Tags::[term()], Exts::list()) ->
+-spec shaft(ModelName::atom(), ModelOpt::[term()], Tags::[term()], Exts::[assembly()]) ->
                   assembly().
-shaft(ModelName, ModelOpt, Tags, Exts) when is_list(Exts) ->
+shaft(ModelName, ModelOpt, Tags, Exts) ->
     ProtName = erlmachine_worker_prototype_default:name(),
     ProtOpt = [],
     shaft(ModelName, ModelOpt, ProtName, ProtOpt, Tags, Exts).
 
--spec shaft(ModelName::atom(), ModelOpt::term(), ProtName::atom(), ProtOpt::list(), Tags::[term()], Exts::list()) ->
+-spec shaft(ModelName::atom(), ModelOpt::[term()], ProtName::atom(), ProtOpt::[term()], Tags::[term()], Exts::[assembly()]) ->
                   assembly().
-shaft(ModelName, ModelOpt, ProtName, ProtOpt, Tags, Exts) when is_list(Exts) ->
+shaft(ModelName, ModelOpt, ProtName, ProtOpt, Tags, Exts) when is_list(ModelOpt),
+                                                               is_list(ProtOpt),
+                                                               is_list(Exts) ->
     Shaft = erlmachine_shaft:shaft(),
 
     Prot = erlmachine_prototype:prototype(ProtName, ProtOpt),
@@ -294,7 +297,7 @@ shaft(ModelName, ModelOpt, ProtName, ProtOpt, Tags, Exts) when is_list(Exts) ->
     {ok, Rel} = process(erlmachine_assembly:tags(Assembly, Tags)),
     erlmachine_assembly:extensions(Rel, Exts).
 
--spec axle(Datasheet::datasheet(), Exts::list()) -> 
+-spec axle(Datasheet::datasheet(), Exts::[assembly()]) -> 
                    assembly().
 axle(Datasheet, Exts) ->
     Axle = erlmachine_axle:axle(),
@@ -302,16 +305,18 @@ axle(Datasheet, Exts) ->
     {ok, Rel} = process(Axle, Datasheet),
     erlmachine_assembly:extensions(Rel, Exts).
 
--spec axle(ModelName::atom(), ModelOpt::term(), Tags::[term()], Exts::list()) ->
+-spec axle(ModelName::atom(), ModelOpt::[term()], Tags::[term()], Exts::[assembly()]) ->
                    assembly().
-axle(ModelName, ModelOpt, Tags, Exts) when is_list(Exts) ->
+axle(ModelName, ModelOpt, Tags, Exts) ->
     ProtName = erlmachine_supervisor_prototype_default:name(),
     ProtOpt = [],
     axle(ModelName, ModelOpt, ProtName, ProtOpt, Tags, Exts).
 
--spec axle(ModelName::atom(), ModelOpt::term(), ProtName::atom(), ProtOpt::list(), Tags::[term()], Exts::list()) -> 
+-spec axle(ModelName::atom(), ModelOpt::[term()], ProtName::atom(), ProtOpt::[term()], Tags::[term()], Exts::[assembly()]) ->
                    assembly().
-axle(ModelName, ModelOpt, ProtName, ProtOpt, Tags, Exts) when is_list(Exts) ->
+axle(ModelName, ModelOpt, ProtName, ProtOpt, Tags, Exts) when is_list(ModelOpt),
+                                                              is_list(ProtOpt),
+                                                              is_list(Exts) ->
     Axle = erlmachine_axle:axle(),
 
     Prot = erlmachine_prototype:prototype(ProtName, ProtOpt),
@@ -323,7 +328,7 @@ axle(ModelName, ModelOpt, ProtName, ProtOpt, Tags, Exts) when is_list(Exts) ->
 
 %% Gearbox should be responsible to pass env context through the each model;
 %% Each extension inherites this context as execution scope;
--spec gearbox(Datasheet::datasheet(), Exts::list()) ->
+-spec gearbox(Datasheet::datasheet(), Exts::[assembly()]) ->
                   assembly().
 gearbox(Datasheet, Exts) ->
     GearBox = erlmachine_gearbox:gearbox(),
@@ -331,16 +336,19 @@ gearbox(Datasheet, Exts) ->
     {ok, Rel} = process(GearBox, Datasheet),
     schema(erlmachine_assembly:extensions(Rel, Exts)).
 
--spec gearbox(ModelName::atom(), ModelOpt::term(), Env::term(), Tags::[term()], Exts::list()) ->
+-spec gearbox(ModelName::atom(), ModelOpt::[term()], Env::map(), Tags::[term()], Exts::[assembly()]) ->
                   assembly().
-gearbox(ModelName, ModelOpt, Env, Tags, Exts) when is_list(Exts) ->
+gearbox(ModelName, ModelOpt, Env, Tags, Exts) ->
     ProtName = erlmachine_supervisor_prototype_default:name(),
     ProtOpt = [],
     gearbox(ModelName, ModelOpt, ProtName, ProtOpt, Env, Tags, Exts).
 
--spec gearbox(ModelName::atom(), ModelOpt::term(), ProtName::atom(), ProtOpt::list(), Env::term(), Tags::[term()], Exts::list()) -> 
+-spec gearbox(ModelName::atom(), ModelOpt::[term()], ProtName::atom(), ProtOpt::[term()], Env::map(), Tags::[term()], Exts::[assembly()]) ->
                   assembly().
-gearbox(ModelName, ModelOpt, ProtName, ProtOpt, Env, Tags, Exts) when is_list(Exts) ->
+gearbox(ModelName, ModelOpt, ProtName, ProtOpt, Env, Tags, Exts) when is_list(ModelOpt),
+                                                                      is_list(ProtOpt),
+                                                                      is_map(Env),
+                                                                      is_list(Exts) ->
     GearBox = erlmachine_gearbox:gearbox(),
 
     Prot = erlmachine_prototype:prototype(ProtName, ProtOpt),
