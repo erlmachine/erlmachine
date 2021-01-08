@@ -1,2 +1,0 @@
--module(erlmachine_worker_sample).
--export([]).

@@ -5,11 +5,11 @@ model_no: MN-0
 #Socket should be passed into rotate (worker) call and to be reflected on workers schema; 
 socket: "#"
 model:
-  name: erlmachine_worker_ct
+  name: erlmachine_model_ct
   options:
     - key: value
 prototype:
-  name: erlmachine_worker_prototype_default
+  name: erlmachine_prototype_def
   options:
     - key: value
 tags:

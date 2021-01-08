@@ -1,4 +1,4 @@
--module(erlmachine_worker_prototype_default).
+-module(erlmachine_prototype_def).
 -export([name/0]).
 
 %% API.

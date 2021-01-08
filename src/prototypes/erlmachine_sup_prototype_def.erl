@@ -1,4 +1,4 @@
--module(erlmachine_supervisor_prototype_default).
+-module(erlmachine_sup_prototype_def).
 
 -export([name/0]).
 

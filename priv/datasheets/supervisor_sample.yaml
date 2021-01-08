@@ -4,11 +4,11 @@ body:
 model_no: MN-0
 socket:
 model:
-  name: erlmachine_supervisor_ct
+  name: erlmachine_sup_model_ct
   options:
     - key: value
 prototype:
-  name: erlmachine_supervisor_prototype_default
+  name: erlmachine_sup_prototype_def
   options:
     - key: value
 tags:

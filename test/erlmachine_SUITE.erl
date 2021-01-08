@@ -115,7 +115,7 @@ boot(_Config) ->
 %%              to be executed).
 %%--------------------------------------------------------------------
 install(_Config) ->
-    Ext = erlmachine_factory:gear(erlmachine_worker_ct, [], ['install', 'test']),
+    Ext = erlmachine_factory:gear(erlmachine_model_ct, [], ['install', 'test']),
     {ok, Pid} = erlmachine_ct:install(erlmachine:vertex(Ext, 'test')), true = is_pid(Pid),
     {comment, Pid}.
 

@@ -26,7 +26,7 @@ erlmachine_factory_test_() ->
       {
         "Inspect gear",
        fun() ->
-               Gear = erlmachine_factory:gear(erlmachine_worker_ct, [], ['eunit']),
+               Gear = erlmachine_factory:gear(erlmachine_model_ct, [], ['eunit']),
                SN = erlmachine_assembly:serial_no(Gear), true = is_binary(SN),
 
                Path = filename:join(erlmachine:priv_dir(), "datasheets/worker_sample.yaml"),
@@ -41,7 +41,7 @@ erlmachine_factory_test_() ->
       {
        "Inspect shaft",
         fun() ->
-                Shaft0 = erlmachine_factory:shaft(erlmachine_worker_ct, [], ['eunit'], []),
+                Shaft0 = erlmachine_factory:shaft(erlmachine_model_ct, [], ['eunit'], []),
                 SN0 = erlmachine_assembly:serial_no(Shaft0), true = is_binary(SN0),
 
                 Path = filename:join(erlmachine:priv_dir(), "datasheets/worker_sample.yaml"),
@@ -55,7 +55,7 @@ erlmachine_factory_test_() ->
       {
        "Inspect axle",
        fun() ->
-               Axle0 = erlmachine_factory:axle(erlmachine_supervisor_ct, [], ['eunit'], []),
+               Axle0 = erlmachine_factory:axle(erlmachine_sup_model_ct, [], ['eunit'], []),
                SN0 = erlmachine_assembly:serial_no(Axle0), true = is_binary(SN0),
 
                Path = filename:join(erlmachine:priv_dir(), "datasheets/supervisor_sample.yaml"),
@@ -69,7 +69,7 @@ erlmachine_factory_test_() ->
       {
        "Inspect gearbox",
        fun() ->
-               GearBox0 = erlmachine_factory:gearbox(erlmachine_supervisor_ct, [], #{}, ['eunit'], []),
+               GearBox0 = erlmachine_factory:gearbox(erlmachine_sup_model_ct, [], #{}, ['eunit'], []),
                SN0 = erlmachine_assembly:serial_no(GearBox0), true = is_binary(SN0),
 
                Path = filename:join(erlmachine:priv_dir(), "datasheets/supervisor_sample.yaml"),

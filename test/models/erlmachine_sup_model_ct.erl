@@ -1,4 +1,4 @@
--module(erlmachine_supervisor_ct).
+-module(erlmachine_sup_model_ct).
 %% Can be widely used as service versioning;
 -vsn(['test']).
 

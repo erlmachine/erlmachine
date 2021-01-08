@@ -239,7 +239,7 @@ gear(Datasheet, Ext) ->
 -spec gear(ModelName::atom(), ModelOpt::[term()], Tags::[term()]) ->
                   assembly().
 gear(ModelName, ModelOpt, Tags) ->
-    ProtName = erlmachine_worker_prototype_default:name(),
+    ProtName = erlmachine_prototype_def:name(),
     ProtOpt = [],
     gear(ModelName, ModelOpt, ProtName, ProtOpt, Tags).
 
@@ -279,7 +279,7 @@ shaft(Datasheet, Exts) when is_list(Exts) ->
 -spec shaft(ModelName::atom(), ModelOpt::[term()], Tags::[term()], Exts::[assembly()]) ->
                   assembly().
 shaft(ModelName, ModelOpt, Tags, Exts) ->
-    ProtName = erlmachine_worker_prototype_default:name(),
+    ProtName = erlmachine_prototype_def:name(),
     ProtOpt = [],
     shaft(ModelName, ModelOpt, ProtName, ProtOpt, Tags, Exts).
 
@@ -308,7 +308,7 @@ axle(Datasheet, Exts) ->
 -spec axle(ModelName::atom(), ModelOpt::[term()], Tags::[term()], Exts::[assembly()]) ->
                    assembly().
 axle(ModelName, ModelOpt, Tags, Exts) ->
-    ProtName = erlmachine_supervisor_prototype_default:name(),
+    ProtName = erlmachine_sup_prototype_def:name(),
     ProtOpt = [],
     axle(ModelName, ModelOpt, ProtName, ProtOpt, Tags, Exts).
 
@@ -339,7 +339,7 @@ gearbox(Datasheet, Exts) ->
 -spec gearbox(ModelName::atom(), ModelOpt::[term()], Env::map(), Tags::[term()], Exts::[assembly()]) ->
                   assembly().
 gearbox(ModelName, ModelOpt, Env, Tags, Exts) ->
-    ProtName = erlmachine_supervisor_prototype_default:name(),
+    ProtName = erlmachine_sup_prototype_def:name(),
     ProtOpt = [],
     gearbox(ModelName, ModelOpt, ProtName, ProtOpt, Env, Tags, Exts).
 
