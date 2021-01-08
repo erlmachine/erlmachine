@@ -1,5 +1,9 @@
 -module(erlmachine_model_sample).
 
+-behaviour(erlmachine_worker_model).
+%% Can be widely used as service versioning;
+-vsn(['sample']).
+
 -export([boot/4]).
 -export([process/3]).
 -export([execute/3]).

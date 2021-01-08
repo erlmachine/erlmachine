@@ -1,7 +1,11 @@
 -module(erlmachine_prototype_def).
+
+-behaviour(gen_server).
+-behaviour(erlmachine_worker_prototype).
+
 -export([name/0]).
 
-%% API.
+%% erlmachine_worker_prototype.
 -export([prototype_init/3]).
 -export([prototype_call/2]).
 -export([prototype_cast/2]).
@@ -13,9 +17,6 @@
 -export([handle_cast/2]).
 -export([handle_info/2]).
 -export([terminate/2]).
-
--behaviour(gen_server).
--behaviour(erlmachine_worker_prototype).
 
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").

@@ -1,4 +1,4 @@
--module(erlmachine_supervisor).
+-module(erlmachine_supervisor_model).
 %% NOTE: The main purpouse of the supervisor model is the ability to make impact on runtime layer without affecting monitoring layer of service;
 
 %% NOTE: Supervisor model concerns: runtime credentials;

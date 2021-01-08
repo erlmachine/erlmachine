@@ -93,24 +93,24 @@ shutdown(Assembly, Reason, Timeout) ->
 -spec init(Context::context()) ->
                   success(context()) | failure(term(), term(), context()).
 init(Context) ->
-    erlmachine_worker:boot(Context).
+    erlmachine_worker_model:boot(Context).
 
 -spec cast(Context::context(), Msg::term()) ->
                   success(context()) | failure(term(), term(), context()).
 cast(Context, Msg) ->
-    erlmachine_worker:process(Context, Msg).
+    erlmachine_worker_model:process(Context, Msg).
 
 -spec call(Context::context(), Req::term()) ->
                   success(term(), context()) | failure(term(), term(), context()).
 call(Context, Req) ->
-    erlmachine_worker:execute(Context, Req).
+    erlmachine_worker_model:execute(Context, Req).
 
 -spec info(Context::context(), Info::term()) ->
                   success(context()) | failure(term(), term(), context()).
 info(Context, Info) ->
-    erlmachine_worker:pressure(Context, Info).
+    erlmachine_worker_model:pressure(Context, Info).
 
 -spec terminate(Context::context(), Reason::term()) ->
                        success().
 terminate(Context, Reason) ->
-    erlmachine_worker:shutdown(Context, Reason).
+    erlmachine_worker_model:shutdown(Context, Reason).

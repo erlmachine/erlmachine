@@ -1,16 +1,18 @@
 -module(erlmachine_sup_prototype_def).
 
+-behaviour(supervisor).
+-behaviour(erlmachine_supervisor_prototype).
+
 -export([name/0]).
 
--export([init/1]).
-
+%% erlmachine_supervisor_prototype
 -export([prototype_init/4]).
 -export([prototype_start_child/3]).
 -export([prototype_terminate_child/3]).
 -export([prototype_terminate/4]).
 
--behaviour(supervisor).
--behaviour(erlmachine_supervisor_prototype).
+%% supervisor
+-export([init/1]).
 
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").

@@ -1,4 +1,4 @@
--module(erlmachine_pressure).
+-module(erlmachine_worker_pressure).
 
 -export([pressure/2]).
 -export([pass/2]).
@@ -27,4 +27,4 @@ pass(Context, Motion) ->
     Mod = Name, Fun = 'pressure', Args = [UID, Motion, Body],
     Def = erlmachine:success(Motion, Context),
     Res = erlmachine:optional_callback(Mod, Fun, Args, Def), 
-    erlmachine_worker:context(Res, Context).
+    erlmachine_worker_model:context(Res, Context).

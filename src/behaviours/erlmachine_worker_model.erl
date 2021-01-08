@@ -1,4 +1,4 @@
--module(erlmachine_worker).
+-module(erlmachine_worker_model).
 %% NOTE: The main purpouse of the worker model is the ability to make impact on domain layer without affecting transport layer of service;
 %% NOTE: Pressure callback was intentionally reduced to the "gear" mode with the idea to support readability of schemas (load balancing or routing facilities require to arrange additional component on a schema);
 
@@ -59,7 +59,7 @@ boot(Context) ->
 -spec process(Context::assembly(), Motion::term()) ->
                     success(assembly()) | failure(term(), term(), assembly()).
 process(Context, Motion) ->
-    Res = erlmachine_process:process(Context, Motion),
+    Res = erlmachine_worker_process:process(Context, Motion),
     trim(Res).
 
 -spec execute(Context::assembly(), Command::term()) ->
@@ -75,7 +75,7 @@ execute(Context, Command) ->
 -spec pressure(Context::assembly(), Load::term()) ->
                       success(assembly()) | failure(term(), term(), assembly()).
 pressure(Context, Load) ->
-    Res = erlmachine_pressure:pressure(Context, Load),
+    Res = erlmachine_worker_pressure:pressure(Context, Load),
     trim(Res).
 
 -spec shutdown(Context::assembly(), Reason::term()) -> 

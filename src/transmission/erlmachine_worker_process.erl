@@ -1,4 +1,4 @@
--module(erlmachine_process).
+-module(erlmachine_worker_process).
 
 -export([process/2]).
 -export([mesh/4, pass/2]).
@@ -35,7 +35,7 @@ mesh(Context, Motion, Ext, Range) ->
     MNs = [erlmachine_assembly:model_no(E) || E <- Range],
 
     Res = Name:process(UID, Motion, Socket, MNs, Body),
-    erlmachine_worker:context(Res, Context).
+    erlmachine_worker_model:context(Res, Context).
 
 -spec pass(Context::assembly(), Motion::term()) ->
                   success(assembly()) | success(term(), assembly()) | failure(term(), term(), assembly()).
@@ -48,4 +48,4 @@ pass(Context, Motion) ->
     Mod = Name, Fun = process, Args = [UID, Motion, Body],
     Def = erlmachine:success(Motion, Context),
     Res = erlmachine:optional_callback(Mod, Fun, Args, Def),
-    erlmachine_worker:context(Res, Context).
+    erlmachine_worker_model:context(Res, Context).

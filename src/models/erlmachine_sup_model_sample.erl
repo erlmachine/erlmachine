@@ -1,6 +1,8 @@
 -module(erlmachine_sup_model_sample).
+
+-behaviour(erlmachine_supervisor_model).
 %% Can be widely used as service versioning;
--vsn(['test']).
+-vsn(['sample']).
 
 -export([boot/4]).
 -export([install/2]).

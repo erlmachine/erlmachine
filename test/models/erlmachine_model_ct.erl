@@ -1,5 +1,7 @@
 -module(erlmachine_model_ct).
 
+-behaviour(erlmachine_worker_model).
+
 -export([boot/4]).
 -export([process/3]).
 -export([execute/3]).

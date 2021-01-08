@@ -105,19 +105,19 @@ shutdown(Assembly, Reason, Timeout) ->
 -spec init(Context::context(), Specs::[map()]) ->
                   success() | failure(term(), term()).
 init(Context, Specs) ->
-    erlmachine_supervisor:boot(Context, Specs).
+    erlmachine_supervisor_model:boot(Context, Specs).
 
 -spec start_child(Context::context(), Spec::[map()]) ->
                          success() | failure(term(), term()).
 start_child(Context, Spec) ->
-    erlmachine_supervisor:install(Context, Spec).
+    erlmachine_supervisor_model:install(Context, Spec).
 
 -spec terminate_child(Context::context(), ID::term()) ->
                              success().
 terminate_child(Context, ID) ->
-    erlmachine_supervisor:uninstall(Context, ID).
+    erlmachine_supervisor_model:uninstall(Context, ID).
 
 -spec terminate(Context::context(), Reason::term()) ->
                        success().
 terminate(Context, Reason) ->
-    erlmachine_supervisor:shutdown(Context, Reason).
+    erlmachine_supervisor_model:shutdown(Context, Reason).

@@ -1,4 +1,6 @@
 -module(erlmachine_sup_model_ct).
+
+-behaviour(erlmachine_supervisor_model).
 %% Can be widely used as service versioning;
 -vsn(['test']).
 
