@@ -221,7 +221,6 @@ next(Assembly, {_, _, I}) ->
 %%%===================================================================
 %%% Extensions
 %%%===================================================================
-%% TODO: Factory is responsible to support datasheets; erlmachine_datasheet shouldn't know about assembly;
 -spec gear(Datasheet::datasheet()) -> 
                   assembly().
 gear(Datasheet) ->

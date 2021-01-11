@@ -11,6 +11,29 @@ prototype:
   name: erlmachine_sup_prototype_def
   options:
     - key: value
+schema:
+  vertices:
+    c:
+      model:
+        name: test
+        options:
+          - key: value
+      description: Test model
+    d:
+      model:
+        name: test1
+        options:
+          - key: value
+      description: Test model1
+    e:
+      model:
+        name: test2
+        options:
+          - key: value
+      description: Test model2
+  edges:
+    a: [c, d, e]
+    d: e
 tags:
   - test
 vertex: test

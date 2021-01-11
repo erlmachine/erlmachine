@@ -57,11 +57,11 @@
                     %% Service level specification
                     prototype::prototype(),
                     %% Build configuration
-                    extensions=[]::[assembly()],
+                    extensions = []::[assembly()],
                     %% Machine operator
                     uid::uid(),
                     %% Tags are used as selection criteria ([supervisor, overloaded, etc.])
-                    tags=[]::list(term()),
+                    tags = []::list(term()),
                     %% An alternative id within schema (by default serial_no)
                     vertex::term(),
                     %% By part_no we can track quality of component through release period

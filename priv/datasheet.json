@@ -1,36 +1,55 @@
 {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Datasheet",
-    "description": "A document that specifies characteristics of an extension",
+    "description": "A document that summarizes characteristics of an extension",
     "type": "object",
     "properties":{
         "serial_no":{
             "type": "string",
-            "description": "The unique assembly runtime identifier which is assigned incrementally"
+            "description": "Runtime identifier"
         },
         "body":{
             "type": "object",
-            "description": "The initial state of an extension"
+            "description": "The initial state"
         },
         "model_no":{
             "type": "string",
             "description": ""
         },
         "socket":{
-            "description": "Rotation interface"
+            "description": "Processing interface"
+        },
+        "schema":{
+            "properties":{
+                "vertices":{
+                    "type": "object",
+                    "additionalProperties":{
+                        "$ref": "#"
+                    }
+                },
+                "edges":{
+                    "type": "object",
+                    "additionalProperties":{
+                        "anyOf": [{"type": "array", "items": { "type": "string" } }, {"type": "string"}]
+                    }
+                }
+            },
+            "additionalProperties": false,
+            "description": "Transmission specification on a graph"
         },
         "model":{
             "type": "object",
             "properties":{
                 "name":{
                     "type": "string",
-                    "description": "Domain level implementation (module name)"
+                    "description": "Domain level module"
                 },
                 "options":{
                     "type": "array",
-                    "description": "Domain layer options"
+                    "description": "Domain level options"
                 }
             },
+            "additionalProperties": false,
             "required": [ "name", "options" ],
             "description": ""
         },
@@ -39,13 +58,14 @@
             "properties":{
                 "name": {
                     "type": "string",
-                    "description": "Service level implementation (module name)"
+                    "description": "Service level module"
                 },
                 "options": {
                     "type": "array",
-                    "description": "Service layer options"
+                    "description": "Service level options"
                 }
             },
+            "additionalProperties": false,
             "required": [ "name", "options" ],
             "description": ""
         },
@@ -54,7 +74,7 @@
             "description": ""
         },
         "vertex":{
-            "description": "The extension Id on a graph"
+            "description": "The identity on a graph"
         },
         "part_no":{
             "type": "string",
@@ -66,7 +86,7 @@
         },
         "description":{
             "type": "string",
-            "description": "Short overview of the exrtension's role within overall system"
+            "description": "Short overview of the role of an extension within overall system"
         }
     },
     "required": [ "model" ]

@@ -22,7 +22,8 @@ erlmachine_datasheet_test_() ->
        fun() ->
                Path = filename:join(erlmachine:priv_dir(), "datasheets/worker_sample.yaml"),
 
-               {ok, Datasheet} = erlmachine_datasheet:file(Path), true = is_map(Datasheet)
+               {ok, Datasheet} = erlmachine_datasheet:file(Path), true = is_map(Datasheet),
+               ?debugFmt("~nWorker datasheet is: ~p~n", [Datasheet])
 
        end
       },
@@ -31,7 +32,8 @@ erlmachine_datasheet_test_() ->
         fun() ->
                 Path = filename:join(erlmachine:priv_dir(), "datasheets/supervisor_sample.yaml"),
 
-                {ok, Datasheet} = erlmachine_datasheet:file(Path), true = is_map(Datasheet)
+                {ok, Datasheet} = erlmachine_datasheet:file(Path), true = is_map(Datasheet),
+                ?debugFmt("~nSupervisor datasheet is: ~p~n", [Datasheet])
         end
       }
      ]
