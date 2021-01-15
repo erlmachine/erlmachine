@@ -19,24 +19,6 @@
         "socket":{
             "description": "Processing interface"
         },
-        "schema":{
-            "properties":{
-                "vertices":{
-                    "type": "object",
-                    "additionalProperties":{
-                        "$ref": "#"
-                    }
-                },
-                "edges":{
-                    "type": "object",
-                    "additionalProperties":{
-                        "anyOf": [{"type": "array", "items": { "type": "string" } }, {"type": "string"}]
-                    }
-                }
-            },
-            "additionalProperties": false,
-            "description": "Transmission specification on a graph"
-        },
         "model":{
             "type": "object",
             "properties":{
@@ -68,6 +50,9 @@
             "additionalProperties": false,
             "required": [ "name", "options" ],
             "description": ""
+        },
+        "uid":{
+            "type": "integer"
         },
         "tags":{
             "type": "array",

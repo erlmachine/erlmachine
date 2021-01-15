@@ -9,13 +9,10 @@ erlmachine_factory_test_() ->
              application:start(yamerl),
 
              mnesia:create_schema([node()]), ok = mnesia:start(),
-             ok = mnesia:wait_for_tables([erlmachine_factory:tabname()], 1000),
+             erlmachine_app:wait_for_tables(1000),
              {ok, _} = erlmachine_factory:start(),
 
-             Path = filename:join(erlmachine:priv_dir(), "datasheet.json"),
-             [Schema] = jsx:consult(Path, [return_maps]),
-
-             ok = jesse:add_schema(_Key = erlmachine_datasheet:schema(), Schema)
+             [ok = erlmachine_app:add_schema(File) || File <- ["assembly.json", "schema.json"]]
      end,
      fun(_) ->
              mnesia:stop(),
@@ -29,8 +26,8 @@ erlmachine_factory_test_() ->
                Gear = erlmachine_factory:gear(erlmachine_model_ct, [], ['eunit']),
                SN = erlmachine_assembly:serial_no(Gear), true = is_binary(SN),
 
-               Path = filename:join(erlmachine:priv_dir(), "datasheets/worker_sample.yaml"),
-               {ok, Datasheet} = erlmachine_datasheet:file(Path),
+               Path = filename:join(erlmachine:priv_dir(), "datasheets/sample.yaml"),
+               {ok, Datasheet} = erlmachine_datasheet:assembly(Path),
 
                Gear1 = erlmachine_factory:gear(Datasheet),
 
@@ -44,8 +41,8 @@ erlmachine_factory_test_() ->
                 Shaft0 = erlmachine_factory:shaft(erlmachine_model_ct, [], ['eunit'], []),
                 SN0 = erlmachine_assembly:serial_no(Shaft0), true = is_binary(SN0),
 
-                Path = filename:join(erlmachine:priv_dir(), "datasheets/worker_sample.yaml"),
-                {ok, Datasheet} = erlmachine_datasheet:file(Path),
+                Path = filename:join(erlmachine:priv_dir(), "datasheets/sample.yaml"),
+                {ok, Datasheet} = erlmachine_datasheet:assembly(Path),
 
                 Shaft1 = erlmachine_factory:shaft(Datasheet, []),
                 SN1 = erlmachine_assembly:serial_no(Shaft1), true = is_binary(SN1)
@@ -58,8 +55,8 @@ erlmachine_factory_test_() ->
                Axle0 = erlmachine_factory:axle(erlmachine_sup_model_ct, [], ['eunit'], []),
                SN0 = erlmachine_assembly:serial_no(Axle0), true = is_binary(SN0),
 
-               Path = filename:join(erlmachine:priv_dir(), "datasheets/supervisor_sample.yaml"),
-               {ok, Datasheet} = erlmachine_datasheet:file(Path),
+               Path = filename:join(erlmachine:priv_dir(), "datasheets/sup_sample.yaml"),
+               {ok, Datasheet} = erlmachine_datasheet:assembly(Path),
 
                Axle1 = erlmachine_factory:axle(Datasheet, []),
                SN1 = erlmachine_assembly:serial_no(Axle1), true = is_binary(SN1)
@@ -72,8 +69,8 @@ erlmachine_factory_test_() ->
                GearBox0 = erlmachine_factory:gearbox(erlmachine_sup_model_ct, [], #{}, ['eunit'], []),
                SN0 = erlmachine_assembly:serial_no(GearBox0), true = is_binary(SN0),
 
-               Path = filename:join(erlmachine:priv_dir(), "datasheets/supervisor_sample.yaml"),
-               {ok, Datasheet} = erlmachine_datasheet:file(Path),
+               Path = filename:join(erlmachine:priv_dir(), "datasheets/sup_sample.yaml"),
+               {ok, Datasheet} = erlmachine_datasheet:assembly(Path),
 
                GearBox1 = erlmachine_factory:gearbox(Datasheet, []),
                SN1 = erlmachine_assembly:serial_no(GearBox1), true = is_binary(SN1)
@@ -83,8 +80,8 @@ erlmachine_factory_test_() ->
       {
        "Inspect datasheet processing",
        fun() ->
-               Path = filename:join(erlmachine:priv_dir(), "datasheets/worker_sample.yaml"),
-               {ok, Datasheet} = erlmachine_datasheet:file(Path),
+               Path = filename:join(erlmachine:priv_dir(), "datasheets/sample.yaml"),
+               {ok, Datasheet} = erlmachine_datasheet:assembly(Path),
 
                Gear = erlmachine_factory:gear(Datasheet),
 
@@ -117,6 +114,9 @@ erlmachine_factory_test_() ->
                ProtNameAsAtom = erlmachine_prototype:name(erlmachine_assembly:prototype(Gear)),
 
                ProtOpt = erlmachine_prototype:options(erlmachine_assembly:prototype(Gear)),
+
+               {ok, UID} = erlmachine_datasheet:find(<<"uid">>, Datasheet),
+               UID = erlmachine_assembly:uid(Gear),
 
                {ok, Tags} = erlmachine_datasheet:find(<<"tags">>, Datasheet),
                Tags = erlmachine_assembly:tags(Gear),

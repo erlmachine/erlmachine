@@ -7,8 +7,9 @@
 %% 4. System report about vertex and overall system in separate widjet (erlang:memory/0);
 
 -export([new/1]).
--export([root/1, root/2]).
--export([graph/1]).
+-export([boot/1, boot/2, process/1, process/2, execute/1, execute/2]).
+-export([graph/1, graph/2]).
+-export([description/1, description/2]).
 
 -export([vertex/2]).
 
@@ -25,7 +26,14 @@
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
 
--record (schema, { root::term(), graph::term() }).
+-record (schema, {
+                  description::binary(),
+                  boot::vertex(),
+                  process::vertex(),
+                  execute::vertex(),
+                  graph::term()
+                 }
+        ).
 
 -type vertex() :: term().
 -type edge() :: term().
@@ -35,22 +43,50 @@
 -export_type([schema/0, vertex/0, edge/0]).
 
 %% Current implementation of a schema is digraph. But we are able to change it on demand;
--spec new(Root::term()) -> schema().
-new(Root) ->
+-spec new(Boot::vertex()) -> schema().
+new(Boot) ->
     Graph = digraph:new(),
-    #schema{ root = Root, graph = Graph }.
+    #schema{ boot = Boot, graph = Graph }.
 
--spec root(Schema::schema()) -> term().
-root(Schema) ->
-    Schema#schema.root.
+-spec description(Schema::schema()) -> binary().
+description(Schema) ->
+    Schema#schema.description.
 
--spec root(Schema::schema(), Root::term()) -> schema().
-root(Schema, Root) ->
-    Schema#schema{ root = Root }.
+-spec description(Schema::schema(), Desc::binary()) -> schema().
+description(Schema, Desc) ->
+    Schema#schema{ description = Desc }.
+
+-spec boot(Schema::schema()) -> vertex().
+boot(Schema) ->
+    Schema#schema.boot.
+
+-spec boot(Schema::schema(), V::vertex()) -> schema().
+boot(Schema, Boot) ->
+    Schema#schema{ boot = Boot }.
 
 -spec graph(Schema::schema()) -> term().
 graph(Schema) ->
     Schema#schema.graph.
+
+-spec graph(Schema::schema(), Graph::term()) -> schema().
+graph(Schema, Graph) ->
+    Schema#schema{ graph = Graph }.
+
+-spec process(Schema::schema()) -> vertex().
+process(Schema) ->
+    Schema#schema.process.
+
+-spec process(Schema::schema(), V::vertex()) -> schema().
+process(Schema, V) ->
+    Schema#schema{ process = V }.
+
+-spec execute(Schema::schema()) -> vertex().
+execute(Schema) ->
+    Schema#schema.execute.
+
+-spec execute(Schema::schema(), V::vertex()) -> schema().
+execute(Schema, V) ->
+    Schema#schema{ execute = V }.
 
 %% TODO: Path can be specified #.reg, label.reg, etc..
 %% Model doesn't have to know about meshed parts;

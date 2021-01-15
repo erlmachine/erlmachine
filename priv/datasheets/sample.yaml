@@ -12,6 +12,7 @@ prototype:
   name: erlmachine_prototype_def
   options:
     - key: value
+uid: 0
 tags:
   - test
 vertex: test

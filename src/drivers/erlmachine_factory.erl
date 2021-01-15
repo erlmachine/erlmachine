@@ -34,6 +34,8 @@
 -export([shaft/2, shaft/4, shaft/6]).
 -export([axle/2, axle/4, axle/6]).
 -export([gearbox/2, gearbox/5, gearbox/7]).
+%% TODO load via datasheet schema and build;
+-export([schema/1]).
 
 -export([tabname/0]).
 
@@ -193,6 +195,10 @@ next(Assembly, {<<"prototype">>, Prot, I}) ->
     {ok, Opt} = erlmachine_datasheet:find(<<"options">>, Prot),
 
     Rel = erlmachine_assembly:prototype(Assembly, erlmachine_prototype:prototype(Module, Opt)),
+    next(Rel, erlmachine_datasheet:next(I));
+
+next(Assembly, {<<"uid">>, UID, I}) ->
+    Rel = erlmachine_assembly:uid(Assembly, UID),
     next(Rel, erlmachine_datasheet:next(I));
 
 next(Assembly, {<<"tags">>, Tags, I}) ->

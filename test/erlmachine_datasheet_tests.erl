@@ -7,34 +7,39 @@ erlmachine_datasheet_test_() ->
      foreach,
      fun() ->
              application:start(yamerl),
-
-             Path = filename:join(erlmachine:priv_dir(), "datasheet.json"),
-             [Schema] = jsx:consult(Path, [return_maps]),
-
-             ok = jesse:add_schema(_Key = erlmachine_datasheet:schema(), Schema)
-     end,
+             [ok = erlmachine_app:add_schema(File) || File <- ["assembly.json", "schema.json"]]
+    end,
      fun(_) ->
              ok = application:stop(yamerl)
      end,
      [
       {
-        "Inspect a worker datasheet",
+        "Inspect sample.yaml",
        fun() ->
-               Path = filename:join(erlmachine:priv_dir(), "datasheets/worker_sample.yaml"),
+               Path = filename:join(erlmachine:priv_dir(), "datasheets/sample.yaml"),
 
-               {ok, Datasheet} = erlmachine_datasheet:file(Path), true = is_map(Datasheet),
-               ?debugFmt("~nWorker datasheet is: ~p~n", [Datasheet])
+               {ok, Datasheet} = erlmachine_datasheet:assembly(Path), true = is_map(Datasheet),
+               ?debugFmt("~n~p~n", [Datasheet])
 
        end
       },
       {
-        "Inspect a supervisor datasheet",
+        "Inspect sup_sample.yaml",
         fun() ->
-                Path = filename:join(erlmachine:priv_dir(), "datasheets/supervisor_sample.yaml"),
+                Path = filename:join(erlmachine:priv_dir(), "datasheets/sup_sample.yaml"),
 
-                {ok, Datasheet} = erlmachine_datasheet:file(Path), true = is_map(Datasheet),
-                ?debugFmt("~nSupervisor datasheet is: ~p~n", [Datasheet])
+                {ok, Datasheet} = erlmachine_datasheet:assembly(Path), true = is_map(Datasheet),
+                ?debugFmt("~n~p~n", [Datasheet])
         end
+      },
+      {
+       "Inspect schema_sample.yaml",
+       fun() ->
+               Path = filename:join(erlmachine:priv_dir(), "datasheets/schema_sample.yaml"),
+
+               {ok, Datasheet} = erlmachine_datasheet:schema(Path), true = is_map(Datasheet),
+               ?debugFmt("~n~p~n", [Datasheet])
+       end
       }
      ]
     }.

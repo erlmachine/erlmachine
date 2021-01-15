@@ -1,6 +1,4 @@
 -module(erlmachine).
-%% NOTE: There are two transmission API: Schema based (erlmachine) and assembly based (erlmachine_transmission);
--folder(<<"erlmachine">>).
 
 -export([start/0, stop/0, priv_dir/0]).
 
@@ -8,8 +6,8 @@
 
 -export([boot/1, boot/2]).
 
--export([process/3]).
--export([execute/3]).
+-export([process/2, process/3]).
+-export([execute/2, execute/3]).
 -export([install/2, install/3]).
 -export([uninstall/2, uninstall/3]).
 
@@ -101,18 +99,30 @@ is_worker(Assembly) ->
 -spec boot(Schema::schema()) ->
                    success(pid()) | ingnore | failure(term()).
 boot(Schema) ->
-    Root = erlmachine_schema:root(Schema),
-    boot(Schema, Root).
+    V = erlmachine_schema:boot(Schema),
+    boot(Schema, V).
 
 -spec boot(Schema::assembly(), V::vertex()) ->
                    success(pid()) | ingnore | failure(term()).
 boot(Schema, V) ->
     erlmachine_transmission:boot(Schema, V).
 
+-spec process(Schema::schema(), Motion::term()) ->
+                     term().
+process(Schema, Motion) ->
+    V = erlmachine_schema:process(Schema),
+    process(Schema, V, Motion).
+
 -spec process(Schema::schema(), V::vertex(), Motion::term()) ->
                     term().
 process(Schema, V, Motion) ->
     erlmachine_transmission:process(Schema, V, Motion).
+
+-spec execute(Schema::assembly(), Command::term()) ->
+                     term().
+execute(Schema, Command) ->
+    V = erlmachine_schema:execute(Schema),
+    execute(Schema, V, Command).
 
 -spec execute(Schema::assembly(), V::vertex(), Command::term()) ->
                       term().
@@ -122,8 +132,8 @@ execute(Schema, V, Command) ->
 -spec install(Schema::schema(), Ext::assembly()) ->
                      success(pid()) | ingnore | failure(term()).
 install(Schema, Ext) ->
-    Root = erlmachine_schema:root(Schema),
-    install(Schema, Root, Ext).
+    V = erlmachine_schema:boot(Schema),
+    install(Schema, V, Ext).
 
 -spec install(Schema::schema(), V::vertex(), Ext::assembly()) ->
                      success(pid()) | ingnore | failure(term()).
@@ -133,8 +143,8 @@ install(Schema, V, Ext) ->
 -spec uninstall(Schema::schema(), Id::term()) ->
                        success().
 uninstall(Schema, Id) ->
-    Root = erlmachine_schema:root(Schema),
-    uninstall(Schema, Root, Id).
+    V = erlmachine_schema:boot(Schema),
+    uninstall(Schema, V, Id).
 
 -spec uninstall(Schema::schema(), V::vertex(), Id::term()) ->
                        success().
@@ -144,8 +154,8 @@ uninstall(Schema, V, Id) ->
 -spec shutdown(Schema::schema()) ->
                       success().
 shutdown(Schema) ->
-    Root = erlmachine_schema:root(Schema),
-    shutdown(Schema, Root).
+    V = erlmachine_schema:boot(Schema),
+    shutdown(Schema, V).
 
 -spec shutdown(Schema::schema(), V::vertex()) ->
                   success().
@@ -390,7 +400,7 @@ base64url(N) when is_binary(N) ->
 
 -spec timestamp() -> integer().
 timestamp() ->
-    erlang:system_time(seconds).
+    erlang:monotonic_time(second) + erlang:time_offset(second).
 
 -spec tag(Assembly::assembly(), Tag::term()) -> assembly().
 tag(Assembly, Tag) ->

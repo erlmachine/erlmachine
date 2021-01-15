@@ -1,0 +1,53 @@
+description: Sample cluster datasheet. Should be checked via ct and eunit test.
+
+boot: a
+process: b
+
+vertices:
+  a:
+    model:
+      name: erlmachine_sup_model_ct
+      options:
+        - key: value
+    prototype:
+      name: erlmachine_sup_prototype_def
+      options:
+        - key: value
+    description: Test assembly a (Boot)
+  b:
+    model:
+      name: erlmachine_model_ct
+      options:
+        - key: value
+    prototype:
+      name: erlmachine_prototype_def
+      options:
+        - key: value
+    tags:
+        - test
+    description: Test assembly b (Process)
+  c:
+    model:
+      name: erlmachine_model_ct
+      options:
+        - key: value
+    description: Test assembly c
+  d:
+    model:
+      name: erlmachine_model_ct
+      options:
+        - key: value
+    description: Test assembly d
+  e:
+    model:
+      name: erlmachine_model_ct
+      options:
+        - key: value
+    description: Test assembly e
+edges:
+  # Boot
+  a: [b, c, d, e]
+  # Description 1
+  b: [c, d]
+  # Description 2
+  c: e

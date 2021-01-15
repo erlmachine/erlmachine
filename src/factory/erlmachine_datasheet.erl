@@ -1,65 +1,68 @@
 -module(erlmachine_datasheet).
 
 %% This module is responsible to:
-%% a) To read technical specifications (datasheets);
-%% b) To validate datasheet content via https://json-schema.org;
-%% c) To build extensions accordingly to datasheets;
+%% a) Read technical specifications (datasheets);
+%% b) Validate datasheet content via https://json-schema.org;
+%% c) Build extension accordingly to the assembly datasheet;
+%% d) Build cluster accordingly to the schema datasheet
 
 %% NOTE: There is possibility to load datasheet from other sources (for example DB);
-%% But validate/1 call should be performed before usage; 
 
 %% API.
+-export([schema/1, assembly/1]).
+
+-export([file/2]).
+-export([decode/3]).
+
 -export([new/0]).
-
--export([file/1]).
--export([decode/2]).
--export([schema/0]).
-
--export([validate/1]).
 
 -export([iterator/1, next/1]).
 -export([find/2]).
 
 -type datasheet() :: map().
 
+-type path() :: list().
+-type spec() :: list().
+
 -export_type([datasheet/0]).
 
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
 
-%% NOTE: This module should provide access  to the datasheet fields for factory;
-%% By the same way as assembly;
+-spec schema(Path::path()) ->
+                    success(datasheet()) | failure(term(), term()).
+schema(Path) ->
+    file(Path, "schema.json").
 
--spec schema() -> list().
-schema() ->
-    "datasheet".
+-spec assembly(Path::path()) ->
+                      success(datasheet()) | failure(term(), term()).
+assembly(Path) ->
+    file(Path, "assembly.json").
+
+-spec file(Path::path(), Schema::[term()]) ->
+                  success(datasheet()) | failure(term(), term()).
+file(Path, Schema) ->
+    try
+        Opt = [{str_node_as_binary, true}, {map_node_format, map}],
+        [Datasheet] = yamerl_constr:file(Path, Opt),
+        {ok, _} = jesse:validate(Schema, Datasheet)
+    catch E:R ->
+            erlmachine:failure(E, R)
+    end.
+
+-spec decode(Spec::spec(), Opt::[term()], Schema::[term()]) ->
+                    success(datasheet()) | failure(term(), term()).
+decode(Spec, Opt, Schema) ->
+    try
+        [Datasheet] = yamerl:decode(Spec, Opt),
+        {ok, _} = jesse:validate(Schema, Datasheet)
+    catch E:R ->
+            erlmachine:failure(E, R)
+    end.
 
 -spec new() -> datasheet().
 new() ->
     maps:new().
-
--spec validate(Datasheet::map()) -> success(map()) | failure(term()).
-validate(Datasheet) ->
-    jesse:validate(schema(), Datasheet).
-
--spec decode(Spec::list(), Opt::list()) ->
-                    success(datasheet()) | failure(term(), term()).
-decode(Spec, Opt) ->
-    try
-        [Res] = yamerl:decode(Spec, Opt), {ok, _} = validate(Res)
-    catch E:R ->
-            erlmachine:failure(E, R)
-    end.
-
--spec file(Path::list()) ->
-                  success(datasheet()) | failure(term(), term()).
-file(Path) ->
-    try
-        Opt = [{str_node_as_binary, true}, {map_node_format, map}],
-        [Res] = yamerl_constr:file(Path, Opt), {ok, _} = validate(Res)
-    catch E:R ->
-            erlmachine:failure(E, R)
-    end.
 
 -spec iterator(Datasheet::datasheet()) -> term().
 iterator(Datasheet) ->

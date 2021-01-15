@@ -1,0 +1,43 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "Graph based cluster schema",
+    "description": "The document which reflects cluster schema",
+    "definitions":{
+        "vertex":{
+            "type": "string",
+            "description": "The unique identity on a graph"
+        }
+    },
+    "type": "object",
+    "properties":{
+        "description":{
+            "type": "string"
+        },
+        "boot": {
+            "$ref": "#/definitions/vertex"
+        },
+        "process":{
+            "$ref": "#/definitions/vertex"
+        },
+        "execute":{
+            "$ref": "#/definitions/vertex"
+        },
+        "vertices":{
+            "type": "object",
+            "additionalProperties":{
+                "$ref": "assembly.json#"
+            }
+        },
+        "edges":{
+            "type": "object",
+            "additionalProperties":{
+                "anyOf": [
+                    { "type": "array", "items": { "$ref": "#/definitions/vertex" } },
+                    { "$ref": "#/definitions/vertex" }
+                ]
+            }
+        },
+        "required": [ "boot", "vertices", "edges" ],
+        "additionalProperties": false
+    }
+}
