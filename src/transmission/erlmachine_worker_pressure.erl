@@ -12,9 +12,7 @@
 pressure(Context, Load) ->
     erlmachine_transmission:pass(?MODULE, Context, Load).
 
-%%%===================================================================
 %%%  transmission callbacks
-%%%===================================================================
 
 -spec pass(Context::assembly(), Motion::term()) ->
                     success(assembly()) | success(term(), assembly()) | failure(term(), term(), assembly()).

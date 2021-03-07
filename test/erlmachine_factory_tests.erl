@@ -1,5 +1,8 @@
 -module(erlmachine_factory_tests).
-%% NOTE: The factory test is responsible to inspect the next related concerns: gear, shaft, axle, gearbox, datasheet mapping;
+%% NOTE: The factory test is responsible to inspect:
+%% a) Release of default extensions: gear, shaft, axle, gearbox;
+%% b) Release of an extension via datasheet;
+%% c) Release of a transmission via datasheet
 -include_lib("eunit/include/eunit.hrl").
 
 erlmachine_factory_test_() ->
@@ -12,7 +15,7 @@ erlmachine_factory_test_() ->
              erlmachine_app:wait_for_tables(1000),
              {ok, _} = erlmachine_factory:start(),
 
-             [ok = erlmachine_app:add_schema(File) || File <- ["assembly.json", "schema.json"]]
+             [ok = erlmachine_app:add_schema(File) || File <- ["assembly.json", "transmission.json"]]
      end,
      fun(_) ->
              mnesia:stop(),
@@ -21,119 +24,104 @@ erlmachine_factory_test_() ->
      end,
      [
       {
-        "Inspect gear",
+       "Inspect assembly of worker type",
        fun() ->
-               Gear = erlmachine_factory:gear(erlmachine_model_ct, [], ['eunit']),
-               SN = erlmachine_assembly:serial_no(Gear), true = is_binary(SN),
-
                Path = filename:join(erlmachine:priv_dir(), "datasheets/sample.yaml"),
                {ok, Datasheet} = erlmachine_datasheet:assembly(Path),
 
-               Gear1 = erlmachine_factory:gear(Datasheet),
+               Assembly = erlmachine_factory:assembly(Datasheet),
+               true = erlmachine:is_worker(Assembly)
+       end
+      },
+      {
+       "Inspect assembly of supervisor type",
+       fun() ->
+               Path = filename:join(erlmachine:priv_dir(), "datasheets/sup_sample.yaml"),
+               {ok, Datasheet} = erlmachine_datasheet:assembly(Path),
 
-               {ok, SN1} = erlmachine_datasheet:find(<<"serial_no">>, Datasheet),
-               SN1 = erlmachine_assembly:serial_no(Gear1), true = is_binary(SN1)
+               Assembly = erlmachine_factory:assembly(Datasheet),
+               true = erlmachine:is_supervisor(Assembly)
+       end
+      },
+      {
+        "Inspect gear",
+       fun() ->
+               Gear = erlmachine_factory:gear(erlmachine_model_ct, [], ['eunit']),
+               <<"GR-", _/binary>> = erlmachine_assembly:serial_no(Gear)
        end
       },
       {
        "Inspect shaft",
         fun() ->
-                Shaft0 = erlmachine_factory:shaft(erlmachine_model_ct, [], ['eunit'], []),
-                SN0 = erlmachine_assembly:serial_no(Shaft0), true = is_binary(SN0),
-
-                Path = filename:join(erlmachine:priv_dir(), "datasheets/sample.yaml"),
-                {ok, Datasheet} = erlmachine_datasheet:assembly(Path),
-
-                Shaft1 = erlmachine_factory:shaft(Datasheet, []),
-                SN1 = erlmachine_assembly:serial_no(Shaft1), true = is_binary(SN1)
-
+                Shaft = erlmachine_factory:shaft(erlmachine_model_ct, [], ['eunit'], []),
+                <<"ST-", _/binary>> = erlmachine_assembly:serial_no(Shaft)
         end
       },
       {
        "Inspect axle",
        fun() ->
-               Axle0 = erlmachine_factory:axle(erlmachine_sup_model_ct, [], ['eunit'], []),
-               SN0 = erlmachine_assembly:serial_no(Axle0), true = is_binary(SN0),
-
-               Path = filename:join(erlmachine:priv_dir(), "datasheets/sup_sample.yaml"),
-               {ok, Datasheet} = erlmachine_datasheet:assembly(Path),
-
-               Axle1 = erlmachine_factory:axle(Datasheet, []),
-               SN1 = erlmachine_assembly:serial_no(Axle1), true = is_binary(SN1)
-
+               Axle = erlmachine_factory:axle(erlmachine_sup_model_ct, [], ['eunit'], []),
+               <<"AE-", _/binary>> = erlmachine_assembly:serial_no(Axle)
        end
       },
       {
        "Inspect gearbox",
        fun() ->
-               GearBox0 = erlmachine_factory:gearbox(erlmachine_sup_model_ct, [], #{}, ['eunit'], []),
-               SN0 = erlmachine_assembly:serial_no(GearBox0), true = is_binary(SN0),
-
-               Path = filename:join(erlmachine:priv_dir(), "datasheets/sup_sample.yaml"),
-               {ok, Datasheet} = erlmachine_datasheet:assembly(Path),
-
-               GearBox1 = erlmachine_factory:gearbox(Datasheet, []),
-               SN1 = erlmachine_assembly:serial_no(GearBox1), true = is_binary(SN1)
-
+               GearBox = erlmachine_factory:gearbox(erlmachine_sup_model_ct, [], #{}, ['eunit'], []),
+               <<"GX-", _/binary>> = erlmachine_assembly:serial_no(GearBox)
        end
       },
       {
-       "Inspect datasheet processing",
+       "Inspect datasheet mapping (sample.yaml)",
        fun() ->
                Path = filename:join(erlmachine:priv_dir(), "datasheets/sample.yaml"),
                {ok, Datasheet} = erlmachine_datasheet:assembly(Path),
 
-               Gear = erlmachine_factory:gear(Datasheet),
+               Assembly = erlmachine_factory:assembly(Datasheet),
+               Model = erlmachine_assembly:model(Assembly),
+               Prot = erlmachine_assembly:prototype(Assembly),
 
-               {ok, SN} = erlmachine_datasheet:find(<<"serial_no">>, Datasheet),
-               SN = erlmachine_assembly:serial_no(Gear),
+               <<"SN-0">> = erlmachine_assembly:serial_no(Assembly),
 
-               {ok, Body} = erlmachine_datasheet:find(<<"body">>, Datasheet),
-               Body = erlmachine_assembly:body(Gear),
+               true = erlmachine:is_worker(Assembly),
 
-               {ok, MN} = erlmachine_datasheet:find(<<"model_no">>, Datasheet),
-               MN = erlmachine_assembly:model_no(Gear),
+               true = is_map(erlmachine_assembly:body(Assembly)),
 
-               {ok, Socket} = erlmachine_datasheet:find(<<"socket">>, Datasheet),
-               Socket = erlmachine_assembly:socket(Gear),
+               <<"MN-0">> = erlmachine_assembly:model_no(Assembly),
 
-               {ok, Model} = erlmachine_datasheet:find(<<"model">>, Datasheet),
-               {ok, ModelName} = erlmachine_datasheet:find(<<"name">>, Model),
-               {ok, ModelOpt} = erlmachine_datasheet:find(<<"options">>, Model),
+               <<"#">> = erlmachine_assembly:socket(Assembly),
 
-               ModelNameAsAtom = binary_to_atom(ModelName, utf8),
-               ModelNameAsAtom = erlmachine_model:name(erlmachine_assembly:model(Gear)),
+               'erlmachine_model_ct' = erlmachine_model:module(Model),
 
-               ModelOpt = erlmachine_model:options(erlmachine_assembly:model(Gear)),
+               true = is_list(erlmachine_model:options(Model)),
 
-               {ok, Prot} = erlmachine_datasheet:find(<<"prototype">>, Datasheet),
-               {ok, ProtName} = erlmachine_datasheet:find(<<"name">>, Prot),
-               {ok, ProtOpt} = erlmachine_datasheet:find(<<"options">>, Prot),
+               <<"0.0.1">> = erlmachine_model:vsn(Model),
 
-               ProtNameAsAtom = binary_to_atom(ProtName, utf8),
-               ProtNameAsAtom = erlmachine_prototype:name(erlmachine_assembly:prototype(Gear)),
+               'erlmachine_prototype_def' = erlmachine_prototype:module(Prot),
 
-               ProtOpt = erlmachine_prototype:options(erlmachine_assembly:prototype(Gear)),
+               true = is_list(erlmachine_prototype:options(Prot)),
 
-               {ok, UID} = erlmachine_datasheet:find(<<"uid">>, Datasheet),
-               UID = erlmachine_assembly:uid(Gear),
+               1 = erlmachine_prototype:vsn(Prot),
 
-               {ok, Tags} = erlmachine_datasheet:find(<<"tags">>, Datasheet),
-               Tags = erlmachine_assembly:tags(Gear),
+               true = is_integer(erlmachine_assembly:uid(Assembly)),
 
-               {ok, V} = erlmachine_datasheet:find(<<"vertex">>, Datasheet),
-               V = erlmachine_assembly:vertex(Gear),
+               true = is_list(erlmachine_assembly:tags(Assembly)),
 
-               {ok, PN} = erlmachine_datasheet:find(<<"part_no">>, Datasheet),
-               PN = erlmachine_assembly:part_no(Gear),
+               <<"vertex-test">> = erlmachine_assembly:vertex(Assembly),
 
-               {ok, Env} = erlmachine_datasheet:find(<<"env">>, Datasheet),
-               Env = erlmachine_assembly:env(Gear),
+               <<"PN-0">> = erlmachine_assembly:part_no(Assembly),
 
-               {ok, Desc} = erlmachine_datasheet:find(<<"description">>, Datasheet),
-               Desc = erlmachine_assembly:description(Gear)
+               true = is_map(erlmachine_assembly:env(Assembly)),
+
+               true = is_binary(erlmachine_assembly:description(Assembly))
        end
       },
+      {
+       "Inspect transmission mapping (transmission_sample.yaml)",
+       fun() ->
+               ok
+       end
+      }
       {
        "Inspect serial rotation",
        fun() ->

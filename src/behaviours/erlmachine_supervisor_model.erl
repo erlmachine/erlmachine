@@ -20,12 +20,11 @@
 %%   5. https://www.howtogeek.com/437958/how-to-use-the-chmod-command-on-linux/
 
 %% API
+
+-export([is_supervisor_model/1]).
+
 -export([boot/2]).
-
--export([install/2]).
--export([uninstall/2]).
-
--export([shutdown/2]).
+-export([install/2, uninstall/2]).
 
 -include("erlmachine_user.hrl").
 -include("erlmachine_factory.hrl").
@@ -43,10 +42,13 @@
 -callback uninstall(UID::uid(), ID::term()) ->
     success() | failure(term(), term()).
 
--callback shutdown(UID::uid(), Reason::term()) ->
-    success() | failure(term(), term()).
+-optional_callbacks([install/2, uninstall/2]).
 
--optional_callbacks([install/2, uninstall/2, shutdown/2]).
+-spec is_supervisor_model(Module::atom()) -> boolean().
+is_supervisor_model(Module) ->
+    lists:member(?MODULE, erlmachine:behaviours(Module)).
+
+%%%  Transmission API
 
 -spec boot(Context::assembly(), Specs::[spec()]) ->
                   success() | failure(term(), term()).
@@ -62,24 +64,18 @@ boot(Context, Specs) ->
                      success() | failure(term(), term()).
 install(Context, Spec) ->
     Model = erlmachine_assembly:model(Context), Name = erlmachine_model:name(Model),
-    UID = erlmachine_assembly:uid(Context), 
+    UID = erlmachine_assembly:uid(Context),
 
-    Name:install(UID, Spec).
+    Mod = Name, Fun = install, Args = [UID, Spec],
+    Def = erlmachine:success(),
+    erlmachine:optional_callback(Mod, Fun, Args, Def).
 
 -spec uninstall(Context::assembly(), ID::term()) ->
                        success() | failure(term(), term()).
 uninstall(Context, ID) ->
     Model = erlmachine_assembly:model(Context), Name = erlmachine_model:name(Model),
-    UID = erlmachine_assembly:uid(Context), 
-
-    Name:uninstall(UID, ID).
-
--spec shutdown(Context::assembly(), Reason::term()) ->
-                      success() | failure(term(), term()).
-shutdown(Context, Reason) ->
-    Model = erlmachine_assembly:model(Context), Name = erlmachine_model:name(Model),
     UID = erlmachine_assembly:uid(Context),
 
-    Mod = Name, Fun = shutdown, Args = [UID, Reason],
+    Mod = Name, Fun = uninstall, Args = [UID, ID],
     Def = erlmachine:success(),
-    ok = erlmachine:optional_callback(Mod, Fun, Args, Def).
+    erlmachine:optional_callback(Mod, Fun, Args, Def).

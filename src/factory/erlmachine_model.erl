@@ -1,9 +1,9 @@
 -module(erlmachine_model).
 %% API.
--export([model/0, model/2]).
+-export([new/0, new/2, new/3]).
 
 -export([
-         name/1, name/2,
+         module/1, module/2,
          options/1, options/2,
          vsn/1, vsn/2
         ]).
@@ -11,41 +11,48 @@
 -include("erlmachine_system.hrl").
 
 -record(model, {
-                name::name(),
-                options::term(),
+                %% Module name
+                name::module(),
+                %% Domain level options which are passed as is
+                options::[term()],
+                %% vsn/1 attribute of the module (MD5 checksum if not specified)
                 vsn::term()
                }
        ).
 
--type model() :: #model{}.
+-type module() :: atom().
 
--type name() :: atom().
+-opaque model() :: #model{}.
 
 -export_type([model/0]).
 
--spec model() -> model().
-model() ->
+-spec new() -> model().
+new() ->
     #model{}.
 
--spec model(Name::atom(), Opt::list()) ->
-                  model().
-model(Name, Opt) ->
-    Model = model(),
-    options(name(Model, Name), Opt).
+-spec new(Module::module(), Opt::list()) -> model().
+new(Module, Opt) ->
+    Model = new(),
+    options(module(Model, Module), Opt).
 
--spec name(Model::model()) -> atom().
-name(Model) ->
-    Model#model.name.
+-spec new(Module::module(), Opt::list(), Vsn::term()) -> model().
+new(Module, Opt, Vsn) ->
+    Model = new(Module, Opt),
+    vsn(Model, Vsn).
 
--spec name(Model::model(), Name::atom()) -> model().
-name(Model, Name) ->
-    Model#model{ name=Name }.
+-spec module(Model::model()) -> module().
+module(Model) ->
+    Model#model.module.
 
--spec options(Model::model()) -> list().
+-spec module(Model::model(), Module::module()) -> model().
+module(Model, Module) ->
+    Model#model{ module=Module }.
+
+-spec options(Model::model()) -> [term()].
 options(Model) ->
     Model#model.options.
 
--spec options(Model::model(), Opt::list()) -> model().
+-spec options(Model::model(), Opt::[term()]) -> model().
 options(Model, Opt) ->
     Model#model{ options=Opt }.
 

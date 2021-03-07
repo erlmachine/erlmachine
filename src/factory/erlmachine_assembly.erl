@@ -1,16 +1,19 @@
 -module(erlmachine_assembly).
 
+-behaviour(erlmachine_db).
+
 %% API.
 
--export([assembly/1, assembly/5]).
+-export([new/0, new/1, new/5]).
 
 -export([
+         id/1, id/2,
          serial_no/1, serial_no/2,
-         name/1, name/2,
+         type/1, type/2,
          body/1, body/2,
          model_no/1, model_no/2,
          socket/1, socket/2,
-         schema/1, schema/2,
+         graph/1, graph/2,
          model/1, model/2,
          prototype/1, prototype/2,
          extensions/1, extensions/2,
@@ -22,7 +25,7 @@
          description/1, description/2
         ]).
 
--export([store/2, delete/2, find/2]).
+-export([datasheet/2]).
 
 -include("erlmachine_user.hrl").
 -include("erlmachine_factory.hrl").
@@ -33,81 +36,179 @@
 %% We can support polymorphism by different ways - by overriding prototype or by changing model itself;
 
 %% NOTE: I am thinking about two kinds of assembly manual and automated;
-
-%% a) Manual applies through the canvas;
-%% b) The assembly itself and any potential future changes should be persisted;
+%% Manual issued by canvas whereas automated via code
 
 -record (assembly, {
+                    %% Produced number which is assigned by factory
+                    id::integer(),
                     %% Runtime unique identifier (S/N)
-                    %% TODO: Don't forget to pass it as args list to the supervisor model
-                    %% That is the right approach for supervsior (to have knowledge about runtime ID's)
                     serial_no::serial_no(),
-                    %% Extension module: erlmachine_axle, erlmachine_shaft, erlmachine_gearbox, erlmachine_gear
-                    name::atom(),
-                    %% Body that stores the current state
+                    %% Behavioral type of an extension
+                    type::type(),
+                    %% Data structure that stores the state of an extension
                     body::term(),
-                    %% A model_no can be used by product configurator to generate a master production schedule
+                    %% Product configurator input to generate a master production schedule
                     model_no::model_no(),
-                    %% Interface which is passed into the rotate call)
+                    %% Interface (shape) of an extension
                     socket::term(),
                     %% Build topology which is inherited through the all extensions
-                    schema::schema(),
+                    graph::graph(),
                     %% Domain level specification
                     model::model(),
                     %% Service level specification
                     prototype::prototype(),
                     %% Build configuration
                     extensions = []::[assembly()],
-                    %% Machine operator
+                    %% The identity of Erlmachine operator
                     uid::uid(),
-                    %% Tags are used as selection criteria ([supervisor, overloaded, etc.])
-                    tags = []::list(term()),
-                    %% An alternative id within schema (by default serial_no)
-                    vertex::term(),
-                    %% By part_no we can track quality of component through release period
+                    %% Index terms which are assigned as meta-information
+                    tags = []::[term()],
+                    %% The identity on a graph (by default serial_no)
+                    vertex::vertex(),
+                    %% Deployment identity to track the quality of a component through release period
                     part_no::part_no(),
-                    %% The execution context which is inherited through the extensions
-                    env::term(),
-                    %% Textual description of the extension
+                    %% The environment context which inherites from the root
+                    env::map(),
+                    %% Short overview of the extension role
                     description::binary()
                    }
         ).
 
--type schema() :: erlmachine_schema:schema().
+-type type() :: 'worker' | 'supervisor'.
+
+-type graph() :: erlmachine_graph:graph().
 
 -type model() :: erlmachine_model:model().
 -type prototype() :: erlmachine_prototype:prototype().
 
--type assembly() :: #assembly{}.
+-type datasheet() :: erlmachine_datasheet:datasheet().
+
+-type opaque() :: #assembly{}.
 
 -export_type([assembly/0]).
 
--spec assembly(Socket::term()) -> assembly().
-assembly(Socket) ->
-    #assembly{ socket = Socket }.
+%%% Constructor
 
--spec assembly(Name::atom(), Socket::term(), Body::term(), Tags::list(), Desc::binary()) -> 
+-spec new() -> assembly().
+new() ->
+    #assembly{}.
+
+-spec new(ModelName, ModelOpt, ProtName, ProtOpt, Tags) ->
                       assembly().
-assembly(Name, Socket, Body, Tags, Desc) ->
-    Rel = name(body(assembly(Socket), Body), Name),
-    description(tags(Rel, Tags), Desc).
+new(Module, Socket, Body, Tags, Desc) ->
+    Assembly = new(Socket),
+    Rel = module(body(Assembly, Body), Module), description(tags(Rel, Tags), Desc).
+
+%%% Datasheet processing
+
+-spec datasheet(Assembly::assembly(), Datasheet::datasheet()) -> assembly().
+datasheet(Assembly, Datasheet) ->
+    I = erlmachine_datasheet:iterator(Datasheet), Next = erlmachine_datasheet:next(I),
+    next(Assembly, Next).
+
+-spec next(Assembly::assembly(), none | {Key::binary(), Value::term(), I::term()}) ->
+                  assembly().
+next(Assembly, none) ->
+    Assembly;
+
+next(Assembly, {<<"serial_no">>, V, I}) ->
+    Rel = serial_no(Assembly, V),
+    next(Rel, erlmachine_datasheet:next(I));
+
+next(Assembly, {<<"type">>, V, I}) ->
+    Rel = type(Assembly, binary_to_atom(V, utf8)),
+    next(Rel, erlmachine_datasheet:next(I));
+
+next(Assembly, {<<"body">>, V, I}) ->
+    Rel = body(Assembly, V),
+    next(Rel, erlmachine_datasheet:next(I));
+
+next(Assembly, {<<"model_no">>, V, I}) ->
+    Rel = model_no(Assembly, V),
+    next(Rel, erlmachine_datasheet:next(I));
+
+next(Assembly, {<<"socket">>, V, I}) ->
+    Rel = socket(Assembly, V),
+    next(Rel, erlmachine_datasheet:next(I));
+
+next(Assembly, {<<"model">>, V, I}) ->
+    {ok, Name} = erlmachine_datasheet:find(<<"module">>, V), Module = binary_to_existing_atom(Name, utf8),
+    {ok, Opt} = erlmachine_datasheet:find(<<"options">>, V),
+    Model =
+        case erlmachine_datasheet:find(<<"vsn">>, V) of
+            {ok, Vsn} ->
+                erlmachine_model:new(Module, Opt, Vsn);
+            _ ->
+                erlmachine_model:new(Module, Opt)
+        end,
+    Rel = model(Assembly, Model),
+    next(Rel, erlmachine_datasheet:next(I));
+
+next(Assembly, {<<"prototype">>, V, I}) ->
+    {ok, Name} = erlmachine_datasheet:find(<<"module">>, V), Module = binary_to_existing_atom(Name, utf8),
+    {ok, Opt} = erlmachine_datasheet:find(<<"options">>, V),
+    Prot =
+        case erlmachine_datasheet:find(<<"vsn">>, V) of
+            {ok, Vsn} ->
+                erlmachine_prototype:new(Module, Opt, Vsn);
+            _ ->
+                erlmachine_prototype:new(Module, Opt)
+        end,
+    Rel = prototype(Assembly, Prot),
+    next(Rel, erlmachine_datasheet:next(I));
+
+next(Assembly, {<<"uid">>, V, I}) ->
+    Rel = uid(Assembly, V),
+    next(Rel, erlmachine_datasheet:next(I));
+
+next(Assembly, {<<"tags">>, V, I}) ->
+    Rel = tags(Assembly, V),
+    next(Rel, erlmachine_datasheet:next(I));
+
+next(Assembly, {<<"vertex">>, V, I}) ->
+    Rel = vertex(Assembly, V),
+    next(Rel, erlmachine_datasheet:next(I));
+
+next(Assembly, {<<"part_no">>, V, I}) ->
+    Rel = part_no(Assembly, V),
+    next(Rel, erlmachine_datasheet:next(I));
+
+next(Assembly, {<<"env">>, V, I}) ->
+    Rel = env(Assembly, V),
+    next(Rel, erlmachine_datasheet:next(I));
+
+next(Assembly, {<<"description">>, V, I}) ->
+    Rel = description(Assembly, V),
+    next(Rel, erlmachine_datasheet:next(I));
+
+next(Assembly, {_, _, I}) ->
+    next(Assembly, erlmachine_datasheet:next(I)).
+
+%%% Field accessors
+
+-spec id(Assembly::assembly()) -> integer().
+id(Assembly) ->
+    Assembly#assembly.id.
+
+-spec id(Assembly::assembly(), ID::integer()) -> assembly().
+id(Assembly, ID) ->
+    Assembly#assembly{ id = ID }.
 
 -spec serial_no(Assembly::assembly()) -> serial_no().
 serial_no(Assembly) ->
-    SN = Assembly#assembly.serial_no,
-    SN.
+    Assembly#assembly.serial_no.
 
 -spec serial_no(Assembly::assembly(), SN::serial_no()) -> assembly().
 serial_no(Assembly, SN) ->
-    Assembly#assembly{ serial_no=SN }.
+    Assembly#assembly{ serial_no = SN }.
 
--spec name(Assembly::assembly()) -> atom().
-name(Assembly) ->
-    Assembly#assembly.name.
+-spec type(Assembly::assembly()) -> type().
+type(Assembly) ->
+    Assembly#assembly.type.
 
--spec name(Assembly::assembly(), Name::atom()) -> assembly().
-name(Assembly, Name) ->
-    Assembly#assembly{ name=Name }.
+-spec type(Assembly::assembly(), Type::type()) -> assembly().
+type(Assembly, Type) ->
+    Assembly#assembly{ type = Type }.
 
 -spec body(Assembly::assembly()) -> term().
 body(Assembly) ->
@@ -115,7 +216,7 @@ body(Assembly) ->
 
 -spec body(Assembly::assembly(), Body::term()) -> assembly().
 body(Assembly, Body) ->
-    Assembly#assembly{ body=Body }.
+    Assembly#assembly{ body = Body }.
 
 -spec model_no(Assembly::assembly()) -> model_no().
 model_no(Assembly) ->
@@ -123,7 +224,7 @@ model_no(Assembly) ->
 
 -spec model_no(Assembly::assembly(), MN::model_no()) -> assembly().
 model_no(Assembly, MN) ->
-    Assembly#assembly{ model_no=MN }.
+    Assembly#assembly{ model_no = MN }.
 
 -spec socket(Assembly::assembly()) -> term().
 socket(Assembly) -> 
@@ -133,13 +234,13 @@ socket(Assembly) ->
 socket(Assembly, Socket) ->
     Assembly#assembly{ socket = Socket }.
 
--spec schema(Assembly::assembly()) -> term().
-schema(Assembly) ->
-    Assembly#assembly.schema.
+-spec graph(Assembly::assembly()) -> graph().
+graph(Assembly) ->
+    Assembly#assembly.graph.
 
--spec schema(Assembly::assembly(), Schema::term()) -> assembly().
-schema(Assembly, Schema) ->
-    Assembly#assembly{ schema=Schema }.
+-spec graph(Assembly::assembly(), Graph::graph()) -> assembly().
+graph(Assembly, Graph) ->
+    Assembly#assembly{ graph = Graph }.
 
 -spec model(Assembly::assembly()) -> model().
 model(Assembly) ->
@@ -179,7 +280,7 @@ part_no(Assembly) ->
 
 -spec part_no(Assembly::assembly(), PN::term()) -> assembly().
 part_no(Assembly, PN) ->
-    Assembly#assembly{ part_no=PN }.
+    Assembly#assembly{ part_no = PN }.
 
 -spec tags(Assembly::assembly()) -> term().
 tags(Assembly) ->
@@ -187,7 +288,7 @@ tags(Assembly) ->
 
 -spec tags(Assembly::assembly(), Tags::term()) -> assembly().
 tags(Assembly, Tags) ->
-    Assembly#assembly{ tags=Tags }.
+    Assembly#assembly{ tags = Tags }.
 
 -spec vertex(Assembly::assembly()) -> term().
 vertex(Assembly) ->
@@ -212,17 +313,3 @@ description(Assembly) ->
 -spec description(Assembly::assembly(), Desc::binary()) -> assembly().
 description(Assembly, Desc) ->
     Assembly#assembly{ description = Desc }.
-
--spec store(Assembly::assembly(), Ext::assembly()) -> assembly().
-store(Assembly, Ext) ->
-    Exts = lists:keystore(vertex(Ext), #assembly.vertex, extensions(Assembly), Ext),
-    extensions(Assembly, Exts).
-
--spec delete(Assembly::assembly(), Vertex::term()) -> assembly().
-delete(Assembly, Vertex) ->
-    Exts = lists:keydelete(Vertex, #assembly.vertex, extensions(Assembly)),
-    extensions(Assembly, Exts).
-
--spec find(Assembly::assembly(), Vertex::term()) -> assembly().
-find(Assembly, Vertex) ->
-    lists:keyfind(Vertex, #assembly.vertex, extensions(Assembly)).

@@ -17,7 +17,7 @@
               }
        ).
 
--type user() :: #user{}.
+-opaque user() :: #user{}.
 -type uid() :: integer().
 
 -export_type([user/0, uid/0]).

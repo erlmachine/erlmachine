@@ -15,7 +15,14 @@
 
 -behaviour(gen_server).
 
+-behaviour(erlmachine_database).
+-behaviour(erlmachine_registry).
+
 %% API.
+
+-export([table/0, attributes/0]).
+
+-export([group/0]).
 
 -export([start_link/0]).
 -export([start/0]).
@@ -29,15 +36,13 @@
 -export([handle_info/2]).
 -export([terminate/2]).
 
-%% extensions
--export([gear/1, gear/2, gear/3, gear/4, gear/5, gear/6]).
--export([shaft/2, shaft/4, shaft/6]).
--export([axle/2, axle/4, axle/6]).
--export([gearbox/2, gearbox/5, gearbox/7]).
-%% TODO load via datasheet schema and build;
--export([schema/1]).
+-export([gear/3, gear/4, gear/5, gear/6]).
+-export([shaft/4, shaft/6]).
+-export([axle/4, axle/6]).
+-export([gearbox/5, gearbox/7]).
 
--export([tabname/0]).
+-export([assembly/1, assembly/2]).
+-export([transmission/1]).
 
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
@@ -49,19 +54,28 @@
 
 -type hash() :: binary().
 -type uid() :: erlmachine_user:uid().
--type serial() :: non_neg_integer().
+
+-type schema() :: erlmachine_schema:schema().
 
 -export_type([serial_no/0, part_no/0]).
 
--spec tabname() -> atom().
-tabname() ->
+%%% erlmachine_db
+
+-spec table() -> atom().
+table() ->
     ?MODULE.
 
--spec update_serial() -> serial().
-update_serial() ->
-    mnesia:dirty_update_counter(tabname(), ?MODULE, 1).
+-spec attributes() -> [atom()].
+attributes() ->
+    record_info(fields, ?MODULE).
 
--record (erlmachine_factory, { id::atom(), count::serial() }).
+%%% erlmachine_registry
+
+-spec group() -> atom().
+group() ->
+    ?MODULE.
+
+-record (erlmachine_factory, { id::atom(), count::integer() }).
 
 id() -> 
     ?MODULE.
@@ -92,28 +106,36 @@ process(Assembly, Datasheet) ->
 stop() ->
     gen_server:stop(id()).
 
+%%% gen_server
+
 -record(state, { hash::hash(), serial::serial(), uid::uid() }).
 
 -type state() :: #state{}.
 
 init([]) ->
-    Attrs = {attributes, record_info(fields, ?MODULE)}, _TabRes = mnesia:create_table(tabname(), [Attrs]),
-    Serial = update_serial(),
-    Hash = erlmachine:guid(Serial),
+    Serial = erlmachine_database:update_counter(?MODULE), Hash = erlmachine:guid(Serial),
     UID = erlmachine_user:root(),
+
     {ok, #state{ hash = Hash, serial = Serial, uid = UID }}.
 
 handle_call(#process{ assembly = Assembly, datasheet = Datasheet }, _From, #state{ hash = Hash } = State) ->
-    I = erlmachine_datasheet:iterator(Datasheet), Next = erlmachine_datasheet:next(I),
-
-    Steps = [fun serial_no/2, fun uid/2, fun(A, _) -> next(A, Next) end, fun vsn/2],
+    Steps =
+        [
+         fun id/2,
+         fun serial_no/2,
+         fun prefix/2,
+         fun uid/2,
+         fun (A, _) -> erlmachine_assembly:datasheet(A, Datasheet) end,
+         fun vsn/2,
+         fun publish/2
+        ],
     Res = pipe(Steps, Assembly, State),
 
-    <<B1:32, B2:32, B3:32, B4:32>> = Hash,
-    B5 = erlmachine:phash2({B1, update_serial()}),
+    <<B1:32, B2:32, B3:32, B4:32>> = Hash, Serial = erlmachine_database:update_counter(?MODULE),
+    B5 = erlmachine:phash2({B1, Serial}),
     Rotated = <<(B2 bxor B5):32, (B3 bxor B5):32, (B4 bxor B5):32, B5:32>>,
 
-    {reply, erlmachine:success(Res), State#state{ hash = Rotated }};
+    {reply, erlmachine:success(Res), State#state{ hash = Rotated, serial = Serial }};
 
 handle_call(_Request, _From, State) ->
     {reply, ignored, State}.
@@ -134,11 +156,21 @@ pipe([Step|T], Assembly, State) ->
     Rel = Step(Assembly, State),
     pipe(T, Rel, State).
 
+
+-spec id(Assembly::assembly(), State::state()) -> assembly().
+id(Assembly, #state{ serial = Serial }) ->
+    erlmachine_assembly:id(Assembly, Serial).
+
 -spec serial_no(Assembly::assembly(), State::state()) -> assembly().
 serial_no(Assembly, #state{ hash = Hash }) ->
-    Name = erlmachine_assembly:name(Assembly),
-    SN =  <<(Name:prefix())/binary, "-", (erlmachine:base64url(Hash))/binary>>,
-    Rel = erlmachine_assembly:serial_no(Assembly, SN),
+    SN = erlmachine:base64url(Hash),
+    erlmachine_assembly:serial_no(Assembly, SN).
+
+-spec prefix(Assembly::assembly(), State::state()) -> assembly().
+prefix(Assembly, _) ->
+    Type = erlmachine_assembly:type(Assembly), Prefix = Type:prefix(),
+    SN = erlmachine_assembly:serial_no(Assembly),
+    Rel = erlmachine_assembly:serial_no(Assembly, <<Prefix/binary, "-", SN/binary>>),
     erlmachine_assembly:vertex(Rel, SN).
 
 -spec uid(Assembly::assembly(), State::state()) -> assembly().
@@ -158,89 +190,15 @@ vsn(Assembly, _) ->
 
     erlmachine_assembly:prototype(erlmachine_assembly:model(Assembly, ModelRel), ProtRel).
 
-%%%===================================================================
-%%% Datasheet processing
-%%%===================================================================
+-spec publish(Assembly::assembly(), State::state()) -> assembly().
+publish(Assembly, _) ->
+    %% NOTE: There is a place where production trackers and ws are notified;
+    {ok, _Count} = erlmachine_registry:publish(?MODULE, Assembly),
+    Assembly.
 
--spec next(Assembly::assembly(), none | {Key::binary(), Value::term(), I::term()}) ->
-                  assembly().
-next(Assembly, none) ->
-    Assembly;
+%%% Production API
 
-next(Assembly, {<<"serial_no">>, SN, I}) ->
-    Rel = erlmachine_assembly:serial_no(Assembly, SN),
-    next(Rel, erlmachine_datasheet:next(I));
-
-next(Assembly, {<<"body">>, Body, I}) ->
-    Rel = erlmachine_assembly:body(Assembly, Body),
-    next(Rel, erlmachine_datasheet:next(I));
-
-next(Assembly, {<<"model_no">>, MN, I}) ->
-    Rel = erlmachine_assembly:model_no(Assembly, MN),
-    next(Rel, erlmachine_datasheet:next(I));
-
-next(Assembly, {<<"socket">>, Socket, I}) ->
-    Rel = erlmachine_assembly:socket(Assembly, Socket),
-    next(Rel, erlmachine_datasheet:next(I));
-
-next(Assembly, {<<"model">>, Model, I}) ->
-    {ok, Name} = erlmachine_datasheet:find(<<"name">>, Model), Module = binary_to_existing_atom(Name, utf8),
-    {ok, Opt} = erlmachine_datasheet:find(<<"options">>, Model),
-
-    Rel = erlmachine_assembly:model(Assembly, erlmachine_model:model(Module, Opt)),
-    next(Rel, erlmachine_datasheet:next(I));
-
-next(Assembly, {<<"prototype">>, Prot, I}) ->
-    {ok, Name} = erlmachine_datasheet:find(<<"name">>, Prot), Module = binary_to_existing_atom(Name, utf8),
-    {ok, Opt} = erlmachine_datasheet:find(<<"options">>, Prot),
-
-    Rel = erlmachine_assembly:prototype(Assembly, erlmachine_prototype:prototype(Module, Opt)),
-    next(Rel, erlmachine_datasheet:next(I));
-
-next(Assembly, {<<"uid">>, UID, I}) ->
-    Rel = erlmachine_assembly:uid(Assembly, UID),
-    next(Rel, erlmachine_datasheet:next(I));
-
-next(Assembly, {<<"tags">>, Tags, I}) ->
-    Rel = erlmachine_assembly:tags(Assembly, Tags),
-    next(Rel, erlmachine_datasheet:next(I));
-
-next(Assembly, {<<"vertex">>, V, I}) ->
-    Rel = erlmachine_assembly:vertex(Assembly, V),
-    next(Rel, erlmachine_datasheet:next(I));
-
-next(Assembly, {<<"part_no">>, PN, I}) ->
-    Rel = erlmachine_assembly:part_no(Assembly, PN),
-    next(Rel, erlmachine_datasheet:next(I));
-
-next(Assembly, {<<"env">>, Env, I}) ->
-    Rel = erlmachine_assembly:env(Assembly, Env),
-    next(Rel, erlmachine_datasheet:next(I));
-
-next(Assembly, {<<"description">>, Desc, I}) ->
-    Rel = erlmachine_assembly:description(Assembly, Desc),
-    next(Rel, erlmachine_datasheet:next(I));
-
-next(Assembly, {_, _, I}) ->
-    next(Assembly, erlmachine_datasheet:next(I)).
-
-%%%===================================================================
-%%% Extensions
-%%%===================================================================
--spec gear(Datasheet::datasheet()) -> 
-                  assembly().
-gear(Datasheet) ->
-    Gear = erlmachine_gear:gear(),
-
-    {ok, Rel} = process(Gear, Datasheet),
-    Rel.
-
--spec gear(Datasheet::datasheet(), Ext::assembly()) ->
-                  assembly().
-gear(Datasheet, Ext) ->
-    Gear = gear(Datasheet),
-    erlmachine_assembly:extensions(Gear, [Ext]).
-
+%% TODO To consider a call supported by decorating module as arg;
 -spec gear(ModelName::atom(), ModelOpt::[term()], Tags::[term()]) ->
                   assembly().
 gear(ModelName, ModelOpt, Tags) ->
@@ -254,13 +212,13 @@ gear(ModelName, ModelOpt, Tags, Ext) ->
     Gear = gear(ModelName, ModelOpt, Tags),
     erlmachine_assembly:extensions(Gear, [Ext]).
 
--spec gear(ModelName::atom(), ModelOpt::[term()], ProtName::atom(), ProtOpt::[term()], Tags::[term()]) -> 
+-spec gear(ModelName::atom(), ModelOpt::[term()], ProtName::atom(), ProtOpt::[term()], Tags::[term()]) ->
                   assembly().
 gear(ModelName, ModelOpt, ProtName, ProtOpt, Tags) when is_list(ModelOpt),
                                                         is_list(ProtOpt) ->
-    Gear = erlmachine_gear:gear(),
+    Gear = erlmachine_gear:new(),
 
-    Prot = erlmachine_prototype:prototype(ProtName, ProtOpt),
+    Prot = erlmachine_prototype:new(ProtName, ProtOpt),
     Model = erlmachine_model:model(ModelName, ModelOpt),
 
     Assembly = erlmachine_assembly:prototype(erlmachine_assembly:model(Gear, Model), Prot),
@@ -272,14 +230,6 @@ gear(ModelName, ModelOpt, ProtName, ProtOpt, Tags) when is_list(ModelOpt),
 gear(ModelName, ModelOpt, ProtName, ProtOpt, Tags, Ext) ->
     Gear = gear(ModelName, ModelOpt, ProtName, ProtOpt, Tags),
     erlmachine_assembly:extensions(Gear, [Ext]).
-
--spec shaft(Datasheet::datasheet(), Exts::[assembly()]) ->
-                  assembly().
-shaft(Datasheet, Exts) when is_list(Exts) ->
-    Shaft = erlmachine_shaft:shaft(),
-
-    {ok, Rel} = process(Shaft, Datasheet),
-    erlmachine_assembly:extensions(Rel, Exts).
 
 -spec shaft(ModelName::atom(), ModelOpt::[term()], Tags::[term()], Exts::[assembly()]) ->
                   assembly().
@@ -293,21 +243,13 @@ shaft(ModelName, ModelOpt, Tags, Exts) ->
 shaft(ModelName, ModelOpt, ProtName, ProtOpt, Tags, Exts) when is_list(ModelOpt),
                                                                is_list(ProtOpt),
                                                                is_list(Exts) ->
-    Shaft = erlmachine_shaft:shaft(),
+    Shaft = erlmachine_shaft:new(),
 
-    Prot = erlmachine_prototype:prototype(ProtName, ProtOpt),
+    Prot = erlmachine_prototype:new(ProtName, ProtOpt),
     Model = erlmachine_model:model(ModelName, ModelOpt),
 
     Assembly = erlmachine_assembly:prototype(erlmachine_assembly:model(Shaft, Model), Prot),
     {ok, Rel} = process(erlmachine_assembly:tags(Assembly, Tags)),
-    erlmachine_assembly:extensions(Rel, Exts).
-
--spec axle(Datasheet::datasheet(), Exts::[assembly()]) -> 
-                   assembly().
-axle(Datasheet, Exts) ->
-    Axle = erlmachine_axle:axle(),
-
-    {ok, Rel} = process(Axle, Datasheet),
     erlmachine_assembly:extensions(Rel, Exts).
 
 -spec axle(ModelName::atom(), ModelOpt::[term()], Tags::[term()], Exts::[assembly()]) ->
@@ -322,51 +264,68 @@ axle(ModelName, ModelOpt, Tags, Exts) ->
 axle(ModelName, ModelOpt, ProtName, ProtOpt, Tags, Exts) when is_list(ModelOpt),
                                                               is_list(ProtOpt),
                                                               is_list(Exts) ->
-    Axle = erlmachine_axle:axle(),
+    Axle = erlmachine_axle:new(),
 
-    Prot = erlmachine_prototype:prototype(ProtName, ProtOpt),
+    Prot = erlmachine_prototype:new(ProtName, ProtOpt),
     Model = erlmachine_model:model(ModelName, ModelOpt),
 
     Assembly = erlmachine_assembly:prototype(erlmachine_assembly:model(Axle, Model), Prot),
     {ok, Rel} = process(erlmachine_assembly:tags(Assembly, Tags)),
     erlmachine_assembly:extensions(Rel, Exts).
 
-%% Gearbox should be responsible to pass env context through the each model;
-%% Each extension inherites this context as execution scope;
--spec gearbox(Datasheet::datasheet(), Exts::[assembly()]) ->
-                  assembly().
-gearbox(Datasheet, Exts) ->
-    GearBox = erlmachine_gearbox:gearbox(),
 
-    {ok, Rel} = process(GearBox, Datasheet),
-    schema(erlmachine_assembly:extensions(Rel, Exts)).
-
--spec gearbox(ModelName::atom(), ModelOpt::[term()], Env::map(), Tags::[term()], Exts::[assembly()]) ->
+%% TODO: To provide a build call to generate schema for convinience;
+-spec gearbox(ModelName::atom(), ModelOpt::[term()], Tags::[term()], Exts::[assembly()]) ->
                   assembly().
-gearbox(ModelName, ModelOpt, Env, Tags, Exts) ->
+gearbox(ModelName, ModelOpt, Tags, Exts) ->
     ProtName = erlmachine_sup_prototype_def:name(),
     ProtOpt = [],
-    gearbox(ModelName, ModelOpt, ProtName, ProtOpt, Env, Tags, Exts).
+    gearbox(ModelName, ModelOpt, ProtName, ProtOpt, Tags, Exts).
 
 -spec gearbox(ModelName::atom(), ModelOpt::[term()], ProtName::atom(), ProtOpt::[term()], Env::map(), Tags::[term()], Exts::[assembly()]) ->
                   assembly().
-gearbox(ModelName, ModelOpt, ProtName, ProtOpt, Env, Tags, Exts) when is_list(ModelOpt),
-                                                                      is_list(ProtOpt),
-                                                                      is_map(Env),
-                                                                      is_list(Exts) ->
-    GearBox = erlmachine_gearbox:gearbox(),
+gearbox(ModelName, ModelOpt, ProtName, ProtOpt, Tags, Exts) when is_list(ModelOpt),
+                                                                 is_list(ProtOpt),
+                                                                 is_map(Env),
+                                                                 is_list(Exts) ->
+    %% TODO
+    Assembly = erlmachine_assembly:new(ModelName, ModelOpt, ProtName, ProtOpt, Tags),
+    %% Decorated as GearBox
+    GearBox = erlmachine_gearbox:new(Assembly),
 
-    Prot = erlmachine_prototype:prototype(ProtName, ProtOpt),
+    Prot = erlmachine_prototype:new(ProtName, ProtOpt),
     Model = erlmachine_model:model(ModelName, ModelOpt),
 
     Assembly = erlmachine_assembly:prototype(erlmachine_assembly:model(GearBox, Model), Prot),
-    {ok, Rel} = process(erlmachine_assembly:tags(erlmachine_assembly:env(Assembly, Env), Tags)),
+
+    {ok, Rel} = process(erlmachine_assembly:tags(Assembly, Tags)),
     schema(erlmachine_assembly:extensions(Rel, Exts)).
 
+%% TODO
+%% To make it via assembly(Datasheet); erlmachine_gear:new(), 
+%% Transmition should be built here;
+
+-spec assembly(Datasheet::datasheet()) ->
+                      assembly().
+assembly(Datasheet) ->
+    Assembly = erlmachine_assembly:new(), {ok, Rel} = process(Assembly, Datasheet),
+    Rel.
+
+-spec assembly(Datasheet::datasheet(), Exts::[assembly()]) ->
+                      assembly().
+assembly(Datasheet, Exts) when is_list(Exts) ->
+    Assembly = assembly(Datasheet),
+    erlmachine_assembly:extensions(Assembly, Exts).
+
+-spec transmission(Datasheet::datasheet()) -> schema().
+transmission(_Datasheet) ->
+    ok.
+
+%% TODO To locate it into transmission
 -spec schema(GearBox::assembly()) ->
                     assembly().
 schema(GearBox) ->
-    Root = erlmachine:serial_no(GearBox), Schema = erlmachine_schema:new(Root),
+    Boot = erlmachine:serial_no(GearBox), Schema = erlmachine_schema:new(Boot),
     Rel = erlmachine_assembly:schema(GearBox, Schema),
     ok = add(Schema, [Rel]),
     Rel.

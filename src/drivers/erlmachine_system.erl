@@ -1,10 +1,15 @@
 -module(erlmachine_system).
 %% TODO: To provide automated system monitoring within predefined range of tags: system, log, etc.
 
+-behaviour(erlmachine_registry).
+
+-export([group/0]).
+
 -export([failure/0, failure/1, failure/2, failure/3]).
 -export([success/0, success/1, success/2]).
 
--export([boot/2, boot/3]).
+-export([startup/2]).
+-export([install/3]).
 -export([process/1, process/2]).
 -export([shutdown/3]).
 
@@ -22,6 +27,12 @@
 -type success() :: ok.
 
 -export_type([failure/1, failure/2, failure/3, success/0, success/1, success/2]).
+
+%%% erlmachine_registry
+
+-spec group() -> atom().
+group() ->
+    ?MODULE.
 
 -spec failure() -> failure().
 failure() ->
@@ -71,33 +82,44 @@ is_failure({error, {_, _}, _}) ->
 is_failure(_) ->
     false.
 
-%%%===================================================================
 %%% Transmission hub
-%%%===================================================================
-%% TODO: TO supply restarts counter is an edge;
 
-boot({ok, Pid}, Assembly) when is_pid(Pid) ->
+%% TODO:
+%% 1. Supply restarts counter is an edge;
+%% 2. To manage the overall extension vocabulary via syn;
+%% 3. To deliver control messages ("overlad", etc.) via syn
+%% 4. To manage process exit via syn (syn_event_handler) 
+
+-spec startup(success(Pid::pid()) | failure(E::term(), R::term()), Assembly::assembly()) -> 
+                     success().
+startup({ok, Pid}, Assembly) when is_pid(Pid) ->
     _Schema = erlmachine_assembly:schema(Assembly),
     _Rel = erlmachine_tag:pid(Assembly, Pid),
+
+    ok = erlmachine_registry:join(?MODULE, Pid, Assembly),
     %ok = add_vertex(Schema, Rel),
     ok;
-boot({error, {E, R}}, Assembly) ->
+startup({error, {E, R}}, Assembly) ->
     _Schema = erlmachine_assembly:schema(Assembly),
 
     _Rel = erlmachine_tag:error(Assembly, E, R),
     %ok = add_vertex(Schema, Rel), 
     ok.
 
-boot(_Res = {ok, Pid}, Assembly, Ext) when is_pid(Pid) ->
+-spec install(success(Pid::pid()) | failure(E::term(), R::term()), Assembly::assembly(), Ext::assembly()) ->
+                     success().
+install(_Res = {ok, Pid}, Assembly, Ext) when is_pid(Pid) ->
     _Schema = erlmachine_assembly:schema(Assembly),
 
     _Rel = erlmachine_tag:pid(Assembly, Pid),
     %ok = add_vertex(Schema, Rel),
 
     _V1 = erlmachine_assembly:vertex(Assembly), _V2 = erlmachine_assembly:vertex(Ext),
+
+    ok = erlmachine_registry:join(?MODULE, Pid, Ext),
     %erlmachine_schema:add_edge(Schema, V1, V2, Res),
     ok;
-boot(_Res = {error, {E, R}}, Assembly, Ext) ->
+install(_Res = {error, {E, R}}, Assembly, Ext) ->
     _Schema = erlmachine_assembly:schema(Assembly),
 
     _Rel = erlmachine_tag:error(Assembly, E, R),
@@ -108,6 +130,7 @@ boot(_Res = {error, {E, R}}, Assembly, Ext) ->
 
     ok.
 
+-spec transmit()
 process({ok, _Assembly}) ->
     %% TODO: Place for vertex statistics gathering;
     ok;
@@ -140,6 +163,8 @@ process(_Res = {error, {E, R}, Assembly}, Ext) ->
 
     %% TODO: Place for errors statistics gathering (we can mark edge by red color);
     ok.
+
+uninstall(Res, Assembly, ID)
 
 shutdown(ok, _Assembly, _V) ->
     ok.

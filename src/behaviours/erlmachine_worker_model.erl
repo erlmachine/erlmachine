@@ -4,6 +4,9 @@
 
 %% NOTE: Worker model concerns: domain layer processing;
 %% API
+
+-export([is_worker_model/1]).
+
 -export([boot/1]).
 
 -export([process/2]).
@@ -42,6 +45,12 @@
 %% NOTE: Lazy callbacks are designed to reduce computational resources when extension is deadlocked;
 -optional_callbacks([process/3, process/5, pressure/3, shutdown/3]).
 
+-spec is_worker_model(Module::atom()) -> boolean().
+is_worker_model(Module) ->
+    lists:member(?MODULE, erlmachine:behaviours(Module)).
+
+%%%  Transmission API
+
 -spec boot(Context::assembly()) ->
                    success(assembly()) | failure(term(), term(), assembly()).
 boot(Context) ->
@@ -54,7 +63,6 @@ boot(Context) ->
 
     Res = Name:boot(UID, Body, Opt, Env),
     context(Res, Context).
-
 
 -spec process(Context::assembly(), Motion::term()) ->
                     success(assembly()) | failure(term(), term(), assembly()).
@@ -106,4 +114,3 @@ trim({ok, _, Context}) ->
     erlmachine:success(Context);
 trim(Res) ->
     Res.
-

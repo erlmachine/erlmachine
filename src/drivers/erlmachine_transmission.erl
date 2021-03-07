@@ -1,21 +1,43 @@
 -module(erlmachine_transmission).
 -behaviour(gen_server).
-%% NOTE: The most popular approach to solve publish/subscribe interactions is about how to use shared hash table;
-%% This table is filled by routes and can be accesed within whole application with appropriate tags (keys);
-%% NOTE: The transmission based design:
-%% 1) Each gearbox has topology with it's own exectution context and vocabulary of routes;
-%% 2) The data storage which contains routes for incomming messages is based on graph;
-%% 3) The responsibility to manage the schema belongs to the transmission;
-%% 4) It supports "dead letter" and "error message" queues;
-%% 5) It monitors the quality of service through "mesh" call;
+%% NOTE: In general the concept of a transmission is about "how to build processing algorithms which are based on structured mechanical extensions";
+%% NOTE: The responsibility to manage the schema belongs to the transmission.
+%% 1. Schema should be preserved and to be managed by the owner;
+%% 2. Env is assigned to the Model (in comparison to the options param which is assigned to the extension);
 
+%% NOTE: Transmission can provide developer with a various features such as:
 
-%% TODO: To supply cluster topology visualization in admin panel (errors, message history, throughput);
-%% TODO: To supply message history in headers:
+%% a) Time measurements between mechanical parts;
+%% b) Implementation of advanced flow algorithms (throughput capacity control, load balancing, etc..);
+
+%% NOTE: The most typical implementation of publish/subscribe interchange is based on shared hash table.
+%% This table is filled by routes and can be accesed within whole application through appropriate tags (keys);
+%% The erlmachine based design is different and assumes:
+
+%% a) Each engine has it's own internal topology which serves as a routes vocabulary;
+%% b) The data storage which contains routes for incomming messages is based on graph data structure;
+
+%% TODO: Support "dead letter" and "error message" queues;
+%% TODO: Monitor the quality of a service through "mesh" call;
+%% TODO: Display graphically on a chart the all components from a schema. To animate active extensions;
+%% TODO: Represent statistics report via dashboards (errors, message history, throughput);
+%% TODO: Support of message history via headers:
 %% https://www.enterpriseintegrationpatterns.com/patterns/messaging/MessageHistory.html;
 
 %% API.
 -export([start_link/0]).
+
+-export([motion/2]).
+-export([header/1, header/2]).
+-export([body/1, body/2]).
+
+-export([startup/1, startup/2]).
+
+-export([install/3, uninstall/3]).
+-export([process/3]).
+-export([execute/3]).
+
+-export([shutdown/4]).
 
 %% gen_server.
 -export([
@@ -25,19 +47,7 @@
          code_change/3
         ]).
 
--export([boot/1, boot/2]).
-
--export([install/3, uninstall/3]).
--export([process/3]).
--export([execute/3]).
-
--export([shutdown/4]).
-
 -export([mesh/3, pass/3]).
-
--export([motion/2]).
--export([header/1, header/2]).
--export([body/1, body/2]).
 
 -export([spec/1]).
 
@@ -55,64 +65,78 @@
 
 -export_type([motion/0, header/0, body/0]).
 
-%% NOTE: To operate only via schema;
-%% Schema has to be extracted and managed by independent way;
-%% To be able to manage topology you have to store it;
+id() ->
+    ?MODULE.
 
-%% TODO: To decouple schema from assembly;
-%% TODO: To pass schema arg each time when transmission invoked;
-%% TODO: To mark each schema edge after extension is running;
+-spec start_link() -> {ok, pid()}.
+start_link() ->
+    gen_server:start_link({local, id()}, ?MODULE, [], []).
 
--spec boot(Schema::schema(), V::term()) ->
+
+%% TODO To supply Env as argument
+-spec startup(Schema::schema(), V::term(), Env::map()) ->
                   success(pid()) | failure(term(), term()).
-boot(Schema, V) ->
-    Assembly = erlmachine_schema:vertex(Schema, V), boot(Assembly).
+startup(Schema, V, Env) ->
+    Assembly = erlmachine_schema:vertex(Schema, V), startup(Assembly, Env).
 
--spec boot(Assembly::assembly()) ->
+-spec startup(Assembly::assembly(), Env::map()) ->
+                     success(pid()) | failure(term(), term()).
+startup(Assembly, Env) ->
+    Rel = erlmachine_assembly:env(Assembly, Env),
+    startup(Rel).
+
+-spec startup(Assembly::assembly(), Env::map()) ->
                    success(pid()) | failure(term(), term()).
-boot(Assembly) ->
-    Supervisor = erlmachine:is_supervisor(Assembly), Name = erlmachine_assembly:name(Assembly),
-    Res =
-        if Supervisor ->
-                Schema = erlmachine_assembly:schema(Assembly), V = erlmachine_assembly:vertex(Assembly),
-                Exts = erlmachine_schema:out_neighbours(Schema, V),
-                Name:boot(Assembly, Exts);
-           true ->
-                Name:boot(Assembly)
-        end,
-    ok = erlmachine_system:boot(Res, Assembly),
-    Res.
+startup(Assembly, Env) ->
+    Env = erlmachine_assembly:env(Assembly),
 
-%% NOTE: Schema and env params are inherited through thq all gearbox;
+    IsSup = erlmachine:is_supervisor(Rel),
+    Res =
+        if IsSup ->
+                Graph = erlmachine_assembly:graph(Rel), V = erlmachine_assembly:vertex(Rel),
+                Exts = [ext(Ext, Env)|| Ext <- erlmachine_schema:out_neighbours(Graph, V)],
+                erlmachine_supervisor_prototype:startup(Rel, Exts);
+           true ->
+                erlmachine_worker_prototype:startup(Rel)
+        end,
+
+    ok = erlmachine_system:startup(Res, Rel), Res.
+
+-spec ext(Assembly::assembly(), Env::map()) -> assembly().
+ext(Assembly, Env) ->
+    Graph = erlmachine_assembly:graph(Assembly),
+    erlmachine_assembly:graph(erlmachine_assembly:env(Ext, Env), Graph).
+
+%% NOTE: Schema and env params are inherited through the whole transmission;
 -spec spec(Assembly::assembly()) -> spec().
 spec(Assembly) ->
     ID = erlmachine_assembly:vertex(Assembly),
 
-    Name = erlmachine_assembly:name(Assembly), Type = Name:type(),
-    Start = {?MODULE, boot, [Assembly]},
+    Type = erlmachine_assembly:type(Assembly),
+    Start = { ?MODULE, startup, [Assembly] },
     #{ id => ID, start => Start, type => Type }.
 
--spec install(Schema::schema(), V::vertex(), Ext::assembly()) ->
+-spec install(Schema::schema(), V::vertex(), Ext::assembly(), Env::map()) ->
                      success(pid()) | failure(term(), term()).
-install(Schema, V, Ext) ->
-    Assembly = erlmachine_schema:vertex(Schema, V), Name = erlmachine_assembly:name(Assembly),
-    erlmachine_schema:add_vertex(Schema, erlmachine_assembly:vertex(Ext), Ext),
+install(Schema, V, Ext, Env) ->
+    Assembly = erlmachine_schema:vertex(Schema, V),
+    Rel = ext(Ext, Env), 
+    Res = erlmachine_supervisor_prototype:install(Assembly, Rel),
 
-    Res = Name:install(Assembly, Ext),
-    ok = erlmachine_system:boot(Res, Assembly, Ext),
-    Res.
+    ok = erlmachine_system:install(Res, Assembly, Ext),
+
+    erlmachine_schema:add_vertex(Schema, erlmachine_assembly:vertex(Rel), Rel), Res.
 
 -spec uninstall(Schema::schema(), V::vertex(), ID::term()) ->
                        success().
 uninstall(Schema, V, ID) ->
-    Assembly = erlmachine_schema:vertex(Schema, V), Name = erlmachine_assembly:name(Assembly),
-    Res = Name:uninstall(Assembly, ID),
+    Assembly = erlmachine_schema:vertex(Schema, V),
+    Res = erlmachine_supervisor_prototype:uninstall(Assembly, ID),
 
-    ok = erlmachine_schema:del_vertex(Schema, ID),
-    ok = erlmachine_system:shutdown(Res, Assembly, ID),
-    Res.
+    ok = erlmachine_system:uninstall(Res, Assembly, ID),
 
-%% TODO: To make via prototype call;
+    ok = erlmachine_schema:del_vertex(Schema, ID), Res.
+
 -spec process(Schema::schema(), V::vertex(), Motion::term()) ->
                     success().
 process(Schema, V, Motion) ->
@@ -121,8 +145,7 @@ process(Schema, V, Motion) ->
 -spec process(Assembly::assembly(), Motion::term()) ->
                      success().
 process(Assembly, Motion) ->
-    Name = erlmachine_assembly:name(Assembly),
-    ok = Name:process(Assembly, Motion).
+    ok = erlmachine_worker_prototype:process(Assembly, Motion).
 
 -spec mesh(Module::atom(), Assembly::assembly(), Motion::term()) ->
                   success(assembly()) | failure(term(), term(), assembly()).
@@ -136,8 +159,10 @@ mesh(Module, Assembly, Motion) ->
     end.
 
 mesh([Ext|Range], Module, Assembly, Motion) ->
-    Res = Module:mesh(Assembly, Motion, Ext, Range), ok = transmit(Res, Ext),
-    ok = erlmachine_system:process(Res, Ext),
+    Res = Module:mesh(Assembly, Motion, Ext, Range),
+
+    ok = erlmachine_system:process(Res, Ext), ok = transmit(Res, Ext),
+
     if Range == [] ->
             Res;
        true ->
@@ -154,8 +179,8 @@ pass(Module, Assembly, Motion) ->
 
 pass(Exts, Module, Assembly, Motion) ->
     Res = Module:pass(Assembly, Motion),
-    [begin ok = transmit(Res, Ext), ok = erlmachine_system:process(Res, Ext) end|| Ext <- Exts],
-    Res.
+
+    [begin ok = erlmachine_system:process(Res, Ext), ok = transmit(Res, Ext) end|| Ext <- Exts], Res.
 
 transmit({ok, _Assembly}, _Ext) ->
     ok;
@@ -171,30 +196,46 @@ rel({ok, _Ret, Assembly}) ->
 rel({error, {_E, _R}, Assembly}) ->
     Assembly.
 
-%% Serve has designed to be synchronous. It can be used for direct API calls on the particular extension;
 -spec execute(Schema::schema(), V::vertex(), Command::term()) ->
                       term().
 execute(Schema, V, Command) ->
-    Assembly = erlmachine_schema:vertex(Schema, V), Name = erlmachine_assembly:name(Assembly),
-    Name:execute(Assembly, Command).
+    Assembly = erlmachine_schema:vertex(Schema, V),
+
+    erlmachine_worker_prototype:execute(Assembly, Command).
 
 -spec shutdown(Schema::schema(), V::vertex(), Reason::term(), Timeout::term()) ->
                        success().
 shutdown(Schema, V, Reason, Timeout) ->
-    Assembly = erlmachine_schema:vertex(Schema, V), Name = erlmachine_assembly:name(Assembly),
-    Res = Name:shutdown(Assembly, Reason, Timeout),
+    Assembly = erlmachine_schema:vertex(Schema, V),
+    Res = erlmachine_worker_prototype:shutdown(Assembly, Reason, Timeout),
+
     ok = erlmachine_system:shutdown(Res, Assembly, V),
-    Res.
 
-%% TODO: To supply connect/disconnect by edge label args (via graph API the all interaction through schema);
-%% NOTE: They must be graphically displayed;
+    ok = erlmachine_schema:del_vertex(Schema, V), Res.
 
--record(state, {
-}).
+-record(state, {}).
 
-%% A message consists of two basic parts:
-%% 1. Header – Information used by the messaging system that describes the data being transmitted, its origin, its destination, and so on.
-%% 2. Body – The data being transmitted; generally ignored by the messaging system and simply transmitted as-is.
+init([]) ->
+	{ok, #state{}}.
+
+handle_call(_Request, _From, State) ->
+	{reply, ignored, State}.
+
+handle_cast(_Msg, State) ->
+	{noreply, State}.
+
+handle_info(_Info, State) ->
+	{noreply, State}.
+
+terminate(_Reason, _State) ->
+	ok.
+
+code_change(_OldVsn, State, _Extra) ->
+	{ok, State}.
+
+%% NOTE: A message consists of two basic parts:
+%% 1) Header – Information used by the messaging system that describes the data being transmitted, its origin, its destination, and so on.
+%% 2) Body – The data being transmitted; generally ignored by the messaging system and simply transmitted as-is.
 
 %% NOTE: See the message construction patterns:
 %% https://www.enterpriseintegrationpatterns.com/patterns/messaging/MessageConstructionIntro.html
@@ -219,43 +260,4 @@ body(Motion) ->
 -spec body(Motion::motion(), Body::body()) -> motion().
 body(Motion, Body) ->
     Motion#{ body => Body }.
-
-%% API.
-
-%% That next statement will be produced by system itself: erlmachine_system:damage(Assembly, Damage);
-%% Transmission can provide a lot of abilities, for example:
-%% Time measurements between parts, different flow algorithms inside gearbox etc..
-%% Actually, it's just tree , and we'll be able to do that by various ways;
-%% We can even provide slowering between parts or persistence layer, because control level was provided;
-%% Error handling will be implemented by product API parts instead;
-%% In generally term transmission is about processing algorithms over mechanical topology;
-
-id() ->
-    ?MODULE.
-
--spec start_link() -> {ok, pid()}.
-start_link() ->
-    gen_server:start_link({local, id()}, ?MODULE, [], []).
-
-%%%===================================================================
-%%%  gen_server behaviour
-%%%===================================================================
-
-init([]) ->
-	{ok, #state{}}.
-
-handle_call(_Request, _From, State) ->
-	{reply, ignored, State}.
-
-handle_cast(_Msg, State) ->
-	{noreply, State}.
-
-handle_info(_Info, State) ->
-	{noreply, State}.
-
-terminate(_Reason, _State) ->
-	ok.
-
-code_change(_OldVsn, State, _Extra) ->
-	{ok, State}.
 

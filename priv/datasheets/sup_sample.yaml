@@ -1,21 +1,22 @@
-serial_no: SN-test
+serial_no: SN-1
+type: supervisor
 body:
   key: value
 model_no: MN-0
 socket:
 model:
-  name: erlmachine_sup_model_ct
+  module: erlmachine_sup_model_ct
   options:
     - key: value
+  vsn: 0.0.1
 prototype:
-  name: erlmachine_sup_prototype_def
+  module: erlmachine_sup_prototype_def
   options:
     - key: value
+  vsn: 1
 uid: 0
 tags:
   - test
-vertex: test
+vertex: sup-test
 part_no: PN-0
-env:
-  key: value
 description: Supervisor datasheet sample

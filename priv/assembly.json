@@ -1,78 +1,91 @@
 {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "title": "Datasheet",
-    "description": "A document that summarizes characteristics of an extension",
+    "title": "Assembly datasheet",
+    "description": "The document that summarizes characteristics of an assembly",
+    "definitions":{
+        "module":{
+            "type": "string",
+            "description": "Module name"
+        },
+        "vsn":{
+            "description": "Module version attribute (MD5 checksum if not specified)"
+        }
+    },
     "type": "object",
     "properties":{
         "serial_no":{
             "type": "string",
-            "description": "Runtime identifier"
+            "description": "Runtime unique identifier (S/N)"
+        },
+        "type":{
+            "enum": ["worker", "supervisor"],
+            "description": "Behavioral type of an extension"
         },
         "body":{
             "type": "object",
-            "description": "The initial state"
+            "description": "Data structure that stores the state of an extension"
         },
         "model_no":{
-            "type": "string",
-            "description": ""
+            "description": "Product configurator input to generate a master production schedule"
         },
         "socket":{
-            "description": "Processing interface"
+            "description": "Interface (shape) of an extension"
         },
         "model":{
             "type": "object",
             "properties":{
-                "name":{
-                    "type": "string",
-                    "description": "Domain level module"
+                "module":{
+                    "$ref": "#/definitions/module"
                 },
-                "options":{
+                "options": {
                     "type": "array",
-                    "description": "Domain level options"
+                    "description": "Domain level options which are passed as is"
+                },
+                "vsn":{
+                   "$ref": "#/definitions/vsn"
                 }
             },
             "additionalProperties": false,
-            "required": [ "name", "options" ],
-            "description": ""
+            "required": [ "module", "options" ],
+            "description": "Domain level specification"
         },
         "prototype":{
             "type": "object",
             "properties":{
-                "name": {
-                    "type": "string",
-                    "description": "Service level module"
+                "module":{
+                    "$ref": "#/definitions/module"
                 },
                 "options": {
                     "type": "array",
-                    "description": "Service level options"
+                    "description": "Service level options which are passed as is"
+                },
+                "vsn":{
+                    "$ref": "#/definitions/vsn"
                 }
             },
             "additionalProperties": false,
-            "required": [ "name", "options" ],
-            "description": ""
+            "required": [ "module", "options" ],
+            "description": "Service level specification"
         },
         "uid":{
-            "type": "integer"
+            "type": "integer",
+            "description": "The identity of Erlmachine operator"
         },
         "tags":{
             "type": "array",
-            "description": ""
+            "description": "Index terms which are assigned as meta-information"
         },
         "vertex":{
-            "description": "The identity on a graph"
+            "description": "The identity on a graph (by default serial_no)"
         },
         "part_no":{
             "type": "string",
-            "description": ""
-        },
-        "env":{
-            "type": "object",
-            "description": "Execution context"
+            "description": "Deployment identity to track the quality of a component through a release period"
         },
         "description":{
             "type": "string",
-            "description": "Short overview of the role of an extension within overall system"
+            "description": "Short overview of the extension role"
         }
     },
-    "required": [ "model" ]
+    "required": [ "type", "model" ]
 }

@@ -9,7 +9,6 @@
 -export([prototype_init/4]).
 -export([prototype_start_child/3]).
 -export([prototype_terminate_child/3]).
--export([prototype_terminate/4]).
 
 %% supervisor
 -export([init/1]).
@@ -26,9 +25,7 @@ name() ->
 id(SN) ->
     erlang:binary_to_atom(SN, latin1).
 
-%%%===================================================================
 %%%  erlmachine_supervisor_prototype behaviour
-%%%===================================================================
 
 -record(init, { specs::[map()], flags::map() }).
 
@@ -54,18 +51,7 @@ prototype_terminate_child(SN, ID, Context) ->
 
     supervisor:terminate_child(id(SN), ID).
 
--spec prototype_terminate(SN::serial_no(), Reason::term(), Timeout::term(), Context::term()) ->
-                                 success().
-prototype_terminate(SN, Reason, _Timeout, Context) ->
-    erlmachine_supervisor_prototype:terminate(Context, Reason),
-
-    Reason = normal,
-    exit(whereis(id(SN)), Reason),
-    erlmachine:success().
-
-%%%===================================================================
 %%%  supervisor behaviour
-%%%===================================================================
 
 init(#init{ specs = Specs, flags = Flags }) ->
     Strategy = maps:get(<<"strategy">>, Flags, one_for_one),

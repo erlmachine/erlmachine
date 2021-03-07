@@ -29,9 +29,7 @@ name() ->
 id(SN) ->
     erlang:binary_to_atom(SN, latin1).
 
-%%%===================================================================
 %%%  erlmachine_worker_prototype behaviour
-%%%===================================================================
 
 -record(init, { context::term(), opts::[] }).
 
@@ -62,9 +60,7 @@ prototype_cast(SN, Msg) ->
 prototype_terminate(SN, Reason, Timeout) ->
     gen_server:stop(id(SN), Reason, Timeout).
 
-%%%===================================================================
 %%%  gen_server behaviour
-%%%===================================================================
 
 -record(state, { context::term() }).
 

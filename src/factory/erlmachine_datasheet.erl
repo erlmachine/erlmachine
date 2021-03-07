@@ -1,7 +1,7 @@
 -module(erlmachine_datasheet).
 
 %% This module is responsible to:
-%% a) Read technical specifications (datasheets);
+%% a) Read technical manufacturer's specifications (datasheets);
 %% b) Validate datasheet content via https://json-schema.org;
 %% c) Build extension accordingly to the assembly datasheet;
 %% d) Build cluster accordingly to the schema datasheet
@@ -9,7 +9,7 @@
 %% NOTE: There is possibility to load datasheet from other sources (for example DB);
 
 %% API.
--export([schema/1, assembly/1]).
+-export([transmission/1, assembly/1]).
 
 -export([file/2]).
 -export([decode/3]).
@@ -19,7 +19,7 @@
 -export([iterator/1, next/1]).
 -export([find/2]).
 
--type datasheet() :: map().
+-opaque datasheet() :: map().
 
 -type path() :: list().
 -type spec() :: list().
@@ -29,10 +29,10 @@
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
 
--spec schema(Path::path()) ->
+-spec transmission(Path::path()) ->
                     success(datasheet()) | failure(term(), term()).
-schema(Path) ->
-    file(Path, "schema.json").
+transmission(Path) ->
+    file(Path, "transmission.json").
 
 -spec assembly(Path::path()) ->
                       success(datasheet()) | failure(term(), term()).

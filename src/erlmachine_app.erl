@@ -14,25 +14,26 @@ start(_Type, _Args) ->
     Nodes = [node()],
     mnesia:create_schema(Nodes), ok = mnesia:start(),
 
+    Schemas = [erlmachine_factory, erlmachine_assembly, erlmachine_schema],
+
+    [erlmachine_database:create_table(Schema) || Schema <- Schemas],
     erlmachine_sup:start_link().
 
 stop(_State) ->
     ok = mnesia:stop().
 
 start_phase(wait_for_tables, _Type, Timeout) when is_integer(Timeout) ->
-    ok = wait_for_tables(Timeout);
+    Tables = [erlmachine_catalogue, erlmachine_factory, erlmachine_assembly, erlmachine_schema],
+
+    ok = erlmachine_database:wait_for_tables([Factory], Timeout);
 
 start_phase(add_schema, _Type, Files) when is_list(Files) ->
-    [ok = add_schema(File) || File <- Files], 
+    [ok = add_schema(File) || File <- Files],
+
     erlmachine:success();
 
 start_phase(_, _Type, _PhaseArgs) ->
     erlmachine:success().
-
--spec wait_for_tables(Timeout::integer()) -> ok.
-wait_for_tables(Timeout) ->
-    Factory = erlmachine_factory:tabname(),
-    ok = mnesia:wait_for_tables([Factory], Timeout).
 
 -spec add_schema(File::list()) -> success().
 add_schema(File) ->

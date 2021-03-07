@@ -1,17 +1,20 @@
 -module(erlmachine).
+%% NOTE: The main purpouse of erlmachine project is to provide a set of well designed behaviours which are supported by visual tools (flowcharts, widjets, etc..).
+%% The Erlmachine based design operates via flexible mechanism of prototypes and models. Where business layer is decoupled from transport implementation.
 
--export([start/0, stop/0, priv_dir/0]).
+-export([start/0, stop/0, get_key/1, get_key/2]).
+
+-export(priv_dir/0).
 
 -export([is_supervisor/1, is_worker/1]).
 
--export([boot/1, boot/2]).
+-export([startup/1, startup/2]).
 
--export([process/2, process/3]).
--export([execute/2, execute/3]).
--export([install/2, install/3]).
--export([uninstall/2, uninstall/3]).
+-export([process/3]).
+-export([execute/3]).
+-export([install/3, uninstall/3]).
 
--export([shutdown/1, shutdown/2, shutdown/3]).
+-export([shutdown/2, shutdown/3]).
 
 -export([motion/2]).
 -export([header/1, header/2, body/1, body/2]).
@@ -32,11 +35,12 @@
 -export([success/0, success/1, success/2]).
 -export([is_success/1, is_failure/1]).
 
--export([attribute/2, attribute/3]).
+-export([attributes/1]).
+-export([behaviours/1]).
 -export([optional_callback/3, optional_callback/4]).
 
 -export([serial_no/1]).
--export([schema/1]).
+-export([graph/1]).
 -export([vertex/1, vertex/2]).
 -export([tags/1]).
 -export([part_no/1]).
@@ -56,8 +60,8 @@
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_factory.hrl").
 
--type schema() :: erlmachine_schema:schema().
--type vertex() :: erlmachine_schema:vertex().
+-type graph() :: erlmachine_graph:graph().
+-type vertex() :: erlmachine_graph:vertex().
 
 -type motion() :: erlmachine_transmission:motion().
 -type header() :: erlmachine_transmission:header().
@@ -69,6 +73,8 @@
 
 -export_type([guid/0]).
 
+%%% Application API
+
 -spec start() -> success().
 start() ->
     {ok, _} = application:ensure_all_started(?MODULE),
@@ -78,100 +84,71 @@ start() ->
 stop() ->
     application:stop(?MODULE).
 
+-spec get_key(Key::atom()) -> undefined | success(Val).
+get_key(Key) ->
+    get_key(?MODULE, Key).
+
+-spec get_key(Application::atom(), Key::atom()) -> undefined | success(Val).
+get_key(Application, Key) ->
+    application:get_key(Application, Key).
+
 -spec priv_dir() -> file:filename().
 priv_dir() ->
     code:priv_dir(?MODULE).
 
 -spec is_supervisor(Assembly::assembly()) -> boolean().
 is_supervisor(Assembly) ->
-    Name = erlmachine_assembly:name(Assembly),
-    Name:type() == 'supervisor'.
+    Type = erlmachine_assembly:type(Assembly),
+    Type == 'supervisor'.
 
 -spec is_worker(Assembly::assembly()) -> boolean().
 is_worker(Assembly) ->
-    Name = erlmachine_assembly:name(Assembly),
-    Name:type() == 'worker'.
+    Type = erlmachine_assembly:type(Assembly),
+    Type == 'worker'.
 
-%% The main purpouse of erlmachine project is to provide a set of well desikgned behaviours which are accompanied with visualization tools as well.
-%%  Erlmachine doesn't restrict your design with the one possible way but instead provide you ability to implement your own components accordingly to your vison.
-%% This ability is available under flexible mechanism of prototypes and overloading (models).
-
--spec boot(Schema::schema()) ->
+-spec startup(Assembly::assembly()) ->
                    success(pid()) | ingnore | failure(term()).
-boot(Schema) ->
-    V = erlmachine_schema:boot(Schema),
-    boot(Schema, V).
+startup(Assembly) ->
+    erlmachine_transmission:startup(Assembly).
 
--spec boot(Schema::assembly(), V::vertex()) ->
+-spec startup(Graph::graph(), V::vertex()) ->
                    success(pid()) | ingnore | failure(term()).
-boot(Schema, V) ->
-    erlmachine_transmission:boot(Schema, V).
+startup(Graph, V) ->
+    erlmachine_transmission:startup(Graph, V).
 
--spec process(Schema::schema(), Motion::term()) ->
-                     term().
-process(Schema, Motion) ->
-    V = erlmachine_schema:process(Schema),
-    process(Schema, V, Motion).
-
--spec process(Schema::schema(), V::vertex(), Motion::term()) ->
+-spec process(Graph::graph(), V::vertex(), Motion::term()) ->
                     term().
-process(Schema, V, Motion) ->
-    erlmachine_transmission:process(Schema, V, Motion).
+process(Graph, V, Motion) ->
+    erlmachine_transmission:process(Graph, V, Motion).
 
--spec execute(Schema::assembly(), Command::term()) ->
-                     term().
-execute(Schema, Command) ->
-    V = erlmachine_schema:execute(Schema),
-    execute(Schema, V, Command).
-
--spec execute(Schema::assembly(), V::vertex(), Command::term()) ->
+-spec execute(Graph::graph(), V::vertex(), Command::term()) ->
                       term().
-execute(Schema, V, Command) ->
-    erlmachine_transmission:execute(Schema, V, Command).
+execute(Graph, V, Command) ->
+    erlmachine_transmission:execute(Graph, V, Command).
 
--spec install(Schema::schema(), Ext::assembly()) ->
+-spec install(Graph::graph(), V::vertex(), Ext::assembly()) ->
                      success(pid()) | ingnore | failure(term()).
-install(Schema, Ext) ->
-    V = erlmachine_schema:boot(Schema),
-    install(Schema, V, Ext).
+install(Graph, V, Ext) ->
+    erlmachine_transmission:install(Graph, V, Ext).
 
--spec install(Schema::schema(), V::vertex(), Ext::assembly()) ->
-                     success(pid()) | ingnore | failure(term()).
-install(Schema, V, Ext) ->
-    erlmachine_transmission:install(Schema, V, Ext).
-
--spec uninstall(Schema::schema(), Id::term()) ->
+-spec uninstall(Graph::graph(), V::vertex(), Id::term()) ->
                        success().
-uninstall(Schema, Id) ->
-    V = erlmachine_schema:boot(Schema),
-    uninstall(Schema, V, Id).
+uninstall(Graph, V, Id) ->
+    erlmachine_transmission:uninstall(Graph, V, Id).
 
--spec uninstall(Schema::schema(), V::vertex(), Id::term()) ->
-                       success().
-uninstall(Schema, V, Id) ->
-    erlmachine_transmission:uninstall(Schema, V, Id).
-
--spec shutdown(Schema::schema()) ->
-                      success().
-shutdown(Schema) ->
-    V = erlmachine_schema:boot(Schema),
-    shutdown(Schema, V).
-
--spec shutdown(Schema::schema(), V::vertex()) ->
+-spec shutdown(Graph::graph(), V::vertex()) ->
                   success().
-shutdown(Schema, V) ->
+shutdown(Graph, V) ->
     Reason = normal,
-    shutdown(Schema, V, Reason).
+    shutdown(Graph, V, Reason).
 
--spec shutdown(Schema::schema(), V::vertex(), Reason::term()) ->
+-spec shutdown(Graph::graph(), V::vertex(), Reason::term()) ->
                       success().
-shutdown(Schema, V, Reason) ->
+shutdown(Graph, V, Reason) ->
     Timeout = 5000,
-    erlmachine_transmission:shutdown(Schema, V, Reason, Timeout).
+    erlmachine_transmission:shutdown(Graph, V, Reason, Timeout).
 
-%%%===================================================================
 %%%  Message construction API
-%%%===================================================================
 
 -spec motion(Header::header(), Body::body()) -> motion().
 motion(Header, Body) ->
@@ -275,9 +252,8 @@ correlation_id(Motion, Id) ->
 reply(Req, Res) ->
     Header = maps:merge(header(Req), header(Res)),
     header(Res, Header).
-%%%===================================================================
-%%% Reply API
-%%%===================================================================
+
+%%% Result API
 
 -spec failure() -> failure().
 failure() ->
@@ -315,20 +291,15 @@ is_success(Res) ->
 is_failure(Res) ->
     erlmachine_system:is_failure(Res).
 
--spec attribute(Module::atom(), Tag::atom()) -> {term(), term()} | false.
-attribute(Module, Tag) ->
-    Attributes = Module:module_info(attributes),
-    lists:keyfind(Tag, 1, Attributes).
+%%% Module API
 
--spec attribute(Module::atom(), Tag::atom(), Def::term()) -> {term(), term()}.
-attribute(Module, Tag, Def) ->
-    Res = attribute(Module, Tag),
-    case Res of
-        false ->
-            {Tag, Def};
-        {Tag, _} -> 
-            Res
-    end.
+-spec attributes(Module::atom()) -> [{atom(), term()}].
+attributes(Module) ->
+    Module:module_info(attributes).
+
+-spec behaviours(Module::atom()) -> [atom()].
+behaviours(Module) ->
+    [Name|| {behaviour, Name} <- attributes(Module)].
 
 -spec optional_callback(Mod::atom(), Fun::atom(), Args::list()) -> 
                                term().
@@ -345,13 +316,15 @@ optional_callback(Mod, Fun, Args, Def) ->
             Def 
     end.
 
+%%% Field accessors
+
 -spec serial_no(Assembly::assembly()) -> serial_no().
 serial_no(Assembly) ->
     erlmachine_assembly:serial_no(Assembly).
 
--spec schema(Assembly::assembly()) -> term().
-schema(Assembly) ->
-    erlmachine_assembly:schema(Assembly).
+-spec graph(Assembly::assembly()) -> graph().
+graph(Assembly) ->
+    erlmachine_assembly:graph(Assembly).
 
 -spec vertex(Assembly::assembly()) -> term().
 vertex(Assembly) ->
@@ -373,10 +346,7 @@ part_no(Assembly) ->
 description(Assembly) ->
     erlmachine_assembly:description(Assembly).
 
-%% NOTE: To produce a readable string representation of a SN/MN/PN/TN;
-%%
-%% base64url encoding was provided; 
-%% This format is safer and more applicable by web applications (in comparison with base64);
+%% NOTE: This format is safer and more applicable by web applications (in comparison to base64);
 
 -spec guid(Serial::term()) -> binary().
 guid(Serial) ->
@@ -398,10 +368,6 @@ base64url(N) when is_binary(N) ->
     Base64Url = [fun($+) -> <<"-">>; ($/) -> <<"_">>; (C) -> <<C>> end(Char)|| <<Char>> <= Base64],
     << <<X/binary>> || X <- Base64Url >>.
 
--spec timestamp() -> integer().
-timestamp() ->
-    erlang:monotonic_time(second) + erlang:time_offset(second).
-
 -spec tag(Assembly::assembly(), Tag::term()) -> assembly().
 tag(Assembly, Tag) ->
     Tags = erlmachine_assembly:tags(Assembly),
@@ -411,3 +377,7 @@ tag(Assembly, Tag) ->
 untag(Assembly, Tag) ->
     Tags = erlmachine_assembly:tags(Assembly),
     erlmachine_assembly:tags(Assembly, lists:delete(Tag, Tags)).
+
+-spec timestamp() -> integer().
+timestamp() ->
+    erlang:monotonic_time(second) + erlang:time_offset(second).

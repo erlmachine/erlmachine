@@ -1,0 +1,65 @@
+description: "Sample datasheet. Should be checked via ct and eunit test."
+
+# Extensions vocabulary guaranties the uniqueness of keys;
+extensions:
+  a:
+    type: supervisor
+    model:
+      module: erlmachine_sup_model_ct
+      options:
+        - key: value
+      vsn: 0.0.1
+    prototype:
+      module: erlmachine_sup_prototype_def
+      options:
+        - key: value
+      vsn: 1
+    description: Test assembly a (Boot)
+  b:
+    type: worker
+    model:
+      module: erlmachine_model_ct
+      options:
+        - key: value
+    prototype:
+      module: erlmachine_prototype_def
+      options:
+        - key: value
+    tags:
+        - test
+    description: Test assembly b (Process)
+  c:
+    type: worker
+    model:
+      module: erlmachine_model_ct
+      options:
+        - key: value
+    description: Test assembly c
+  d:
+    type: worker
+    model:
+      module: erlmachine_model_ct
+      options:
+        - key: value
+    description: Test assembly d
+  e:
+    type: worker # To setup via attribute? To specify just a type (worker, supervisor)
+    model:
+      module: erlmachine_model_ct
+      options:
+        - key: value
+    description: Test assembly e
+
+boot:
+# Description 0 (The list guaranties the right order and describes the first elementh as the boot entry)
+  - a: [b, c, d]
+  - d: e
+
+process:
+# Description 1
+  - b: [c, d]
+# Description 2
+  - c: e
+
+env:
+  key: value

@@ -2,10 +2,11 @@ PROJECT = erlmachine
 PROJECT_DESCRIPTION = The first flow-based Erlang OTP programming framework
 PROJECT_VERSION = 2.0.0
 
-DEPS = jsx yamerl jessy
+DEPS = syn jsx yamerl jessy
 
 TEST_DEPS = meck
 
+dep_syn = git https://github.com/ostinelli/syn.git 2.1.1
 dep_jsx = git https://github.com/talentdeficit/jsx.git main 3.0.0
 dep_yamerl = git https://github.com/yakaz/yamerl.git v0.8.0
 dep_jessy = git https://github.com/for-GET/jesse.git 1.5.6

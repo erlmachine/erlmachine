@@ -3,11 +3,14 @@
   {vsn,"2.0.0"},
   {modules,[]},
   {registered,[]},
-  {applications,[kernel, stdlib, jsx, yamerl, jessy]},
+  {applications,[kernel, stdlib, syn, jsx, yamerl, jessy]},
   {env,[]},
   {mod,{application_starter,[erlmachine_app,[]]}},
-  {start_phases,[{wait_for_tables, 1000}, {add_schema, ["assembly.json", "schema.json"]}]},
-
+  {start_phases,[
+                 {wait_for_tables, 1000},
+                 {add_schema, ["assembly.json", "schema.json"]}
+                ]
+  },
   {licenses, ["apache-2.0"]},
   {links, [{"Github", "https://github.com/Erlmachine/erlmachine"}]}
 ]}.

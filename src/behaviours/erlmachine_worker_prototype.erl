@@ -14,6 +14,9 @@
 %% NOTE: The responsibility of worker prototype is to catch the all errors outside erlmachine scope;
 
 %% API
+
+-export([is_worker_prototype/1]).
+
 -export([boot/1]).
 
 -export([process/2]).
@@ -42,9 +45,11 @@
 -callback prototype_terminate(SN::serial_no(), Reason::term(), Timeout::term()) ->
     success().
 
-%%%===================================================================
+-spec is_worker_prototype(Module::atom()) -> boolean().
+is_worker_prototype(Module) ->
+    lists:member(?MODULE, erlmachine:behaviours(Module)).
+
 %%%  Transmission API
-%%%===================================================================
 
 -spec boot(Assembly::assembly()) ->
                   success(pid()) | failure(term(), term()).
@@ -86,9 +91,7 @@ shutdown(Assembly, Reason, Timeout) ->
 
     Name:prototype_terminate(SN, Reason, Timeout).
 
-%%%===================================================================
 %%% Context API
-%%%===================================================================
 
 -spec init(Context::context()) ->
                   success(context()) | failure(term(), term(), context()).

@@ -2,10 +2,10 @@
 
 %% API.
 
--export([prototype/2]).
+-export([new/0, new/2, new/3]).
 
 -export([
-         name/1, name/2,
+         module/1, module/2,
          options/1, options/2,
          vsn/1, vsn/2
         ]).
@@ -13,38 +13,48 @@
 -include("erlmachine_system.hrl").
 
 -record(prototype, {
-                    name::atom(),
-                    options::term(),
+                    %% Module name
+                    module::module(),
+                    %% Service level options which are passed as is
+                    options::[term()],
+                    %% vsn/1 attribute of the module (MD5 checksum if not specified)
                     vsn::term()
                    }
        ).
 
--type prototype() :: #prototype{}.
+-type module() :: atom().
+
+-opaque prototype() :: #prototype{}.
 
 -export_type([prototype/0]).
 
--spec prototype() -> prototype().
-prototype() ->
+-spec new() -> prototype().
+new() ->
     #prototype{}.
 
--spec prototype(Name::atom(), Opt::list()) -> prototype().
-prototype(Name, Opt) ->
-    Prototype = prototype(),
-    options(name(Prototype, Name), Opt).
+-spec new(Module::module(), Opt::[term()]) -> prototype().
+new(Module, Opt) ->
+    Prototype = new(),
+    options(module(Prototype, Module), Opt).
 
--spec name(Prot::prototype()) -> atom().
-name(Prot) ->
-    Prot#prototype.name.
+-spec new(Module::module(), Opt::[term()], Vsn::[term()]) -> prototype().
+new(Module, Opt, Vsn) ->
+    Prototype = new(Module, Opt),
+    vsn(Prototype, Vsn).
 
--spec name(Prot::prototype(), Name::atom()) -> prototype().
-name(Prot, Name) ->
-    Prot#prototype{ name=Name }.
+-spec module(Prot::prototype()) -> module().
+module(Prot) ->
+    Prot#prototype.module.
 
--spec options(Prot::prototype()) -> list().
+-spec module(Prot::prototype(), Module::module()) -> prototype().
+module(Prot, Module) ->
+    Prot#prototype{ module=Module }.
+
+-spec options(Prot::prototype()) -> [term()].
 options(Prot) ->
     Prot#prototype.options.
 
--spec options(Prot::prototype(), Opt::list()) -> prototype().
+-spec options(Prot::prototype(), Opt::[term()]) -> prototype().
 options(Prot, Opt) ->
     Prot#prototype{ options=Opt }.
 

@@ -19,9 +19,7 @@ process(Context, Motion) ->
             erlmachine_transmission:pass(?MODULE, Context, Motion)
     end.
 
-%%%===================================================================
 %%%  transmission callbacks
-%%%===================================================================
 
 -spec mesh(Context::assembly(), Motion::term(), Ext::assembly(), Range::[assembly()]) ->
                     success(assembly()) | success(term(), assembly()) | failure(term(), term(), assembly()).

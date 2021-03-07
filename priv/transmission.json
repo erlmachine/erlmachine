@@ -1,0 +1,53 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "Transmission datasheet",
+    "description": "The document that summarizes characteristics of a transmission",
+    "definitions":{
+        "vertex":{
+            "type": "string",
+            "description": "The unique identity on a graph"
+        },
+        "edge":{
+            "type": "object",
+            "additionalProperties":{
+                "anyOf": [
+                    { "type": "array", "items": { "$ref": "#/definitions/vertex" } },
+                    { "$ref": "#/definitions/vertex" }
+                ]
+            },
+            "minProperties": 1,
+            "maxProperties": 1
+        }
+    },
+    "type": "object",
+    "properties":{
+        "description":{
+            "type": "string",
+            "description": "The brief manufacturer overview"
+        },
+        "extensions":{
+            "type": "object",
+            "additionalProperties":{
+                "$ref": "assembly.json#"
+            },
+            "description": "The vocabulary which specifies the setup of a transmission"
+        },
+        "boot": {
+            "type": "array",
+            "items":{
+                "$ref": "#/definitions/edge"
+            },
+            "minItems": 1,
+            "description": "The bootload graph (the first entry represents a bootloader)"
+        },
+        "process":{
+            "type": "array",
+            "items":{
+                "$ref": "#/definitions/edge"
+            },
+            "description": "The dataflow graph"
+        },
+        "required": [ "extensions", "boot" ],
+        "additionalProperties": false
+    }
+}

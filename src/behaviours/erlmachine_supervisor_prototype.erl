@@ -5,6 +5,7 @@
 %% 2. supervisor2;
 %% 3. mirrored_supervisor;
 
+%% NOTE: There is should exists the "mother" or bootloader extension which will load and initiate transmission;
 %% NOTE: Supervisor prototype concerns: health check, recovery management;
 %% NOTE: In comparison to worker prototype a supervisor prototype is state-less;
 
@@ -15,14 +16,14 @@
 %% TODO https://github.com/rabbitmq/rabbitmq-common/blob/master/src/supervisor2.erl
 
 %% API
--export([boot/2]).
 
--export([install/2, uninstall/2]).
+-export([is_supervisor_prototype/1]).
 
--export([shutdown/3]).
+-export([startup/3]).
+-export([install/3, uninstall/2]).
 
 %% Context API
--export([init/2, start_child/2, terminate_child/2, terminate/2]).
+-export([init/2, start_child/2, terminate_child/2]).
 
 -type context() :: term().
 
@@ -41,37 +42,30 @@
 -callback prototype_terminate_child(SN::serial_no(), ID::term(), Context::context()) ->
     success().
 
--callback prototype_terminate(SN::serial_no(), Reason::term(), Timeout::term(), Context::context()) ->
-    success().
+-spec is_supervisor_prototype(Module::atom()) -> boolean().
+is_supervisor_prototype(Module) ->
+    lists:member(?MODULE, erlmachine:behaviours(Module)).
 
-%%%===================================================================
 %%%  Transmission API
-%%%===================================================================
+
 %% NOTE: There is responsibility of decorated module to provide the right entry on graph;
--spec boot(Assembly::assembly(), Exts::[assembly()]) ->
+-spec startup(Assembly::assembly(), Exts::[assembly()], Env::map()) ->
                      success(pid()) | failure(term(), term()).
-boot(Assembly, Exts) ->
+startup(Assembly, Exts, Env) ->
     SN = erlmachine_assembly:serial_no(Assembly),
 
     Prot = erlmachine_assembly:prototype(Assembly),
     Name = erlmachine_prototype:name(Prot), Opt = erlmachine_prototype:options(Prot),
-    Specs = [spec(Assembly, Ext)|| Ext <- Exts],
+    Specs = [erlmachine_transmission:spec(Ext, Env)|| Ext <- Exts],
 
     Name:prototype_init(SN, Specs, _Context = Assembly, Opt).
 
--spec spec(Assembly::assembly(), Ext::assembly()) -> spec().
-spec(Assembly, Ext) ->
-    Schema = erlmachine_assembly:schema(Assembly),
-    Env = erlmachine_assembly:env(Assembly),
-    Rel = erlmachine_assembly:schema(erlmachine_assembly:env(Ext, Env), Schema),
-    erlmachine_transmission:spec(Rel).
-
--spec install(Assembly::assembly(), Ext::assembly()) ->
+-spec install(Assembly::assembly(), Ext::assembly(), Env::map()) ->
                      success(pid()) | failure(term(), term()).
-install(Assembly, Ext) ->
+install(Assembly, Ext, Env) ->
     SN = erlmachine_assembly:serial_no(Assembly),
 
-    Spec = spec(Assembly, Ext),
+    Spec = erlmachine_transmission:spec(Ext, Env),
 
     Prot = erlmachine_assembly:prototype(Assembly),
     Name = erlmachine_prototype:name(Prot),
@@ -88,19 +82,7 @@ uninstall(Assembly, ID) ->
 
     Name:prototype_terminate_child(SN, ID, _Context = Assembly).
 
--spec shutdown(Assembly::assembly(), Reason::term(), Timeout::term()) ->
-                       success().
-shutdown(Assembly, Reason, Timeout) ->
-    SN = erlmachine_assembly:serial_no(Assembly),
-
-    Prot = erlmachine_assembly:prototype(Assembly),
-    Name = erlmachine_prototype:name(Prot),
-
-    Name:prototype_terminate(SN, Reason, Timeout, _Context = Assembly).
-
-%%%===================================================================
 %%% Prototype API
-%%%===================================================================
 
 -spec init(Context::context(), Specs::[map()]) ->
                   success() | failure(term(), term()).
@@ -116,8 +98,3 @@ start_child(Context, Spec) ->
                              success().
 terminate_child(Context, ID) ->
     erlmachine_supervisor_model:uninstall(Context, ID).
-
--spec terminate(Context::context(), Reason::term()) ->
-                       success().
-terminate(Context, Reason) ->
-    erlmachine_supervisor_model:shutdown(Context, Reason).

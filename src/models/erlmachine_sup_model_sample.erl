@@ -5,9 +5,7 @@
 -vsn(['sample']).
 
 -export([boot/4]).
--export([install/2]).
--export([uninstall/2]).
--export([shutdown/2]).
+-export([install/2, uninstall/2]).
 
 -include("erlmachine_user.hrl").
 -include("erlmachine_factory.hrl").
@@ -22,7 +20,7 @@ boot(UID, Specs, Opt, Env) ->
     io:format("~n~p:boot(~p, ~p, ~p, ~p)~n", [?MODULE, UID, Specs, Opt, Env]),
     erlmachine:success().
 
--spec install(UID::uid(), Spec::spec()) -> 
+-spec install(UID::uid(), Spec::spec()) ->
     success() | failure(term(), term()).
 install(UID, Spec) ->
     io:format("~n~p:install(~p, ~p)~n", [?MODULE, UID, Spec]),
@@ -32,11 +30,5 @@ install(UID, Spec) ->
     success() | failure(term(), term()).
 uninstall(UID, ID) ->
     io:format("~n~p:uninstall(~p, ~p)~n", [?MODULE, UID, ID]),
-    erlmachine:success().
-
--spec shutdown(UID::uid(), Reason::term()) ->
-    success() | failure(term(), term()).
-shutdown(UID, Reason) ->
-    io:format("~n~p:shutdown(~p, ~p)~n", [?MODULE, UID, Reason]),
     erlmachine:success().
 
