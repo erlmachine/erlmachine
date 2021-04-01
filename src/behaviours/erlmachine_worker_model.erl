@@ -7,7 +7,7 @@
 
 -export([is_worker_model/1]).
 
--export([boot/1]).
+-export([startup/1]).
 
 -export([process/2]).
 -export([execute/2]).
@@ -24,13 +24,13 @@
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
 
--callback boot(UID::uid(), State::state(), Opt::[term()], Env::map()) ->
+-callback startup(UID::uid(), State::state(), Opt::[term()], Env::map()) ->
     success(state()) | failure(term(), term(), state()).
 
 -callback process(UID::uid(), Motion::term(), State::state()) ->
     success(state()) | success(term(), state()) | failure(term(), term(), state()).
 
--callback process(UID::uid(), Motion::term(), Socket::term(), Range::[term()], State::state()) ->
+-callback process(UID::uid(), Motion::term(), Port::term(), Scheduled::[term()], State::state()) ->
     success(state()) | success(term(), state()) | failure(term(), term(), state()).
 
 -callback execute(UID::uid(), Command::term(), State::state()) ->
@@ -51,9 +51,9 @@ is_worker_model(Module) ->
 
 %%%  Transmission API
 
--spec boot(Context::assembly()) ->
+-spec startup(Context::assembly()) ->
                    success(assembly()) | failure(term(), term(), assembly()).
-boot(Context) ->
+startup(Context) ->
     UID = erlmachine_assembly:uid(Context),
 
     Model = erlmachine_assembly:model(Context), Name = erlmachine_model:name(Model),
@@ -61,7 +61,7 @@ boot(Context) ->
     Body = erlmachine_assembly:body(Context),
     Env = erlmachine_assembly:env(Context),
 
-    Res = Name:boot(UID, Body, Opt, Env),
+    Res = Name:startup(UID, Body, Opt, Env),
     context(Res, Context).
 
 -spec process(Context::assembly(), Motion::term()) ->

@@ -3,13 +3,13 @@
 %% This module is responsible to:
 %% a) Read technical manufacturer's specifications (datasheets);
 %% b) Validate datasheet content via https://json-schema.org;
-%% c) Build extension accordingly to the assembly datasheet;
-%% d) Build cluster accordingly to the schema datasheet
+%% c) Create assembly accordingly to the extension datasheet;
+%% d) Create graph accordingly to the transmission datasheet
 
-%% NOTE: There is possibility to load datasheet from other sources (for example DB);
+%% NOTE: There is possibility to load datasheet from other sources (via DB, network, etc.);
 
 %% API.
--export([transmission/1, assembly/1]).
+-export([extension/1, transmission/1]).
 
 -export([file/2]).
 -export([decode/3]).
@@ -29,15 +29,15 @@
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
 
+-spec extension(Path::path()) ->
+                      success(datasheet()) | failure(term(), term()).
+extension(Path) ->
+    file(Path, "extension.json").
+
 -spec transmission(Path::path()) ->
-                    success(datasheet()) | failure(term(), term()).
+                          success(datasheet()) | failure(term(), term()).
 transmission(Path) ->
     file(Path, "transmission.json").
-
--spec assembly(Path::path()) ->
-                      success(datasheet()) | failure(term(), term()).
-assembly(Path) ->
-    file(Path, "assembly.json").
 
 -spec file(Path::path(), Schema::[term()]) ->
                   success(datasheet()) | failure(term(), term()).

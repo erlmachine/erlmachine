@@ -1,0 +1,24 @@
+# This sample specification should be changed in conjunction with erlmachine_factory_tests module
+serial_no: SN-0
+type: worker
+body:
+  key: value
+model_no: MN-0
+# Port should be passed into rotate (worker) call and to be reflected on workers schema; 
+port: "#"
+model:
+  module: erlmachine_model_ct
+  options:
+    - key: value
+  vsn: 0.0.1
+prototype:
+  module: erlmachine_prototype_def
+  options:
+    - key: value
+  vsn: 1
+uid: 0
+tags:
+  - test
+vertex: vertex-test
+part_no: PN-0
+description: Worker datasheet sample

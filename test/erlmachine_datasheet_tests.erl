@@ -17,9 +17,9 @@ erlmachine_datasheet_test_() ->
      end,
      [
       {
-        "Inspect sample.yaml",
+       "Inspect datasheet: datasheets/extensions/sample.yaml",
        fun() ->
-               Path = filename:join(erlmachine:priv_dir(), "datasheets/sample.yaml"),
+               Path = filename:join(erlmachine:priv_dir(), "datasheets/extensions/sample.yaml"),
 
                {ok, Datasheet} = erlmachine_datasheet:assembly(Path), true = is_map(Datasheet),
                ?debugFmt("~n~p~n", [Datasheet])
@@ -27,18 +27,18 @@ erlmachine_datasheet_test_() ->
        end
       },
       {
-        "Inspect sup_sample.yaml",
+       "Inspect datasheet: datasheets/extensions/sup_sample.yaml",
         fun() ->
-                Path = filename:join(erlmachine:priv_dir(), "datasheets/sup_sample.yaml"),
+                Path = filename:join(erlmachine:priv_dir(), "datasheets/extensions/sup_sample.yaml"),
 
                 {ok, Datasheet} = erlmachine_datasheet:assembly(Path), true = is_map(Datasheet),
                 ?debugFmt("~n~p~n", [Datasheet])
         end
       },
       {
-       "Inspect transmission_sample.yaml",
+       "Inspect datasheet: datasheets/sample.yaml",
        fun() ->
-               Path = filename:join(erlmachine:priv_dir(), "datasheets/transmission_sample.yaml"),
+               Path = filename:join(erlmachine:priv_dir(), "datasheets/sample.yaml"),
 
                {ok, Datasheet} = erlmachine_datasheet:transmission(Path), true = is_map(Datasheet),
                ?debugFmt("~n~p~n", [Datasheet])

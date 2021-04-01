@@ -1,13 +1,13 @@
 -module(erlmachine_supervisor_model).
-%% NOTE: The main purpouse of the supervisor model is the ability to make impact on runtime layer without affecting monitoring layer of service;
+%% NOTE: The main purpouse of the supervisor model is the ability to make impact on runtime layer without affecting of monitoring layer of service;
 
-%% NOTE: Supervisor model concerns: runtime credentials;
+%% NOTE: Supervisor model concerns: runtime credentials, logging;
 
-%% NOTE: UID and GID are credentials of the initiator of supervisor process:
+%% NOTE: UID is used to support runtime credentials of the initiator of supervisor process:
 %%  - https://en.wikipedia.org/wiki/Group_identifier;
 %%  - https://en.wikipedia.org/wiki/User_identifier;
 
-%% NOTE: Permissions are a set of characters which represents the read, write, and execute access;
+%% NOTE: Permissions are set of characters which represents the read, write, and execute access;
 %% TODO: Permissions should be checked automatically before invocation;
 
 %% TODO: https://www.kernel.org/doc/html/latest/security/credentials.html;
@@ -23,7 +23,7 @@
 
 -export([is_supervisor_model/1]).
 
--export([boot/2]).
+-export([startup/2]).
 -export([install/2, uninstall/2]).
 
 -include("erlmachine_user.hrl").
@@ -33,13 +33,13 @@
 -include("erlmachine_transmission.hrl").
 
 
--callback boot(UID::uid(), Specs::[spec()], Opt::[term()], Env::map()) -> 
+-callback startup(UID::uid(), Vertices::[vertex()], Opt::[term()], Env::map()) ->
     success() | failure(term(), term()).
 
--callback install(UID::uid(), Spec::spec()) ->
+-callback install(UID::uid(), Vertex::vertex()) ->
     success() | failure(term(), term()).
 
--callback uninstall(UID::uid(), ID::term()) ->
+-callback uninstall(UID::uid(), Vertex::vertex()) ->
     success() | failure(term(), term()).
 
 -optional_callbacks([install/2, uninstall/2]).
@@ -50,32 +50,33 @@ is_supervisor_model(Module) ->
 
 %%%  Transmission API
 
--spec boot(Context::assembly(), Specs::[spec()]) ->
+-spec startup(Context::assembly(), Vs::[vertex()]) ->
                   success() | failure(term(), term()).
-boot(Context, Specs) ->
+startup(Context, Vs) ->
     Model = erlmachine_assembly:model(Context), Name = erlmachine_model:name(Model),
     UID = erlmachine_assembly:uid(Context),
 
-    Opt = erlmachine_model:options(Model), Env = erlmachine_assembly:env(Context),
+    Opt = erlmachine_model:options(Model),
+    Env = erlmachine_assembly:env(Context),
 
-    Name:boot(UID, Specs, Opt, Env).
+    Name:startup(UID, Vs, Opt, Env).
 
--spec install(Context::assembly(), Spec::spec()) ->
+-spec install(Context::assembly(), Vertex::vertex()) ->
                      success() | failure(term(), term()).
-install(Context, Spec) ->
+install(Context, Vertex) ->
     Model = erlmachine_assembly:model(Context), Name = erlmachine_model:name(Model),
     UID = erlmachine_assembly:uid(Context),
 
-    Mod = Name, Fun = install, Args = [UID, Spec],
+    Mod = Name, Fun = install, Args = [UID, Vertex],
     Def = erlmachine:success(),
     erlmachine:optional_callback(Mod, Fun, Args, Def).
 
--spec uninstall(Context::assembly(), ID::term()) ->
+-spec uninstall(Context::assembly(), Vertex::vertex()) ->
                        success() | failure(term(), term()).
-uninstall(Context, ID) ->
+uninstall(Context, Vertex) ->
     Model = erlmachine_assembly:model(Context), Name = erlmachine_model:name(Model),
     UID = erlmachine_assembly:uid(Context),
 
-    Mod = Name, Fun = uninstall, Args = [UID, ID],
+    Mod = Name, Fun = uninstall, Args = [UID, Vertex],
     Def = erlmachine:success(),
     erlmachine:optional_callback(Mod, Fun, Args, Def).

@@ -4,7 +4,7 @@
 
 %% API.
 
--export([new/0, new/1, new/5]).
+-export([new/0, new/5]).
 
 -export([
          id/1, id/2,
@@ -12,7 +12,7 @@
          type/1, type/2,
          body/1, body/2,
          model_no/1, model_no/2,
-         socket/1, socket/2,
+         port/1, port/2,
          graph/1, graph/2,
          model/1, model/2,
          prototype/1, prototype/2,
@@ -49,8 +49,8 @@
                     body::term(),
                     %% Product configurator input to generate a master production schedule
                     model_no::model_no(),
-                    %% Interface (shape) of an extension
-                    socket::term(),
+                    %% Conenction port of an extension (accordingly to J.P. Morrison)
+                    port::term(),
                     %% Build topology which is inherited through the all extensions
                     graph::graph(),
                     %% Domain level specification
@@ -67,9 +67,9 @@
                     vertex::vertex(),
                     %% Deployment identity to track the quality of a component through release period
                     part_no::part_no(),
-                    %% The environment context which inherites from the root
+                    %% The environment context which is passed on transmission start
                     env::map(),
-                    %% Short overview of the extension role
+                    %% Short textual overview or metadata for auto generated extension
                     description::binary()
                    }
         ).
@@ -93,11 +93,16 @@
 new() ->
     #assembly{}.
 
--spec new(ModelName, ModelOpt, ProtName, ProtOpt, Tags) ->
-                      assembly().
-new(Module, Socket, Body, Tags, Desc) ->
-    Assembly = new(Socket),
-    Rel = module(body(Assembly, Body), Module), description(tags(Rel, Tags), Desc).
+-spec new(ModelName::atom(), ModelOpt::[term()], ProtName::atom(), ProtOpt::[term()], Tags::[term()]) -> 
+                 assembly().
+new(Model, Prototype, Tags) ->
+    Assembly = new(),
+
+    Model = erlmachine_model:new(ModelName, ModelOpt),
+    Prototype = erlmachine_prototype:new(ProtName, ProtOpt),
+
+    Rel = prototype(model(Assembly, Model), Prototype),
+    tags(Rel, Tags).
 
 %%% Datasheet processing
 
@@ -127,8 +132,8 @@ next(Assembly, {<<"model_no">>, V, I}) ->
     Rel = model_no(Assembly, V),
     next(Rel, erlmachine_datasheet:next(I));
 
-next(Assembly, {<<"socket">>, V, I}) ->
-    Rel = socket(Assembly, V),
+next(Assembly, {<<"port">>, V, I}) ->
+    Rel = port(Assembly, V),
     next(Rel, erlmachine_datasheet:next(I));
 
 next(Assembly, {<<"model">>, V, I}) ->
@@ -171,10 +176,6 @@ next(Assembly, {<<"vertex">>, V, I}) ->
 
 next(Assembly, {<<"part_no">>, V, I}) ->
     Rel = part_no(Assembly, V),
-    next(Rel, erlmachine_datasheet:next(I));
-
-next(Assembly, {<<"env">>, V, I}) ->
-    Rel = env(Assembly, V),
     next(Rel, erlmachine_datasheet:next(I));
 
 next(Assembly, {<<"description">>, V, I}) ->
@@ -226,13 +227,13 @@ model_no(Assembly) ->
 model_no(Assembly, MN) ->
     Assembly#assembly{ model_no = MN }.
 
--spec socket(Assembly::assembly()) -> term().
-socket(Assembly) -> 
-    Assembly#assembly.socket.
+-spec port(Assembly::assembly()) -> term().
+port(Assembly) -> 
+    Assembly#assembly.port.
 
--spec socket(Assembly::assembly(), Socket::term()) -> assembly().
-socket(Assembly, Socket) ->
-    Assembly#assembly{ socket = Socket }.
+-spec port(Assembly::assembly(), Port::term()) -> assembly().
+port(Assembly, Port) ->
+    Assembly#assembly{ port = Port }.
 
 -spec graph(Assembly::assembly()) -> graph().
 graph(Assembly) ->

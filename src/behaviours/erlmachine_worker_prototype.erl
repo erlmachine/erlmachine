@@ -1,23 +1,25 @@
 -module(erlmachine_worker_prototype).
-%% NOTE: The main purpouse of the worker prototype is the ability to make impact on transport layer without affecting business layer of service;
-%% NOTE: There are few examples:
-%% 1. direct function call;
-%% 2. gen_server (via local, global, to use process registry, etc.);
-%% 3. gen_server2;
-%% 4. gen_batch_server;
-%% 5. via message broker RabbitMQ, Apache Kafka, etc);
-%% 6. via http server (within Kubernetes cluster or in the cloud like AWS, etc.);
+%% NOTE: The main purpouse of worker prototype is the ability to change transport layer (in/out API), environment layer (allocated process, dicrect function call, remote server API, etc.) without affecting business layer of service
 
-%% NOTE: Worker prototype concerns: overloading, error handling, capacity management, etc.;
-%% NOTE: In comparision to erlmachine_supervisor_prototype a worker prototype is state-full;
-%% NOTE: The responsibility of worker prototype is to terminate running process after error status has returned;
-%% NOTE: The responsibility of worker prototype is to catch the all errors outside erlmachine scope;
+%% NOTE: There are few examples:
+
+%% 1. direct function call
+%% 2. gen_server (via local, global, to use process registry, etc.)
+%% 3. gen_server2
+%% 4. gen_batch_server
+%% 5. via message broker RabbitMQ, Apache Kafka, etc)
+%% 6. via http server (within Kubernetes cluster or in the cloud like AWS, etc.)
+
+%% NOTE: Worker prototype concerns: overloading, error handling, capacity management, etc.
+%% NOTE: In comparision to erlmachine_supervisor_prototype a worker prototype is state-full
+%% NOTE: The responsibility of worker prototype is to terminate running process after error status has returned
+%% NOTE: The responsibility of worker prototype is to catch the all errors outside erlmachine scope
 
 %% API
 
 -export([is_worker_prototype/1]).
 
--export([boot/1]).
+-export([startup/1]).
 
 -export([process/2]).
 -export([execute/2]).
@@ -51,9 +53,9 @@ is_worker_prototype(Module) ->
 
 %%%  Transmission API
 
--spec boot(Assembly::assembly()) ->
+-spec startup(Assembly::assembly()) ->
                   success(pid()) | failure(term(), term()).
-boot(Assembly) ->
+startup(Assembly) ->
     SN = erlmachine_assembly:serial_no(Assembly),
 
     Prot = erlmachine_assembly:prototype(Assembly),

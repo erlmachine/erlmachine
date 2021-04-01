@@ -2,6 +2,7 @@
     "$schema": "http://json-schema.org/draft-04/schema#",
     "title": "Assembly datasheet",
     "description": "The document that summarizes characteristics of an assembly",
+
     "definitions":{
         "module":{
             "type": "string",
@@ -11,6 +12,7 @@
             "description": "Module version attribute (MD5 checksum if not specified)"
         }
     },
+
     "type": "object",
     "properties":{
         "serial_no":{
@@ -23,13 +25,13 @@
         },
         "body":{
             "type": "object",
-            "description": "Data structure that stores the state of an extension"
+            "description": "Data structure that keeps the state of an assembly"
         },
         "model_no":{
-            "description": "Product configurator input to generate a master production schedule"
+            "description": "Product configurator input to generate a master-production schedule"
         },
-        "socket":{
-            "description": "Interface (shape) of an extension"
+        "port":{
+            "description": "Conenction port of an extension (accordingly to J.P. Morrison)"
         },
         "model":{
             "type": "object",
@@ -69,7 +71,7 @@
         },
         "uid":{
             "type": "integer",
-            "description": "The identity of Erlmachine operator"
+            "description": "The unique identity of Erlmachine operator"
         },
         "tags":{
             "type": "array",
@@ -80,11 +82,11 @@
         },
         "part_no":{
             "type": "string",
-            "description": "Deployment identity to track the quality of a component through a release period"
+            "description": "Deployment identity to track the quality of an assembly through a release period"
         },
         "description":{
             "type": "string",
-            "description": "Short overview of the extension role"
+            "description": "Short textual overview or metadata for auto generated assembly"
         }
     },
     "required": [ "type", "model" ]

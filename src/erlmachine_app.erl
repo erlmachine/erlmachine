@@ -12,18 +12,17 @@
 
 start(_Type, _Args) ->
     Nodes = [node()],
-    mnesia:create_schema(Nodes), ok = mnesia:start(),
+    erlmachine_database:create_schema(Nodes), ok = erlmachine_database:start(),
 
-    Schemas = [erlmachine_factory, erlmachine_assembly, erlmachine_schema],
-
-    [erlmachine_database:create_table(Schema) || Schema <- Schemas],
+    [erlmachine_database:create_table(Tab) || Tab <- tables()],
     erlmachine_sup:start_link().
 
 stop(_State) ->
-    ok = mnesia:stop().
+    ok = erlmachine_database:stop().
 
 start_phase(wait_for_tables, _Type, Timeout) when is_integer(Timeout) ->
-    Tables = [erlmachine_catalogue, erlmachine_factory, erlmachine_assembly, erlmachine_schema],
+    Modules = erlmachine:get_key(modules),
+    Tables = [M || M <- Modules, erlmachine_database:is_database(M)],
 
     ok = erlmachine_database:wait_for_tables([Factory], Timeout);
 
@@ -37,6 +36,11 @@ start_phase(_, _Type, _PhaseArgs) ->
 
 -spec add_schema(File::list()) -> success().
 add_schema(File) ->
-    Priv = erlmachine:priv_dir(),
-    Path = filename:join(Priv, File), [Schema] = jsx:consult(Path, [return_maps]),
+    Priv = erlmachine:priv_dir(), Path = filename:join(Priv, File),
+    [Schema] = jsx:consult(Path, [return_maps]),
     ok = jesse:add_schema(File, Schema).
+
+-spec tables() -> [atom()].
+tables() ->
+    Modules = erlmachine:get_key(modules),
+    [Module || Module <- Modules, erlmachine_database:is_database(Module)].

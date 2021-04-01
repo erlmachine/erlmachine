@@ -20,7 +20,7 @@
 name() ->
     ?MODULE.
 
--spec id(SN::serial_no()) -> 
+-spec id(SN::serial_no()) ->
                          atom().
 id(SN) ->
     erlang:binary_to_atom(SN, latin1).
@@ -32,7 +32,7 @@ id(SN) ->
 -spec prototype_init(SN::serial_no(), Specs::[map()], Context::term(), Opt::[term()]) ->
                             success(pid()) | failure(term(), term()).
 prototype_init(SN, Specs, Context, Opt) ->
-    ok = erlmachine_supervisor_prototype:init(Context, Specs),
+    ok = erlmachine_supervisor_prototype:init(Context),
 
     Com = #init{ specs = Specs, flags = flags(Opt) },
     supervisor:start_link({local, id(SN)}, ?MODULE, Com).

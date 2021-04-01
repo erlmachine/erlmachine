@@ -2,11 +2,14 @@
 
 -export([is_database/1]).
 
+-export([create_schema/1]).
+
 -export([create_table/1]).
 -export([update_counter/1, update_counter/2, update_counter/3]).
 
 -export([wait_for_tables/2]).
 
+-export([start/0, stop/0]).
 -export([info/0]).
 
 -include("erlmachine_system.hrl").
@@ -34,6 +37,10 @@
 -spec is_database(Module::atom()) -> boolean().
 is_database(Module) ->
     lists:member(?MODULE, erlmachine:behaviours(Module)).
+
+-spec create_schema(Nodes::[node()]) -> success() | failure(term()).
+create_schema(Nodes) ->
+    mnesia:create_schema(Nodes).
 
 %%% Tables
 
@@ -63,7 +70,15 @@ update_counter(Tab, Key, Val) when is_integer(Val) ->
 wait_for_tables(Tables, Timeout) ->
     ok = mnesia:wait_for_tables(Tables, Timeout).
 
-%%% Debug
+%%% Database
+
+-spec start() -> success().
+start() ->
+    ok = mnesia:start().
+
+-spec stop() -> success().
+stop() ->
+    ok = mnesia:stop().
 
 -spec info() -> success().
 info() ->

@@ -8,7 +8,7 @@
   {mod,{application_starter,[erlmachine_app,[]]}},
   {start_phases,[
                  {wait_for_tables, 1000},
-                 {add_schema, ["assembly.json", "schema.json"]}
+                 {add_schema, ["assembly.json", "transmission.json"]}
                 ]
   },
   {licenses, ["apache-2.0"]},

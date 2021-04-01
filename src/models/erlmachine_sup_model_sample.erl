@@ -13,11 +13,11 @@
 -include("erlmachine_system.hrl").
 -include("erlmachine_transmission.hrl").
 
--spec boot(UID::uid(), Specs::[spec()], Opt::list(), Env::list()) -> 
+-spec startup(UID::uid(), Vs::[vertex()], Opt::[term()], Env::map()) ->
     success() | failure(term(), term()).
-boot(UID, Specs, Opt, Env) ->
+startup(UID, Vs, Opt, Env) ->
 %% TODO: To provide test cases parametrization through Env;
-    io:format("~n~p:boot(~p, ~p, ~p, ~p)~n", [?MODULE, UID, Specs, Opt, Env]),
+    io:format("~n~p:startup(~p, ~p, ~p, ~p)~n", [?MODULE, UID, Vs, Opt, Env]),
     erlmachine:success().
 
 -spec install(UID::uid(), Spec::spec()) ->

@@ -3,7 +3,6 @@ type: supervisor
 body:
   key: value
 model_no: MN-0
-socket:
 model:
   module: erlmachine_sup_model_ct
   options:

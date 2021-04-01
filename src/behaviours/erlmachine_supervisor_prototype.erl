@@ -1,17 +1,19 @@
 -module(erlmachine_supervisor_prototype).
-%% NOTE: The main puprouse of the supervisor is the ability to change monitor layer without affecting business layer of service;
-%% NOTE: Potential cases:
-%% 1. erlang:monitor/2;
-%% 2. supervisor2;
-%% 3. mirrored_supervisor;
+%% NOTE: The main puprouse of supervisor prototype is the ability to change monitoring layer without affecting credentials layer of service
 
-%% NOTE: There is should exists the "mother" or bootloader extension which will load and initiate transmission;
-%% NOTE: Supervisor prototype concerns: health check, recovery management;
-%% NOTE: In comparison to worker prototype a supervisor prototype is state-less;
+%% NOTE: There are few examples:
+
+%% 1. erlang:monitor/2
+%% 2. supervisor2
+%% 3. mirrored_supervisor
+
+%% NOTE: There is should exists the "mother" or bootloader extension which will load and initiate transmission
+%% NOTE: Supervisor prototype concerns: health check, recovery management
+%% NOTE: In comparison to worker prototype a supervisor prototype is state-less
 
 %% TODO:
-%% a) To simplify context for network transmission;
-%% b) To gather statistics into graph;
+%% a) To simplify context for network transmission
+%% b) To gather statistics into graph
 
 %% TODO https://github.com/rabbitmq/rabbitmq-common/blob/master/src/supervisor2.erl
 
@@ -19,7 +21,7 @@
 
 -export([is_supervisor_prototype/1]).
 
--export([startup/3]).
+-export([startup/2]).
 -export([install/3, uninstall/2]).
 
 %% Context API
@@ -49,16 +51,16 @@ is_supervisor_prototype(Module) ->
 %%%  Transmission API
 
 %% NOTE: There is responsibility of decorated module to provide the right entry on graph;
--spec startup(Assembly::assembly(), Exts::[assembly()], Env::map()) ->
+-spec startup(Assembly::assembly(), Exts::[assembly()]) ->
                      success(pid()) | failure(term(), term()).
-startup(Assembly, Exts, Env) ->
+startup(Assembly, Exts) ->
     SN = erlmachine_assembly:serial_no(Assembly),
 
     Prot = erlmachine_assembly:prototype(Assembly),
     Name = erlmachine_prototype:name(Prot), Opt = erlmachine_prototype:options(Prot),
-    Specs = [erlmachine_transmission:spec(Ext, Env)|| Ext <- Exts],
+    Specs = [erlmachine_transmission:spec(Ext)|| Ext <- Exts],
 
-    Name:prototype_init(SN, Specs, _Context = Assembly, Opt).
+    Name:prototype_init(SN, Specs, _Context = [Assembly, Exts], Opt).
 
 -spec install(Assembly::assembly(), Ext::assembly(), Env::map()) ->
                      success(pid()) | failure(term(), term()).
@@ -84,10 +86,13 @@ uninstall(Assembly, ID) ->
 
 %%% Prototype API
 
--spec init(Context::context(), Specs::[map()]) ->
+-spec init(Context::context()) ->
                   success() | failure(term(), term()).
-init(Context, Specs) ->
-    erlmachine_supervisor_model:boot(Context, Specs).
+init(Context) ->
+    [Assembly, Exts] = Context,
+    Vs = [erlmachine_assembly:vertex(Ext)|| Ext <- Exts],
+
+    erlmachine_supervisor_model:startup(Context, Vs).
 
 -spec start_child(Context::context(), Spec::[map()]) ->
                          success() | failure(term(), term()).
