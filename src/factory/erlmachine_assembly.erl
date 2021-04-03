@@ -1,7 +1,5 @@
 -module(erlmachine_assembly).
 
--behaviour(erlmachine_db).
-
 %% API.
 
 -export([new/0, new/5]).
@@ -29,6 +27,7 @@
 
 -include("erlmachine_user.hrl").
 -include("erlmachine_factory.hrl").
+-include("erlmachine_graph.hrl").
 -include("erlmachine_system.hrl").
 
 %% NOTE: Here is implemented incapsulation across independent parts and the whole transmission too;
@@ -76,14 +75,12 @@
 
 -type type() :: 'worker' | 'supervisor'.
 
--type graph() :: erlmachine_graph:graph().
-
 -type model() :: erlmachine_model:model().
 -type prototype() :: erlmachine_prototype:prototype().
 
 -type datasheet() :: erlmachine_datasheet:datasheet().
 
--type opaque() :: #assembly{}.
+-type assembly() :: #assembly{}.
 
 -export_type([assembly/0]).
 
@@ -95,7 +92,7 @@ new() ->
 
 -spec new(ModelName::atom(), ModelOpt::[term()], ProtName::atom(), ProtOpt::[term()], Tags::[term()]) -> 
                  assembly().
-new(Model, Prototype, Tags) ->
+new(ModelName, ModelOpt, ProtName, ProtOpt, Tags) ->
     Assembly = new(),
 
     Model = erlmachine_model:new(ModelName, ModelOpt),
@@ -139,27 +136,14 @@ next(Assembly, {<<"port">>, V, I}) ->
 next(Assembly, {<<"model">>, V, I}) ->
     {ok, Name} = erlmachine_datasheet:find(<<"module">>, V), Module = binary_to_existing_atom(Name, utf8),
     {ok, Opt} = erlmachine_datasheet:find(<<"options">>, V),
-    Model =
-        case erlmachine_datasheet:find(<<"vsn">>, V) of
-            {ok, Vsn} ->
-                erlmachine_model:new(Module, Opt, Vsn);
-            _ ->
-                erlmachine_model:new(Module, Opt)
-        end,
-    Rel = model(Assembly, Model),
+    Model = erlmachine_model:new(Module, Opt), Rel = model(Assembly, Model),
+
     next(Rel, erlmachine_datasheet:next(I));
 
 next(Assembly, {<<"prototype">>, V, I}) ->
     {ok, Name} = erlmachine_datasheet:find(<<"module">>, V), Module = binary_to_existing_atom(Name, utf8),
     {ok, Opt} = erlmachine_datasheet:find(<<"options">>, V),
-    Prot =
-        case erlmachine_datasheet:find(<<"vsn">>, V) of
-            {ok, Vsn} ->
-                erlmachine_prototype:new(Module, Opt, Vsn);
-            _ ->
-                erlmachine_prototype:new(Module, Opt)
-        end,
-    Rel = prototype(Assembly, Prot),
+    Prot = erlmachine_prototype:new(Module, Opt), Rel = prototype(Assembly, Prot),
     next(Rel, erlmachine_datasheet:next(I));
 
 next(Assembly, {<<"uid">>, V, I}) ->

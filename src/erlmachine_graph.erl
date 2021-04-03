@@ -8,7 +8,7 @@
 %% 4. System report which covers extension state within a separate widjet;
 %% 5. System report which covers node state within a separate widjet (erlang:memory/0)
 
--export([new/0, new/1]).
+-export([new/0]).
 
 -export([add_vertex/3, del_vertex/2]).
 -export([add_edge/4]).
@@ -24,10 +24,10 @@
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
 
--opaque graph() :: term().
+-type graph() :: term().
 
--opaque vertex() :: term().
--opaque edge() :: term().
+-type vertex() :: term().
+-type edge() :: term().
 
 -export_type([graph/0, vertex/0, edge/0]).
 
@@ -40,27 +40,16 @@
 new() ->
     digraph:new().
 
-%% NOTE: Call new/1 (or somthing) should be peformed before erlmachine_transmission:startup/2;
-%% NOTE: This call should return the new assembly which contains filled graph field (and the all childs);
--spec new(Assembly::assembly()) ->
-                    assembly().
-new(Assembly) ->
-    Top = erlmachine_assembly:serial_no(Assembly), 
-    %% TODO Graph should be already passed from Assembly;
-    %% Graph = erlmachine_graph:new(),
-    ok = add(Schema, [Rel]),
-    Rel.
-
 %% Assembly should be made by the same way (before erlmachine_graph:new/1 call);
 %% In the case of datasheet - recursevly
-add(_Schema, []) ->
-    ok;
-add(Schema, [H|T]) ->
-
-    add_vertex(Schema, H),
-    Exts = erlmachine_assembly:extensions(H),
-    add(Schema, Exts), [add_edge(Schema, H, Ext) || Ext <- Exts],
-    add(Schema, T).
+%add(_Schema, []) ->
+ %   ok;
+%add(Schema, [H|T]) ->
+%
+ %   add_vertex(Schema, H),
+  %  Exts = erlmachine_assembly:extensions(H),
+   % add(Schema, Exts), [add_edge(Schema, H, Ext) || Ext <- Exts],
+    %add(Schema, T).
 
 %% NOTE: 1. Path can be specified #.reg, label.reg, etc..
 %%       2. Model doesn't have to know about meshed parts;

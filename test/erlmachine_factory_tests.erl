@@ -6,27 +6,31 @@
 -include_lib("eunit/include/eunit.hrl").
 
 erlmachine_factory_test_() ->
+    Nodes = [node()], Table = 'erlmachine_factory',
+
     {
      foreach,
      fun() ->
-             application:start(yamerl),
+             erlmachine_database:create_schema(Nodes), ok = erlmachine_database:start(),
 
-             mnesia:create_schema([node()]), ok = mnesia:start(),
-             erlmachine_app:wait_for_tables(1000),
+             erlmachine_database:create_table(Table),
+             erlmachine_app:wait_for_tables([Table], 1000),
+
+             application:start(yamerl), application:start(syn),
              {ok, _} = erlmachine_factory:start(),
 
              [ok = erlmachine_app:add_schema(File) || File <- ["assembly.json", "transmission.json"]]
      end,
      fun(_) ->
-             mnesia:stop(),
              erlmachine_factory:stop(),
-             application:stop(yamerl)
+             application:stop(yamerl),
+             erlmachine_database:delete_table(Table), erlmachine_database:delete_schema(Nodes)
      end,
      [
       {
-       "Inspect assembly: datasheets/sample.yaml",
+       "Inspect assembly: datasheets/extensions/sample.yaml",
        fun() ->
-               Path = filename:join(erlmachine:priv_dir(), "datasheets/sample.yaml"),
+               Path = filename:join(erlmachine:priv_dir(), "datasheets/extensions/sample.yaml"),
                {ok, Datasheet} = erlmachine_datasheet:assembly(Path),
 
                Assembly = erlmachine_factory:assembly(Datasheet),
@@ -34,9 +38,9 @@ erlmachine_factory_test_() ->
        end
       },
       {
-       "Inspect assembly: datasheets/sup_sample.yaml",
+       "Inspect assembly: datasheets/extensions/sup_sample.yaml",
        fun() ->
-               Path = filename:join(erlmachine:priv_dir(), "datasheets/sup_sample.yaml"),
+               Path = filename:join(erlmachine:priv_dir(), "datasheets/extensions/sup_sample.yaml"),
                {ok, Datasheet} = erlmachine_datasheet:assembly(Path),
 
                Assembly = erlmachine_factory:assembly(Datasheet),
@@ -67,7 +71,7 @@ erlmachine_factory_test_() ->
       {
        "Inspect assembly: gearbox",
        fun() ->
-               GearBox = erlmachine_factory:gearbox(erlmachine_sup_model_ct, [], #{}, ['eunit'], []),
+               GearBox = erlmachine_factory:gearbox(erlmachine_sup_model_ct, [], ['eunit'], []),
                SN = erlmachine_assembly:serial_no(GearBox), true = is_binary(SN)
        end
       },
@@ -80,7 +84,6 @@ erlmachine_factory_test_() ->
                Assembly = erlmachine_factory:assembly(Datasheet),
                Model = erlmachine_assembly:model(Assembly), Prot = erlmachine_assembly:prototype(Assembly),
 
-
                SN = erlmachine_assembly:serial_no(Assembly), true = is_binary(SN),
  
                true = erlmachine:is_worker(Assembly),
@@ -91,17 +94,13 @@ erlmachine_factory_test_() ->
 
                Port = erlmachine_assembly:port(Assembly), true = is_binary(Port),
 
-               ModelName = erlmachine_model:module(Model), 'erlmachine_model_ct' = ModelName,
+               Module = erlmachine_model:module(Model), 'erlmachine_model_ct' = Module,
 
-               ModelOpt = erlmachine_model:options(Model), true = is_list(ModelOpt),
+               Opt = erlmachine_model:options(Model), true = is_list(Opt),
 
-               ModelVsn = erlmachine_model:vsn(Model), true = is_binary(ModelVsn),
+               Module2 = erlmachine_prototype:module(Prot), 'erlmachine_prototype_def' = Module2,
 
-               ProtName = erlmachine_prototype:module(Prot), 'erlmachine_prototype_def' = ProtName,
-
-               ProtOpt = erlmachine_prototype:options(Prot), true = is_list(ProtOpt),
-
-               ProtVsn = erlmachine_prototype:vsn(Prot), true = is_integer(ProtVsn),
+               Opt2 = erlmachine_prototype:options(Prot), true = is_list(Opt2),
 
                UID = erlmachine_assembly:uid(Assembly), true = is_integer(UID),
 
@@ -119,7 +118,7 @@ erlmachine_factory_test_() ->
        fun() ->
                ok
        end
-      }
+      },
       {
        "Inspect serial: rotation",
        fun() ->

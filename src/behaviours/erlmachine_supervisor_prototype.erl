@@ -1,7 +1,7 @@
 -module(erlmachine_supervisor_prototype).
-%% NOTE: The main puprouse of supervisor prototype is the ability to change monitoring layer without affecting credentials layer of service
+%% NOTE: The main puprouse of supervisor prototype is the ability to change monitoring layer without affecting credentials layer of an extension
 
-%% NOTE: There are few examples:
+%% NOTE: There are few examples of monitorings implementations:
 
 %% 1. erlang:monitor/2
 %% 2. supervisor2
@@ -22,17 +22,16 @@
 -export([is_supervisor_prototype/1]).
 
 -export([startup/2]).
--export([install/3, uninstall/2]).
+-export([install/2, uninstall/2]).
 
 %% Context API
--export([init/2, start_child/2, terminate_child/2]).
+-export([init/1, start_child/1, terminate_child/1]).
 
 -type context() :: term().
 
--type spec() :: erlmachine_transmission:spec().
-
 -include("erlmachine_factory.hrl").
 -include("erlmachine_assembly.hrl").
+-include("erlmachine_graph.hrl").
 -include("erlmachine_system.hrl").
 
 -callback prototype_init(SN::serial_no(), Specs::[map()], Context::context(), Opt::[term()]) ->
@@ -50,39 +49,38 @@ is_supervisor_prototype(Module) ->
 
 %%%  Transmission API
 
-%% NOTE: There is responsibility of decorated module to provide the right entry on graph;
 -spec startup(Assembly::assembly(), Exts::[assembly()]) ->
                      success(pid()) | failure(term(), term()).
 startup(Assembly, Exts) ->
     SN = erlmachine_assembly:serial_no(Assembly),
 
     Prot = erlmachine_assembly:prototype(Assembly),
-    Name = erlmachine_prototype:name(Prot), Opt = erlmachine_prototype:options(Prot),
+    Module = erlmachine_prototype:module(Prot), Opt = erlmachine_prototype:options(Prot),
     Specs = [erlmachine_transmission:spec(Ext)|| Ext <- Exts],
 
-    Name:prototype_init(SN, Specs, _Context = [Assembly, Exts], Opt).
+    Module:prototype_init(SN, Specs, _Context = [Assembly, Exts], Opt).
 
--spec install(Assembly::assembly(), Ext::assembly(), Env::map()) ->
+-spec install(Assembly::assembly(), Ext::assembly()) ->
                      success(pid()) | failure(term(), term()).
-install(Assembly, Ext, Env) ->
+install(Assembly, Ext) ->
     SN = erlmachine_assembly:serial_no(Assembly),
 
-    Spec = erlmachine_transmission:spec(Ext, Env),
+    Spec = erlmachine_transmission:spec(Ext),
 
     Prot = erlmachine_assembly:prototype(Assembly),
-    Name = erlmachine_prototype:name(Prot),
+    Module = erlmachine_prototype:module(Prot),
 
-    Name:prototype_start_child(SN, Spec, _Context = Assembly).
+    Module:prototype_start_child(SN, Spec, _Context = [Assembly, Ext]).
 
--spec uninstall(Assembly::assembly(), ID::term()) ->
+-spec uninstall(Assembly::assembly(), V::vertex()) ->
                        failure(term(), term()).
-uninstall(Assembly, ID) ->
+uninstall(Assembly, V) ->
     SN = erlmachine_assembly:serial_no(Assembly),
 
     Prot = erlmachine_assembly:prototype(Assembly),
-    Name = erlmachine_prototype:name(Prot),
+    Module = erlmachine_prototype:module(Prot),
 
-    Name:prototype_terminate_child(SN, ID, _Context = Assembly).
+    Module:prototype_terminate_child(SN, V, _Context = [Assembly, V]).
 
 %%% Prototype API
 
@@ -90,16 +88,16 @@ uninstall(Assembly, ID) ->
                   success() | failure(term(), term()).
 init(Context) ->
     [Assembly, Exts] = Context,
-    Vs = [erlmachine_assembly:vertex(Ext)|| Ext <- Exts],
+    erlmachine_supervisor_model:startup(Assembly, Exts).
 
-    erlmachine_supervisor_model:startup(Context, Vs).
-
--spec start_child(Context::context(), Spec::[map()]) ->
+-spec start_child(Context::context()) ->
                          success() | failure(term(), term()).
-start_child(Context, Spec) ->
-    erlmachine_supervisor_model:install(Context, Spec).
+start_child(Context) ->
+    [Assembly, Ext] = Context,
+    erlmachine_supervisor_model:install(Assembly, Ext).
 
--spec terminate_child(Context::context(), ID::term()) ->
+-spec terminate_child(Context::context()) ->
                              success().
-terminate_child(Context, ID) ->
-    erlmachine_supervisor_model:uninstall(Context, ID).
+terminate_child(Context) ->
+    [Assembly, V] = Context,
+    erlmachine_supervisor_model:uninstall(Assembly, V).

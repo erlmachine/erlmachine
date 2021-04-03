@@ -7,16 +7,12 @@
         "module":{
             "type": "string",
             "description": "Module name"
-        },
-        "vsn":{
-            "description": "Module version attribute (MD5 checksum if not specified)"
         }
     },
 
     "type": "object",
     "properties":{
         "serial_no":{
-            "type": "string",
             "description": "Runtime unique identifier (S/N)"
         },
         "type":{
@@ -25,7 +21,7 @@
         },
         "body":{
             "type": "object",
-            "description": "Data structure that keeps the state of an assembly"
+            "description": "Data structure that keeps the state of an extension"
         },
         "model_no":{
             "description": "Product configurator input to generate a master-production schedule"
@@ -42,13 +38,10 @@
                 "options": {
                     "type": "array",
                     "description": "Domain level options which are passed as is"
-                },
-                "vsn":{
-                   "$ref": "#/definitions/vsn"
                 }
             },
             "additionalProperties": false,
-            "required": [ "module", "options" ],
+            "required": [ "module" ],
             "description": "Domain level specification"
         },
         "prototype":{
@@ -60,13 +53,10 @@
                 "options": {
                     "type": "array",
                     "description": "Service level options which are passed as is"
-                },
-                "vsn":{
-                    "$ref": "#/definitions/vsn"
                 }
             },
             "additionalProperties": false,
-            "required": [ "module", "options" ],
+            "required": [ "module" ],
             "description": "Service level specification"
         },
         "uid":{
@@ -81,12 +71,11 @@
             "description": "The identity on a graph (by default serial_no)"
         },
         "part_no":{
-            "type": "string",
             "description": "Deployment identity to track the quality of an assembly through a release period"
         },
         "description":{
             "type": "string",
-            "description": "Short textual overview or metadata for auto generated assembly"
+            "description": "Short textual overview or metadata for generated assembly"
         }
     },
     "required": [ "type", "model" ]

@@ -1,10 +1,10 @@
 -module(erlmachine_worker_prototype).
-%% NOTE: The main purpouse of worker prototype is the ability to change transport layer (in/out API), environment layer (allocated process, dicrect function call, remote server API, etc.) without affecting business layer of service
+%% NOTE: The main purpouse of worker prototype is the ability to change transport layer (in/out API), execution environment (allocated process, dicrect function calls, remote server API, etc.) without affecting business layer of an extension
 
-%% NOTE: There are few examples:
+%% NOTE: There are few examples of transport implementations:
 
 %% 1. direct function call
-%% 2. gen_server (via local, global, to use process registry, etc.)
+%% 2. gen_server (via local, global, process registry, etc.)
 %% 3. gen_server2
 %% 4. gen_batch_server
 %% 5. via message broker RabbitMQ, Apache Kafka, etc)
@@ -59,9 +59,9 @@ startup(Assembly) ->
     SN = erlmachine_assembly:serial_no(Assembly),
 
     Prot = erlmachine_assembly:prototype(Assembly),
-    Name = erlmachine_prototype:name(Prot), Opt = erlmachine_prototype:options(Prot),
+    Module = erlmachine_prototype:module(Prot), Opt = erlmachine_prototype:options(Prot),
 
-    Name:prototype_init(SN, _Context = Assembly, Opt).
+    Module:prototype_init(SN, _Context = Assembly, Opt).
 
 -spec process(Assembly::assembly(), Msg::term()) ->
                     success().
@@ -69,9 +69,9 @@ process(Assembly, Msg) ->
     SN = erlmachine_assembly:serial_no(Assembly),
 
     Prot = erlmachine_assembly:prototype(Assembly),
-    Name = erlmachine_prototype:name(Prot),
+    Module = erlmachine_prototype:module(Prot),
 
-    Name:prototype_cast(SN, Msg).
+    Module:prototype_cast(SN, Msg).
 
 -spec execute(Assembly::assembly(), Req::term()) ->
                       term().
@@ -79,9 +79,9 @@ execute(Assembly, Req) ->
     SN = erlmachine_assembly:serial_no(Assembly),
 
     Prot = erlmachine_assembly:prototype(Assembly),
-    Name = erlmachine_prototype:name(Prot),
+    Module = erlmachine_prototype:module(Prot),
 
-    Name:prototype_call(SN, Req).
+    Module:prototype_call(SN, Req).
 
 -spec shutdown(Assembly::assembly(), Reason::term(), Timeout::term()) ->
                   success().
@@ -89,16 +89,16 @@ shutdown(Assembly, Reason, Timeout) ->
     SN = erlmachine_assembly:serial_no(Assembly),
 
     Prot = erlmachine_assembly:prototype(Assembly),
-    Name = erlmachine_prototype:name(Prot),
+    Module = erlmachine_prototype:module(Prot),
 
-    Name:prototype_terminate(SN, Reason, Timeout).
+    Module:prototype_terminate(SN, Reason, Timeout).
 
 %%% Context API
 
 -spec init(Context::context()) ->
                   success(context()) | failure(term(), term(), context()).
 init(Context) ->
-    erlmachine_worker_model:boot(Context).
+    erlmachine_worker_model:startup(Context).
 
 -spec cast(Context::context(), Msg::term()) ->
                   success(context()) | failure(term(), term(), context()).

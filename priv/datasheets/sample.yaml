@@ -8,12 +8,10 @@ extensions:
       module: erlmachine_sup_model_ct
       options:
         - key: value
-      vsn: 0.0.1
     prototype:
       module: erlmachine_sup_prototype_def
       options:
         - key: value
-      vsn: 1
     description: Test assembly a (Boot)
   b:
     type: worker

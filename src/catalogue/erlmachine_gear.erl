@@ -3,10 +3,8 @@
 %% Gear represents a worker which supplies a load through a transmission;
 %% Gear is called one time per message;
 
--export([new/0]).
-
+-export([new/1]).
 -export([type/0]).
--export([prefix/0]).
 
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
@@ -15,7 +13,7 @@
 new(Assembly) ->
     %% TODO: Additional decoration inside body;
     Body = #{}, Port = <<"#">>, 
-    Rel = erlmachine_assembly:body(erlmachine_assembly:type(Assembly, _Type = type())),
+    Rel = erlmachine_assembly:body(erlmachine_assembly:type(Assembly, _Type = type()), Body),
     erlmachine_assembly:port(Rel, Port).
 
 

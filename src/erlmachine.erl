@@ -4,7 +4,7 @@
 
 -export([start/0, stop/0, get_key/1, get_key/2]).
 
--export(priv_dir/0).
+-export([priv_dir/0]).
 
 -export([is_supervisor/1, is_worker/1]).
 
@@ -38,6 +38,7 @@
 -export([attributes/1]).
 -export([behaviours/1]).
 -export([optional_callback/3, optional_callback/4]).
+-export([vsn/1]).
 
 -export([serial_no/1]).
 -export([graph/1]).
@@ -84,11 +85,11 @@ start() ->
 stop() ->
     application:stop(?MODULE).
 
--spec get_key(Key::atom()) -> undefined | success(Val).
+-spec get_key(Key::atom()) -> undefined | success(term()).
 get_key(Key) ->
     get_key(?MODULE, Key).
 
--spec get_key(Application::atom(), Key::atom()) -> undefined | success(Val).
+-spec get_key(Application::atom(), Key::atom()) -> undefined | success(term()).
 get_key(Application, Key) ->
     application:get_key(Application, Key).
 
@@ -288,28 +289,33 @@ is_failure(Res) ->
 
 %%% Module API
 
--spec attributes(Module::atom()) -> [{atom(), term()}].
+-spec attributes(Module::module()) -> [{atom(), term()}].
 attributes(Module) ->
     Module:module_info(attributes).
 
--spec behaviours(Module::atom()) -> [atom()].
+-spec behaviours(Module::module()) -> [atom()].
 behaviours(Module) ->
     [Name|| {behaviour, Name} <- attributes(Module)].
 
--spec optional_callback(Mod::atom(), Fun::atom(), Args::list()) -> 
+-spec optional_callback(Module::module(), Fun::atom(), Args::list()) -> 
                                term().
-optional_callback(Mod, Fun, Args) ->
-    optional_callback(Mod, Fun, Args, success()).
+optional_callback(Module, Fun, Args) ->
+    optional_callback(Module, Fun, Args, success()).
 
--spec optional_callback(Mod::atom(), Fun::atom(), Args::list(), Def::term()) -> 
+-spec optional_callback(Module::module(), Fun::atom(), Args::[term()], Def::term()) -> 
                                term().
-optional_callback(Mod, Fun, Args, Def) ->
-    case erlang:function_exported(Mod, Fun, length(Args)) of 
+optional_callback(Module, Fun, Args, Def) ->
+    case erlang:function_exported(Module, Fun, length(Args)) of 
         true ->
-            erlang:apply(Mod, Fun, Args); 
+            erlang:apply(Module, Fun, Args); 
         _  -> 
             Def 
     end.
+
+-spec vsn(Module::module()) -> binary() | integer().
+vsn(Module) ->
+    {_, [Vsn]} = lists:keyfind('vsn', 1, attributes(Module)),
+    Vsn.
 
 %%% Field accessors
 

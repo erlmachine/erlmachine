@@ -40,14 +40,14 @@ prototype_init(SN, Specs, Context, Opt) ->
 -spec prototype_start_child(SN::serial_no(), Spec::map(), Context::term()) ->
                                    success(pid()) | failure(term(), term()).
 prototype_start_child(SN, Spec, Context) ->
-    ok = erlmachine_supervisor_prototype:start_child(Context, Spec),
+    ok = erlmachine_supervisor_prototype:start_child(Context),
 
     supervisor:start_child(id(SN), Spec).
 
 -spec prototype_terminate_child(SN::serial_no(), ID::term(), Context::term()) ->
                                        success().
 prototype_terminate_child(SN, ID, Context) ->
-    ok = erlmachine_supervisor_prototype:terminate_child(Context, ID),
+    ok = erlmachine_supervisor_prototype:terminate_child(Context),
 
     supervisor:terminate_child(id(SN), ID).
 

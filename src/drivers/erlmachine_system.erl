@@ -10,7 +10,7 @@
 
 -export([startup/2]).
 -export([install/3]).
--export([process/1, process/2]).
+-export([transmit/1, transmit/2]).
 -export([shutdown/3]).
 
 -export([is_success/1, is_failure/1]).
@@ -130,13 +130,12 @@ install(_Res = {error, {E, R}}, Assembly, Ext) ->
 
     ok.
 
--spec transmit()
-process({ok, _Assembly}) ->
+transmit({ok, _Assembly}) ->
     %% TODO: Place for vertex statistics gathering;
     ok;
-process({ok, _Ret, _Assembly}) ->
+transmit({ok, _Ret, _Assembly}) ->
     ok;
-process({error, {E, R}, Assembly}) ->
+transmit({error, {E, R}, Assembly}) ->
     _Schema = erlmachine_assembly:schema(Assembly),
 
     _Rel = erlmachine_tag:error(Assembly, E, R),
@@ -147,12 +146,12 @@ process({error, {E, R}, Assembly}) ->
 
     ok.
 
-process({ok, _Assembly}, _Ext) ->
+transmit({ok, _Assembly}, _Ext) ->
     ok;
-process({ok, _Ret, _Assembly}, _Ext) ->
+transmit({ok, _Ret, _Assembly}, _Ext) ->
     %% TODO: Place for edge statistics gathering;
     ok;
-process(_Res = {error, {E, R}, Assembly}, Ext) ->
+transmit(_Res = {error, {E, R}, Assembly}, Ext) ->
     _Schema = erlmachine_assembly:schema(Assembly),
 
     _Rel = erlmachine_tag:error(Assembly, E, R),
@@ -163,8 +162,6 @@ process(_Res = {error, {E, R}, Assembly}, Ext) ->
 
     %% TODO: Place for errors statistics gathering (we can mark edge by red color);
     ok.
-
-uninstall(Res, Assembly, ID)
 
 shutdown(ok, _Assembly, _V) ->
     ok.

@@ -27,10 +27,9 @@
 -export([install/2, uninstall/2]).
 
 -include("erlmachine_user.hrl").
--include("erlmachine_factory.hrl").
 -include("erlmachine_assembly.hrl").
+-include("erlmachine_graph.hrl").
 -include("erlmachine_system.hrl").
--include("erlmachine_transmission.hrl").
 
 
 -callback startup(UID::uid(), Vertices::[vertex()], Opt::[term()], Env::map()) ->
@@ -50,33 +49,35 @@ is_supervisor_model(Module) ->
 
 %%%  Transmission API
 
--spec startup(Context::assembly(), Vs::[vertex()]) ->
+-spec startup(Assembly::assembly(), Exts::[assembly()]) ->
                   success() | failure(term(), term()).
-startup(Context, Vs) ->
-    Model = erlmachine_assembly:model(Context), Name = erlmachine_model:name(Model),
-    UID = erlmachine_assembly:uid(Context),
+startup(Assembly, Exts) ->
+    Model = erlmachine_assembly:model(Assembly), Module = erlmachine_model:module(Model),
 
+    UID = erlmachine_assembly:uid(Assembly),
+    Vs = [erlmachine_assembly:vertex(Ext)|| Ext <- Exts],
     Opt = erlmachine_model:options(Model),
-    Env = erlmachine_assembly:env(Context),
+    Env = erlmachine_assembly:env(Assembly),
 
-    Name:startup(UID, Vs, Opt, Env).
+    Module:startup(UID, Vs, Opt, Env).
 
--spec install(Context::assembly(), Vertex::vertex()) ->
+-spec install(Assembly::assembly(), Ext::assembly()) ->
                      success() | failure(term(), term()).
-install(Context, Vertex) ->
-    Model = erlmachine_assembly:model(Context), Name = erlmachine_model:name(Model),
-    UID = erlmachine_assembly:uid(Context),
+install(Assembly, Ext) ->
+    Model = erlmachine_assembly:model(Assembly), Module = erlmachine_model:module(Model),
 
-    Mod = Name, Fun = install, Args = [UID, Vertex],
-    Def = erlmachine:success(),
-    erlmachine:optional_callback(Mod, Fun, Args, Def).
+    UID = erlmachine_assembly:uid(Assembly),
+    V = erlmachine_assembly:vertex(Ext),
+    Fun = install, Args = [UID, V], Def = erlmachine:success(),
 
--spec uninstall(Context::assembly(), Vertex::vertex()) ->
+    erlmachine:optional_callback(Module, Fun, Args, Def).
+
+-spec uninstall(Assembly::assembly(), V::vertex()) ->
                        success() | failure(term(), term()).
-uninstall(Context, Vertex) ->
-    Model = erlmachine_assembly:model(Context), Name = erlmachine_model:name(Model),
-    UID = erlmachine_assembly:uid(Context),
+uninstall(Assembly, V) ->
+    Model = erlmachine_assembly:model(Assembly), Module = erlmachine_model:module(Model),
 
-    Mod = Name, Fun = uninstall, Args = [UID, Vertex],
-    Def = erlmachine:success(),
-    erlmachine:optional_callback(Mod, Fun, Args, Def).
+    UID = erlmachine_assembly:uid(Assembly),
+    Fun = uninstall, Args = [UID, V], Def = erlmachine:success(),
+
+    erlmachine:optional_callback(Module, Fun, Args, Def).

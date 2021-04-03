@@ -2,23 +2,24 @@
 
 -behaviour(erlmachine_worker_model).
 
--export([boot/4]).
+-export([startup/4]).
+
 -export([process/3]).
 -export([execute/3]).
 -export([pressure/3]).
+
 -export([shutdown/3]).
 
 -include("erlmachine_user.hrl").
--include("erlmachine_factory.hrl").
--include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
--include("erlmachine_transmission.hrl").
 
--spec boot(UID::uid(), State::state(), Opt::list(), Env::map()) ->
+-type state() :: map().
+
+-spec startup(UID::uid(), State::state(), Opt::[term()], Env::map()) ->
                   success(state()) | failure(term(), term(), state()).
-boot(UID, State, Opt, Env) ->
+startup(UID, State, Opt, Env) ->
     %% TODO: To provide test cases parametrization through Env;
-    ct:log("~n~p:boot(~p, ~p, ~p, ~p)~n", [?MODULE, UID, State, Opt, Env]),
+    ct:log("~n~p:startup(~p, ~p, ~p, ~p)~n", [?MODULE, UID, State, Opt, Env]),
     erlmachine:success(State).
 
 -spec process(UID::uid(), Motion::term(), State::state()) ->

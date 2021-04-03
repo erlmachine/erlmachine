@@ -3,8 +3,7 @@
 %% Shaft represents a worker which routes a load through a transmission;
 %% Shaft is called multiple times per message (extensions count);
 
--export([new/0]).
-
+-export([new/1]).
 -export([type/0]).
 
 -include("erlmachine_assembly.hrl").
@@ -14,7 +13,7 @@
 new(Assembly) ->
     %% TODO: Additional decoration inside body;
     Body = [], Port = <<"#">>,
-    Rel = erlmachine_assembly:body(erlmachine_assembly:type(Assembly, _Type = type())),
+    Rel = erlmachine_assembly:body(erlmachine_assembly:type(Assembly, _Type = type()), Body),
     erlmachine_assembly:port(Rel, Port).
 
 -spec type() -> atom().

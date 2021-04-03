@@ -22,8 +22,6 @@
                    }
        ).
 
--type module() :: atom().
-
 -opaque prototype() :: #prototype{}.
 
 -export_type([prototype/0]).

@@ -6,8 +6,11 @@
 
 -export([create_table/1]).
 -export([update_counter/1, update_counter/2, update_counter/3]).
+-export([delete_table/1]).
 
 -export([wait_for_tables/2]).
+
+-export([delete_schema/1]).
 
 -export([start/0, stop/0]).
 -export([info/0]).
@@ -52,7 +55,8 @@ create_table(Module) ->
     Index = erlmachine:optional_callback(Module, 'index', [], []),
     AccessMode = erlmachine:optional_callback(Module, 'access_mode', [], 'read_write'),
 
-    ok = mnesia:create_table(Table, [{attributes, Attributes}, {index, Index}, {access_mode, AccessMode}]).
+    mnesia:create_table(Table, [{attributes, Attributes}, {index, Index}, {access_mode, AccessMode}]),
+    ok.
 
 -spec update_counter(Tab::table()) -> integer().
 update_counter(Tab) ->
@@ -66,9 +70,18 @@ update_counter(Tab, Key) ->
 update_counter(Tab, Key, Val) when is_integer(Val) ->
     mnesia:dirty_update_counter(Tab, Key, Val).
 
+-spec delete_table(Tab::table()) -> success().
+delete_table(Tab) ->
+    mnesia:delete_table(Tab),
+    ok.
+
 -spec wait_for_tables(Tables::[table()], Timeout::integer()) -> success().
 wait_for_tables(Tables, Timeout) ->
     ok = mnesia:wait_for_tables(Tables, Timeout).
+
+-spec delete_schema(Nodes::[node()]) -> success() | failure(term()).
+delete_schema(Nodes) ->
+    mnesia:create_schema(Nodes).
 
 %%% Database
 

@@ -9,7 +9,7 @@
 %% NOTE: There is possibility to load datasheet from other sources (via DB, network, etc.);
 
 %% API.
--export([extension/1, transmission/1]).
+-export([assembly/1, transmission/1]).
 
 -export([file/2]).
 -export([decode/3]).
@@ -29,10 +29,10 @@
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
 
--spec extension(Path::path()) ->
+-spec assembly(Path::path()) ->
                       success(datasheet()) | failure(term(), term()).
-extension(Path) ->
-    file(Path, "extension.json").
+assembly(Path) ->
+    file(Path, "assembly.json").
 
 -spec transmission(Path::path()) ->
                           success(datasheet()) | failure(term(), term()).

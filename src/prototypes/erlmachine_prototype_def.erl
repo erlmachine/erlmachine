@@ -37,6 +37,7 @@ id(SN) ->
                             success(pid()) | failure(term(), term()).
 prototype_init(SN, Context, Opts) ->
     Com = #init{ context = Context, opts = Opts },
+
     gen_server:start_link({local, id(SN)}, ?MODULE, Com, []).
 
 -record(call, { request::term() }).
@@ -45,6 +46,7 @@ prototype_init(SN, Context, Opts) ->
                             term().
 prototype_call(SN, Request) ->
     Com = #call{ request = Request },
+
     gen_server:call(id(SN), Com).
 
 -record(cast, { message::term() }).
@@ -53,6 +55,7 @@ prototype_call(SN, Request) ->
                             success().
 prototype_cast(SN, Msg) ->
     Com = #cast{ message = Msg },
+
     gen_server:cast(id(SN), Com).
 
 -spec prototype_terminate(SN::serial_no(), Reason::term(), Timeout::term()) ->

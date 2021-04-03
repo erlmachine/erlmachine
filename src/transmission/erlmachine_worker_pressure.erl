@@ -7,22 +7,21 @@
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
 
--spec pressure(Context::assembly(), Load::term()) ->
+-spec pressure(Assembly::assembly(), Load::term()) ->
                       success(assembly()) | success(term(), assembly()) | failure(term(), term(), assembly()).
-pressure(Context, Load) ->
-    erlmachine_transmission:pass(?MODULE, Context, Load).
+pressure(Assembly, Load) ->
+    erlmachine_transmission:pass(?MODULE, Assembly, Load).
 
 %%%  transmission callbacks
 
--spec pass(Context::assembly(), Motion::term()) ->
+-spec pass(Assembly::assembly(), Motion::term()) ->
                     success(assembly()) | success(term(), assembly()) | failure(term(), term(), assembly()).
-pass(Context, Motion) ->
-    UID = erlmachine_assembly:uid(Context),
+pass(Assembly, Motion) ->
+    Model = erlmachine_assembly:model(Assembly), Name = erlmachine_model:name(Model),
 
-    Model = erlmachine_assembly:model(Context), Name = erlmachine_model:name(Model),
-    Body = erlmachine_assembly:body(Context),
+    UID = erlmachine_assembly:uid(Assembly),
+    Body = erlmachine_assembly:body(Assembly),
+    Mod = Name, Fun = 'pressure', Args = [UID, Motion, Body], Def = erlmachine:success(Motion, Assembly),
 
-    Mod = Name, Fun = 'pressure', Args = [UID, Motion, Body],
-    Def = erlmachine:success(Motion, Context),
     Res = erlmachine:optional_callback(Mod, Fun, Args, Def), 
-    erlmachine_worker_model:context(Res, Context).
+    erlmachine_worker_model:body(Res, Assembly).

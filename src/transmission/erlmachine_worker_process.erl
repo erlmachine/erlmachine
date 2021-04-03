@@ -7,43 +7,42 @@
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
 
--spec process(Context::assembly(), Motion::term()) ->
+-spec process(Assembly::assembly(), Motion::term()) ->
                      success(assembly()) | success(term(), assembly()) | failure(term(), term(), assembly()).
-process(Context, Motion) ->
-    Model = erlmachine_assembly:model(Context), Name = erlmachine_model:name(Model),
+process(Assembly, Motion) ->
+    Model = erlmachine_assembly:model(Assembly), Name = erlmachine_model:name(Model),
     %% NOTE: Shaft mode callback;
     Exported = erlang:function_exported(Name, 'rotate', 5),
     if Exported ->
-            erlmachine_transmission:mesh(?MODULE, Context, Motion);
+            erlmachine_transmission:mesh(?MODULE, Assembly, Motion);
        true ->
-            erlmachine_transmission:pass(?MODULE, Context, Motion)
+            erlmachine_transmission:pass(?MODULE, Assembly, Motion)
     end.
 
 %%%  transmission callbacks
 
--spec mesh(Context::assembly(), Motion::term(), Ext::assembly(), Range::[assembly()]) ->
+-spec mesh(Assembly::assembly(), Motion::term(), Ext::assembly(), T::[assembly()]) ->
                     success(assembly()) | success(term(), assembly()) | failure(term(), term(), assembly()).
-mesh(Context, Motion, Ext, Range) ->
-    UID = erlmachine_assembly:uid(Context),
+mesh(Assembly, Motion, Ext, T) ->
+    Model = erlmachine_assembly:model(Assembly), Name = erlmachine_model:name(Model),
 
-    Model = erlmachine_assembly:model(Context), Name = erlmachine_model:name(Model),
+    UID = erlmachine_assembly:uid(Assembly),
 
-    Body = erlmachine_assembly:body(Context),
-    Socket = erlmachine_assembly:socket(Ext),
-    MNs = [erlmachine_assembly:model_no(E) || E <- Range],
+    Body = erlmachine_assembly:body(Assembly),
+    Port = erlmachine_assembly:port(Ext),
+    Scheduled = [erlmachine_assembly:port(E) || E <- T],
 
-    Res = Name:process(UID, Motion, Socket, MNs, Body),
-    erlmachine_worker_model:context(Res, Context).
+    Res = Name:process(UID, Motion, Port, Scheduled, Body),
+    erlmachine_worker_model:body(Res, Assembly).
 
--spec pass(Context::assembly(), Motion::term()) ->
+-spec pass(Assembly::assembly(), Motion::term()) ->
                   success(assembly()) | success(term(), assembly()) | failure(term(), term(), assembly()).
-pass(Context, Motion) ->
-    UID = erlmachine_assembly:uid(Context),
+pass(Assembly, Motion) ->
+    Model = erlmachine_assembly:model(Assembly), Name = erlmachine_model:name(Model),
 
-    Model = erlmachine_assembly:model(Context), Name = erlmachine_model:name(Model),
-    Body = erlmachine_assembly:body(Context),
+    UID = erlmachine_assembly:uid(Assembly),
+    Body = erlmachine_assembly:body(Assembly),
+    Mod = Name, Fun = process, Args = [UID, Motion, Body], Def = erlmachine:success(Motion, Assembly),
 
-    Mod = Name, Fun = process, Args = [UID, Motion, Body],
-    Def = erlmachine:success(Motion, Context),
     Res = erlmachine:optional_callback(Mod, Fun, Args, Def),
-    erlmachine_worker_model:context(Res, Context).
+    erlmachine_worker_model:body(Res, Assembly).

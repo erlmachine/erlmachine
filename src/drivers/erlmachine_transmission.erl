@@ -58,8 +58,8 @@
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
 
--type graph() :: erlmachine_schema:graph().
--type vertex() :: erlmachine_schema:vertex().
+-type graph() :: erlmachine_graph:graph().
+-type vertex() :: erlmachine_graph:vertex().
 
 -type motion() :: map(). %% envelope;
 -type header() :: map().
@@ -80,7 +80,7 @@ add_vertex(Assembly) ->
 
     erlmachine_graph:add_vertex(Graph, V, Rel).
 
--spec add_edge(Assembly, Ext, Label) -> success().
+-spec add_edge(Assembly::assembly(), Ext::assembly(), Label::term()) -> success().
 add_edge(Assembly, Ext, Label) ->
     Graph = erlmachine_assembly:graph(Assembly),
     V1 = erlmachine_assembly:vertex(Assembly), V2 = erlmachine_assembly:vertex(Ext),
@@ -144,22 +144,20 @@ install(Graph, V, Ext) ->
     ok = erlmachine_system:install(Res, Assembly, Rel),
     Res.
 
--spec uninstall(Graph::graph(), V::vertex(), ID::term()) ->
+-spec uninstall(Graph::graph(), V::vertex(), V2::vertex()) ->
                        success().
-uninstall(Graph, V, ID) ->
+uninstall(Graph, V, V2) ->
     Assembly = erlmachine_graph:vertex(Graph, V),
+    Res = erlmachine_supervisor_prototype:uninstall(Assembly, V2),
 
-    Res = erlmachine_supervisor_prototype:uninstall(Assembly, ID),
-
-    ok = erlmachine_graph:del_vertex(Graph, ID),
-
-    ok = erlmachine_system:uninstall(Res, Assembly, ID),
+    ok = erlmachine_system:uninstall(Res, Assembly, V2), ok = erlmachine_graph:del_vertex(Graph, V2),
     Res.
 
 -spec process(Graph::graph(), V::vertex(), Motion::term()) ->
                     success().
 process(Graph, V, Motion) ->
-    Assembly = erlmachine_graph:vertex(Graph, V), ok = process(Assembly, Motion).
+    Assembly = erlmachine_graph:vertex(Graph, V),
+    ok = process(Assembly, Motion).
 
 -spec process(Assembly::assembly(), Motion::term()) ->
                      success().
@@ -169,7 +167,8 @@ process(Assembly, Motion) ->
 -spec mesh(Module::atom(), Assembly::assembly(), Motion::term()) ->
                   success(assembly()) | failure(term(), term(), assembly()).
 mesh(Module, Assembly, Motion) ->
-    Schema = erlmachine_assembly:graph(Assembly), V = erlmachine_assembly:vertex(Assembly),
+    Graph = erlmachine_assembly:graph(Assembly), V = erlmachine_assembly:vertex(Assembly),
+
     Exts = erlmachine_graph:out_neighbours(Graph, V),
     if Exts == [] ->
             erlmachine:success(Assembly);
@@ -177,29 +176,31 @@ mesh(Module, Assembly, Motion) ->
             mesh(Exts, Module, Assembly, Motion)
     end.
 
-mesh([Ext|Range], Module, Assembly, Motion) ->
-    Res = Module:mesh(Assembly, Motion, Ext, Range),
+mesh([Ext|T], Module, Assembly, Motion) ->
+    Res = Module:mesh(Assembly, Motion, Ext, T),
 
-    ok = erlmachine_system:process(Res, Ext), ok = transmit(Res, Ext),
+    ok = erlmachine_system:transmit(Res, Ext), ok = transmit(Res, Ext),
 
-    if Range == [] ->
+    if T == [] ->
             Res;
        true ->
             Rel = rel(Res),
-            mesh(Range, Module, Rel, Motion)
+            mesh(T, Module, Rel, Motion)
     end.
 
 -spec pass(Module::atom(), Assembly::assembly(), Motion::term()) ->
                   success(assembly()) | failure(term(), term(), assembly()).
 pass(Module, Assembly, Motion) ->
-    Schema = erlmachine_assembly:graph(Assembly), V = erlmachine_assembly:vertex(Assembly),
-    Exts = erlmachine_graph:out_neighbours(Schema, V),
+    Graph = erlmachine_assembly:graph(Assembly), V = erlmachine_assembly:vertex(Assembly),
+
+    Exts = erlmachine_graph:out_neighbours(Graph, V),
     pass(Exts, Module, Assembly, Motion).
 
 pass(Exts, Module, Assembly, Motion) ->
     Res = Module:pass(Assembly, Motion),
 
-    [begin ok = erlmachine_system:process(Res, Ext), ok = transmit(Res, Ext) end|| Ext <- Exts], Res.
+    [begin ok = erlmachine_system:transmit(Res, Ext), ok = transmit(Res, Ext) end|| Ext <- Exts], 
+    Res.
 
 transmit({ok, _Assembly}, _Ext) ->
     ok;
@@ -215,7 +216,7 @@ rel({ok, _Ret, Assembly}) ->
 rel({error, {_E, _R}, Assembly}) ->
     Assembly.
 
--spec execute(Graph:graph(), V::vertex(), Command::term()) ->
+-spec execute(Graph::graph(), V::vertex(), Command::term()) ->
                       term().
 execute(Graph, V, Command) ->
     Assembly = erlmachine_graph:vertex(Graph, V),
@@ -226,11 +227,10 @@ execute(Graph, V, Command) ->
                        success().
 shutdown(Graph, V, Reason, Timeout) ->
     Assembly = erlmachine_graph:vertex(Graph, V),
+
     Res = erlmachine_worker_prototype:shutdown(Assembly, Reason, Timeout),
 
-    ok = erlmachine_system:shutdown(Res, Assembly, V),
-
-    ok = erlmachine_graph:del_vertex(Graph, V), 
+    ok = erlmachine_system:shutdown(Res, Assembly, V), ok = erlmachine_graph:del_vertex(Graph, V),
     Res.
 
 -record(state, {}).

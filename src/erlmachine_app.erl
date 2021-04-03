@@ -6,7 +6,7 @@
 
 -export([start_phase/3]).
 
--export([wait_for_tables/1, add_schema/1]).
+-export([wait_for_tables/2, add_schema/1]).
 
 -include("erlmachine_system.hrl").
 
@@ -24,7 +24,7 @@ start_phase(wait_for_tables, _Type, Timeout) when is_integer(Timeout) ->
     Modules = erlmachine:get_key(modules),
     Tables = [M || M <- Modules, erlmachine_database:is_database(M)],
 
-    ok = erlmachine_database:wait_for_tables([Factory], Timeout);
+    ok = wait_for_tables(Tables, Timeout);
 
 start_phase(add_schema, _Type, Files) when is_list(Files) ->
     [ok = add_schema(File) || File <- Files],
@@ -33,6 +33,11 @@ start_phase(add_schema, _Type, Files) when is_list(Files) ->
 
 start_phase(_, _Type, _PhaseArgs) ->
     erlmachine:success().
+
+
+-spec wait_for_tables(Tables::[atom()], Timeout::integer()) -> success().
+wait_for_tables(Tables, Timeout) ->
+    ok = erlmachine_database:wait_for_tables(Tables, Timeout).
 
 -spec add_schema(File::list()) -> success().
 add_schema(File) ->

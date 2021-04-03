@@ -5,8 +5,7 @@
 %% That's all very similar to the modern orchestration approaches like k8s, swarm, etc..
 %% Whereas each contained assembly represensts microservice and gearbox keeps cluster environment inside;
 
--export([new/0]).
-
+-export([new/1]).
 -export([type/0]).
 
 -include("erlmachine_assembly.hrl").
@@ -16,7 +15,7 @@
 new(Assembly) ->
     %% TODO: Additional decoration inside body;
     Body = [], Port = <<"*">>,
-    Rel = erlmachine_assembly:body(erlmachine_assembly:type(Assembly, _Type = type())),
+    Rel = erlmachine_assembly:body(erlmachine_assembly:type(Assembly, _Type = type()), Body),
     erlmachine_assembly:port(Rel, Port).
 
 %% NOTE: We should check this call when schema is requested;

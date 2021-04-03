@@ -12,15 +12,13 @@
 
 -record(model, {
                 %% Module name
-                name::module(),
+                module::module(),
                 %% Domain level options which are passed as is
                 options::[term()],
                 %% vsn/1 attribute of the module (MD5 checksum if not specified)
                 vsn::term()
                }
        ).
-
--type module() :: atom().
 
 -opaque model() :: #model{}.
 
@@ -30,7 +28,7 @@
 new() ->
     #model{}.
 
--spec new(Module::module(), Opt::list()) -> model().
+-spec new(Module::module(), Opt::[term()]) -> model().
 new(Module, Opt) ->
     Model = new(),
     options(module(Model, Module), Opt).
@@ -46,7 +44,7 @@ module(Model) ->
 
 -spec module(Model::model(), Module::module()) -> model().
 module(Model, Module) ->
-    Model#model{ module=Module }.
+    Model#model{ module = Module }.
 
 -spec options(Model::model()) -> [term()].
 options(Model) ->
@@ -54,7 +52,7 @@ options(Model) ->
 
 -spec options(Model::model(), Opt::[term()]) -> model().
 options(Model, Opt) ->
-    Model#model{ options=Opt }.
+    Model#model{ options = Opt }.
 
 -spec vsn(Model::model()) -> term().
 vsn(Model) ->
