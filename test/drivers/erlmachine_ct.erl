@@ -3,11 +3,13 @@
 -behaviour(gen_server).
 
 %% API.
--export([start/1, stop/0]).
+-export([start/2, stop/0]).
 
 -export([install/1, uninstall/1]).
+-export([add_edge/2]).
 -export([process/2]).
 -export([execute/2]).
+-export([shutdown/1]).
 -export([pressure/2]).
 
 %% gen_server.
@@ -25,9 +27,11 @@
 id() ->
     ?MODULE.
 
--spec start(Env::map()) -> success(pid()) | ingnore | failure(term()).
-start(Env) ->
-    gen_server:start({local, id()}, ?MODULE, Env, []).
+-record(start, { assembly::assembly(), env::map() }).
+
+-spec start(Assembly::assembly(), Env::map()) -> success(pid()) | ingnore | failure(term()).
+start(Assembly, Env) ->
+    gen_server:start({local, id()}, ?MODULE, #start{ assembly = Assembly, env = Env }, []).
 
 -record(install, { extension::assembly() }).
 
@@ -35,17 +39,29 @@ start(Env) ->
 install(Ext) ->
     gen_server:call(id(), #install{ extension = Ext }).
 
--record(uninstall, { vertex::vertex() }).
+-record(add_edge, { vertex::vertex(), vertex2::vertex() }).
 
--spec uninstall(V::vertex()) -> success().
-uninstall(V) ->
-    gen_server:call(id(), #uninstall{ vertex = V }).
+-spec add_edge(V::vertex(), V2::vertex()) -> success().
+add_edge(V, V2) ->
+    gen_server:call(id(), #add_edge{ vertex = V, vertex2 = V2 }).
 
 -record(execute, { vertex::vertex(), command::term() }).
 
 -spec execute(V::vertex(), Command::term()) -> term().
 execute(V, Command) ->
     gen_server:call(id(), #execute{ vertex = V, command = Command }).
+
+-record(uninstall, { vertex::vertex() }).
+
+-spec uninstall(V::vertex()) -> success().
+uninstall(V) ->
+    gen_server:call(id(), #uninstall{ vertex = V }).
+
+-record(shutdown, { vertex::vertex() }).
+
+-spec shutdown(V::vertex()) -> success().
+shutdown(V) ->
+    gen_server:call(id(), #shutdown{ vertex = V }).
 
 -record(process, { vertex::vertex(), motion::term() }).
 
@@ -70,30 +86,37 @@ stop() ->
 %%% gen_server behaviour
 %%%===================================================================
 
--record(state, { graph::graph(), vertex::vertex() }).
+-record(state, { graph::graph(), root::vertex() }).
 
-init(Env) ->
-    Ext = erlmachine_factory:gear(erlmachine_model_ct, [], ['test', 'ct']),
-    GearBox = erlmachine_factory:gearbox(erlmachine_sup_model_ct, [], ['ct'], [Ext]),
-    Graph = erlmachine:graph(GearBox), V = erlmachine:vertex(GearBox),
+init(#start{ assembly = Assembly, env = Env }) ->
+    Graph = erlmachine_graph:draw(Assembly), V = erlmachine:vertex(Assembly),
 
-    {ok, Pid} = erlmachine:startup(GearBox, Env), true = is_pid(Pid),
-
-    {ok, #state{ graph = Graph, vertex = V }}.
+    {ok, Pid} = erlmachine:startup(Graph, Assembly, Env), true = is_pid(Pid),
+    {ok, #state{ graph = Graph, root = V }}.
 
 
-handle_call(#install{ extension = Ext }, _From, #state{ graph = Graph, vertex = V } = State) ->
+handle_call(#install{ extension = Ext }, _From, #state{ graph = Graph, root = V } = State) ->
     Res = erlmachine:install(Graph, V, Ext),
 
     {reply, Res, State};
 
-handle_call(#uninstall{ vertex = V }, _From, #state{ graph = Graph } = State) ->
-    Res = erlmachine:uninstall(Graph, V),
+handle_call(#add_edge{ vertex = V, vertex2 = V2 }, _From, #state{ graph = Graph } = State) ->
+    Res = erlmachine_graph:add_edge(Graph, V, V2, 'test'),
+
+    {reply, Res, State};
+
+handle_call(#uninstall{ vertex = V2 }, _From, #state{ graph = Graph, root = V } = State) ->
+    Res = erlmachine:uninstall(Graph, V, V2),
 
     {reply, Res, State};
 
 handle_call(#execute{ vertex = V, command = Command }, _From, #state{ graph = Graph } = State) ->
     Res = erlmachine:execute(Graph, V, Command),
+
+    {reply, Res, State};
+
+handle_call(#shutdown{ vertex = V2 }, _From, #state{ graph = Graph } = State) ->
+    Res = erlmachine:shutdown(Graph, V2),
 
     {reply, Res, State};
 
@@ -115,5 +138,5 @@ handle_info(#pressure{ vertex = _V, load = _Load }, #state{ graph = _Graph } = S
 handle_info(_Info, State) ->
 	{noreply, State}.
 
-terminate(_Reason, #state{ graph = Graph, vertex = V }) ->
-    ok = erlmachine:shutdown(Graph, V).
+terminate(_Reason, _State) ->
+    ok.

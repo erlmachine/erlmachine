@@ -9,7 +9,6 @@
 
 -export([all/0]).
 
--export([boot/1]).
 -export([process/1, execute/1, pressure/1]).
 -export([install/1, uninstall/1]).
 -export([shutdown/1]).
@@ -24,18 +23,31 @@ suite() ->
     [{timetrap,{minutes,1}}].
 
 init_per_suite(Config) ->
-    mnesia:create_schema([node()]), ok = mnesia:start(),
-%    ok = mnesia:wait_for_tables([erlmachine_factory:tabname()], 5000),
+    application:start(yamerl), application:start(syn),
+
+    Nodes = [node()], Table = 'erlmachine_factory',
+
+    erlmachine_database:create_schema(Nodes), ok = erlmachine_database:start(),
+
+    erlmachine_database:create_table(Table),
+    erlmachine_app:wait_for_tables([Table], 1000),
+
+    {ok, _} = erlmachine_factory:start(),
 
     Env = #{},
-    {ok, _} = erlmachine_factory:start(),
-    {ok, Pid} = erlmachine_ct:start(Env), true = is_pid(Pid),
+
+    Ext = erlmachine_factory:gear(erlmachine_model_ct, [], ['test', 'ct']), 
+    Ext2 = erlmachine:vertex(Ext, 'test'),
+
+    GearBox = erlmachine_factory:gearbox(erlmachine_sup_model_ct, [], ['ct'], [Ext2]),
+
+
+    {ok, Pid} = erlmachine_ct:start(GearBox, Env), true = is_pid(Pid),
     Setup = [], %%TODO: To provide test case args;
     lists:concat([Setup, Config]).
 
 end_per_suite(Config) ->
-    mnesia:stop(),
-    ok = erlmachine_factory:stop().
+    ok.
 
 init_per_group(_GroupName, Config) ->
     Config.
@@ -71,7 +83,7 @@ end_per_testcase(_TestCase, _Config) ->
 %% Description: Returns a list of test case group definitions.
 %%--------------------------------------------------------------------
 groups() ->
-    [{sample, [sequence], [boot, install, process, execute, pressure, uninstall, shutdown]}].
+    [{sample, [sequence], [install, process, execute, pressure, uninstall, shutdown]}].
 
 %%--------------------------------------------------------------------
 %% Function: all() -> GroupsAndTestCases | {skip,Reason}
@@ -93,9 +105,11 @@ all() ->
 %%--------------------------------------------------------------------
 %% TEST CASES
 %%--------------------------------------------------------------------
+install(_Config) ->
+    Ext = erlmachine_factory:gear(erlmachine_model_ct, [], ['install', 'test2']),
+    Ext2 = erlmachine:vertex(Ext, 'test2'),
 
-boot(_Config) ->
-    {ok, Pid} = erlmachine_ct:boot(), true = is_pid(Pid),
+    {ok, Pid} = erlmachine_ct:install(Ext2), true = is_pid(Pid),
     {comment, Pid}.
 
 %%--------------------------------------------------------------------
@@ -114,14 +128,10 @@ boot(_Config) ->
 %%              the all/0 list or in a test case group for the test case
 %%              to be executed).
 %%--------------------------------------------------------------------
-install(_Config) ->
-    Ext = erlmachine_factory:gear(erlmachine_model_ct, [], ['install', 'test']),
-    {ok, Pid} = erlmachine_ct:install(erlmachine:vertex(Ext, 'test')), true = is_pid(Pid),
-    {comment, Pid}.
 
 process(_Config) ->
     Event = erlmachine:event(#{}, 'ping', <<"ping">>),
-    ok = erlmachine_ct:process('test', Event).
+    ok = erlmachine_ct:add_edge('test', 'test2'), ok = erlmachine_ct:process('test', Event).
 
 execute(_Config) ->
     Com = erlmachine:command(#{}, 'test', []),
@@ -131,7 +141,7 @@ pressure(_Config) ->
     ok = erlmachine_ct:pressure('test', <<"load">>).
 
 uninstall(_Config) ->
-    ok = erlmachine_ct:uninstall('test').
+    ok = erlmachine_ct:uninstall('test2').
 
 shutdown(_Config) ->
-    ok = erlmachine_ct:shutdown().
+    ok = erlmachine_ct:shutdown('test').

@@ -162,7 +162,8 @@ id(Assembly, #state{ serial = Serial }) ->
 -spec serial_no(Assembly::assembly(), State::state()) -> assembly().
 serial_no(Assembly, #state{ hash = Hash }) ->
     SN = erlmachine:base64url(Hash),
-    erlmachine_assembly:serial_no(Assembly, SN).
+    Rel = erlmachine_assembly:serial_no(Assembly, SN),
+    erlmachine_assembly:vertex(Rel, SN).
 
 -spec uid(Assembly::assembly(), State::state()) -> assembly().
 uid(Assembly, #state{ uid = UID }) ->
@@ -264,13 +265,10 @@ gearbox(Model, Opt, Tags, Exts) ->
 gearbox(Model, Opt, Prot, ProtOpt, Tags, Exts) when is_list(Opt),
                                                     is_list(ProtOpt),
                                                     is_list(Exts) ->
-    Graph = erlmachine_graph:new(),
-
     Assembly = erlmachine_assembly:new(Model, Opt, Prot, ProtOpt, Tags),
     GearBox = erlmachine_gearbox:new(Assembly), {ok, Rel} = process(GearBox),
 
-    Root = erlmachine_assembly:graph(Rel, Graph),
-    erlmachine_assembly:extensions(Root, Exts).
+    erlmachine_assembly:extensions(Rel, Exts).
 
 %% TODO: Transmition should be built here;
 

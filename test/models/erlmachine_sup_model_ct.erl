@@ -18,7 +18,7 @@
     success() | failure(term(), term()).
 startup(UID, Vs, Opt, Env) ->
 %% TODO: To provide test cases parametrization through Env;
-    ct:log("~n~p:boot(~p, ~p, ~p, ~p)~n", [?MODULE, UID, Vs, Opt, Env]),
+    ct:log("~n~p:startup(~p, ~p, ~p, ~p)~n", [?MODULE, UID, Vs, Opt, Env]),
     erlmachine:success().
 
 -spec install(UID::uid(), V::vertex()) -> 

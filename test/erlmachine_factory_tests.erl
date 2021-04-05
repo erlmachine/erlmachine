@@ -1,7 +1,7 @@
 -module(erlmachine_factory_tests).
 %% NOTE: The factory test is responsible to inspect:
-%% a) Release of default extensions: gear, shaft, axle, gearbox;
-%% b) Release of an extension via datasheet;
+%% a) Release of predefined extensions: gear, shaft, axle, gearbox;
+%% b) Release of an assembly via datasheet;
 %% c) Release of a transmission via datasheet
 -include_lib("eunit/include/eunit.hrl").
 
@@ -23,7 +23,7 @@ erlmachine_factory_test_() ->
      end,
      fun(_) ->
              erlmachine_factory:stop(),
-             application:stop(yamerl),
+             application:stop(yamerl), application:start(syn),
              erlmachine_database:delete_table(Table), erlmachine_database:delete_schema(Nodes)
      end,
      [
@@ -51,28 +51,32 @@ erlmachine_factory_test_() ->
        "Inspect assembly: gear",
        fun() ->
                Gear = erlmachine_factory:gear(erlmachine_model_ct, [], ['eunit']),
-               SN = erlmachine_assembly:serial_no(Gear), true = is_binary(SN)
+               SN = erlmachine_assembly:serial_no(Gear), V = erlmachine:vertex(Gear),
+               true = is_binary(SN), true = (SN == V)
        end
       },
       {
        "Inspect assembly: shaft",
         fun() ->
                 Shaft = erlmachine_factory:shaft(erlmachine_model_ct, [], ['eunit'], []),
-                SN = erlmachine_assembly:serial_no(Shaft), true = is_binary(SN)
+                SN = erlmachine_assembly:serial_no(Shaft), V = erlmachine:vertex(Shaft),
+                true = is_binary(SN), true = (SN == V)
         end
       },
       {
        "Inspect assembly: axle",
        fun() ->
                Axle = erlmachine_factory:axle(erlmachine_sup_model_ct, [], ['eunit'], []),
-               SN = erlmachine_assembly:serial_no(Axle), true = is_binary(SN)
+               SN = erlmachine_assembly:serial_no(Axle), V = erlmachine:vertex(Axle),
+               true = is_binary(SN), true = (SN == V)
        end
       },
       {
        "Inspect assembly: gearbox",
        fun() ->
                GearBox = erlmachine_factory:gearbox(erlmachine_sup_model_ct, [], ['eunit'], []),
-               SN = erlmachine_assembly:serial_no(GearBox), true = is_binary(SN)
+               SN = erlmachine_assembly:serial_no(GearBox), V = erlmachine:vertex(GearBox),
+               true = is_binary(SN), true = (SN == V)
        end
       },
       {
@@ -116,7 +120,8 @@ erlmachine_factory_test_() ->
       {
        "Inspect datasheet mapping: datasheets/sample.yaml",
        fun() ->
-               ok
+               Path = filename:join(erlmachine:priv_dir(), "datasheets/sample.yaml"),
+               {ok, _Datasheet} = erlmachine_datasheet:transmission(Path)
        end
       },
       {

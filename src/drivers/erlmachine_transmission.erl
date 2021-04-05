@@ -34,7 +34,7 @@
 -export([header/1, header/2]).
 -export([body/1, body/2]).
 
--export([startup/1, startup/2]).
+-export([startup/1, startup/3]).
 
 -export([install/3, uninstall/3]).
 
@@ -58,6 +58,8 @@
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
 
+-type extension() :: assembly().
+
 -type graph() :: erlmachine_graph:graph().
 -type vertex() :: erlmachine_graph:vertex().
 
@@ -71,22 +73,6 @@
 
 -export_type([motion/0, header/0, body/0]).
 
-%%% Graph mapping
-
--spec add_vertex(Assembly::assembly()) -> success().
-add_vertex(Assembly) ->
-    Graph = erlmachine_assembly:graph(Assembly), V = erlmachine_assembly:vertex(Assembly),
-    Rel = erlmachine_assembly:extensions(Assembly, []),
-
-    erlmachine_graph:add_vertex(Graph, V, Rel).
-
--spec add_edge(Assembly::assembly(), Ext::assembly(), Label::term()) -> success().
-add_edge(Assembly, Ext, Label) ->
-    Graph = erlmachine_assembly:graph(Assembly),
-    V1 = erlmachine_assembly:vertex(Assembly), V2 = erlmachine_assembly:vertex(Ext),
-
-    erlmachine_graph:add_edge(Graph, V1, V2, Label).
-
 id() ->
     ?MODULE.
 
@@ -94,16 +80,47 @@ id() ->
 start_link() ->
     gen_server:start_link({local, id()}, ?MODULE, [], []).
 
--spec startup(Assembly::assembly(), Env::map()) ->
-                  success(pid()) | failure(term(), term()).
-startup(Assembly, Env) ->
+%%% gen_server
+
+-record(state, {}).
+
+init([]) ->
+    {ok, #state{}}.
+
+handle_call(_Request, _From, State) ->
+    {reply, ignored, State}.
+
+handle_cast(_Msg, State) ->
+    {noreply, State}.
+
+handle_info(_Info, State) ->
+    {noreply, State}.
+
+terminate(_Reason, _State) ->
+    ok.
+
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.
+
+%%% Transmission management
+
+-spec extension(Graph::graph(), Assembly::assembly(), Env::map()) -> extension().
+extension(Graph, Assembly, Env) ->
+    %% TODO There is a place to decorate extension by transmission tags;
+
     Rel = erlmachine_assembly:env(Assembly, Env),
-    startup(Rel).
+    erlmachine_assembly:graph(Rel, Graph).
+
+-spec startup(Graph::graph(), Assembly::assembly(), Env::map()) ->
+                  success(pid()) | failure(term(), term()).
+startup(Graph, Assembly, Env) ->
+    Ext = extension(Graph, Assembly, Env),
+    startup(Ext).
 
 %% NOTE: Schema and env params are inherited through the whole transmission;
 -spec spec(Assembly::assembly()) -> spec().
 spec(Assembly) ->
-    ID = erlmachine_assembly:vertex(Assembly), Type = erlmachine_assembly:type(Assembly),
+    ID = erlmachine:vertex(Assembly), Type = erlmachine_assembly:type(Assembly),
 
     Start = { ?MODULE, startup, [Assembly] },
     #{ id => ID, start => Start, type => Type }.
@@ -111,35 +128,33 @@ spec(Assembly) ->
 -spec startup(Assembly::assembly()) ->
                    success(pid()) | failure(term(), term()).
 startup(Assembly) ->
-    Env = erlmachine_assembly:env(Assembly),
-    Exts = [erlmachine_assembly:env(Ext, Env)|| Ext <- erlmachine_assembly:extensions(Assembly)],
-
     IsSup = erlmachine:is_supervisor(Assembly),
     Res =
         if IsSup ->
+                Graph = erlmachine_assembly:graph(Assembly),
+                Env = erlmachine_assembly:env(Assembly),
+
+                Exts = [extension(Graph, Ext, Env)|| Ext <- erlmachine_assembly:extensions(Assembly)],
+
                 erlmachine_supervisor_prototype:startup(Assembly, Exts);
            true ->
                 erlmachine_worker_prototype:startup(Assembly)
         end,
-
-    Graph = erlmachine_assembly:graph(Assembly),
-
-    ok = add_vertex(Assembly), [ok = add_vertex(erlmachine_assembly:graph(Ext, Graph))|| Ext <- Exts],
-    [ok = add_edge(Assembly, Ext, []) || Ext <- Exts],
-
-    ok = erlmachine_system:startup(Res, Assembly), 
+    ok = erlmachine_system:startup(Res, Assembly),
     Res.
 
 -spec install(Graph::graph(), V::vertex(), Ext::assembly()) ->
                      success(pid()) | failure(term(), term()).
 install(Graph, V, Ext) ->
     %% TODO To add extensions on a graph
-    Assembly = erlmachine_graph:vertex(Graph, V), Env = erlmachine_assembly:env(Assembly),
+    Assembly = erlmachine_graph:vertex(Graph, V),
 
-    Rel = erlmachine_assembly:env(Ext, Env),
+    Graph = erlmachine_assembly:graph(Assembly), Env = erlmachine_assembly:env(Assembly),
+
+    Rel = extension(Graph, Ext, Env),
     Res = erlmachine_supervisor_prototype:install(Assembly, Rel),
 
-    ok = add_vertex(erlmachine_assembly:graph(Rel, Graph)), ok = add_edge(Assembly, Rel, []),
+    erlmachine_graph:draw_vertex(Graph, Ext), erlmachine_graph:draw_edge(Graph, Assembly, Ext),
 
     ok = erlmachine_system:install(Res, Assembly, Rel),
     Res.
@@ -167,7 +182,7 @@ process(Assembly, Motion) ->
 -spec mesh(Module::atom(), Assembly::assembly(), Motion::term()) ->
                   success(assembly()) | failure(term(), term(), assembly()).
 mesh(Module, Assembly, Motion) ->
-    Graph = erlmachine_assembly:graph(Assembly), V = erlmachine_assembly:vertex(Assembly),
+    Graph = erlmachine:graph(Assembly), V = erlmachine:vertex(Assembly),
 
     Exts = erlmachine_graph:out_neighbours(Graph, V),
     if Exts == [] ->
@@ -180,7 +195,6 @@ mesh([Ext|T], Module, Assembly, Motion) ->
     Res = Module:mesh(Assembly, Motion, Ext, T),
 
     ok = erlmachine_system:transmit(Res, Ext), ok = transmit(Res, Ext),
-
     if T == [] ->
             Res;
        true ->
@@ -191,9 +205,9 @@ mesh([Ext|T], Module, Assembly, Motion) ->
 -spec pass(Module::atom(), Assembly::assembly(), Motion::term()) ->
                   success(assembly()) | failure(term(), term(), assembly()).
 pass(Module, Assembly, Motion) ->
-    Graph = erlmachine_assembly:graph(Assembly), V = erlmachine_assembly:vertex(Assembly),
-
+    Graph = erlmachine:graph(Assembly), V = erlmachine:vertex(Assembly),
     Exts = erlmachine_graph:out_neighbours(Graph, V),
+
     pass(Exts, Module, Assembly, Motion).
 
 pass(Exts, Module, Assembly, Motion) ->
@@ -227,31 +241,12 @@ execute(Graph, V, Command) ->
                        success().
 shutdown(Graph, V, Reason, Timeout) ->
     Assembly = erlmachine_graph:vertex(Graph, V),
-
     Res = erlmachine_worker_prototype:shutdown(Assembly, Reason, Timeout),
 
     ok = erlmachine_system:shutdown(Res, Assembly, V), ok = erlmachine_graph:del_vertex(Graph, V),
     Res.
 
--record(state, {}).
-
-init([]) ->
-	{ok, #state{}}.
-
-handle_call(_Request, _From, State) ->
-	{reply, ignored, State}.
-
-handle_cast(_Msg, State) ->
-	{noreply, State}.
-
-handle_info(_Info, State) ->
-	{noreply, State}.
-
-terminate(_Reason, _State) ->
-	ok.
-
-code_change(_OldVsn, State, _Extra) ->
-	{ok, State}.
+%%% Message construction
 
 %% NOTE: A message consists of two basic parts:
 %% 1) Header – Information used by the messaging system that describes the data being transmitted, its origin, its destination, and so on.

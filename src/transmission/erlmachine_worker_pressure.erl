@@ -17,11 +17,11 @@ pressure(Assembly, Load) ->
 -spec pass(Assembly::assembly(), Motion::term()) ->
                     success(assembly()) | success(term(), assembly()) | failure(term(), term(), assembly()).
 pass(Assembly, Motion) ->
-    Model = erlmachine_assembly:model(Assembly), Name = erlmachine_model:name(Model),
+    Model = erlmachine_assembly:model(Assembly), Module = erlmachine_model:module(Model),
 
     UID = erlmachine_assembly:uid(Assembly),
     Body = erlmachine_assembly:body(Assembly),
-    Mod = Name, Fun = 'pressure', Args = [UID, Motion, Body], Def = erlmachine:success(Motion, Assembly),
+    Fun = 'pressure', Args = [UID, Motion, Body], Def = erlmachine:success(Motion, Assembly),
 
-    Res = erlmachine:optional_callback(Mod, Fun, Args, Def), 
+    Res = erlmachine:optional_callback(Module, Fun, Args, Def),
     erlmachine_worker_model:body(Res, Assembly).

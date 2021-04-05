@@ -12,6 +12,7 @@
 -export([install/3]).
 -export([transmit/1, transmit/2]).
 -export([shutdown/3]).
+-export([uninstall/3]).
 
 -export([is_success/1, is_failure/1]).
 
@@ -93,14 +94,14 @@ is_failure(_) ->
 -spec startup(success(Pid::pid()) | failure(E::term(), R::term()), Assembly::assembly()) -> 
                      success().
 startup({ok, Pid}, Assembly) when is_pid(Pid) ->
-    _Schema = erlmachine_assembly:schema(Assembly),
+    _Graph = erlmachine:graph(Assembly),
     _Rel = erlmachine_tag:pid(Assembly, Pid),
 
     ok = erlmachine_registry:join(?MODULE, Pid, Assembly),
     %ok = add_vertex(Schema, Rel),
     ok;
 startup({error, {E, R}}, Assembly) ->
-    _Schema = erlmachine_assembly:schema(Assembly),
+    _Graph = erlmachine:graph(Assembly),
 
     _Rel = erlmachine_tag:error(Assembly, E, R),
     %ok = add_vertex(Schema, Rel), 
@@ -109,23 +110,23 @@ startup({error, {E, R}}, Assembly) ->
 -spec install(success(Pid::pid()) | failure(E::term(), R::term()), Assembly::assembly(), Ext::assembly()) ->
                      success().
 install(_Res = {ok, Pid}, Assembly, Ext) when is_pid(Pid) ->
-    _Schema = erlmachine_assembly:schema(Assembly),
+    _Graph = erlmachine:graph(Assembly),
 
     _Rel = erlmachine_tag:pid(Assembly, Pid),
     %ok = add_vertex(Schema, Rel),
 
-    _V1 = erlmachine_assembly:vertex(Assembly), _V2 = erlmachine_assembly:vertex(Ext),
+    _V1 = erlmachine:vertex(Assembly), _V2 = erlmachine:vertex(Ext),
 
     ok = erlmachine_registry:join(?MODULE, Pid, Ext),
     %erlmachine_schema:add_edge(Schema, V1, V2, Res),
     ok;
 install(_Res = {error, {E, R}}, Assembly, Ext) ->
-    _Schema = erlmachine_assembly:schema(Assembly),
+    _Graph = erlmachine:graph(Assembly),
 
     _Rel = erlmachine_tag:error(Assembly, E, R),
     %ok = add_vertex(Schema, Rel),
 
-    _V1 = erlmachine_assembly:vertex(Assembly), _V2 = erlmachine_assembly:vertex(Ext),
+    _V1 = erlmachine:vertex(Assembly), _V2 = erlmachine:vertex(Ext),
     %erlmachine_schema:add_edge(Schema, V1, V2, Res),
 
     ok.
@@ -136,7 +137,7 @@ transmit({ok, _Assembly}) ->
 transmit({ok, _Ret, _Assembly}) ->
     ok;
 transmit({error, {E, R}, Assembly}) ->
-    _Schema = erlmachine_assembly:schema(Assembly),
+    _Graph = erlmachine:graph(Assembly),
 
     _Rel = erlmachine_tag:error(Assembly, E, R),
     %ok = add_vertex(Schema, Rel),
@@ -152,15 +153,19 @@ transmit({ok, _Ret, _Assembly}, _Ext) ->
     %% TODO: Place for edge statistics gathering;
     ok;
 transmit(_Res = {error, {E, R}, Assembly}, Ext) ->
-    _Schema = erlmachine_assembly:schema(Assembly),
+    _Graph = erlmachine:graph(Assembly),
 
     _Rel = erlmachine_tag:error(Assembly, E, R),
     %ok = add_vertex(Schema, Rel),
 
-    _V1 = erlmachine_assembly:vertex(Assembly), _V2 = erlmachine_assembly:vertex(Ext),
+    _V1 = erlmachine:vertex(Assembly), _V2 = erlmachine:vertex(Ext),
     %erlmachine_schema:add_edge(Schema, V1, V2, Res),
 
     %% TODO: Place for errors statistics gathering (we can mark edge by red color);
+    ok.
+
+
+uninstall(_, _Assembly, _V) ->
     ok.
 
 shutdown(ok, _Assembly, _V) ->

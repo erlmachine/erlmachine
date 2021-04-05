@@ -8,7 +8,7 @@
 
 -export([is_supervisor/1, is_worker/1]).
 
--export([startup/2]).
+-export([startup/3]).
 
 -export([process/3]).
 -export([execute/3]).
@@ -107,10 +107,10 @@ is_worker(Assembly) ->
     Type = erlmachine_assembly:type(Assembly),
     Type == 'worker'.
 
--spec startup(Assembly::assembly(), Env::map()) ->
+-spec startup(Graph::graph(), Assembly::assembly(), Env::map()) ->
                    success(pid()) | ingnore | failure(term()).
-startup(Assembly, Env) ->
-    erlmachine_transmission:startup(Assembly, Env).
+startup(Graph, Assembly, Env) ->
+    erlmachine_transmission:startup(Graph, Assembly, Env).
 
 -spec process(Graph::graph(), V::vertex(), Motion::term()) ->
                     term().

@@ -8,22 +8,26 @@
          id/1, id/2,
          serial_no/1, serial_no/2,
          type/1, type/2,
-         body/1, body/2,
+         body/0, body/1, body/2,
          model_no/1, model_no/2,
          port/1, port/2,
          graph/1, graph/2,
          model/1, model/2,
          prototype/1, prototype/2,
-         extensions/1, extensions/2,
+         extensions/0, extensions/1, extensions/2,
          uid/1, uid/2,
          tags/1, tags/2,
          vertex/1, vertex/2,
          part_no/1, part_no/2,
-         env/1, env/2,
+         env/0, env/1, env/2,
          description/1, description/2
         ]).
 
 -export([datasheet/2]).
+
+-export([to_vertex/1, from_vertex/1]).
+-export([to_json/1, from_json/1]).
+-export([to_binary/1, from_binary/1]).
 
 -include("erlmachine_user.hrl").
 -include("erlmachine_factory.hrl").
@@ -45,7 +49,7 @@
                     %% Behavioral type of an extension
                     type::type(),
                     %% Data structure that stores the state of an extension
-                    body::term(),
+                    body = #{}::map() | [term()],
                     %% Product configurator input to generate a master production schedule
                     model_no::model_no(),
                     %% Conenction port of an extension (accordingly to J.P. Morrison)
@@ -57,17 +61,17 @@
                     %% Service level specification
                     prototype::prototype(),
                     %% Build configuration
-                    extensions = []::[assembly()],
+                    extensions = []::[] | [assembly()],
                     %% The identity of Erlmachine operator
                     uid::uid(),
                     %% Index terms which are assigned as meta-information
-                    tags = []::[term()],
+                    tags = []::[] | [term()],
                     %% The identity on a graph (by default serial_no)
                     vertex::vertex(),
                     %% Deployment identity to track the quality of a component through release period
                     part_no::part_no(),
                     %% The environment context which is passed on transmission start
-                    env::map(),
+                    env = #{}::map(),
                     %% Short textual overview or metadata for auto generated extension
                     description::binary()
                    }
@@ -81,6 +85,8 @@
 -type datasheet() :: erlmachine_datasheet:datasheet().
 
 -type assembly() :: #assembly{}.
+
+-type json() :: map().
 
 -export_type([assembly/0]).
 
@@ -195,11 +201,15 @@ type(Assembly) ->
 type(Assembly, Type) ->
     Assembly#assembly{ type = Type }.
 
--spec body(Assembly::assembly()) -> term().
+-spec body() -> map().
+body() ->
+    #assembly{}#assembly.body.
+
+-spec body(Assembly::assembly()) -> map() | [term()].
 body(Assembly) ->
     Assembly#assembly.body.
 
--spec body(Assembly::assembly(), Body::term()) -> assembly().
+-spec body(Assembly::assembly(), Body::map() | [term()]) -> assembly().
 body(Assembly, Body) ->
     Assembly#assembly{ body = Body }.
 
@@ -243,11 +253,15 @@ prototype(Assembly) ->
 prototype(Assembly, Prot) ->
     Assembly#assembly{ prototype = Prot }.
 
--spec extensions(Assembly::assembly()) -> [assembly()].
+-spec extensions() -> [].
+extensions() ->
+    #assembly{}#assembly.extensions.
+
+-spec extensions(Assembly::assembly()) -> [] | [assembly()].
 extensions(Assembly) ->
     Assembly#assembly.extensions.
 
--spec extensions(Assembly::assembly(), Exts::[assembly()]) -> assembly().
+-spec extensions(Assembly::assembly(), Exts::[] | [assembly()]) -> assembly().
 extensions(Assembly, Exts) ->
     Assembly#assembly{ extensions = Exts }.
 
@@ -283,11 +297,15 @@ vertex(Assembly) ->
 vertex(Assembly, Vertex) ->
     Assembly#assembly{ vertex = Vertex }.
 
--spec env(Assembly::assembly()) -> term().
+-spec env() -> map().
+env() ->
+    #assembly{}#assembly.env.
+
+-spec env(Assembly::assembly()) -> map().
 env(Assembly) ->
     Assembly#assembly.env.
 
--spec env(Assembly::assembly(), Env::term()) -> assembly().
+-spec env(Assembly::assembly(), Env::map()) -> assembly().
 env(Assembly, Env) ->
     Assembly#assembly{ env = Env }.
 
@@ -298,3 +316,32 @@ description(Assembly) ->
 -spec description(Assembly::assembly(), Desc::binary()) -> assembly().
 description(Assembly, Desc) ->
     Assembly#assembly{ description = Desc }.
+
+%%% Format API
+
+-spec to_vertex(Assembly::assembly()) -> vertex().
+to_vertex(Assembly) ->
+    Body = body(), Exts = extensions(), Env = env(),
+    Rel = extensions(body(Assembly, Body), Exts), env(Rel, Env).
+
+-spec from_vertex(V::vertex()) -> assembly().
+from_vertex(V) ->
+    _Assembly = V.
+
+%% TODO:
+
+-spec to_json(Assembly::assembly()) -> json().
+to_json(_Assembly) ->
+    throw(?LINE).
+
+-spec from_json(json()) -> assembly().
+from_json(_Json) ->
+    throw(?LINE).
+
+-spec to_binary(Assembly::assembly()) -> binary().
+to_binary(_Assembly) ->
+    throw(?LINE).
+
+-spec from_binary(Binary::binary()) -> assembly().
+from_binary(_Binary) ->
+    throw(?LINE).

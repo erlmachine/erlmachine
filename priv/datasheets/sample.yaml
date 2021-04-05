@@ -50,9 +50,10 @@ extensions:
 
 transmission:
 # Description 0 (The list guaranties the right order and describes the first elementh as the boot entry)
-  - a: [b, c, d]
-  - d: e
+  - a: [b, c, d, e]
 # Description 1
-  - b: [c, d]
+  - d: e
 # Description 2
+  - b: [c, d]
+# Description 
   - c: e
