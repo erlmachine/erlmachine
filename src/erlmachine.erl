@@ -8,11 +8,12 @@
 
 -export([is_supervisor/1, is_worker/1]).
 
--export([startup/3]).
+-export([startup/1, startup/2]).
 
 -export([process/3]).
 -export([execute/3]).
--export([install/3, uninstall/3]).
+-export([install/2, install/3]).
+-export([uninstall/2, uninstall/3]).
 
 -export([shutdown/2, shutdown/3]).
 
@@ -41,9 +42,12 @@
 -export([vsn/1]).
 
 -export([serial_no/1]).
+-export([model_no/1]).
+-export([port/1, port/2]).
 -export([graph/1]).
--export([vertex/1, vertex/2]).
+-export([uid/1]).
 -export([tags/1]).
+-export([vertex/1, vertex/2]).
 -export([part_no/1]).
 -export([description/1]).
 
@@ -58,6 +62,7 @@
 -export([timestamp/0]).
 
 -include("erlmachine_system.hrl").
+-include("erlmachine_user.hrl").
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_factory.hrl").
 
@@ -107,10 +112,15 @@ is_worker(Assembly) ->
     Type = erlmachine_assembly:type(Assembly),
     Type == 'worker'.
 
--spec startup(Graph::graph(), Assembly::assembly(), Env::map()) ->
+-spec startup(Graph::graph()) ->
                    success(pid()) | ingnore | failure(term()).
-startup(Graph, Assembly, Env) ->
-    erlmachine_transmission:startup(Graph, Assembly, Env).
+startup(Graph) ->
+    [Root|_] = erlmachine_graph:topsort(Graph), startup(Graph, Root).
+
+-spec startup(Graph::graph(), V::vertex()) ->
+                     success(pid()) | ingnore | failure(term()).
+startup(Graph, V) ->
+    erlmachine_transmission:startup(Graph, V).
 
 -spec process(Graph::graph(), V::vertex(), Motion::term()) ->
                     term().
@@ -122,15 +132,25 @@ process(Graph, V, Motion) ->
 execute(Graph, V, Command) ->
     erlmachine_transmission:execute(Graph, V, Command).
 
+-spec install(Graph::graph(), Ext::assembly()) ->
+                     success(pid()) | ingnore | failure(term()).
+install(Graph, Ext) ->
+    [Root|_] = erlmachine_graph:topsort(Graph), install(Graph, Root, Ext).
+
 -spec install(Graph::graph(), V::vertex(), Ext::assembly()) ->
                      success(pid()) | ingnore | failure(term()).
 install(Graph, V, Ext) ->
     erlmachine_transmission:install(Graph, V, Ext).
 
--spec uninstall(Graph::graph(), V::vertex(), Id::term()) ->
+-spec uninstall(Graph::graph(), V2::vertex()) ->
                        success().
-uninstall(Graph, V, Id) ->
-    erlmachine_transmission:uninstall(Graph, V, Id).
+uninstall(Graph, V2) ->
+    [Root|_] = erlmachine_graph:topsort(Graph), uninstall(Graph, Root, V2).
+
+-spec uninstall(Graph::graph(), V::vertex(), V2::vertex()) ->
+                       success().
+uninstall(Graph, V, V2) ->
+    erlmachine_transmission:uninstall(Graph, V, V2).
 
 -spec shutdown(Graph::graph(), V::vertex()) ->
                   success().
@@ -295,7 +315,7 @@ attributes(Module) ->
 
 -spec behaviours(Module::module()) -> [atom()].
 behaviours(Module) ->
-    [Name|| {behaviour, Name} <- attributes(Module)].
+    [Name|| {behaviour, [Name]} <- attributes(Module)].
 
 -spec optional_callback(Module::module(), Fun::atom(), Args::list()) -> 
                                term().
@@ -323,9 +343,29 @@ vsn(Module) ->
 serial_no(Assembly) ->
     erlmachine_assembly:serial_no(Assembly).
 
+-spec model_no(Assembly::assembly()) -> model_no().
+model_no(Assembly) ->
+    erlmachine_assembly:model_no(Assembly).
+
+-spec port(Assembly::assembly()) -> term().
+port(Assembly) ->
+    erlmachine_assembly:port(Assembly).
+
+-spec port(Assembly::assembly(), Port::term()) -> assembly().
+port(Assembly, Port) ->
+    erlmachine_assembly:port(Assembly, Port).
+
 -spec graph(Assembly::assembly()) -> graph().
 graph(Assembly) ->
     erlmachine_assembly:graph(Assembly).
+
+-spec uid(Assembly::assembly()) -> uid().
+uid(Assembly) ->
+    erlmachine_assembly:uid(Assembly).
+
+-spec tags(Assembly::assembly()) -> [term()].
+tags(Assembly) ->
+    erlmachine_assembly:tags(Assembly).
 
 -spec vertex(Assembly::assembly()) -> term().
 vertex(Assembly) ->
@@ -335,10 +375,6 @@ vertex(Assembly) ->
 vertex(Assembly, Vertex) ->
     erlmachine_assembly:vertex(Assembly, Vertex).
 
--spec tags(Assembly::assembly()) -> list(). 
-tags(Assembly) ->
-    erlmachine_assembly:tags(Assembly).
-
 -spec part_no(Assembly::assembly()) -> part_no().
 part_no(Assembly) ->
     erlmachine_assembly:part_no(Assembly).
@@ -347,7 +383,7 @@ part_no(Assembly) ->
 description(Assembly) ->
     erlmachine_assembly:description(Assembly).
 
-%% NOTE: This format is safer and more applicable by web applications (in comparison to base64);
+%% NOTE: The next format is safer and more applicable by web applications (in comparison to base64);
 
 -spec guid(Serial::term()) -> binary().
 guid(Serial) ->

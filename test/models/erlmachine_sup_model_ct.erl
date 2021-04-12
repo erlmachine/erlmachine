@@ -18,24 +18,24 @@
     success() | failure(term(), term()).
 startup(UID, Vs, Opt, Env) ->
 %% TODO: To provide test cases parametrization through Env;
-    ct:log("~n~p:startup(~p, ~p, ~p, ~p)~n", [?MODULE, UID, Vs, Opt, Env]),
+    io:format(user, "~n~p:startup(~p, ~p, ~p, ~p)~n", [?MODULE, UID, Vs, Opt, Env]),
     erlmachine:success().
 
 -spec install(UID::uid(), V::vertex()) -> 
     success() | failure(term(), term()).
 install(UID, V) ->
-    ct:log("~n~p:install(~p, ~p)~n", [?MODULE, UID, V]),
+    io:format(user, "~n~p:install(~p, ~p)~n", [?MODULE, UID, V]),
     erlmachine:success().
 
 -spec uninstall(UID::uid(), V::vertex()) ->
     success() | failure(term(), term()).
 uninstall(UID, V) ->
-    ct:log("~n~p:uninstall(~p, ~p)~n", [?MODULE, UID, V]),
+    io:format(user, "~n~p:uninstall(~p, ~p)~n", [?MODULE, UID, V]),
     erlmachine:success().
 
 -spec shutdown(UID::uid(), Reason::term()) ->
     success() | failure(term(), term()).
 shutdown(UID, Reason) ->
-    ct:log("~n~p:shutdown(~p, ~p)~n", [?MODULE, UID, Reason]),
+    io:format(user, "~n~p:shutdown(~p, ~p)~n", [?MODULE, UID, Reason]),
     erlmachine:success().
 

@@ -1,5 +1,7 @@
 -module(erlmachine_assembly).
 
+-behaviour(erlmachine_factory).
+
 %% API.
 
 -export([new/0, new/5]).
@@ -23,9 +25,8 @@
          description/1, description/2
         ]).
 
--export([datasheet/2]).
+-export([process/2]).
 
--export([to_vertex/1, from_vertex/1]).
 -export([to_json/1, from_json/1]).
 -export([to_binary/1, from_binary/1]).
 
@@ -56,9 +57,9 @@
                     port::term(),
                     %% Build topology which is inherited through the all extensions
                     graph::graph(),
-                    %% Domain level specification
+                    %% Domain level implementation
                     model::model(),
-                    %% Service level specification
+                    %% Service level implementation
                     prototype::prototype(),
                     %% Build configuration
                     extensions = []::[] | [assembly()],
@@ -70,7 +71,7 @@
                     vertex::vertex(),
                     %% Deployment identity to track the quality of a component through release period
                     part_no::part_no(),
-                    %% The environment context which is passed on transmission start
+                    %% The environment context which is passed to the domain level implementation
                     env = #{}::map(),
                     %% Short textual overview or metadata for auto generated extension
                     description::binary()
@@ -109,8 +110,8 @@ new(ModelName, ModelOpt, ProtName, ProtOpt, Tags) ->
 
 %%% Datasheet processing
 
--spec datasheet(Assembly::assembly(), Datasheet::datasheet()) -> assembly().
-datasheet(Assembly, Datasheet) ->
+-spec process(Assembly::assembly(), Datasheet::datasheet()) -> assembly().
+process(Assembly, Datasheet) ->
     I = erlmachine_datasheet:iterator(Datasheet), Next = erlmachine_datasheet:next(I),
     next(Assembly, Next).
 
@@ -318,15 +319,6 @@ description(Assembly, Desc) ->
     Assembly#assembly{ description = Desc }.
 
 %%% Format API
-
--spec to_vertex(Assembly::assembly()) -> vertex().
-to_vertex(Assembly) ->
-    Body = body(), Exts = extensions(), Env = env(),
-    Rel = extensions(body(Assembly, Body), Exts), env(Rel, Env).
-
--spec from_vertex(V::vertex()) -> assembly().
-from_vertex(V) ->
-    _Assembly = V.
 
 %% TODO:
 

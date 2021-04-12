@@ -9,7 +9,7 @@
 %% NOTE: There is possibility to load datasheet from other sources (via DB, network, etc.);
 
 %% API.
--export([assembly/1, transmission/1]).
+-export([assembly/1, graph/1]).
 
 -export([file/2]).
 -export([decode/3]).
@@ -34,10 +34,10 @@
 assembly(Path) ->
     file(Path, "assembly.json").
 
--spec transmission(Path::path()) ->
+-spec graph(Path::path()) ->
                           success(datasheet()) | failure(term(), term()).
-transmission(Path) ->
-    file(Path, "transmission.json").
+graph(Path) ->
+    file(Path, "graph.json").
 
 -spec file(Path::path(), Schema::[term()]) ->
                   success(datasheet()) | failure(term(), term()).

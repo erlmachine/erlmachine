@@ -1,8 +1,10 @@
-description: "Sample transmission datasheet. Should be checked via ct and eunit test."
+### NOTE: There is a place where developer notes should be written:
 
-# Extensions vocabulary guaranties the uniqueness of keys;
-extensions:
-  a:
+# Sample transmission datasheet. Should be checked via ct and eunit test
+vertices:
+# Extensions vocabulary guaranties the uniqueness of keys
+## Notes about A:
+  A:
     type: supervisor
     model:
       module: erlmachine_sup_model_ct
@@ -12,8 +14,29 @@ extensions:
       module: erlmachine_sup_prototype_def
       options:
         - key: value
-    description: Test assembly a (Boot)
-  b:
+    tags: [root, test]
+    env:
+      key: value
+    description: Test assembly A (supervisor)
+## Notes about B:
+  B:
+    type: worker
+    body:
+      key: value
+    model:
+      module: erlmachine_model_ct
+      options:
+        - key: value
+    prototype:
+      module: erlmachine_prototype_def
+      options:
+        - key: value
+    tags: [test]
+    env:
+      key: value
+    description: Test assembly B (worker)
+## Notes about C:
+  C:
     type: worker
     model:
       module: erlmachine_model_ct
@@ -23,37 +46,36 @@ extensions:
       module: erlmachine_prototype_def
       options:
         - key: value
-    tags:
-        - test
-    description: Test assembly b (Process)
-  c:
+    description: Test assembly C (worker)
+## Notes about D:
+  D:
     type: worker
     model:
       module: erlmachine_model_ct
       options:
         - key: value
-    description: Test assembly c
-  d:
+    prototype:
+      module: erlmachine_prototype_def
+      options:
+        - key: value
+    description: Test assembly D (worker)
+## Notes about E:
+  E:
     type: worker
     model:
       module: erlmachine_model_ct
       options:
         - key: value
-    description: Test assembly d
-  e:
-    type: worker # To setup via attribute? To specify just a type (worker, supervisor)
-    model:
-      module: erlmachine_model_ct
+    prototype:
+      module: erlmachine_prototype_def
       options:
         - key: value
-    description: Test assembly e
+    description: Test assembly E (worker)
 
-transmission:
-# Description 0 (The list guaranties the right order and describes the first elementh as the boot entry)
-  - a: [b, c, d, e]
+edges:
+# Description 0 (The list guaranties the right order and describes the first elementh as the root entry)
+  - A: [B, C, D, E]
 # Description 1
-  - d: e
+  - B: C
 # Description 2
-  - b: [c, d]
-# Description 
-  - c: e
+  - C: [D, E]

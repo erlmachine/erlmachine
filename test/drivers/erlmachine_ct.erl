@@ -3,7 +3,7 @@
 -behaviour(gen_server).
 
 %% API.
--export([start/2, stop/0]).
+-export([start/1, stop/0]).
 
 -export([install/1, uninstall/1]).
 -export([add_edge/2]).
@@ -27,11 +27,9 @@
 id() ->
     ?MODULE.
 
--record(start, { assembly::assembly(), env::map() }).
-
--spec start(Assembly::assembly(), Env::map()) -> success(pid()) | ingnore | failure(term()).
-start(Assembly, Env) ->
-    gen_server:start({local, id()}, ?MODULE, #start{ assembly = Assembly, env = Env }, []).
+-spec start(Assembly::assembly()) -> success(pid()) | ingnore | failure(term()).
+start(Assembly) ->
+    gen_server:start({local, id()}, ?MODULE, Assembly, []).
 
 -record(install, { extension::assembly() }).
 
@@ -67,7 +65,7 @@ shutdown(V) ->
 
 -spec process(V::term(), Motion::term()) -> success().
 process(V, Motion) ->
-    gen_server:cast(id(), #process{ vertex = V, motion = Motion }).
+    gen_server:call(id(), #process{ vertex = V, motion = Motion }).
 
 -record(pressure, { vertex::vertex(), load::term() }).
 
@@ -88,10 +86,10 @@ stop() ->
 
 -record(state, { graph::graph(), root::vertex() }).
 
-init(#start{ assembly = Assembly, env = Env }) ->
+init(Assembly) ->
     Graph = erlmachine_graph:draw(Assembly), V = erlmachine:vertex(Assembly),
+    {ok, Pid} = erlmachine:startup(Graph), true = is_pid(Pid),
 
-    {ok, Pid} = erlmachine:startup(Graph, Assembly, Env), true = is_pid(Pid),
     {ok, #state{ graph = Graph, root = V }}.
 
 
@@ -120,13 +118,13 @@ handle_call(#shutdown{ vertex = V2 }, _From, #state{ graph = Graph } = State) ->
 
     {reply, Res, State};
 
-handle_call(_Request, _From, State) ->
-    {reply, ignored, State}.
-
-handle_cast(#process{ vertex = V, motion = Motion }, #state{ graph = Graph } = State) ->
+handle_call(#process{ vertex = V, motion = Motion }, _From, #state{ graph = Graph } = State) ->
     ok = erlmachine:process(Graph, V, Motion),
 
-    {noreply, State};
+    {reply, ok, State};
+
+handle_call(_Request, _From, State) ->
+    {reply, ignored, State}.
 
 handle_cast(_Msg, State) ->
     {noreply, State}.

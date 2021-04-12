@@ -19,10 +19,12 @@
 %% COMMON TEST CALLBACK FUNCTIONS
 %%--------------------------------------------------------------------
 
-suite() -> 
+suite() ->
     [{timetrap,{minutes,1}}].
 
 init_per_suite(Config) ->
+    meck:expect(erlmachine, get_key, 1, ['erlmachine_assembly']),
+
     application:start(yamerl), application:start(syn),
 
     Nodes = [node()], Table = 'erlmachine_factory',
@@ -39,10 +41,10 @@ init_per_suite(Config) ->
     Ext = erlmachine_factory:gear(erlmachine_model_ct, [], ['test', 'ct']), 
     Ext2 = erlmachine:vertex(Ext, 'test'),
 
-    GearBox = erlmachine_factory:gearbox(erlmachine_sup_model_ct, [], ['ct'], [Ext2]),
+    GearBox = erlmachine_factory:gearbox(erlmachine_sup_model_ct, [], ['ct', 'root'], [Ext2]),
 
 
-    {ok, Pid} = erlmachine_ct:start(GearBox, Env), true = is_pid(Pid),
+    {ok, Pid} = erlmachine_ct:start(GearBox), true = is_pid(Pid),
     Setup = [], %%TODO: To provide test case args;
     lists:concat([Setup, Config]).
 

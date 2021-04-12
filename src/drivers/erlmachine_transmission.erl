@@ -1,5 +1,6 @@
 -module(erlmachine_transmission).
 -behaviour(gen_server).
+
 %% NOTE: In general the concept of a transmission describes how to build processing algorithms which are executed via structured mechanical extensions;
 
 %% NOTE: The responsibility to manage the graph belongs to the transmission.
@@ -34,7 +35,7 @@
 -export([header/1, header/2]).
 -export([body/1, body/2]).
 
--export([startup/1, startup/3]).
+-export([startup/1, startup/2]).
 
 -export([install/3, uninstall/3]).
 
@@ -57,8 +58,6 @@
 
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
-
--type extension() :: assembly().
 
 -type graph() :: erlmachine_graph:graph().
 -type vertex() :: erlmachine_graph:vertex().
@@ -104,26 +103,19 @@ code_change(_OldVsn, State, _Extra) ->
 
 %%% Transmission management
 
--spec extension(Graph::graph(), Assembly::assembly(), Env::map()) -> extension().
-extension(Graph, Assembly, Env) ->
-    %% TODO There is a place to decorate extension by transmission tags;
-
-    Rel = erlmachine_assembly:env(Assembly, Env),
-    erlmachine_assembly:graph(Rel, Graph).
-
--spec startup(Graph::graph(), Assembly::assembly(), Env::map()) ->
+-spec startup(Graph::graph(), V::vertex()) ->
                   success(pid()) | failure(term(), term()).
-startup(Graph, Assembly, Env) ->
-    Ext = extension(Graph, Assembly, Env),
-    startup(Ext).
+startup(Graph, V) ->
+    Assembly = erlmachine_graph:vertex(Graph, V),
+    startup(Assembly).
 
 %% NOTE: Schema and env params are inherited through the whole transmission;
 -spec spec(Assembly::assembly()) -> spec().
 spec(Assembly) ->
-    ID = erlmachine:vertex(Assembly), Type = erlmachine_assembly:type(Assembly),
+    V = erlmachine:vertex(Assembly), Type = erlmachine_assembly:type(Assembly),
 
     Start = { ?MODULE, startup, [Assembly] },
-    #{ id => ID, start => Start, type => Type }.
+    #{ id => V, start => Start, type => Type }.
 
 -spec startup(Assembly::assembly()) ->
                    success(pid()) | failure(term(), term()).
@@ -131,10 +123,8 @@ startup(Assembly) ->
     IsSup = erlmachine:is_supervisor(Assembly),
     Res =
         if IsSup ->
-                Graph = erlmachine_assembly:graph(Assembly),
-                Env = erlmachine_assembly:env(Assembly),
-
-                Exts = [extension(Graph, Ext, Env)|| Ext <- erlmachine_assembly:extensions(Assembly)],
+                Graph = erlmachine_assembly:graph(Assembly), V = erlmachine:vertex(Assembly),
+                Exts = erlmachine_graph:out_neighbours(Graph, V),
 
                 erlmachine_supervisor_prototype:startup(Assembly, Exts);
            true ->
@@ -147,16 +137,12 @@ startup(Assembly) ->
                      success(pid()) | failure(term(), term()).
 install(Graph, V, Ext) ->
     %% TODO To add extensions on a graph
-    Assembly = erlmachine_graph:vertex(Graph, V),
+    Assembly = erlmachine_graph:vertex(Graph, V), V2 = erlmachine:vertex(Ext),
 
-    Graph = erlmachine_assembly:graph(Assembly), Env = erlmachine_assembly:env(Assembly),
+    _ = erlmachine_graph:add_vertex(Graph, V2, Ext), _ =  erlmachine_graph:add_edge(Graph, V, V2, []),
 
-    Rel = extension(Graph, Ext, Env),
-    Res = erlmachine_supervisor_prototype:install(Assembly, Rel),
-
-    erlmachine_graph:draw_vertex(Graph, Ext), erlmachine_graph:draw_edge(Graph, Assembly, Ext),
-
-    ok = erlmachine_system:install(Res, Assembly, Rel),
+    Rel = erlmachine_assembly:graph(Ext, Graph), Res = erlmachine_supervisor_prototype:install(Assembly, Rel),
+    ok = erlmachine_system:install(Res, Assembly, Ext),
     Res.
 
 -spec uninstall(Graph::graph(), V::vertex(), V2::vertex()) ->
@@ -193,7 +179,6 @@ mesh(Module, Assembly, Motion) ->
 
 mesh([Ext|T], Module, Assembly, Motion) ->
     Res = Module:mesh(Assembly, Motion, Ext, T),
-
     ok = erlmachine_system:transmit(Res, Ext), ok = transmit(Res, Ext),
     if T == [] ->
             Res;

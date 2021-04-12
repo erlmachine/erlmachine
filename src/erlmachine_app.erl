@@ -1,4 +1,8 @@
 -module(erlmachine_app).
+
+%% “Πάντα ῥεῖ (Panta rhei)  – Everything flows”  ( Heraclitus of Ephesus, ca. 500 BCE)”
+%% Excerpt From: Morrison, J. Paul. “Flow-Based Programming - 2nd Edition.” Apple Books.
+
 -behaviour(application).
 
 -export([start/2]).

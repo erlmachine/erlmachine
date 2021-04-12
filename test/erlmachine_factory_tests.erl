@@ -11,6 +11,8 @@ erlmachine_factory_test_() ->
     {
      foreach,
      fun() ->
+             meck:expect(erlmachine, get_key, 1, ['erlmachine_assembly']),
+
              erlmachine_database:create_schema(Nodes), ok = erlmachine_database:start(),
 
              erlmachine_database:create_table(Table),
@@ -19,7 +21,7 @@ erlmachine_factory_test_() ->
              application:start(yamerl), application:start(syn),
              {ok, _} = erlmachine_factory:start(),
 
-             [ok = erlmachine_app:add_schema(File) || File <- ["assembly.json", "transmission.json"]]
+             [ok = erlmachine_app:add_schema(File) || File <- ["assembly.json", "graph.json"]]
      end,
      fun(_) ->
              erlmachine_factory:stop(),
@@ -34,7 +36,8 @@ erlmachine_factory_test_() ->
                {ok, Datasheet} = erlmachine_datasheet:assembly(Path),
 
                Assembly = erlmachine_factory:assembly(Datasheet),
-               true = erlmachine:is_worker(Assembly)
+
+               SN = erlmachine:serial_no(Assembly), true = is_binary(SN)
        end
       },
       {
@@ -44,39 +47,44 @@ erlmachine_factory_test_() ->
                {ok, Datasheet} = erlmachine_datasheet:assembly(Path),
 
                Assembly = erlmachine_factory:assembly(Datasheet),
-               true = erlmachine:is_supervisor(Assembly)
+
+               SN = erlmachine:serial_no(Assembly), true = is_binary(SN)
        end
       },
       {
        "Inspect assembly: gear",
        fun() ->
                Gear = erlmachine_factory:gear(erlmachine_model_ct, [], ['eunit']),
-               SN = erlmachine_assembly:serial_no(Gear), V = erlmachine:vertex(Gear),
-               true = is_binary(SN), true = (SN == V)
+
+               SN = erlmachine:serial_no(Gear), V = erlmachine:vertex(Gear),
+               true = is_binary(SN), SN = V
        end
       },
       {
        "Inspect assembly: shaft",
         fun() ->
                 Shaft = erlmachine_factory:shaft(erlmachine_model_ct, [], ['eunit'], []),
-                SN = erlmachine_assembly:serial_no(Shaft), V = erlmachine:vertex(Shaft),
-                true = is_binary(SN), true = (SN == V)
+
+                SN = erlmachine:serial_no(Shaft), V = erlmachine:vertex(Shaft),
+                true = is_binary(SN), SN = V
         end
       },
       {
        "Inspect assembly: axle",
        fun() ->
                Axle = erlmachine_factory:axle(erlmachine_sup_model_ct, [], ['eunit'], []),
-               SN = erlmachine_assembly:serial_no(Axle), V = erlmachine:vertex(Axle),
-               true = is_binary(SN), true = (SN == V)
+
+               SN = erlmachine:serial_no(Axle), V = erlmachine:vertex(Axle),
+               true = is_binary(SN), SN = V
        end
       },
       {
        "Inspect assembly: gearbox",
        fun() ->
                GearBox = erlmachine_factory:gearbox(erlmachine_sup_model_ct, [], ['eunit'], []),
-               SN = erlmachine_assembly:serial_no(GearBox), V = erlmachine:vertex(GearBox),
-               true = is_binary(SN), true = (SN == V)
+
+               SN = erlmachine:serial_no(GearBox), V = erlmachine:vertex(GearBox),
+               true = is_binary(SN), SN = V
        end
       },
       {
@@ -88,7 +96,7 @@ erlmachine_factory_test_() ->
                Assembly = erlmachine_factory:assembly(Datasheet),
                Model = erlmachine_assembly:model(Assembly), Prot = erlmachine_assembly:prototype(Assembly),
 
-               SN = erlmachine_assembly:serial_no(Assembly), true = is_binary(SN),
+               SN = erlmachine:serial_no(Assembly), true = is_binary(SN),
  
                true = erlmachine:is_worker(Assembly),
 
@@ -96,7 +104,7 @@ erlmachine_factory_test_() ->
 
                MN = erlmachine_assembly:model_no(Assembly), true = is_binary(MN),
 
-               Port = erlmachine_assembly:port(Assembly), true = is_binary(Port),
+               Port = erlmachine:port(Assembly), true = is_binary(Port),
 
                Module = erlmachine_model:module(Model), 'erlmachine_model_ct' = Module,
 
@@ -106,22 +114,27 @@ erlmachine_factory_test_() ->
 
                Opt2 = erlmachine_prototype:options(Prot), true = is_list(Opt2),
 
-               UID = erlmachine_assembly:uid(Assembly), true = is_integer(UID),
+               UID = erlmachine:uid(Assembly), true = is_integer(UID),
 
-               Tags = erlmachine_assembly:tags(Assembly), true = is_list(Tags),
+               Tags = erlmachine:tags(Assembly), true = is_list(Tags),
 
-               Vertex = erlmachine_assembly:vertex(Assembly), true = is_binary(Vertex),
+               Vertex = erlmachine:vertex(Assembly), true = is_binary(Vertex),
 
-               PN = erlmachine_assembly:part_no(Assembly), true = is_binary(PN),
+               PN = erlmachine:part_no(Assembly), true = is_binary(PN),
 
-               Desc = erlmachine_assembly:description(Assembly), true = is_binary(Desc)
+               Desc = erlmachine:description(Assembly), true = is_binary(Desc)
        end
       },
       {
        "Inspect datasheet mapping: datasheets/sample.yaml",
        fun() ->
                Path = filename:join(erlmachine:priv_dir(), "datasheets/sample.yaml"),
-               {ok, _Datasheet} = erlmachine_datasheet:transmission(Path)
+
+               {ok, Datasheet} = erlmachine_datasheet:graph(Path),
+               Graph = erlmachine_factory:graph(Datasheet),
+
+               Exts = erlmachine_graph:vertices(Graph), [_A, _B, _C, _D, _E] = Exts,
+               [true = is_binary(erlmachine:serial_no(Ext)) || Ext <- Exts]
        end
       },
       {
@@ -132,3 +145,4 @@ erlmachine_factory_test_() ->
       }
      ]
     }.
+

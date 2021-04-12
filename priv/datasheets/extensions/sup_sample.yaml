@@ -16,4 +16,6 @@ tags:
   - test
 vertex: sup-test
 part_no: PN-0
+env:
+  key: value
 description: Supervisor datasheet sample

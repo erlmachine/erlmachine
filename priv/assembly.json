@@ -17,11 +17,11 @@
         },
         "type":{
             "enum": ["worker", "supervisor"],
-            "description": "Behavioral type of an extension"
+            "description": "Behavioral type of an assembly"
         },
         "body":{
             "type": "object",
-            "description": "Data structure that keeps the state of an extension"
+            "description": "Data structure that keeps the state of an assembly"
         },
         "model_no":{
             "description": "Product configurator input to generate a master-production schedule"
@@ -42,7 +42,7 @@
             },
             "additionalProperties": false,
             "required": [ "module" ],
-            "description": "Domain level specification"
+            "description": "Domain level implementation"
         },
         "prototype":{
             "type": "object",
@@ -57,7 +57,7 @@
             },
             "additionalProperties": false,
             "required": [ "module" ],
-            "description": "Service level specification"
+            "description": "Service level implementation"
         },
         "uid":{
             "type": "integer",
@@ -73,9 +73,13 @@
         "part_no":{
             "description": "Deployment identity to track the quality of an assembly through a release period"
         },
+        "env":{
+            "type": "object",
+            "description": "The environment context which is passed to the domain level implementation"
+        },
         "description":{
             "type": "string",
-            "description": "Short textual overview or metadata for generated assembly"
+            "description": "Short textual overview or metadata for a generated assembly"
         }
     },
     "required": [ "type", "model" ]

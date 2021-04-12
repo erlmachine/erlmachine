@@ -19,4 +19,6 @@ tags:
   - test
 vertex: vertex-test
 part_no: PN-0
+env:
+  key: value
 description: Worker datasheet sample

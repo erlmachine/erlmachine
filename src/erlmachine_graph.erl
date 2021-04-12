@@ -11,8 +11,6 @@
 -export([new/0]).
 
 -export([draw/1]).
--export([draw_vertex/2]).
--export([draw_edge/3]).
 
 -export([add_vertex/3, del_vertex/2]).
 -export([add_edge/4]).
@@ -48,33 +46,22 @@ new() ->
 
 -spec draw(Assembly::assembly()) -> graph().
 draw(Assembly) ->
-    Graph = new(), ok = draw_vertex(Graph, Assembly),
+    Graph = new(),
+    V = erlmachine:vertex(Assembly), Exts = erlmachine_assembly:extensions(Assembly),
 
-    Exts = erlmachine_assembly:extensions(Assembly),
-    ok = draw(Graph, Exts), [ok = draw_edge(Graph, Assembly, Ext) || Ext <- Exts],
+    ok = add_vertex(Graph, V, Assembly),
+
+    ok = draw(Graph, Exts), [ok = add_edge(Graph, V, erlmachine:vertex(Ext), []) || Ext <- Exts],
     Graph.
 
 draw(_Graph, []) ->
     ok;
-draw(Graph, [H|T]) ->
-    ok = draw_vertex(Graph, H),
+draw(Graph, [Assembly|T]) ->
+    V = erlmachine:vertex(Assembly), ok = add_vertex(Graph, V, Assembly),
 
-    Exts = erlmachine_assembly:extensions(H),
-    draw(Graph, Exts), [draw_edge(Graph, H, Ext) || Ext <- Exts],
+    Exts = erlmachine_assembly:extensions(Assembly),
+    draw(Graph, Exts), [ok = add_edge(Graph, V, erlmachine:vertex(Ext), []) || Ext <- Exts],
     draw(Graph, T).
-
--spec draw_vertex(Graph::graph(), Assembly::assembly()) -> success().
-draw_vertex(Graph, Assembly) ->
-    V = erlmachine_assembly:vertex(Assembly), Rel = erlmachine_assembly:graph(Assembly, Graph),
-
-    add_vertex(Graph, V, Rel).
-
--spec draw_edge(Graph::graph(), Assembly::assembly(), Ext::assembly()) -> success().
-draw_edge(Graph, Assembly, Ext) ->
-    Label = erlmachine_assembly:type(Assembly),
-    V1 = erlmachine_assembly:vertex(Assembly), V2 = erlmachine_assembly:vertex(Ext),
-
-    add_edge(Graph, V1, V2, Label).
 
 %% NOTE: 1. Path can be specified #.reg, label.reg, etc..
 %%       2. Model doesn't have to know about meshed parts;
@@ -86,8 +73,7 @@ draw_edge(Graph, Assembly, Ext) ->
 %% NOTE: The main purpouse of this call is to register a route;
 -spec add_vertex(Graph::graph(), V::vertex(), Ext::assembly()) -> success().
 add_vertex(Graph, V, Ext) ->
-    Encode = erlmachine_assembly:to_vertex(Ext),
-    digraph:add_vertex(Graph, V, Encode), 
+    Rel = erlmachine_assembly:graph(Ext, Graph), digraph:add_vertex(Graph, V, Rel),
     ok.
 
 %% NOTE: The main purpouse of this call is to delete entry from the schema (routes also deleted);
@@ -108,10 +94,9 @@ del_path(Graph, V1, V2) ->
 
 %% NOTE: vertex/2 allows to find extension within schema (via label);
 -spec vertex(Graph::graph(), V::vertex()) -> 
-                    assembly().
+                    vertex().
 vertex(Graph, V) ->
-    {_, Ext} = digraph:vertex(Graph, V),
-    _Decode = erlmachine_assembly:from_vertex(Ext).
+    {_, Ext} = digraph:vertex(Graph, V), Ext.
 
 %% NOTE: vertices/1 allows to query the full extensions list;
 -spec vertices(Graph::graph()) -> [vertex()].

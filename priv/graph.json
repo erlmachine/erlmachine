@@ -1,7 +1,7 @@
 {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "title": "Transmission datasheet",
-    "description": "The document that summarizes characteristics of a transmission",
+    "title": "Graph datasheet",
+    "description": "The document that summarizes characteristics of a graph",
 
     "definitions":{
         "vertex":{
@@ -23,26 +23,22 @@
 
     "type": "object",
     "properties":{
-        "description":{
-            "type": "string",
-            "description": "The brief manufacturer overview or metadata for auto generated document"
-        },
-        "extensions":{
+        "vertices":{
             "type": "object",
             "additionalProperties":{
                 "$ref": "assembly.json#"
             },
-            "description": "The vocabulary which specifies the setup of a transmission"
+            "description": "The vocabulary which specifies setup of extensions"
         },
-        "transmission": {
+        "edges": {
             "type": "array",
             "items":{
                 "$ref": "#/definitions/edge"
             },
             "minItems": 1,
             "additionalProperties": false,
-            "description": "Transmission arrangement graph"
+            "description": "Extensions arrangement on a graph"
         }
     },
-    "required": [ "extensions", "transmission" ]
+    "required": [ "vertices", "edges" ]
 }

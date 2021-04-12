@@ -20,13 +20,14 @@
 
 %% API.
 
+-export([is_factory/1]).
+
 -export([table/0, attributes/0]).
 
 -export([group/0]).
 
 -export([start_link/0]).
 -export([start/0]).
--export([process/2]).
 -export([stop/0]).
 
 %% gen_server.
@@ -42,12 +43,14 @@
 -export([gearbox/4, gearbox/6]).
 
 -export([assembly/1, assembly/2]).
--export([transmission/1]).
+-export([graph/1]).
 
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_user.hrl").
 -include("erlmachine_graph.hrl").
 -include("erlmachine_system.hrl").
+
+-callback process(Assembly::assembly(), Datasheet::datasheet()) -> assembly().
 
 -type serial_no() :: binary().
 -type part_no() :: binary().
@@ -57,6 +60,21 @@
 -type hash() :: binary().
 
 -export_type([serial_no/0, part_no/0]).
+
+%%% Modules
+
+-spec is_factory(Module::atom()) -> boolean().
+is_factory(Module) ->
+    lists:member(?MODULE, erlmachine:behaviours(Module)).
+
+%%% Factories
+
+-spec process(Factories::[module()], Assembly::assembly(), Datasheet::datasheet()) -> assembly().
+process([], Assembly, _) ->
+    Assembly;
+process([Factory|T], Assembly, Datasheet) ->
+    Rel = Factory:process(Assembly, Datasheet),
+    process(T, Rel, Datasheet).
 
 %%% erlmachine_db
 
@@ -88,18 +106,18 @@ start() ->
 start_link() ->
     gen_server:start_link({local, id()}, ?MODULE, [], []).
 
--record(process, { assembly::assembly(), datasheet::datasheet() }).
+-record(produce, { assembly::assembly(), datasheet::datasheet() }).
 
--spec process(Assembly::assembly()) ->
+-spec produce(Assembly::assembly()) ->
                      success(assembly()) | failure(term(), term()).
-process(Assembly) ->
+produce(Assembly) ->
     Datasheet = erlmachine_datasheet:new(),
-    process(Assembly, Datasheet).
+    produce(Assembly, Datasheet).
 
--spec process(Assembly::assembly(), Datasheet::datasheet()) ->
+-spec produce(Assembly::assembly(), Datasheet::datasheet()) ->
                        success(assembly()) | failure(term(), term()).
-process(Assembly, Datasheet) ->
-    gen_server:call(id(), #process{ assembly = Assembly, datasheet =  Datasheet }).
+produce(Assembly, Datasheet) ->
+    gen_server:call(id(), #produce{ assembly = Assembly, datasheet =  Datasheet }).
 
 -spec stop() -> success().
 stop() ->
@@ -107,27 +125,32 @@ stop() ->
 
 %%% gen_server
 
--record(state, { hash::hash(), serial::integer(), uid::uid() }).
+-record(state, { hash::hash(), serial::integer(), uid::uid(), factories::[module()]}).
 
 -type state() :: #state{}.
 
 init([]) ->
+    Modules = erlmachine:get_key(modules),
+    Factories = [M || M <- Modules, is_factory(M)],
+
     Serial = erlmachine_database:update_counter(?MODULE), Hash = erlmachine:guid(Serial),
     UID = erlmachine_user:root(),
 
-    {ok, #state{ hash = Hash, serial = Serial, uid = UID }}.
+    {ok, #state{ hash = Hash, serial = Serial, uid = UID, factories = Factories }}.
 
-handle_call(#process{ assembly = Assembly, datasheet = Datasheet }, _From, #state{ hash = Hash } = State) ->
+handle_call(#produce{ assembly = Assembly, datasheet = Datasheet }, _From, State) ->
+    Hash = hash(State), Factories = factories(State),
+
     Steps =
         [
          fun id/2,
          fun serial_no/2,
          fun uid/2,
-         fun (A, _) -> erlmachine_assembly:datasheet(A, Datasheet) end,
+         fun (A, _) -> process(Factories, A, Datasheet) end,
          fun vsn/2,
          fun publish/2
         ],
-    Res = pipe(Steps, Assembly, State),
+    Res = assemble(Steps, Assembly, State),
 
     <<B1:32, B2:32, B3:32, B4:32>> = Hash, Serial = erlmachine_database:update_counter(?MODULE),
     B5 = erlmachine:phash2({B1, Serial}),
@@ -147,27 +170,27 @@ handle_info(_Info, State) ->
 terminate(_Reason, _State) ->
     ok.
 
--spec pipe(Steps::[function()], Assembly::assembly(), State::state()) -> assembly().
-pipe([], Assembly, _State) ->
+-spec assemble(Steps::[function()], Assembly::assembly(), State::state()) -> assembly().
+assemble([], Assembly, _State) ->
     Assembly;
-pipe([Step|T], Assembly, State) ->
+assemble([Step|T], Assembly, State) ->
     Rel = Step(Assembly, State),
-    pipe(T, Rel, State).
-
+    assemble(T, Rel, State).
 
 -spec id(Assembly::assembly(), State::state()) -> assembly().
-id(Assembly, #state{ serial = Serial }) ->
-    erlmachine_assembly:id(Assembly, Serial).
+id(Assembly, State) ->
+    Serial = serial(State), erlmachine_assembly:id(Assembly, Serial).
 
 -spec serial_no(Assembly::assembly(), State::state()) -> assembly().
-serial_no(Assembly, #state{ hash = Hash }) ->
-    SN = erlmachine:base64url(Hash),
+serial_no(Assembly, State) ->
+    Hash = hash(State), SN = erlmachine:base64url(Hash),
+
     Rel = erlmachine_assembly:serial_no(Assembly, SN),
     erlmachine_assembly:vertex(Rel, SN).
 
 -spec uid(Assembly::assembly(), State::state()) -> assembly().
-uid(Assembly, #state{ uid = UID }) ->
-    erlmachine_assembly:uid(Assembly, UID).
+uid(Assembly, State) ->
+    UID = uid(State), erlmachine_assembly:uid(Assembly, UID).
 
 -spec vsn(Assembly::assembly(), State::state()) -> assembly().
 vsn(Assembly, _) ->
@@ -190,6 +213,24 @@ publish(Assembly, _) ->
     {ok, _Count} = erlmachine_registry:publish(?MODULE, Assembly),
     Assembly.
 
+%%% Field accessors
+
+-spec factories(State::state()) -> [module()].
+factories(State) ->
+    State#state.factories.
+
+-spec hash(State::state()) -> hash().
+hash(State) ->
+    State#state.hash.
+
+-spec serial(State::state()) -> integer().
+serial(State) ->
+    State#state.serial.
+
+-spec uid(State::state()) -> uid().
+uid(State) ->
+    State#state.uid.
+
 %%% Production API
 
 %% TODO To consider a call supported by decorating module as arg;
@@ -211,7 +252,7 @@ gear(Model, Opt, Tags, Ext) ->
 gear(Model, Opt, Prot, ProtOpt, Tags) when is_list(Opt),
                                            is_list(ProtOpt) ->
     Assembly = erlmachine_assembly:new(Model, Opt, Prot, ProtOpt, Tags),
-    Gear = erlmachine_gear:new(Assembly), {ok, Rel} = process(Gear),
+    Gear = erlmachine_gear:new(Assembly), {ok, Rel} = produce(Gear),
     Rel.
 
 -spec gear(Model::atom(), Opt::[term()], Prot::atom(), ProtOpt::[term()], Tags::[term()], Ext::assembly()) ->
@@ -233,7 +274,7 @@ shaft(Model, Opt, Prot, ProtOpt, Tags, Exts) when is_list(Opt),
                                                   is_list(ProtOpt),
                                                   is_list(Exts) ->
     Assembly = erlmachine_assembly:new(Model, Opt, Prot, ProtOpt, Tags),
-    Shaft = erlmachine_shaft:new(Assembly), {ok, Rel} = process(Shaft),
+    Shaft = erlmachine_shaft:new(Assembly), {ok, Rel} = produce(Shaft),
     erlmachine_assembly:extensions(Rel, Exts).
 
 -spec axle(Model::atom(), Opt::[term()], Tags::[term()], Exts::[assembly()]) ->
@@ -249,7 +290,7 @@ axle(Model, Opt, Prot, ProtOpt, Tags, Exts) when is_list(Opt),
                                                  is_list(ProtOpt),
                                                  is_list(Exts) ->
     Assembly = erlmachine_assembly:new(Model, Opt, Prot, ProtOpt, Tags),
-    Axle = erlmachine_axle:new(Assembly), {ok, Rel} = process(Axle),
+    Axle = erlmachine_axle:new(Assembly), {ok, Rel} = produce(Axle),
     erlmachine_assembly:extensions(Rel, Exts).
 
 %% TODO: To provide a build call to generate a schema for convinience;
@@ -266,16 +307,16 @@ gearbox(Model, Opt, Prot, ProtOpt, Tags, Exts) when is_list(Opt),
                                                     is_list(ProtOpt),
                                                     is_list(Exts) ->
     Assembly = erlmachine_assembly:new(Model, Opt, Prot, ProtOpt, Tags),
-    GearBox = erlmachine_gearbox:new(Assembly), {ok, Rel} = process(GearBox),
+    GearBox = erlmachine_gearbox:new(Assembly), {ok, Rel} = produce(GearBox),
 
     erlmachine_assembly:extensions(Rel, Exts).
 
-%% TODO: Transmition should be built here;
+%%% Assembly datasheet
 
 -spec assembly(Datasheet::datasheet()) ->
                       assembly().
 assembly(Datasheet) ->
-    Assembly = erlmachine_assembly:new(), {ok, Rel} = process(Assembly, Datasheet),
+    Assembly = erlmachine_assembly:new(), {ok, Rel} = produce(Assembly, Datasheet),
     Rel.
 
 -spec assembly(Datasheet::datasheet(), Exts::[assembly()]) ->
@@ -284,6 +325,38 @@ assembly(Datasheet, Exts) when is_list(Exts) ->
     Assembly = assembly(Datasheet),
     erlmachine_assembly:extensions(Assembly, Exts).
 
--spec transmission(Datasheet::datasheet()) -> graph().
-transmission(_Datasheet) ->
-    ok.
+%%% Graph datasheet
+
+-spec vertices(Datasheet::datasheet()) -> [term()].
+vertices(Datasheet) ->
+    {ok, Res} = erlmachine_datasheet:find(<<"vertices">>, Datasheet),
+    _Vertices = maps:to_list(Res).
+
+-spec edges(Datasheet::datasheet()) -> [term()].
+edges(Datasheet) ->
+    {ok, Edges} = erlmachine_datasheet:find(<<"edges">>, Datasheet),
+    [begin [E] = maps:to_list(Edge), E end|| Edge <- Edges].
+
+-spec graph(Datasheet::datasheet()) -> assembly().
+graph(Datasheet) ->
+    Graph = erlmachine_graph:new(),
+
+    Vertices = vertices(Datasheet), Edges = edges(Datasheet),
+    [begin A = assembly(D), _ = add_vertex(Graph, V, A) end || {V, D} <- Vertices],
+
+    [_ = add_edge(Graph, V, V2)|| {V, V2} <- Edges],
+    Graph.
+
+-spec add_vertex(V::binary(), Assembly::assembly(), Graph::graph()) ->
+                         term().
+add_vertex(Graph, V, Assembly) ->
+    Rel = erlmachine_assembly:vertex(Assembly, V),
+    _ = erlmachine_graph:add_vertex(Graph, V, Rel).
+
+-spec add_edge(Graph::graph(), V::binary(), V2::binary() | [binary()]) ->
+                       term().
+add_edge(Graph, V, V2) when is_list(V2) ->
+    [_ = erlmachine_graph:add_edge(Graph, V, Vn, []) || Vn <- V2];
+add_edge(Graph, V, V2) ->
+    _ = erlmachine_graph:add_edge(Graph, V, V2, []).
+
