@@ -43,11 +43,11 @@ install(Ext) ->
 add_edge(V, V2) ->
     gen_server:call(id(), #add_edge{ vertex = V, vertex2 = V2 }).
 
--record(execute, { vertex::vertex(), command::term() }).
+-record(execute, { vertex::vertex(), action::term() }).
 
--spec execute(V::vertex(), Command::term()) -> term().
-execute(V, Command) ->
-    gen_server:call(id(), #execute{ vertex = V, command = Command }).
+-spec execute(V::vertex(), Action::term()) -> term().
+execute(V, Action) ->
+    gen_server:call(id(), #execute{ vertex = V, action = Action }).
 
 -record(uninstall, { vertex::vertex() }).
 
@@ -108,8 +108,8 @@ handle_call(#uninstall{ vertex = V2 }, _From, #state{ graph = Graph, root = V } 
 
     {reply, Res, State};
 
-handle_call(#execute{ vertex = V, command = Command }, _From, #state{ graph = Graph } = State) ->
-    Res = erlmachine:execute(Graph, V, Command),
+handle_call(#execute{ vertex = V, action = Action }, _From, #state{ graph = Graph } = State) ->
+    Res = erlmachine:execute(Graph, V, Action),
 
     {reply, Res, State};
 

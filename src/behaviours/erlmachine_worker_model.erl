@@ -33,7 +33,7 @@
 -callback process(UID::uid(), Motion::term(), Port::term(), Scheduled::[term()], State::state()) ->
     success(state()) | success(term(), state()) | failure(term(), term(), state()).
 
--callback execute(UID::uid(), Command::term(), State::state()) ->
+-callback execute(UID::uid(), Action::term(), State::state()) ->
     success(term(), state()) | failure(term(), term(), state()).
 
 -callback pressure(UID::uid(), Load::term(), State::state()) ->
@@ -69,15 +69,15 @@ process(Assembly, Motion) ->
     Res = erlmachine_worker_process:process(Assembly, Motion),
     trim(Res).
 
--spec execute(Assembly::assembly(), Command::term()) ->
+-spec execute(Assembly::assembly(), Action::term()) ->
                       success(term(), assembly()) | failure(term(), term(), assembly()).
-execute(Assembly, Command) ->
+execute(Assembly, Action) ->
     Model = erlmachine_assembly:model(Assembly), Module = erlmachine_model:module(Model),
 
     UID = erlmachine_assembly:uid(Assembly),
     Body = erlmachine_assembly:body(Assembly),
 
-    Res = Module:execute(UID, Command, Body), body(Res, Assembly).
+    Res = Module:execute(UID, Action, Body), body(Res, Assembly).
 
 -spec pressure(Context::assembly(), Load::term()) ->
                       success(assembly()) | failure(term(), term(), assembly()).
