@@ -1,4 +1,5 @@
 -module(erlmachine_worker_model).
+%% TODO: To make models catalogue via auto genereted docs;
 %% NOTE: The main purpouse of the worker model is the ability to make impact on domain layer without affecting transport layer of service;
 %% NOTE: Pressure callback was intentionally reduced to the "gear" mode with the idea to support readability of schemas (load balancing or routing facilities require to arrange additional component on a schema);
 

@@ -1,4 +1,5 @@
 -module(erlmachine_worker_prototype).
+%% TODO: To make prototypes catalogue via auto genereted docs;
 %% NOTE: The main purpouse of worker prototype is the ability to change transport layer (in/out API), execution environment (allocated process, dicrect function calls, remote server API, etc.) without affecting business layer of an extension
 
 %% NOTE: There are few examples of transport implementations:

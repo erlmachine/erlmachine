@@ -29,6 +29,7 @@
 
 -export([return_address/1, return_address/2]).
 -export([correlation_id/1, correlation_id/2]).
+-export([history/1, history/2]).
 
 -export([reply/2]).
 
@@ -165,6 +166,7 @@ shutdown(Graph, V, Reason) ->
     erlmachine_transmission:shutdown(Graph, V, Reason, Timeout).
 
 %%%  Message construction API
+%%% NOTE: https://www.enterpriseintegrationpatterns.com/patterns/messaging/MessageConstructionIntro.html;
 
 -spec motion(Header::header(), Body::body()) -> motion().
 motion(Header, Body) ->
@@ -186,6 +188,9 @@ body(Motion) ->
 body(Motion, Body) ->
     erlmachine_transmission:body(Motion, Body).
 
+%%% Command message
+%% https://www.enterpriseintegrationpatterns.com/patterns/messaging/CommandMessage.html;
+
 -spec command(Name::term(), Args::body()) ->
                      motion().
 command(Name, Args) ->
@@ -195,7 +200,10 @@ command(Name, Args) ->
 -spec command(Header::header(), Name::term(), Args::body()) ->
                      motion().
 command(Header, Name, Args) ->
-    erlmachine_transmission:motion(Header#{ command => Name }, Args).
+    erlmachine_transmission:motion(Header#{ name => Name }, Args).
+
+%%% Document message
+%% https://www.enterpriseintegrationpatterns.com/patterns/messaging/DocumentMessage.html;
 
 -spec document(Meta::term(), Body::body()) -> 
                       motion().
@@ -206,40 +214,46 @@ document(Meta, Body) ->
 -spec document(Header::header(), Meta::term(), Body::body()) -> 
                       motion().
 document(Header, Meta, Body) ->
-    erlmachine_transmission:motion(Header#{ document => Meta }, Body).
+    erlmachine_transmission:motion(Header#{ meta => Meta }, Body).
 
--spec event(Type::term(), Description::body()) -> 
-                   motion(). 
-event(Type, Description) ->
+%%% Event message
+%% https://www.enterpriseintegrationpatterns.com/patterns/messaging/EventMessage.html;
+
+-spec event(Type::term(), Desc::body()) -> 
+                   motion().
+event(Type, Desc) ->
     Header = #{},
-    event(Header, Type, Description).
+    event(Header, Type, Desc).
 
--spec event(Header::header(), Type::term(), Description::body()) -> 
-                   motion(). 
-event(Header, Type, Description) ->
-    erlmachine_transmission:motion(Header#{ event => Type }, Description).
+-spec event(Header::header(), Type::term(), Desc::body()) -> 
+                   motion().
+event(Header, Type, Desc) ->
+    erlmachine_transmission:motion(Header#{ type => Type }, Desc).
 
 -spec command_name(Motion::motion()) -> term().
 command_name(Motion) ->
     Header = header(Motion),
-    maps:get(command, Header).
+    maps:get(name, Header).
 
 -spec document_meta(Motion::motion()) -> term().
 document_meta(Motion) ->
     Header = header(Motion),
-    maps:get(document, Header).
+    maps:get(meta, Header).
 
 -spec event_type(Motion::motion()) -> term().
 event_type(Motion) ->
     Header = header(Motion),
-    maps:get(event, Header).
+    maps:get(type, Header).
+
+%%% Request-Reply
+%% https://www.enterpriseintegrationpatterns.com/patterns/messaging/RequestReply.html;
 
 -spec request(Motion::motion(), Address::term()) -> 
                            motion().
 request(Motion, Address) ->
     return_address(Motion, Address).
 
--spec request(Motion::motion(), Address::term(), Id::term()) -> 
+-spec request(Motion::motion(), Address::term(), Id::term()) ->
                            motion().
 request(Motion, Address, Id) ->
     correlation_id(return_address(Motion, Address), Id).
@@ -247,27 +261,44 @@ request(Motion, Address, Id) ->
 -spec return_address(Motion::motion()) -> term().
 return_address(Motion) ->
     Header = header(Motion),
-    maps:get(return_address, Header, undefined).
+    maps:get(address, Header, undefined).
 
 -spec return_address(Motion::motion(), Address::term()) -> motion().
 return_address(Motion, Address) ->
     Header = header(Motion),
-    header(Motion, Header#{ return_address => Address }).
-
--spec correlation_id(Motion::motion()) -> term().
-correlation_id(Motion) ->
-    Header = header(Motion),
-    maps:get(correlation_id, Header, undefined).
-
--spec correlation_id(Motion::motion(), Id::term()) -> motion().
-correlation_id(Motion, Id) ->
-    Header = header(Motion),
-    header(Motion, Header#{ correlation_id => Id }).
+    header(Motion, Header#{ address => Address }).
 
 -spec reply(Req::motion(), Res::motion()) -> motion().
 reply(Req, Res) ->
     Header = maps:merge(header(Req), header(Res)),
     header(Res, Header).
+
+%%% Correlation identifier
+%% https://www.enterpriseintegrationpatterns.com/patterns/messaging/CorrelationIdentifier.html;
+
+-spec correlation_id(Motion::motion()) -> term().
+correlation_id(Motion) ->
+    Header = header(Motion),
+    maps:get(id, Header, undefined).
+
+-spec correlation_id(Motion::motion(), Id::term()) -> motion().
+correlation_id(Motion, Id) ->
+    Header = header(Motion),
+    header(Motion, Header#{ id => Id }).
+
+%%% Message history
+%% https://www.enterpriseintegrationpatterns.com/patterns/messaging/MessageHistory.html;
+
+-spec history(Motion::motion()) -> [term()].
+history(Motion) ->
+    Header = header(Motion),
+    maps:get(history, Header, []).
+
+-spec history(Motion::motion(), Log::term()) -> motion().
+history(Motion, Log) ->
+    Header = header(Motion),
+    History = history(Motion),
+    header(Motion, Header#{ history => [Log|History] }).
 
 %%% Result API
 

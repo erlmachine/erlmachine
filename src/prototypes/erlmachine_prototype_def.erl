@@ -1,5 +1,5 @@
 -module(erlmachine_prototype_def).
-
+%% TODO: To make autogenereted documentation catalogue of prototypes;
 -behaviour(gen_server).
 -behaviour(erlmachine_worker_prototype).
 

@@ -6,6 +6,7 @@
 %% NOTE: The responsibility to manage the graph belongs to the transmission.
 %% 1. Graph should be preserved and to be managed by the owner;
 %% 2. Env is assigned to the Model (in comparison to the options param which is assigned to the extension);
+%% 3. Env may contain flags which indicate development mode: debug, test, etc..
 
 %% NOTE: Transmission can provide developer with a various features such as:
 
