@@ -141,14 +141,14 @@ next(Assembly, {<<"port">>, V, I}) ->
     next(Rel, erlmachine_datasheet:next(I));
 
 next(Assembly, {<<"model">>, V, I}) ->
-    {ok, Name} = erlmachine_datasheet:find(<<"module">>, V), Module = binary_to_existing_atom(Name, utf8),
+    {ok, Name} = erlmachine_datasheet:find(<<"module">>, V), Module = binary_to_atom(Name, utf8),
     {ok, Opt} = erlmachine_datasheet:find(<<"options">>, V),
     Model = erlmachine_model:new(Module, Opt), Rel = model(Assembly, Model),
 
     next(Rel, erlmachine_datasheet:next(I));
 
 next(Assembly, {<<"prototype">>, V, I}) ->
-    {ok, Name} = erlmachine_datasheet:find(<<"module">>, V), Module = binary_to_existing_atom(Name, utf8),
+    {ok, Name} = erlmachine_datasheet:find(<<"module">>, V), Module = binary_to_atom(Name, utf8),
     {ok, Opt} = erlmachine_datasheet:find(<<"options">>, V),
     Prot = erlmachine_prototype:new(Module, Opt), Rel = prototype(Assembly, Prot),
     next(Rel, erlmachine_datasheet:next(I));
