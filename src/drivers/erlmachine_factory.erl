@@ -130,7 +130,7 @@ stop() ->
 -type state() :: #state{}.
 
 init([]) ->
-    Modules = erlmachine:get_key(modules),
+    {ok, Modules} = erlmachine:get_key(modules),
     Factories = [M || M <- Modules, is_factory(M)],
 
     Serial = erlmachine_database:update_counter(?MODULE), Hash = erlmachine:guid(Serial),

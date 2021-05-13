@@ -129,8 +129,8 @@ erlmachine_factory_test_() ->
        "Inspect datasheet mapping: datasheets/sample.yaml",
        fun() ->
                Path = filename:join(erlmachine:priv_dir(), "datasheets/sample.yaml"),
-
                {ok, Datasheet} = erlmachine_datasheet:graph(Path),
+
                Graph = erlmachine_factory:graph(Datasheet),
 
                Exts = erlmachine_graph:vertices(Graph), [_A, _B, _C, _D, _E] = Exts,

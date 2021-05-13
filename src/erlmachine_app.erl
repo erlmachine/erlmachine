@@ -25,8 +25,7 @@ stop(_State) ->
     ok = erlmachine_database:stop().
 
 start_phase(wait_for_tables, _Type, Timeout) when is_integer(Timeout) ->
-    Modules = erlmachine:get_key(modules),
-    Tables = [M || M <- Modules, erlmachine_database:is_database(M)],
+    Tables = tables(),
 
     ok = wait_for_tables(Tables, Timeout);
 
@@ -37,7 +36,6 @@ start_phase(add_schema, _Type, Files) when is_list(Files) ->
 
 start_phase(_, _Type, _PhaseArgs) ->
     erlmachine:success().
-
 
 -spec wait_for_tables(Tables::[atom()], Timeout::integer()) -> success().
 wait_for_tables(Tables, Timeout) ->
@@ -51,5 +49,5 @@ add_schema(File) ->
 
 -spec tables() -> [atom()].
 tables() ->
-    Modules = erlmachine:get_key(modules),
+    {ok, Modules} = erlmachine:get_key(modules),
     [Module || Module <- Modules, erlmachine_database:is_database(Module)].
