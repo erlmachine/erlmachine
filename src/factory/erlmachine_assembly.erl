@@ -142,15 +142,26 @@ next(Assembly, {<<"port">>, V, I}) ->
 
 next(Assembly, {<<"model">>, V, I}) ->
     {ok, Name} = erlmachine_datasheet:find(<<"module">>, V), Module = binary_to_atom(Name, utf8),
-    {ok, Opt} = erlmachine_datasheet:find(<<"options">>, V),
-    Model = erlmachine_model:new(Module, Opt), Rel = model(Assembly, Model),
-
+    Model =
+        case erlmachine_datasheet:find(<<"options">>, V) of
+            {ok, Opt} ->
+                erlmachine_model:new(Module, Opt);
+            _ ->
+                erlmachine_model:new(Module)
+        end,
+    Rel = model(Assembly, Model),
     next(Rel, erlmachine_datasheet:next(I));
 
 next(Assembly, {<<"prototype">>, V, I}) ->
     {ok, Name} = erlmachine_datasheet:find(<<"module">>, V), Module = binary_to_atom(Name, utf8),
-    {ok, Opt} = erlmachine_datasheet:find(<<"options">>, V),
-    Prot = erlmachine_prototype:new(Module, Opt), Rel = prototype(Assembly, Prot),
+    Prot =
+        case erlmachine_datasheet:find(<<"options">>, V) of
+            {ok, Opt} ->
+                erlmachine_prototype:new(Module, Opt);
+            _ ->
+                erlmachine_prototype:new(Module)
+        end,
+    Rel = prototype(Assembly, Prot),
     next(Rel, erlmachine_datasheet:next(I));
 
 next(Assembly, {<<"uid">>, V, I}) ->
@@ -167,6 +178,10 @@ next(Assembly, {<<"vertex">>, V, I}) ->
 
 next(Assembly, {<<"part_no">>, V, I}) ->
     Rel = part_no(Assembly, V),
+    next(Rel, erlmachine_datasheet:next(I));
+
+next(Assembly, {<<"env">>, V, I}) ->
+    Rel = env(Assembly, V),
     next(Rel, erlmachine_datasheet:next(I));
 
 next(Assembly, {<<"description">>, V, I}) ->

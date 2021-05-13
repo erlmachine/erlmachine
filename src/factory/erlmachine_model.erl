@@ -1,6 +1,6 @@
 -module(erlmachine_model).
 %% API.
--export([new/0, new/2, new/3]).
+-export([new/0, new/1, new/2, new/3]).
 
 -export([
          module/1, module/2,
@@ -27,6 +27,10 @@
 -spec new() -> model().
 new() ->
     #model{}.
+
+-spec new(Module::module()) -> model().
+new(Module) ->
+    new(Module, []).
 
 -spec new(Module::module(), Opt::[term()]) -> model().
 new(Module, Opt) ->
