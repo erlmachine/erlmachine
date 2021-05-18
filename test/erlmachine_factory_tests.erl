@@ -6,7 +6,7 @@
 -include_lib("eunit/include/eunit.hrl").
 
 erlmachine_factory_test_() ->
-    Nodes = [node()], Table = 'erlmachine_factory',
+    Nodes = [node()], Table = 'erlmachine_factory', Tags = ['eunit'],
 
     {
      foreach,
@@ -54,7 +54,7 @@ erlmachine_factory_test_() ->
       {
        "Inspect assembly: gear",
        fun() ->
-               Gear = erlmachine_factory:gear(erlmachine_model_ct, [], ['eunit']),
+               Gear = erlmachine:tags(erlmachine_factory:gear(erlmachine_model_ct, [], #{}), Tags),
 
                SN = erlmachine:serial_no(Gear), V = erlmachine:vertex(Gear),
                true = is_binary(SN), SN = V
@@ -63,7 +63,7 @@ erlmachine_factory_test_() ->
       {
        "Inspect assembly: shaft",
         fun() ->
-                Shaft = erlmachine_factory:shaft(erlmachine_model_ct, [], ['eunit'], []),
+                Shaft = erlmachine:tags(erlmachine_factory:shaft(erlmachine_model_ct, [], #{}, []), Tags),
 
                 SN = erlmachine:serial_no(Shaft), V = erlmachine:vertex(Shaft),
                 true = is_binary(SN), SN = V
@@ -72,7 +72,7 @@ erlmachine_factory_test_() ->
       {
        "Inspect assembly: axle",
        fun() ->
-               Axle = erlmachine_factory:axle(erlmachine_sup_model_ct, [], ['eunit'], []),
+               Axle = erlmachine:tags(erlmachine_factory:axle(erlmachine_sup_model_ct, [], #{}, []), Tags),
 
                SN = erlmachine:serial_no(Axle), V = erlmachine:vertex(Axle),
                true = is_binary(SN), SN = V
@@ -81,7 +81,7 @@ erlmachine_factory_test_() ->
       {
        "Inspect assembly: gearbox",
        fun() ->
-               GearBox = erlmachine_factory:gearbox(erlmachine_sup_model_ct, [], ['eunit'], []),
+               GearBox = erlmachine:tags(erlmachine_factory:gearbox(erlmachine_sup_model_ct, [], #{}, []), Tags),
 
                SN = erlmachine:serial_no(GearBox), V = erlmachine:vertex(GearBox),
                true = is_binary(SN), SN = V
@@ -116,7 +116,7 @@ erlmachine_factory_test_() ->
 
                UID = erlmachine:uid(Assembly), true = is_integer(UID),
 
-               Tags = erlmachine:tags(Assembly), true = is_list(Tags),
+               true = is_list(erlmachine:tags(Assembly)),
 
                Vertex = erlmachine:vertex(Assembly), true = is_binary(Vertex),
 

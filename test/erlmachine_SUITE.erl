@@ -36,13 +36,12 @@ init_per_suite(Config) ->
 
     {ok, _} = erlmachine_factory:start(),
 
-    Env = #{},
+    Tags = ['ct', 'test'],
 
-    Ext = erlmachine_factory:gear(erlmachine_model_ct, [], ['test', 'ct']), 
+    Ext = erlmachine:tags(erlmachine_factory:gear(erlmachine_model_ct, [], #{}), Tags),
     Ext2 = erlmachine:vertex(Ext, 'test'),
 
-    GearBox = erlmachine_factory:gearbox(erlmachine_sup_model_ct, [], ['ct', 'root'], [Ext2]),
-
+    GearBox = erlmachine:tags(erlmachine_factory:gearbox(erlmachine_sup_model_ct, [], #{}, [Ext2]), Tags),
 
     {ok, Pid} = erlmachine_ct:start(GearBox), true = is_pid(Pid),
     Setup = [], %%TODO: To provide test case args;
@@ -108,7 +107,9 @@ all() ->
 %% TEST CASES
 %%--------------------------------------------------------------------
 install(_Config) ->
-    Ext = erlmachine_factory:gear(erlmachine_model_ct, [], ['install', 'test2']),
+    Tags = ['ct', 'test2', 'install'],
+
+    Ext = erlmachine:tags(erlmachine_factory:gear(erlmachine_model_ct, [], #{}), Tags),
     Ext2 = erlmachine:vertex(Ext, 'test2'),
 
     {ok, Pid} = erlmachine_ct:install(Ext2), true = is_pid(Pid),

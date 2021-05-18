@@ -234,79 +234,79 @@ uid(State) ->
 %%% Production API
 
 %% TODO To consider a call supported by decorating module as arg;
--spec gear(Model::atom(), Opt::[term()], Tags::[term()]) ->
+-spec gear(Model::atom(), Opt::[term()], Env::map()) ->
                   assembly().
-gear(Model, Opt, Tags) ->
+gear(Model, Opt, Env) ->
     Prot = erlmachine_prototype_def:name(),
     ProtOpt = [],
-    gear(Model, Opt, Prot, ProtOpt, Tags).
+    gear(Model, Opt, Prot, ProtOpt, Env).
 
--spec gear(Model::atom(), Opt::[term()], Tags::[term()], Ext::assembly()) ->
+-spec gear(Model::atom(), Opt::[term()], Env::map(), Ext::assembly()) ->
                   assembly().
-gear(Model, Opt, Tags, Ext) ->
-    Gear = gear(Model, Opt, Tags),
+gear(Model, Opt, Env, Ext) ->
+    Gear = gear(Model, Opt, Env),
     erlmachine_assembly:extensions(Gear, [Ext]).
 
--spec gear(Model::atom(), Opt::[term()], Prot::atom(), ProtOpt::[term()], Tags::[term()]) ->
+-spec gear(Model::atom(), Opt::[term()], Prot::atom(), ProtOpt::[term()], Env::map()) ->
                   assembly().
-gear(Model, Opt, Prot, ProtOpt, Tags) when is_list(Opt),
-                                           is_list(ProtOpt) ->
-    Assembly = erlmachine_assembly:new(Model, Opt, Prot, ProtOpt, Tags),
+gear(Model, Opt, Prot, ProtOpt, Env) when is_list(Opt),
+                                          is_list(ProtOpt) ->
+    Assembly = erlmachine_assembly:new(Model, Opt, Prot, ProtOpt, Env),
     Gear = erlmachine_gear:new(Assembly), {ok, Rel} = produce(Gear),
     Rel.
 
--spec gear(Model::atom(), Opt::[term()], Prot::atom(), ProtOpt::[term()], Tags::[term()], Ext::assembly()) ->
+-spec gear(Model::atom(), Opt::[term()], Prot::atom(), ProtOpt::[term()], Env::map(), Ext::assembly()) ->
                   assembly().
-gear(Model, Opt, Prot, ProtOpt, Tags, Ext) ->
-    Gear = gear(Model, Opt, Prot, ProtOpt, Tags),
+gear(Model, Opt, Prot, ProtOpt, Env, Ext) ->
+    Gear = gear(Model, Opt, Prot, ProtOpt, Env),
     erlmachine_assembly:extensions(Gear, [Ext]).
 
--spec shaft(Model::atom(), Opt::[term()], Tags::[term()], Exts::[assembly()]) ->
+-spec shaft(Model::atom(), Opt::[term()], Env::map(), Exts::[assembly()]) ->
                   assembly().
-shaft(Model, Opt, Tags, Exts) ->
+shaft(Model, Opt, Env, Exts) ->
     Prot = erlmachine_prototype_def:name(),
     ProtOpt = [],
-    shaft(Model, Opt, Prot, ProtOpt, Tags, Exts).
+    shaft(Model, Opt, Prot, ProtOpt, Env, Exts).
 
--spec shaft(Model::atom(), Opt::[term()], Prot::atom(), ProtOpt::[term()], Tags::[term()], Exts::[assembly()]) ->
+-spec shaft(Model::atom(), Opt::[term()], Prot::atom(), ProtOpt::[term()], Env::map(), Exts::[assembly()]) ->
                    assembly().
-shaft(Model, Opt, Prot, ProtOpt, Tags, Exts) when is_list(Opt),
-                                                  is_list(ProtOpt),
-                                                  is_list(Exts) ->
-    Assembly = erlmachine_assembly:new(Model, Opt, Prot, ProtOpt, Tags),
+shaft(Model, Opt, Prot, ProtOpt, Env, Exts) when is_list(Opt),
+                                                 is_list(ProtOpt),
+                                                 is_list(Exts) ->
+    Assembly = erlmachine_assembly:new(Model, Opt, Prot, ProtOpt, Env),
     Shaft = erlmachine_shaft:new(Assembly), {ok, Rel} = produce(Shaft),
     erlmachine_assembly:extensions(Rel, Exts).
 
--spec axle(Model::atom(), Opt::[term()], Tags::[term()], Exts::[assembly()]) ->
+-spec axle(Model::atom(), Opt::[term()], Env::map(), Exts::[assembly()]) ->
                    assembly().
-axle(Model, Opt, Tags, Exts) ->
+axle(Model, Opt, Env, Exts) ->
     Prot = erlmachine_sup_prototype_def:name(),
     ProtOpt = [],
-    axle(Model, Opt, Prot, ProtOpt, Tags, Exts).
+    axle(Model, Opt, Prot, ProtOpt, Env, Exts).
 
--spec axle(Model::atom(), Opt::[term()], Prot::atom(), ProtOpt::[term()], Tags::[term()], Exts::[assembly()]) ->
+-spec axle(Model::atom(), Opt::[term()], Prot::atom(), ProtOpt::[term()], Env::map(), Exts::[assembly()]) ->
                    assembly().
-axle(Model, Opt, Prot, ProtOpt, Tags, Exts) when is_list(Opt),
-                                                 is_list(ProtOpt),
-                                                 is_list(Exts) ->
-    Assembly = erlmachine_assembly:new(Model, Opt, Prot, ProtOpt, Tags),
+axle(Model, Opt, Prot, ProtOpt, Env, Exts) when is_list(Opt),
+                                                is_list(ProtOpt),
+                                                is_list(Exts) ->
+    Assembly = erlmachine_assembly:new(Model, Opt, Prot, ProtOpt, Env),
     Axle = erlmachine_axle:new(Assembly), {ok, Rel} = produce(Axle),
     erlmachine_assembly:extensions(Rel, Exts).
 
 %% TODO: To provide a build call to generate a schema for convinience;
--spec gearbox(Model::atom(), Opt::[term()], Tags::[term()], Exts::[assembly()]) ->
+-spec gearbox(Model::atom(), Opt::[term()], Env::map(), Exts::[assembly()]) ->
                   assembly().
-gearbox(Model, Opt, Tags, Exts) ->
+gearbox(Model, Opt, Env, Exts) ->
     Prot = erlmachine_sup_prototype_def:name(),
     ProtOpt = [],
-    gearbox(Model, Opt, Prot, ProtOpt, Tags, Exts).
+    gearbox(Model, Opt, Prot, ProtOpt, Env, Exts).
 
--spec gearbox(Model::atom(), Opt::[term()], Prot::atom(), ProtOpt::[term()], Tags::[term()], Exts::[assembly()]) ->
+-spec gearbox(Model::atom(), Opt::[term()], Prot::atom(), ProtOpt::[term()], Env::map(), Exts::[assembly()]) ->
                   assembly().
-gearbox(Model, Opt, Prot, ProtOpt, Tags, Exts) when is_list(Opt),
-                                                    is_list(ProtOpt),
-                                                    is_list(Exts) ->
-    Assembly = erlmachine_assembly:new(Model, Opt, Prot, ProtOpt, Tags),
+gearbox(Model, Opt, Prot, ProtOpt, Env, Exts) when is_list(Opt),
+                                                   is_list(ProtOpt),
+                                                   is_list(Exts) ->
+    Assembly = erlmachine_assembly:new(Model, Opt, Prot, ProtOpt, Env),
     GearBox = erlmachine_gearbox:new(Assembly), {ok, Rel} = produce(GearBox),
 
     erlmachine_assembly:extensions(Rel, Exts).

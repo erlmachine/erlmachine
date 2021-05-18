@@ -97,16 +97,16 @@
 new() ->
     #assembly{}.
 
--spec new(ModelName::atom(), ModelOpt::[term()], ProtName::atom(), ProtOpt::[term()], Tags::[term()]) -> 
+-spec new(ModelName::atom(), ModelOpt::[term()], ProtName::atom(), ProtOpt::[term()], Env::map()) -> 
                  assembly().
-new(ModelName, ModelOpt, ProtName, ProtOpt, Tags) ->
+new(ModelName, ModelOpt, ProtName, ProtOpt, Env) ->
     Assembly = new(),
 
     Model = erlmachine_model:new(ModelName, ModelOpt),
     Prototype = erlmachine_prototype:new(ProtName, ProtOpt),
 
     Rel = prototype(model(Assembly, Model), Prototype),
-    tags(Rel, Tags).
+    env(Rel, Env).
 
 %%% Datasheet processing
 

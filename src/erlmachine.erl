@@ -47,7 +47,7 @@
 -export([port/1, port/2]).
 -export([graph/1]).
 -export([uid/1]).
--export([tags/1]).
+-export([tags/1, tags/2]).
 -export([vertex/1, vertex/2]).
 -export([part_no/1]).
 -export([description/1]).
@@ -397,6 +397,10 @@ uid(Assembly) ->
 -spec tags(Assembly::assembly()) -> [term()].
 tags(Assembly) ->
     erlmachine_assembly:tags(Assembly).
+
+-spec tags(Assembly::assembly(), Tags::[term()]) -> assembly().
+tags(Assembly, Tags) ->
+    erlmachine_assembly:tags(Assembly, Tags).
 
 -spec vertex(Assembly::assembly()) -> term().
 vertex(Assembly) ->
