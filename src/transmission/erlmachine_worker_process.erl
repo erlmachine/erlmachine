@@ -12,7 +12,7 @@
 process(Assembly, Motion) ->
     Model = erlmachine_assembly:model(Assembly), Module = erlmachine_model:module(Model),
     %% NOTE: Shaft mode callback;
-    Exported = erlang:function_exported(Module, 'rotate', 5),
+    Exported = erlang:function_exported(Module, 'process', 5),
     if Exported ->
             erlmachine_transmission:mesh(?MODULE, Assembly, Motion);
        true ->

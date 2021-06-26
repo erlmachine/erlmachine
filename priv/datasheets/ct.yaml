@@ -73,9 +73,9 @@ vertices:
     description: Test assembly E (worker)
 
 edges:
-# Description 0 (The list guaranties the right order and describes the first element as the root entry)
+# 1. Description (The list guaranties the right order and describes the first element as the root entry)
   - A: [B, C, D, E]
-# Description 1
+# 2. Description
   - B: C
-# Description 2
+# 3. Description
   - C: [D, E]

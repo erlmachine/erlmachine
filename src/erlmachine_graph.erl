@@ -57,6 +57,7 @@ draw(Assembly) ->
 draw(_Graph, []) ->
     ok;
 draw(Graph, [Assembly|T]) ->
+    io:format("~nAssembly1: ~p~n",[Assembly]),
     V = erlmachine:vertex(Assembly), ok = add_vertex(Graph, V, Assembly),
 
     Exts = erlmachine_assembly:extensions(Assembly),
