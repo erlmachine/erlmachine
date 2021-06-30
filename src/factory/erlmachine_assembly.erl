@@ -25,6 +25,7 @@
          description/1, description/2
         ]).
 
+-export([datasheet/1]).
 -export([process/2]).
 
 -export([to_json/1, from_json/1]).
@@ -83,6 +84,7 @@
 -type model() :: erlmachine_model:model().
 -type prototype() :: erlmachine_prototype:prototype().
 
+-type path() :: erlmachine_datasheet:path().
 -type datasheet() :: erlmachine_datasheet:datasheet().
 
 -type assembly() :: #assembly{}.
@@ -108,7 +110,12 @@ new(ModelName, ModelOpt, ProtName, ProtOpt, Env) ->
     Rel = prototype(model(Assembly, Model), Prototype),
     env(Rel, Env).
 
-%%% Datasheet processing
+%%% Datasheet API
+
+-spec datasheet(Path::path()) ->
+                       success(datasheet()) | failure(term(), term()).
+datasheet(Path) ->
+    erlmachine_datasheet:file(Path, "assembly.json").
 
 -spec process(Assembly::assembly(), Datasheet::datasheet()) -> assembly().
 process(Assembly, Datasheet) ->

@@ -9,8 +9,6 @@
 %% NOTE: There is possibility to load datasheet from other sources (via DB, network, etc.);
 
 %% API.
--export([assembly/1, graph/1]).
-
 -export([file/2]).
 -export([decode/3]).
 
@@ -28,16 +26,6 @@
 
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
-
--spec assembly(Path::path()) ->
-                      success(datasheet()) | failure(term(), term()).
-assembly(Path) ->
-    file(Path, "assembly.json").
-
--spec graph(Path::path()) ->
-                          success(datasheet()) | failure(term(), term()).
-graph(Path) ->
-    file(Path, "graph.json").
 
 -spec file(Path::path(), Schema::[term()]) ->
                   success(datasheet()) | failure(term(), term()).

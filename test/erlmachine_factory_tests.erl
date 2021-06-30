@@ -32,8 +32,8 @@ erlmachine_factory_test_() ->
       {
        "Inspect assembly: datasheets/extensions/ct.yaml",
        fun() ->
-               Path = filename:join(erlmachine:priv_dir(), "datasheets/extensions/ct.yaml"),
-               {ok, Datasheet} = erlmachine_datasheet:assembly(Path),
+               FileName = filename("datasheets/extensions/ct.yaml"),
+               {ok, Datasheet} = erlmachine_assembly:datasheet(FileName),
 
                Assembly = erlmachine_factory:assembly(Datasheet),
 
@@ -43,8 +43,8 @@ erlmachine_factory_test_() ->
       {
        "Inspect assembly: datasheets/extensions/sup_ct.yaml",
        fun() ->
-               Path = filename:join(erlmachine:priv_dir(), "datasheets/extensions/sup_ct.yaml"),
-               {ok, Datasheet} = erlmachine_datasheet:assembly(Path),
+               FileName = filename("datasheets/extensions/sup_ct.yaml"),
+               {ok, Datasheet} = erlmachine_assembly:datasheet(FileName),
 
                Assembly = erlmachine_factory:assembly(Datasheet),
 
@@ -90,14 +90,14 @@ erlmachine_factory_test_() ->
       {
        "Inspect datasheet mapping: datasheets/extensions/ct.yaml",
        fun() ->
-               Path = filename:join(erlmachine:priv_dir(), "datasheets/extensions/ct.yaml"),
-               {ok, Datasheet} = erlmachine_datasheet:assembly(Path),
+               FileName = filename("datasheets/extensions/ct.yaml"),
+               {ok, Datasheet} = erlmachine_assembly:datasheet(FileName),
 
                Assembly = erlmachine_factory:assembly(Datasheet),
                Model = erlmachine_assembly:model(Assembly), Prot = erlmachine_assembly:prototype(Assembly),
 
                SN = erlmachine:serial_no(Assembly), true = is_binary(SN),
- 
+
                true = erlmachine:is_worker(Assembly),
 
                Body = erlmachine_assembly:body(Assembly), true = is_map(Body),
@@ -130,8 +130,8 @@ erlmachine_factory_test_() ->
       {
        "Inspect datasheet mapping: datasheets/ct.yaml",
        fun() ->
-               Path = filename:join(erlmachine:priv_dir(), "datasheets/ct.yaml"),
-               {ok, Datasheet} = erlmachine_datasheet:graph(Path),
+               FileName = filename("datasheets/ct.yaml"),
+               {ok, Datasheet} = erlmachine_graph:datasheet(FileName),
 
                Graph = erlmachine_factory:graph(Datasheet),
 
@@ -148,3 +148,6 @@ erlmachine_factory_test_() ->
      ]
     }.
 
+-spec filename(Path::list()) -> list().
+filename(Path) ->
+    filename:join(erlmachine:priv_dir(), Path).

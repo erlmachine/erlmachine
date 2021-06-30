@@ -23,6 +23,8 @@
 
 -export([topsort/1]).
 
+-export([datasheet/1]).
+
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
 
@@ -30,6 +32,9 @@
 
 -type vertex() :: term().
 -type edge() :: term().
+
+-type path() :: erlmachine_datasheet:path().
+-type datasheet() :: erlmachine_datasheet:datasheet().
 
 -export_type([graph/0, vertex/0, edge/0]).
 
@@ -135,3 +140,10 @@ out_neighbours(Graph, V) ->
 -spec topsort(Graph::graph()) -> [vertex()] | false.
 topsort(Graph) ->
     digraph_utils:topsort(Graph).
+
+%%% Datasheet API
+
+-spec datasheet(Path::path()) ->
+                       success(datasheet()) | failure(term(), term()).
+datasheet(Path) ->
+    erlmachine_datasheet:file(Path, "graph.json").
