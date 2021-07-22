@@ -34,7 +34,7 @@
 -export([reply/2]).
 
 -export([failure/0, failure/1, failure/2, failure/3]).
--export([success/0, success/1, success/2]).
+-export([success/0, success/1, success/2, success/3]).
 -export([is_success/1, is_failure/1]).
 
 -export([attributes/1]).
@@ -306,29 +306,33 @@ history(Motion, Log) ->
 failure() ->
     erlmachine_system:failure().
 
--spec failure(E::term()) -> failure(E::term()).
+-spec failure(E::term()) -> failure(term()).
 failure(E) ->
     erlmachine_system:failure(E).
 
--spec failure(E::term(), R::term()) -> failure(E::term(), R::term()).
-failure(E, R) -> 
+-spec failure(E::term(), R::term()) -> failure(term(), term()).
+failure(E, R) ->
     erlmachine_system:failure(E, R).
 
--spec failure(E::term(), R::term(), S::term()) -> failure(E::term(), R::term(), S::term()).
-failure(E, R, S) -> 
+-spec failure(E::term(), R::term(), S::term()) -> failure(term(), term(), term()).
+failure(E, R, S) ->
     erlmachine_system:failure(E, R, S).
-
--spec success(Result::term()) -> success(Result::term()).
-success(Result) ->
-    erlmachine_system:success(Result).
-
--spec success(Result::term(), State::term()) -> success(Result::term(), State::term()).
-success(Result, State) -> 
-    erlmachine_system:success(Result, State).
 
 -spec success() -> success().
 success() ->
     erlmachine_system:success().
+
+-spec success(Res::term()) -> success(term()).
+success(Res) ->
+    erlmachine_system:success(Res).
+
+-spec success(Res::term(), S::term()) -> success(term(), term()).
+success(Res, S) ->
+    erlmachine_system:success(Res, S).
+
+-spec success(Res::term(), S::term(), A::[term()]) -> success(term(), term(), [term()]).
+success(Res, S, A) ->
+    erlmachine_system:success(Res, S, A).
 
 -spec is_success(Res::term()) -> boolean().
 is_success(Res) ->
