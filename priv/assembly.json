@@ -82,5 +82,5 @@
             "description": "Short textual overview or metadata for a generated assembly"
         }
     },
-    "required": [ "type", "model" ]
+    "required": [ "type", "model", "prototype" ]
 }
