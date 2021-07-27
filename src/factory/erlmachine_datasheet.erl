@@ -56,7 +56,7 @@ new() ->
 iterator(Datasheet) ->
     maps:iterator(Datasheet).
 
--spec next(Iterator::term()) -> none | {Key::binary(), Value::term(), Iterator::term()}.
+-spec next(Iterator::term()) -> none | {binary(), term(), term()}.
 next(Iterator) ->
     maps:next(Iterator).
 

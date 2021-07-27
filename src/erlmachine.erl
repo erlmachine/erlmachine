@@ -23,6 +23,7 @@
 -export([command/2, command/3]).
 -export([document/2, document/3]).
 -export([event/2, event/3]).
+
 -export([command_name/1, document_meta/1, event_type/1]).
 
 -export([request/2, request/3]).
@@ -262,6 +263,9 @@ request(Motion, Address, Id) ->
 return_address(Motion) ->
     Header = header(Motion),
     maps:get(address, Header, undefined).
+
+%%% Return address
+%% https://www.enterpriseintegrationpatterns.com/patterns/messaging/ReturnAddress.html
 
 -spec return_address(Motion::motion(), Address::term()) -> motion().
 return_address(Motion, Address) ->
