@@ -14,7 +14,7 @@
 -include("erlmachine_graph.hrl").
 -include("erlmachine_system.hrl").
 
--spec startup(UID::uid(), Vs::[vertex()], Opt::[term()], Env::map()) -> 
+-spec startup(UID::uid(), Vs::[vertex()], Opt::map(), Env::map()) -> 
     success() | failure(term(), term()).
 startup(UID, Vs, Opt, Env) ->
 %% TODO: To provide test cases parametrization through Env;

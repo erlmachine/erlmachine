@@ -9,11 +9,11 @@ vertices:
     model:
       module: erlmachine_sup_model_ct
       options:
-        - key: value
+        key: value
     prototype:
       module: erlmachine_sup_prototype_def
       options:
-        - key: value
+        key: value
     tags: [root, test]
     env:
       key: value
@@ -26,11 +26,11 @@ vertices:
     model:
       module: erlmachine_model_ct
       options:
-        - key: value
+        key: value
     prototype:
       module: erlmachine_prototype_def
       options:
-        - key: value
+        key: value
     tags: [test]
     env:
       key: value
@@ -41,11 +41,11 @@ vertices:
     model:
       module: erlmachine_model_ct
       options:
-        - key: value
+        key: value
     prototype:
       module: erlmachine_prototype_def
       options:
-        - key: value
+        key: value
     description: Test assembly C (worker)
 ## Notes about D:
   D:
@@ -53,11 +53,11 @@ vertices:
     model:
       module: erlmachine_model_ct
       options:
-        - key: value
+        key: value
     prototype:
       module: erlmachine_prototype_def
       options:
-        - key: value
+        key: value
     description: Test assembly D (worker)
 ## Notes about E:
   E:
@@ -65,11 +65,11 @@ vertices:
     model:
       module: erlmachine_model_ct
       options:
-        - key: value
+        key: value
     prototype:
       module: erlmachine_prototype_def
       options:
-        - key: value
+        key: value
     description: Test assembly E (worker)
 
 edges:

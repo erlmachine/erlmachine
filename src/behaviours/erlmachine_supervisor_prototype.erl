@@ -34,7 +34,7 @@
 -include("erlmachine_graph.hrl").
 -include("erlmachine_system.hrl").
 
--callback prototype_init(SN::serial_no(), Specs::[map()], Context::context(), Opt::[term()]) ->
+-callback prototype_init(SN::serial_no(), Specs::[map()], Context::context(), Opt::map()) ->
     success(pid()) | failure(term(), term()).
 
 -callback prototype_start_child(SN::serial_no(), Spec::map(), Context::context()) ->

@@ -16,7 +16,7 @@
                     %% Module name
                     module::module(),
                     %% Service level options which are passed as is
-                    options::[term()],
+                    options::map(),
                     %% vsn/1 attribute of the module (MD5 checksum if not specified)
                     vsn::term()
                    }
@@ -32,14 +32,14 @@ new() ->
 
 -spec new(Module::module()) -> prototype().
 new(Module) ->
-    new(Module, []).
+    new(Module, _Opt = #{}).
 
--spec new(Module::module(), Opt::[term()]) -> prototype().
+-spec new(Module::module(), Opt::map()) -> prototype().
 new(Module, Opt) ->
     Prototype = new(),
     options(module(Prototype, Module), Opt).
 
--spec new(Module::module(), Opt::[term()], Vsn::[term()]) -> prototype().
+-spec new(Module::module(), Opt::map(), Vsn::[term()]) -> prototype().
 new(Module, Opt, Vsn) ->
     Prototype = new(Module, Opt),
     vsn(Prototype, Vsn).
@@ -50,15 +50,15 @@ module(Prot) ->
 
 -spec module(Prot::prototype(), Module::module()) -> prototype().
 module(Prot, Module) ->
-    Prot#prototype{ module=Module }.
+    Prot#prototype{ module = Module }.
 
--spec options(Prot::prototype()) -> [term()].
+-spec options(Prot::prototype()) -> map().
 options(Prot) ->
     Prot#prototype.options.
 
--spec options(Prot::prototype(), Opt::[term()]) -> prototype().
+-spec options(Prot::prototype(), Opt::map()) -> prototype().
 options(Prot, Opt) ->
-    Prot#prototype{ options=Opt }.
+    Prot#prototype{ options = Opt }.
 
 -spec vsn(Prot::prototype()) -> term().
 vsn(Prot) ->

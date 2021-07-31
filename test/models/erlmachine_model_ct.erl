@@ -15,7 +15,7 @@
 
 -type state() :: map().
 
--spec startup(UID::uid(), State::state(), Opt::[term()], Env::map()) ->
+-spec startup(UID::uid(), State::state(), Opt::map(), Env::map()) ->
                   success(state()) | failure(term(), term(), state()).
 startup(UID, State, Opt, Env) ->
     %% TODO: To provide test cases parametrization through Env;

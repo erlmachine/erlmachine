@@ -234,81 +234,83 @@ uid(State) ->
 %%% Production API
 
 %% TODO To consider a call supported by decorating module as arg;
--spec gear(Model::atom(), Opt::[term()], Env::map()) ->
+-spec gear(Model::atom(), Opt::map(), Env::map()) ->
                   assembly().
 gear(Model, Opt, Env) ->
     Prot = erlmachine_prototype_def:name(),
-    ProtOpt = [],
-    gear(Model, Opt, Prot, ProtOpt, Env).
+    gear(Model, Opt, Prot, _ProtOpt = #{}, Env).
 
--spec gear(Model::atom(), Opt::[term()], Env::map(), Ext::assembly()) ->
+-spec gear(Model::atom(), Opt::map(), Env::map(), Ext::assembly()) ->
                   assembly().
 gear(Model, Opt, Env, Ext) ->
     Gear = gear(Model, Opt, Env),
     erlmachine_assembly:extensions(Gear, [Ext]).
 
--spec gear(Model::atom(), Opt::[term()], Prot::atom(), ProtOpt::[term()], Env::map()) ->
+-spec gear(Model::atom(), Opt::map(), Prot::atom(), ProtOpt::map(), Env::map()) ->
                   assembly().
-gear(Model, Opt, Prot, ProtOpt, Env) when is_list(Opt),
-                                          is_list(ProtOpt) ->
+gear(Model, Opt, Prot, ProtOpt, Env) when is_map(Opt),
+                                          is_map(ProtOpt) ->
     Assembly = erlmachine_assembly:new(Model, Opt, Prot, ProtOpt, Env),
-    Gear = erlmachine_gear:new(Assembly), {ok, Rel} = produce(Gear),
+    Gear = erlmachine_gear:new(Assembly),
+
+    {ok, Rel} = produce(Gear),
     Rel.
 
--spec gear(Model::atom(), Opt::[term()], Prot::atom(), ProtOpt::[term()], Env::map(), Ext::assembly()) ->
+-spec gear(Model::atom(), Opt::map(), Prot::atom(), ProtOpt::map(), Env::map(), Ext::assembly()) ->
                   assembly().
 gear(Model, Opt, Prot, ProtOpt, Env, Ext) ->
     Gear = gear(Model, Opt, Prot, ProtOpt, Env),
     erlmachine_assembly:extensions(Gear, [Ext]).
 
--spec shaft(Model::atom(), Opt::[term()], Env::map(), Exts::[assembly()]) ->
+-spec shaft(Model::atom(), Opt::map(), Env::map(), Exts::[assembly()]) ->
                   assembly().
 shaft(Model, Opt, Env, Exts) ->
     Prot = erlmachine_prototype_def:name(),
-    ProtOpt = [],
-    shaft(Model, Opt, Prot, ProtOpt, Env, Exts).
+    shaft(Model, Opt, Prot, _ProtOpt = #{}, Env, Exts).
 
--spec shaft(Model::atom(), Opt::[term()], Prot::atom(), ProtOpt::[term()], Env::map(), Exts::[assembly()]) ->
+-spec shaft(Model::atom(), Opt::map(), Prot::atom(), ProtOpt::map(), Env::map(), Exts::[assembly()]) ->
                    assembly().
-shaft(Model, Opt, Prot, ProtOpt, Env, Exts) when is_list(Opt),
-                                                 is_list(ProtOpt),
+shaft(Model, Opt, Prot, ProtOpt, Env, Exts) when is_map(Opt),
+                                                 is_map(ProtOpt),
                                                  is_list(Exts) ->
     Assembly = erlmachine_assembly:new(Model, Opt, Prot, ProtOpt, Env),
-    Shaft = erlmachine_shaft:new(Assembly), {ok, Rel} = produce(Shaft),
+    Shaft = erlmachine_shaft:new(Assembly),
+
+    {ok, Rel} = produce(Shaft),
     erlmachine_assembly:extensions(Rel, Exts).
 
--spec axle(Model::atom(), Opt::[term()], Env::map(), Exts::[assembly()]) ->
+-spec axle(Model::atom(), Opt::map(), Env::map(), Exts::[assembly()]) ->
                    assembly().
 axle(Model, Opt, Env, Exts) ->
     Prot = erlmachine_sup_prototype_def:name(),
-    ProtOpt = [],
-    axle(Model, Opt, Prot, ProtOpt, Env, Exts).
+    axle(Model, Opt, Prot, _ProtOpt = #{}, Env, Exts).
 
--spec axle(Model::atom(), Opt::[term()], Prot::atom(), ProtOpt::[term()], Env::map(), Exts::[assembly()]) ->
+-spec axle(Model::atom(), Opt::map(), Prot::atom(), ProtOpt::map(), Env::map(), Exts::[assembly()]) ->
                    assembly().
-axle(Model, Opt, Prot, ProtOpt, Env, Exts) when is_list(Opt),
-                                                is_list(ProtOpt),
+axle(Model, Opt, Prot, ProtOpt, Env, Exts) when is_map(Opt),
+                                                is_map(ProtOpt),
                                                 is_list(Exts) ->
     Assembly = erlmachine_assembly:new(Model, Opt, Prot, ProtOpt, Env),
-    Axle = erlmachine_axle:new(Assembly), {ok, Rel} = produce(Axle),
+    Axle = erlmachine_axle:new(Assembly),
+
+    {ok, Rel} = produce(Axle),
     erlmachine_assembly:extensions(Rel, Exts).
 
-%% TODO: To provide a build call to generate a schema for convinience;
--spec gearbox(Model::atom(), Opt::[term()], Env::map(), Exts::[assembly()]) ->
+-spec gearbox(Model::atom(), Opt::map(), Env::map(), Exts::[assembly()]) ->
                   assembly().
 gearbox(Model, Opt, Env, Exts) ->
     Prot = erlmachine_sup_prototype_def:name(),
-    ProtOpt = [],
-    gearbox(Model, Opt, Prot, ProtOpt, Env, Exts).
+    gearbox(Model, Opt, Prot, _ProtOpt = #{}, Env, Exts).
 
--spec gearbox(Model::atom(), Opt::[term()], Prot::atom(), ProtOpt::[term()], Env::map(), Exts::[assembly()]) ->
+-spec gearbox(Model::atom(), Opt::map(), Prot::atom(), ProtOpt::map(), Env::map(), Exts::[assembly()]) ->
                   assembly().
-gearbox(Model, Opt, Prot, ProtOpt, Env, Exts) when is_list(Opt),
-                                                   is_list(ProtOpt),
+gearbox(Model, Opt, Prot, ProtOpt, Env, Exts) when is_map(Opt),
+                                                   is_map(ProtOpt),
                                                    is_list(Exts) ->
     Assembly = erlmachine_assembly:new(Model, Opt, Prot, ProtOpt, Env),
-    GearBox = erlmachine_gearbox:new(Assembly), {ok, Rel} = produce(GearBox),
+    GearBox = erlmachine_gearbox:new(Assembly),
 
+    {ok, Rel} = produce(GearBox),
     erlmachine_assembly:extensions(Rel, Exts).
 
 %%% Assembly datasheet

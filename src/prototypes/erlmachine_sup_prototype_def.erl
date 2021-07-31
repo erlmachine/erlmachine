@@ -23,13 +23,13 @@ name() ->
 -spec id(SN::serial_no()) ->
                          atom().
 id(SN) ->
-    erlang:binary_to_atom(SN, latin1).
+    binary_to_atom(SN).
 
 %%%  erlmachine_supervisor_prototype behaviour
 
 -record(init, { specs::[map()], flags::map() }).
 
--spec prototype_init(SN::serial_no(), Specs::[map()], Context::term(), Opt::[term()]) ->
+-spec prototype_init(SN::serial_no(), Specs::[map()], Context::term(), Opt::map()) ->
                             success(pid()) | failure(term(), term()).
 prototype_init(SN, Specs, Context, Opt) ->
     ok = erlmachine_supervisor_prototype:init(Context),
@@ -57,31 +57,27 @@ init(#init{ specs = Specs, flags = Flags }) ->
     Strategy = maps:get(<<"strategy">>, Flags, one_for_one),
     Int = maps:get(<<"intensity">>, Flags, 1),
     Per = maps:get(<<"period">>, Flags, 5),
+
     erlmachine:success({#{ strategy => Strategy, intensity => Int, period => Per }, Specs}).
 
--spec flags(Opt::[term()]) -> map().
+-spec flags(Opt::map()) -> map().
 flags(Opt) ->
-    case lists:filter(fun filter/1, Opt) of
-        [Flags] ->
-            maps:fold(fun fold/3, #{}, Flags);
-        _ ->
-            #{}
-    end.
+    Flags = maps:get(<<"flags">>, Opt, #{}),
 
-filter(#{ <<"flags">> := _ }) ->
-    true;
-filter(_) ->
-    false.
+    maps:fold(fun fold/3, #{}, Flags).
 
 fold(Key = <<"strategy">>, Value, Acc) when Value == <<"one_for_one">>;
                                             Value == <<"one_for_all">>;
                                             Value == <<"rest_for_one">>;
                                             Value == <<"simple_one_for_one">> ->
-    Acc#{ Key => binary_to_atom(Value, utf8) };
+    Acc#{ Key => binary_to_atom(Value) };
+
 fold(Key = <<"intensity">>, Value, Acc) when is_integer(Value) ->
     Acc#{ Key => Value };
+
 fold(Key = <<"period">>, Value, Acc) when is_integer(Value) ->
     Acc#{ Key => Value };
+
 fold(Key, Value, Acc) ->
     Acc#{ Key => Value }.
 

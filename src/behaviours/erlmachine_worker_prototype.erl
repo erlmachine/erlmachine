@@ -36,7 +36,7 @@
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
 
--callback prototype_init(SN::serial_no(), Context::context(), Opt::[term()]) ->
+-callback prototype_init(SN::serial_no(), Context::context(), Opt::map()) ->
     success(pid()) | failure(term(), term()).
 
 -callback prototype_call(SN::serial_no(), Req::term()) ->

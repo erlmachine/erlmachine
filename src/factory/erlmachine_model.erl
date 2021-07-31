@@ -14,7 +14,7 @@
                 %% Module name
                 module::module(),
                 %% Domain level options which are passed as is
-                options::[term()],
+                options::map(),
                 %% vsn/1 attribute of the module (MD5 checksum if not specified)
                 vsn::term()
                }
@@ -30,14 +30,14 @@ new() ->
 
 -spec new(Module::module()) -> model().
 new(Module) ->
-    new(Module, []).
+    new(Module, _Opt = #{}).
 
--spec new(Module::module(), Opt::[term()]) -> model().
+-spec new(Module::module(), Opt::map()) -> model().
 new(Module, Opt) ->
     Model = new(),
     options(module(Model, Module), Opt).
 
--spec new(Module::module(), Opt::list(), Vsn::term()) -> model().
+-spec new(Module::module(), Opt::map(), Vsn::term()) -> model().
 new(Module, Opt, Vsn) ->
     Model = new(Module, Opt),
     vsn(Model, Vsn).
@@ -50,11 +50,11 @@ module(Model) ->
 module(Model, Module) ->
     Model#model{ module = Module }.
 
--spec options(Model::model()) -> [term()].
+-spec options(Model::model()) -> map().
 options(Model) ->
     Model#model.options.
 
--spec options(Model::model(), Opt::[term()]) -> model().
+-spec options(Model::model(), Opt::map()) -> model().
 options(Model, Opt) ->
     Model#model{ options = Opt }.
 

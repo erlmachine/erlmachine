@@ -32,7 +32,7 @@
 -include("erlmachine_system.hrl").
 
 
--callback startup(UID::uid(), Vertices::[vertex()], Opt::[term()], Env::map()) ->
+-callback startup(UID::uid(), Vertices::[vertex()], Opt::map(), Env::map()) ->
     success() | failure(term(), term()).
 
 -callback install(UID::uid(), Vertex::vertex()) ->

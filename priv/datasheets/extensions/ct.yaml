@@ -9,11 +9,11 @@ port: "#"
 model:
   module: erlmachine_model_ct
   options:
-    - key: value
+    key: value
 prototype:
   module: erlmachine_prototype_def
   options:
-    - key: value
+    key: value
 uid: 0
 tags:
   - test

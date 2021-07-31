@@ -99,7 +99,7 @@
 new() ->
     #assembly{}.
 
--spec new(ModelName::atom(), ModelOpt::[term()], ProtName::atom(), ProtOpt::[term()], Env::map()) -> 
+-spec new(ModelName::atom(), ModelOpt::map(), ProtName::atom(), ProtOpt::map(), Env::map()) -> 
                  assembly().
 new(ModelName, ModelOpt, ProtName, ProtOpt, Env) ->
     Assembly = new(),
@@ -122,7 +122,7 @@ process(Assembly, Datasheet) ->
     I = erlmachine_datasheet:iterator(Datasheet), Next = erlmachine_datasheet:next(I),
     next(Assembly, Next).
 
--spec next(Assembly::assembly(), none | {Key::binary(), Value::term(), I::term()}) ->
+-spec next(Assembly::assembly(), none | {binary(), term(), term()}) ->
                   assembly().
 next(Assembly, none) ->
     Assembly;

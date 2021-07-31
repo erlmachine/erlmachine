@@ -54,7 +54,7 @@ erlmachine_factory_test_() ->
       {
        "Inspect assembly: gear",
        fun() ->
-               Gear = erlmachine:tags(erlmachine_factory:gear(erlmachine_model_ct, [], #{}), Tags),
+               Gear = erlmachine:tags(erlmachine_factory:gear('erlmachine_model_ct', _Opt = #{}, _Env = #{}), Tags),
 
                SN = erlmachine:serial_no(Gear), V = erlmachine:vertex(Gear),
                true = is_binary(SN), SN = V
@@ -63,7 +63,7 @@ erlmachine_factory_test_() ->
       {
        "Inspect assembly: shaft",
         fun() ->
-                Shaft = erlmachine:tags(erlmachine_factory:shaft(erlmachine_model_ct, [], #{}, []), Tags),
+                Shaft = erlmachine:tags(erlmachine_factory:shaft('erlmachine_model_ct', _Opt = #{}, _Env = #{}, []), Tags),
 
                 SN = erlmachine:serial_no(Shaft), V = erlmachine:vertex(Shaft),
                 true = is_binary(SN), SN = V
@@ -72,7 +72,7 @@ erlmachine_factory_test_() ->
       {
        "Inspect assembly: axle",
        fun() ->
-               Axle = erlmachine:tags(erlmachine_factory:axle(erlmachine_sup_model_ct, [], #{}, []), Tags),
+               Axle = erlmachine:tags(erlmachine_factory:axle('erlmachine_sup_model_ct', _Opt = #{}, _Env = #{}, []), Tags),
 
                SN = erlmachine:serial_no(Axle), V = erlmachine:vertex(Axle),
                true = is_binary(SN), SN = V
@@ -81,7 +81,7 @@ erlmachine_factory_test_() ->
       {
        "Inspect assembly: gearbox",
        fun() ->
-               GearBox = erlmachine:tags(erlmachine_factory:gearbox(erlmachine_sup_model_ct, [], #{}, []), Tags),
+               GearBox = erlmachine:tags(erlmachine_factory:gearbox('erlmachine_sup_model_ct', _Opt = #{}, _Env = #{}, []), Tags),
 
                SN = erlmachine:serial_no(GearBox), V = erlmachine:vertex(GearBox),
                true = is_binary(SN), SN = V
@@ -108,11 +108,11 @@ erlmachine_factory_test_() ->
 
                Module = erlmachine_model:module(Model), 'erlmachine_model_ct' = Module,
 
-               Opt = erlmachine_model:options(Model), true = is_list(Opt),
+               Opt = erlmachine_model:options(Model), true = is_map(Opt),
 
                Module2 = erlmachine_prototype:module(Prot), 'erlmachine_prototype_def' = Module2,
 
-               Opt2 = erlmachine_prototype:options(Prot), true = is_list(Opt2),
+               Opt2 = erlmachine_prototype:options(Prot), true = is_map(Opt2),
 
                UID = erlmachine:uid(Assembly), true = is_integer(UID),
 

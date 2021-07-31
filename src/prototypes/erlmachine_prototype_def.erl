@@ -27,16 +27,16 @@ name() ->
 
 -spec id(SN::serial_no()) -> atom().
 id(SN) ->
-    erlang:binary_to_atom(SN, latin1).
+    binary_to_atom(SN).
 
 %%%  erlmachine_worker_prototype behaviour
 
--record(init, { context::term(), opts::[] }).
+-record(init, { context::term(), opt::map() }).
 
--spec prototype_init(SN::serial_no(), Context::term(), Opts::list()) ->
+-spec prototype_init(SN::serial_no(), Context::term(), Opt::map()) ->
                             success(pid()) | failure(term(), term()).
-prototype_init(SN, Context, Opts) ->
-    Com = #init{ context = Context, opts = Opts },
+prototype_init(SN, Context, Opt) ->
+    Com = #init{ context = Context, opt = Opt },
 
     gen_server:start_link({local, id(SN)}, ?MODULE, Com, []).
 
@@ -67,7 +67,7 @@ prototype_terminate(SN, Reason, Timeout) ->
 
 -record(state, { context::term() }).
 
-init(#init{ context = Context, opts = _Opts }) ->
+init(#init{ context = Context, opt = _Opt }) ->
     erlang:process_flag(trap_exit, true),
     {ok, Context2} = erlmachine_worker_prototype:init(Context),
 

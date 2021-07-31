@@ -25,7 +25,7 @@
 -include("erlmachine_graph.hrl").
 -include("erlmachine_system.hrl").
 
--callback startup(UID::uid(), State::state(), Opt::[term()], Env::map()) ->
+-callback startup(UID::uid(), State::state(), Opt::map(), Env::map()) ->
     success(state()) | failure(term(), term(), state()).
 
 -callback process(UID::uid(), Motion::term(), State::state()) ->

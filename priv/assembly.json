@@ -36,7 +36,7 @@
                     "$ref": "#/definitions/module"
                 },
                 "options": {
-                    "type": "array",
+                    "type": "object",
                     "description": "Domain level options which are passed as is"
                 }
             },
@@ -51,7 +51,7 @@
                     "$ref": "#/definitions/module"
                 },
                 "options": {
-                    "type": "array",
+                    "type": "object",
                     "description": "Service level options which are passed as is"
                 }
             },
