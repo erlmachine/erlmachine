@@ -2,9 +2,11 @@
 %% NOTE: The main purpouse of erlmachine project is to provide a set of well designed behaviours which are supported by visual tools (flowcharts, widjets, etc..).
 %% The Erlmachine based design operates via flexible mechanism of prototypes and models. Where business layer is decoupled from a transport implementation.
 
--export([start/0, stop/0, get_key/1, get_key/2]).
+-export([start/0, stop/0, get_key/1, priv_dir/0]).
 
--export([priv_dir/0]).
+-export([modules/0]).
+-export([vsn/0]).
+-export([description/0]).
 
 -export([is_supervisor/1, is_worker/1]).
 
@@ -92,17 +94,28 @@ start() ->
 stop() ->
     application:stop(?MODULE).
 
--spec get_key(Key::atom()) -> undefined | success(term()).
+-spec get_key(Key::atom()) -> 'undefined' | success(term()).
 get_key(Key) ->
-    get_key(?MODULE, Key).
-
--spec get_key(Application::atom(), Key::atom()) -> undefined | success(term()).
-get_key(Application, Key) ->
-    application:get_key(Application, Key).
+    application:get_key(?MODULE, Key).
 
 -spec priv_dir() -> file:filename().
 priv_dir() ->
     code:priv_dir(?MODULE).
+
+-spec modules() -> [module()].
+modules() ->
+    {ok, Modules} = get_key('modules'),
+    Modules.
+
+-spec vsn() -> binary().
+vsn() ->
+    {ok, Vsn} = get_key('vsn'),
+    Vsn.
+
+-spec description() ->  binary().
+description() ->
+    {ok, Desc} = get_key('description'),
+    Desc.
 
 -spec is_supervisor(Assembly::assembly()) -> boolean().
 is_supervisor(Assembly) ->

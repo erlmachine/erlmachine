@@ -6,7 +6,7 @@
 %% c) Create assembly accordingly to the extension datasheet;
 %% d) Create graph accordingly to the transmission datasheet
 
-%% NOTE: There is possibility to load datasheet from other sources (via DB, network, etc.);
+%% NOTE: There is a possibility to load datasheet from other sources (via DB, network, etc.);
 
 %% API.
 -export([file/2]).

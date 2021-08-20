@@ -43,11 +43,13 @@ wait_for_tables(Tables, Timeout) ->
 
 -spec add_schema(File::list()) -> success().
 add_schema(File) ->
-    Priv = erlmachine:priv_dir(), Path = filename:join(Priv, File),
-    [Schema] = jsx:consult(Path, [return_maps]),
-    ok = jesse:add_schema(File, Schema).
+    Priv = erlmachine:priv_dir(),
+    Path = filename:join(Priv, File),
+
+    [Schema] = jsx:consult(Path, [return_maps]), ok = jesse:add_schema(File, Schema).
 
 -spec tables() -> [atom()].
 tables() ->
-    {ok, Modules} = erlmachine:get_key(modules),
+    Modules = erlmachine:modules(),
+
     [Module || Module <- Modules, erlmachine_database:is_database(Module)].

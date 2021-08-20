@@ -11,7 +11,7 @@ erlmachine_factory_test_() ->
     {
      foreach,
      fun() ->
-             meck:expect(erlmachine, get_key, 1, {ok, ['erlmachine_assembly']}),
+             meck:expect(erlmachine, modules, 0, ['erlmachine_assembly']),
 
              erlmachine_database:create_schema(Nodes), ok = erlmachine_database:start(),
 
