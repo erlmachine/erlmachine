@@ -1,10 +1,9 @@
 -module(erlmachine_datasheet).
 
-%% This module is responsible to:
-%% a) Read technical manufacturer's specifications (datasheets);
-%% b) Validate datasheet content via https://json-schema.org;
-%% c) Create assembly accordingly to the extension datasheet;
-%% d) Create graph accordingly to the transmission datasheet
+%% This module is responsible:
+
+%% - Read technical manufacturer's specifications (datasheets);
+%% - Validate datasheet content via https://json-schema.org;
 
 %% NOTE: There is a possibility to load datasheet from other sources (via DB, network, etc.);
 
@@ -24,15 +23,15 @@
 
 -export_type([datasheet/0]).
 
--include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
 
 -spec file(Path::path(), Schema::[term()]) ->
                   success(datasheet()) | failure(term(), term()).
 file(Path, Schema) ->
     try
-        Opt = [{str_node_as_binary, true}, {map_node_format, map}],
+        Opt = [{ 'str_node_as_binary', true }, { 'map_node_format', map }],
         [Datasheet] = yamerl_constr:file(Path, Opt),
+
         {ok, _} = jesse:validate(Schema, Datasheet)
     catch E:R ->
             erlmachine:failure(E, R)
@@ -43,6 +42,7 @@ file(Path, Schema) ->
 decode(Spec, Opt, Schema) ->
     try
         [Datasheet] = yamerl:decode(Spec, Opt),
+
         {ok, _} = jesse:validate(Schema, Datasheet)
     catch E:R ->
             erlmachine:failure(E, R)
