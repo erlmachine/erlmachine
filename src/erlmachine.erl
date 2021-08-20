@@ -2,7 +2,7 @@
 %% NOTE: The main purpouse of erlmachine project is to provide a set of well designed behaviours which are supported by visual tools (flowcharts, widjets, etc..).
 %% The Erlmachine based design operates via flexible mechanism of prototypes and models. Where business layer is decoupled from a transport implementation.
 
--export([start/0, stop/0, get_key/1, priv_dir/0]).
+-export([start/0, stop/0, get_key/1, priv_dir/0, filename/1]).
 
 -export([modules/0]).
 -export([vsn/0]).
@@ -101,6 +101,10 @@ get_key(Key) ->
 -spec priv_dir() -> file:filename().
 priv_dir() ->
     code:priv_dir(?MODULE).
+
+-spec filename(Path::list()) -> list().
+filename(Path) ->
+    filename:join(priv_dir(), Path).
 
 -spec modules() -> [module()].
 modules() ->
