@@ -29,10 +29,9 @@ init_per_suite(Config) ->
 
     Nodes = [node()], Table = 'erlmachine_factory',
 
-    erlmachine_database:create_schema(Nodes), ok = erlmachine_database:start(),
+    erlmachine_db:create_schema(Nodes), ok = erlmachine_db:start(),
 
-    erlmachine_database:create_table(Table),
-    erlmachine_app:wait_for_tables([Table], 1000),
+    erlmachine_db:create_table(Table), ok = erlmachine_db:wait_for_tables([Table], 1000),
 
     {ok, _} = erlmachine_factory:start(),
 

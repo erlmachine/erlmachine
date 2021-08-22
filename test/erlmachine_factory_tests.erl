@@ -6,33 +6,40 @@
 -include_lib("eunit/include/eunit.hrl").
 
 erlmachine_factory_test_() ->
-    Nodes = [node()], Table = 'erlmachine_factory', Tags = ['eunit'],
+    Nodes = [node()],
+    Tables = ['erlmachine_factory'], Templates = ['erlmachine_assembly', 'erlmachine_graph'],
+
+    Tags = ['eunit'],
 
     {
      foreach,
      fun() ->
              meck:expect(erlmachine, modules, 0, ['erlmachine_assembly']),
 
-             erlmachine_database:create_schema(Nodes), ok = erlmachine_database:start(),
+             erlmachine_db:create_schema(Nodes), ok = erlmachine_db:start(),
 
-             erlmachine_database:create_table(Table),
-             erlmachine_app:wait_for_tables([Table], 1000),
+             [erlmachine_db:create_table(T) || T <- Tables], ok = erlmachine_db:wait_for_tables(Tables, 1000),
 
-             application:start(yamerl), application:start(syn),
+             application:start(yamerl),
+             application:start(syn),
+
              {ok, _} = erlmachine_factory:start(),
 
-             [ok = erlmachine_app:add_schema(File) || File <- ["assembly.json", "graph.json"]]
+             [ok = erlmachine_template:add_schema(T) || T <- Templates]
      end,
      fun(_) ->
              erlmachine_factory:stop(),
-             application:stop(yamerl), application:start(syn),
-             erlmachine_database:delete_table(Table), erlmachine_database:delete_schema(Nodes)
+
+             application:stop(yamerl),
+             application:start(syn),
+
+             [erlmachine_db:delete_table(T) || T <- Tables], erlmachine_db:delete_schema(Nodes)
      end,
      [
       {
        "Inspect assembly: datasheets/extensions/ct.yaml",
        fun() ->
-               FileName = filename("datasheets/extensions/ct.yaml"),
+               FileName = erlmachine:filename("datasheets/extensions/ct.yaml"),
                {ok, Datasheet} = erlmachine_assembly:datasheet(FileName),
 
                Assembly = erlmachine_factory:assembly(Datasheet),
@@ -43,7 +50,7 @@ erlmachine_factory_test_() ->
       {
        "Inspect assembly: datasheets/extensions/sup_ct.yaml",
        fun() ->
-               FileName = filename("datasheets/extensions/sup_ct.yaml"),
+               FileName = erlmachine:filename("datasheets/extensions/sup_ct.yaml"),
                {ok, Datasheet} = erlmachine_assembly:datasheet(FileName),
 
                Assembly = erlmachine_factory:assembly(Datasheet),
@@ -90,7 +97,7 @@ erlmachine_factory_test_() ->
       {
        "Inspect datasheet mapping: datasheets/extensions/ct.yaml",
        fun() ->
-               FileName = filename("datasheets/extensions/ct.yaml"),
+               FileName = erlmachine:filename("datasheets/extensions/ct.yaml"),
                {ok, Datasheet} = erlmachine_assembly:datasheet(FileName),
 
                Assembly = erlmachine_factory:assembly(Datasheet),
@@ -130,10 +137,10 @@ erlmachine_factory_test_() ->
       {
        "Inspect datasheet mapping: datasheets/ct.yaml",
        fun() ->
-               FileName = filename("datasheets/ct.yaml"),
-               {ok, Datasheet} = erlmachine_graph:datasheet(FileName),
+               FileName = erlmachine:filename("datasheets/ct.yaml"),
+               {ok, Template} = erlmachine_graph:datasheet(FileName),
 
-               Graph = erlmachine_factory:graph(Datasheet),
+               Graph = erlmachine_factory:graph(Template),
 
                Exts = erlmachine_graph:vertices(Graph), [_A, _B, _C, _D, _E] = Exts,
                [true = is_binary(erlmachine:serial_no(Ext)) || Ext <- Exts]
@@ -147,7 +154,3 @@ erlmachine_factory_test_() ->
       }
      ]
     }.
-
--spec filename(Path::list()) -> list().
-filename(Path) ->
-    filename:join(erlmachine:priv_dir(), Path).

@@ -1,8 +1,12 @@
 -module(erlmachine_assembly).
 
 -behaviour(erlmachine_factory).
+-behaviour(erlmachine_template).
 
 %% API.
+
+-export([schema/0]).
+-export([file/0]).
 
 -export([new/0, new/5]).
 
@@ -85,15 +89,13 @@
 -type prototype() :: erlmachine_prototype:prototype().
 
 -type path() :: erlmachine_datasheet:path().
--type datasheet() :: erlmachine_datasheet:datasheet().
+-type template() :: erlmachine_template:template().
 
 -type assembly() :: #assembly{}.
 
 -type json() :: map().
 
 -export_type([assembly/0]).
-
-%%% Constructor
 
 -spec new() -> assembly().
 new() ->
@@ -110,16 +112,28 @@ new(ModelName, ModelOpt, ProtName, ProtOpt, Env) ->
     Rel = prototype(model(Assembly, Model), Prototype),
     env(Rel, Env).
 
-%%% Datasheet API
-
 -spec datasheet(Path::path()) ->
-                       success(datasheet()) | failure(term(), term()).
+                       success(template()) | failure(term(), term()).
 datasheet(Path) ->
-    erlmachine_datasheet:file(Path, "assembly.json").
+    erlmachine_template:file(?MODULE, Path).
 
--spec process(Assembly::assembly(), Datasheet::datasheet()) -> assembly().
-process(Assembly, Datasheet) ->
-    I = erlmachine_datasheet:iterator(Datasheet), Next = erlmachine_datasheet:next(I),
+%%% erlmachine_template
+
+-spec schema() -> atom().
+schema() ->
+    "assembly.json".
+
+-spec file() -> path().
+file() ->
+    Priv = erlmachine:priv_dir(), File = schema(),
+    filename:join(Priv, File).
+
+%%% erlmachine_factory
+
+-spec process(Assembly::assembly(), Template::template()) -> assembly().
+process(Assembly, Template) ->
+    I = erlmachine_template:iterator(Template), Next = erlmachine_template:next(I),
+
     next(Assembly, Next).
 
 -spec next(Assembly::assembly(), none | {binary(), term(), term()}) ->
@@ -129,74 +143,87 @@ next(Assembly, none) ->
 
 next(Assembly, {<<"serial_no">>, V, I}) ->
     Rel = serial_no(Assembly, V),
-    next(Rel, erlmachine_datasheet:next(I));
+
+    next(Rel, erlmachine_template:next(I));
 
 next(Assembly, {<<"type">>, V, I}) ->
     Rel = type(Assembly, binary_to_atom(V, utf8)),
-    next(Rel, erlmachine_datasheet:next(I));
+
+    next(Rel, erlmachine_template:next(I));
 
 next(Assembly, {<<"body">>, V, I}) ->
     Rel = body(Assembly, V),
-    next(Rel, erlmachine_datasheet:next(I));
+
+    next(Rel, erlmachine_template:next(I));
 
 next(Assembly, {<<"model_no">>, V, I}) ->
     Rel = model_no(Assembly, V),
-    next(Rel, erlmachine_datasheet:next(I));
+
+    next(Rel, erlmachine_template:next(I));
 
 next(Assembly, {<<"port">>, V, I}) ->
     Rel = port(Assembly, V),
-    next(Rel, erlmachine_datasheet:next(I));
+
+    next(Rel, erlmachine_template:next(I));
 
 next(Assembly, {<<"model">>, V, I}) ->
-    {ok, Name} = erlmachine_datasheet:find(<<"module">>, V), Module = binary_to_atom(Name, utf8),
+    {ok, Name} = erlmachine_template:find(<<"module">>, V), Module = binary_to_atom(Name, utf8),
     Model =
-        case erlmachine_datasheet:find(<<"options">>, V) of
+        case erlmachine_template:find(<<"options">>, V) of
             {ok, Opt} ->
                 erlmachine_model:new(Module, Opt);
             _ ->
                 erlmachine_model:new(Module)
         end,
     Rel = model(Assembly, Model),
-    next(Rel, erlmachine_datasheet:next(I));
+
+    next(Rel, erlmachine_template:next(I));
 
 next(Assembly, {<<"prototype">>, V, I}) ->
-    {ok, Name} = erlmachine_datasheet:find(<<"module">>, V), Module = binary_to_atom(Name, utf8),
+    {ok, Name} = erlmachine_template:find(<<"module">>, V), Module = binary_to_atom(Name, utf8),
     Prot =
-        case erlmachine_datasheet:find(<<"options">>, V) of
+        case erlmachine_template:find(<<"options">>, V) of
             {ok, Opt} ->
                 erlmachine_prototype:new(Module, Opt);
             _ ->
                 erlmachine_prototype:new(Module)
         end,
     Rel = prototype(Assembly, Prot),
-    next(Rel, erlmachine_datasheet:next(I));
+
+    next(Rel, erlmachine_template:next(I));
 
 next(Assembly, {<<"uid">>, V, I}) ->
     Rel = uid(Assembly, V),
-    next(Rel, erlmachine_datasheet:next(I));
+
+    next(Rel, erlmachine_template:next(I));
 
 next(Assembly, {<<"tags">>, V, I}) ->
     Rel = tags(Assembly, V),
-    next(Rel, erlmachine_datasheet:next(I));
+
+    next(Rel, erlmachine_template:next(I));
 
 next(Assembly, {<<"vertex">>, V, I}) ->
     Rel = vertex(Assembly, V),
-    next(Rel, erlmachine_datasheet:next(I));
+
+    next(Rel, erlmachine_template:next(I));
 
 next(Assembly, {<<"part_no">>, V, I}) ->
     Rel = part_no(Assembly, V),
-    next(Rel, erlmachine_datasheet:next(I));
+
+    next(Rel, erlmachine_template:next(I));
 
 next(Assembly, {<<"env">>, V, I}) ->
     Rel = env(Assembly, V),
-    next(Rel, erlmachine_datasheet:next(I));
+
+    next(Rel, erlmachine_template:next(I));
 
 next(Assembly, {<<"description">>, V, I}) ->
     Rel = description(Assembly, V),
-    next(Rel, erlmachine_datasheet:next(I));
+
+    next(Rel, erlmachine_template:next(I));
 
 next(Assembly, {_, _, I}) ->
-    next(Assembly, erlmachine_datasheet:next(I)).
+    next(Assembly, erlmachine_template:next(I)).
 
 %%% Field accessors
 
@@ -204,9 +231,9 @@ next(Assembly, {_, _, I}) ->
 id(Assembly) ->
     Assembly#assembly.id.
 
--spec id(Assembly::assembly(), ID::integer()) -> assembly().
-id(Assembly, ID) ->
-    Assembly#assembly{ id = ID }.
+-spec id(Assembly::assembly(), Id::integer()) -> assembly().
+id(Assembly, Id) ->
+    Assembly#assembly{ 'id' = Id }.
 
 -spec serial_no(Assembly::assembly()) -> serial_no().
 serial_no(Assembly) ->
@@ -214,7 +241,7 @@ serial_no(Assembly) ->
 
 -spec serial_no(Assembly::assembly(), SN::serial_no()) -> assembly().
 serial_no(Assembly, SN) ->
-    Assembly#assembly{ serial_no = SN }.
+    Assembly#assembly{ 'serial_no' = SN }.
 
 -spec type(Assembly::assembly()) -> type().
 type(Assembly) ->
@@ -222,7 +249,7 @@ type(Assembly) ->
 
 -spec type(Assembly::assembly(), Type::type()) -> assembly().
 type(Assembly, Type) ->
-    Assembly#assembly{ type = Type }.
+    Assembly#assembly{ 'type' = Type }.
 
 -spec body() -> map().
 body() ->
@@ -234,7 +261,7 @@ body(Assembly) ->
 
 -spec body(Assembly::assembly(), Body::map() | [term()]) -> assembly().
 body(Assembly, Body) ->
-    Assembly#assembly{ body = Body }.
+    Assembly#assembly{ 'body' = Body }.
 
 -spec model_no(Assembly::assembly()) -> model_no().
 model_no(Assembly) ->
@@ -242,7 +269,7 @@ model_no(Assembly) ->
 
 -spec model_no(Assembly::assembly(), MN::model_no()) -> assembly().
 model_no(Assembly, MN) ->
-    Assembly#assembly{ model_no = MN }.
+    Assembly#assembly{ 'model_no' = MN }.
 
 -spec port(Assembly::assembly()) -> term().
 port(Assembly) -> 
@@ -250,7 +277,7 @@ port(Assembly) ->
 
 -spec port(Assembly::assembly(), Port::term()) -> assembly().
 port(Assembly, Port) ->
-    Assembly#assembly{ port = Port }.
+    Assembly#assembly{ 'port' = Port }.
 
 -spec graph(Assembly::assembly()) -> graph().
 graph(Assembly) ->
@@ -258,7 +285,7 @@ graph(Assembly) ->
 
 -spec graph(Assembly::assembly(), Graph::graph()) -> assembly().
 graph(Assembly, Graph) ->
-    Assembly#assembly{ graph = Graph }.
+    Assembly#assembly{ 'graph' = Graph }.
 
 -spec model(Assembly::assembly()) -> model().
 model(Assembly) ->
@@ -266,7 +293,7 @@ model(Assembly) ->
 
 -spec model(Assembly::assembly(), Model::model()) -> assembly().
 model(Assembly, Model) ->
-    Assembly#assembly{ model = Model }.
+    Assembly#assembly{ 'model' = Model }.
 
 -spec prototype(Assembly::assembly()) -> prototype().
 prototype(Assembly) ->
@@ -274,7 +301,7 @@ prototype(Assembly) ->
 
 -spec prototype(Assembly::assembly(), Prot::prototype()) -> assembly().
 prototype(Assembly, Prot) ->
-    Assembly#assembly{ prototype = Prot }.
+    Assembly#assembly{ 'prototype' = Prot }.
 
 -spec extensions() -> [].
 extensions() ->
@@ -286,7 +313,7 @@ extensions(Assembly) ->
 
 -spec extensions(Assembly::assembly(), Exts::[] | [assembly()]) -> assembly().
 extensions(Assembly, Exts) ->
-    Assembly#assembly{ extensions = Exts }.
+    Assembly#assembly{ 'extensions' = Exts }.
 
 -spec uid(Assembly::assembly()) -> uid().
 uid(Assembly) ->
@@ -294,7 +321,7 @@ uid(Assembly) ->
 
 -spec uid(Assembly::assembly(), UID::uid()) -> assembly().
 uid(Assembly, UID) ->
-    Assembly#assembly{ uid = UID }.
+    Assembly#assembly{ 'uid' = UID }.
 
 -spec part_no(Assembly::assembly()) -> term().
 part_no(Assembly) ->
@@ -302,7 +329,7 @@ part_no(Assembly) ->
 
 -spec part_no(Assembly::assembly(), PN::term()) -> assembly().
 part_no(Assembly, PN) ->
-    Assembly#assembly{ part_no = PN }.
+    Assembly#assembly{ 'part_no' = PN }.
 
 -spec tags(Assembly::assembly()) -> term().
 tags(Assembly) ->
@@ -310,7 +337,7 @@ tags(Assembly) ->
 
 -spec tags(Assembly::assembly(), Tags::term()) -> assembly().
 tags(Assembly, Tags) ->
-    Assembly#assembly{ tags = Tags }.
+    Assembly#assembly{ 'tags' = Tags }.
 
 -spec vertex(Assembly::assembly()) -> term().
 vertex(Assembly) ->
@@ -318,7 +345,7 @@ vertex(Assembly) ->
 
 -spec vertex(Assembly::assembly(), Vertex::term()) -> assembly().
 vertex(Assembly, Vertex) ->
-    Assembly#assembly{ vertex = Vertex }.
+    Assembly#assembly{ 'vertex' = Vertex }.
 
 -spec env() -> map().
 env() ->
@@ -330,7 +357,7 @@ env(Assembly) ->
 
 -spec env(Assembly::assembly(), Env::map()) -> assembly().
 env(Assembly, Env) ->
-    Assembly#assembly{ env = Env }.
+    Assembly#assembly{ 'env' = Env }.
 
 -spec description(Assembly::assembly()) -> binary().
 description(Assembly) ->
@@ -338,7 +365,7 @@ description(Assembly) ->
 
 -spec description(Assembly::assembly(), Desc::binary()) -> assembly().
 description(Assembly, Desc) ->
-    Assembly#assembly{ description = Desc }.
+    Assembly#assembly{ 'description' = Desc }.
 
 %%% Format API
 

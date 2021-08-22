@@ -1,6 +1,6 @@
--module(erlmachine_database).
+-module(erlmachine_db).
 
--export([is_database/1]).
+-export([is_db/1]).
 
 -export([create_schema/1]).
 
@@ -37,8 +37,8 @@
 
 %%% Modules
 
--spec is_database(Module::atom()) -> boolean().
-is_database(Module) ->
+-spec is_db(Module::atom()) -> boolean().
+is_db(Module) ->
     lists:member(?MODULE, erlmachine:behaviours(Module)).
 
 -spec create_schema(Nodes::[node()]) -> success() | failure(term()).

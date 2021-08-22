@@ -1,14 +1,23 @@
 -module(erlmachine_graph).
-%% NOTE: This module is responsible to setup a graph based data structure;
-%% TODO: To provide visualization of:
 
-%% 1. Bootloading graph;
-%% 2. Dataflow graph;
-%% 3. Extension vetices which are labeled, tagged and decorated by desc;
-%% 4. System report which covers extension state within a separate widjet;
-%% 5. System report which covers node state within a separate widjet (erlang:memory/0)
+-behaviour(erlmachine_template).
+
+%% NOTE: This module is responsible to setup a graph based data structure;
+%% TODO: To provide visualization:
+
+%% 1. Supervision graph;
+%% 2. Processing graph;
+%% 3. Extension vetices which are labeled, tagged and decorated by description;
+
+%% 4. System report which covers  within a separate widjet:
+%% - extension state
+%% - node state (erlang:memory/0, etc.)
+
+-export([schema/0]).
+-export([file/0]).
 
 -export([new/0]).
+-export([datasheet/1]).
 
 -export([draw/1]).
 
@@ -18,12 +27,11 @@
 
 -export([vertex/2, vertices/1]).
 -export([edge/2, edges/1]).
+
 -export([in_edges/2, out_edges/2]).
 -export([in_neighbours/2, out_neighbours/2]).
 
 -export([topsort/1]).
-
--export([datasheet/1]).
 
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_system.hrl").
@@ -33,19 +41,32 @@
 -type vertex() :: term().
 -type edge() :: term().
 
--type path() :: erlmachine_datasheet:path().
--type datasheet() :: erlmachine_datasheet:datasheet().
+-type path() :: erlmachine_template:path().
+-type template() :: erlmachine_template:template().
 
 -export_type([graph/0, vertex/0, edge/0]).
 
-%% TODO To simplify into graph?; To calculate mother via digraph_utils:topsort/1
-%% Current implementation of a schema is digraph. But we are able to change it on demand;
+%%% erlmachine_template
 
-%%% Constructor API
+-spec schema() -> atom().
+schema() ->
+    "graph.json".
+
+-spec file() -> path().
+file() ->
+    Priv = erlmachine:priv_dir(), File = schema(),
+    filename:join(Priv, File).
+
+%% NOTE: The current implementation of a schema is based on digraph. The backend can be changed;
 
 -spec new() -> graph().
 new() ->
     digraph:new([acyclic]).
+
+-spec datasheet(Path::path()) ->
+                       success(template()) | failure(term(), term()).
+datasheet(Path) ->
+    erlmachine_template:file(?MODULE, Path).
 
 %%% Graph mapping
 
@@ -140,10 +161,3 @@ out_neighbours(Graph, V) ->
 -spec topsort(Graph::graph()) -> [vertex()] | false.
 topsort(Graph) ->
     digraph_utils:topsort(Graph).
-
-%%% Datasheet API
-
--spec datasheet(Path::path()) ->
-                       success(datasheet()) | failure(term(), term()).
-datasheet(Path) ->
-    erlmachine_datasheet:file(Path, "graph.json").

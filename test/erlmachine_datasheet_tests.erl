@@ -9,8 +9,10 @@ erlmachine_datasheet_test_() ->
     {
      foreach,
      fun() ->
+             Templates = ['erlmachine_assembly', 'erlmachine_graph'],
              application:start(yamerl),
-             [ok = erlmachine_app:add_schema(File) || File <- ["assembly.json", "graph.json"]]
+
+             [ok = erlmachine_template:add_schema(T) || T <- Templates]
     end,
      fun(_) ->
              ok = application:stop(yamerl)
