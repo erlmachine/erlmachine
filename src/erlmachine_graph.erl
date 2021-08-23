@@ -17,7 +17,7 @@
 -export([file/0]).
 
 -export([new/0]).
--export([datasheet/1]).
+-export([template/1]).
 
 -export([draw/1]).
 
@@ -46,6 +46,17 @@
 
 -export_type([graph/0, vertex/0, edge/0]).
 
+%% NOTE: The current implementation of a schema is based on digraph. The backend can be changed;
+
+-spec new() -> graph().
+new() ->
+    digraph:new([acyclic]).
+
+-spec template(Path::path()) ->
+                      success(template()) | failure(term(), term()).
+template(Path) ->
+    erlmachine_template:file(?MODULE, Path).
+
 %%% erlmachine_template
 
 -spec schema() -> atom().
@@ -56,17 +67,6 @@ schema() ->
 file() ->
     Priv = erlmachine:priv_dir(), File = schema(),
     filename:join(Priv, File).
-
-%% NOTE: The current implementation of a schema is based on digraph. The backend can be changed;
-
--spec new() -> graph().
-new() ->
-    digraph:new([acyclic]).
-
--spec datasheet(Path::path()) ->
-                       success(template()) | failure(term(), term()).
-datasheet(Path) ->
-    erlmachine_template:file(?MODULE, Path).
 
 %%% Graph mapping
 

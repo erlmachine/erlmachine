@@ -1,8 +1,5 @@
 -module(erlmachine_factory_tests).
-%% NOTE: The factory test is responsible to inspect:
-%% a) Release of predefined extensions: gear, shaft, axle, gearbox;
-%% b) Release of an assembly via datasheet;
-%% c) Release of a transmission via datasheet
+
 -include_lib("eunit/include/eunit.hrl").
 
 erlmachine_factory_test_() ->
@@ -40,9 +37,9 @@ erlmachine_factory_test_() ->
        "Inspect assembly: datasheets/extensions/ct.yaml",
        fun() ->
                FileName = erlmachine:filename("datasheets/extensions/ct.yaml"),
-               {ok, Datasheet} = erlmachine_assembly:datasheet(FileName),
+               {ok, Template} = erlmachine_assembly:template(FileName),
 
-               Assembly = erlmachine_factory:assembly(Datasheet),
+               Assembly = erlmachine_factory:assembly(Template),
 
                SN = erlmachine:serial_no(Assembly), true = is_binary(SN)
        end
@@ -51,9 +48,9 @@ erlmachine_factory_test_() ->
        "Inspect assembly: datasheets/extensions/sup_ct.yaml",
        fun() ->
                FileName = erlmachine:filename("datasheets/extensions/sup_ct.yaml"),
-               {ok, Datasheet} = erlmachine_assembly:datasheet(FileName),
+               {ok, Template} = erlmachine_assembly:template(FileName),
 
-               Assembly = erlmachine_factory:assembly(Datasheet),
+               Assembly = erlmachine_factory:assembly(Template),
 
                SN = erlmachine:serial_no(Assembly), true = is_binary(SN)
        end
@@ -98,9 +95,9 @@ erlmachine_factory_test_() ->
        "Inspect datasheet mapping: datasheets/extensions/ct.yaml",
        fun() ->
                FileName = erlmachine:filename("datasheets/extensions/ct.yaml"),
-               {ok, Datasheet} = erlmachine_assembly:datasheet(FileName),
+               {ok, Template} = erlmachine_assembly:template(FileName),
 
-               Assembly = erlmachine_factory:assembly(Datasheet),
+               Assembly = erlmachine_factory:assembly(Template),
                Model = erlmachine_assembly:model(Assembly), Prot = erlmachine_assembly:prototype(Assembly),
 
                SN = erlmachine:serial_no(Assembly), true = is_binary(SN),
@@ -138,7 +135,7 @@ erlmachine_factory_test_() ->
        "Inspect datasheet mapping: datasheets/ct.yaml",
        fun() ->
                FileName = erlmachine:filename("datasheets/ct.yaml"),
-               {ok, Template} = erlmachine_graph:datasheet(FileName),
+               {ok, Template} = erlmachine_graph:template(FileName),
 
                Graph = erlmachine_factory:graph(Template),
 

@@ -29,7 +29,7 @@
          description/1, description/2
         ]).
 
--export([datasheet/1]).
+-export([template/1]).
 -export([process/2]).
 
 -export([to_json/1, from_json/1]).
@@ -112,9 +112,9 @@ new(ModelName, ModelOpt, ProtName, ProtOpt, Env) ->
     Rel = prototype(model(Assembly, Model), Prototype),
     env(Rel, Env).
 
--spec datasheet(Path::path()) ->
-                       success(template()) | failure(term(), term()).
-datasheet(Path) ->
+-spec template(Path::path()) ->
+                      success(template()) | failure(term(), term()).
+template(Path) ->
     erlmachine_template:file(?MODULE, Path).
 
 %%% erlmachine_template
