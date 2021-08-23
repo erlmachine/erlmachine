@@ -447,7 +447,12 @@ description(Assembly) ->
 
 -spec guid(Serial::term()) -> binary().
 guid(Serial) ->
-    GUID = #guid{ node=node(), serial=Serial, reference=make_ref() },
+    GUID = #guid{
+              node = node(),
+              serial = Serial,
+
+              reference = make_ref()
+             },
     md5(GUID).
 
 -spec md5(Data::term()) -> binary().
@@ -462,7 +467,7 @@ phash2(Term) ->
 -spec base64url(N::binary()) -> Base64::binary().
 base64url(N) when is_binary(N) ->
     Base64 = base64:encode(N),
-    Base64Url = [fun($+) -> <<"-">>; ($/) -> <<"_">>; (C) -> <<C>> end(Char)|| <<Char>> <= Base64],
+    Base64Url = [fun($+) -> <<"-">>; ($/) -> <<"_">>; (X) -> <<X>> end(Ch)|| <<Ch>> <= Base64],
     << <<X/binary>> || X <- Base64Url >>.
 
 -spec tag(Assembly::assembly(), Tag::term()) -> assembly().

@@ -8,8 +8,8 @@
 
 -spec pid(Assembly::assembly(), Pid::pid()) -> assembly().
 pid(Assembly, Pid) ->
-    erlmachine:tag(Assembly, {pid, Pid}).
+    erlmachine:tag(Assembly, { 'pid', Pid }).
 
 -spec error(Assembly::assembly(), E::term(), R::term()) -> assembly().
 error(Assembly, E, R) ->
-    erlmachine:tag(Assembly, {error, {E, R}}).
+    erlmachine:tag(Assembly, { 'error', {E, R} }).

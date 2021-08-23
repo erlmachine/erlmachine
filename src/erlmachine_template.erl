@@ -3,9 +3,9 @@
 %% This module is responsible:
 
 %% - Read YAML specifications (templates);
-%% - Validate template content by https://json-schema.org;
+%% - Validate template content against https://json-schema.org;
 
-%% NOTE: There is a potential possibility to load template from other sources (via DB, network, etc.);
+%% NOTE: There is a potential possibility to load template from other sources such DB, network, etc.
 -export([is_template/1]).
 
 -export([add_schema/1]).

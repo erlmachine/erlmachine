@@ -41,11 +41,11 @@
 -include("erlmachine_system.hrl").
 
 %% NOTE: Here is implemented incapsulation across independent parts and the whole transmission too;
-%% We consider Name as implementation point (like class) and serial number as instance - (like object);
+%% We consider model and prototype as implementation parts (like classes) and serial number as unique id of an instance (object);
 %% We can support polymorphism by different ways - by overriding prototype or by changing model itself;
 
 %% NOTE: I am thinking about two kinds of assembly manual and automated;
-%% Manual issued by canvas whereas automated via code
+%% Manual can be produced on canvas whereas automated via function call
 
 -record (assembly, {
                     %% Produced number which is assigned by factory
@@ -119,7 +119,7 @@ datasheet(Path) ->
 
 %%% erlmachine_template
 
--spec schema() -> atom().
+-spec schema() -> list().
 schema() ->
     "assembly.json".
 
@@ -147,7 +147,7 @@ next(Assembly, {<<"serial_no">>, V, I}) ->
     next(Rel, erlmachine_template:next(I));
 
 next(Assembly, {<<"type">>, V, I}) ->
-    Rel = type(Assembly, binary_to_atom(V, utf8)),
+    Rel = type(Assembly, binary_to_atom(V)),
 
     next(Rel, erlmachine_template:next(I));
 
@@ -167,7 +167,7 @@ next(Assembly, {<<"port">>, V, I}) ->
     next(Rel, erlmachine_template:next(I));
 
 next(Assembly, {<<"model">>, V, I}) ->
-    {ok, Name} = erlmachine_template:find(<<"module">>, V), Module = binary_to_atom(Name, utf8),
+    {ok, Name} = erlmachine_template:find(<<"module">>, V), Module = binary_to_atom(Name),
     Model =
         case erlmachine_template:find(<<"options">>, V) of
             {ok, Opt} ->
@@ -180,7 +180,7 @@ next(Assembly, {<<"model">>, V, I}) ->
     next(Rel, erlmachine_template:next(I));
 
 next(Assembly, {<<"prototype">>, V, I}) ->
-    {ok, Name} = erlmachine_template:find(<<"module">>, V), Module = binary_to_atom(Name, utf8),
+    {ok, Name} = erlmachine_template:find(<<"module">>, V), Module = binary_to_atom(Name),
     Prot =
         case erlmachine_template:find(<<"options">>, V) of
             {ok, Opt} ->
@@ -369,6 +369,7 @@ description(Assembly, Desc) ->
 
 %%% Format API
 
+%% TODO Unified format behaviour (erlmachine_format, etc.)
 %% TODO:
 
 -spec to_json(Assembly::assembly()) -> json().

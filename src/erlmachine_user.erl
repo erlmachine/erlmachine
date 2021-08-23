@@ -4,15 +4,11 @@
 -export([root/0]).
 
 -include("erlmachine_system.hrl").
-%% NOTE: User -1 can be assigned to the automated system objects;
+%% NOTE: User -1 can be assigned to mark the automated system objects;
 -record(user, {
-               %% The identity of a user
                id::uid(),
-               %% User name
-               name::binary(),
-               %% User title
-               title::binary(),
-               %% Short summary
+
+               name::binary(), title::binary(),
                summary::binary()
               }
        ).
