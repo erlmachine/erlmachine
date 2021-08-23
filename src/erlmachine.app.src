@@ -1,6 +1,6 @@
 {application, erlmachine,
  [{description, "The first flow-based Erlang OTP programming framework"},
-  {vsn,"2.0.0"},
+  {vsn,"2.1.0"},
   {modules,[]},
   {registered,[]},
   {applications,[kernel, stdlib, syn, jsx, yamerl, jessy]},
