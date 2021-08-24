@@ -18,7 +18,7 @@
 -export([iterator/1, next/1]).
 -export([find/2]).
 
--opaque template() :: map().
+-type template() :: map().
 
 -type path() :: list().
 -type spec() :: list().
