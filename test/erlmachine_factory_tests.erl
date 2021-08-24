@@ -36,10 +36,10 @@ erlmachine_factory_test_() ->
       {
        "Inspect assembly: datasheets/extensions/ct.yaml",
        fun() ->
-               FileName = erlmachine:filename("datasheets/extensions/ct.yaml"),
-               {ok, Template} = erlmachine_assembly:template(FileName),
+               Name = erlmachine:filename("datasheets/extensions/ct.yaml"),
+               {ok, T} = erlmachine_assembly:template(Name),
 
-               Assembly = erlmachine_factory:assembly(Template),
+               Assembly = erlmachine_factory:assembly(T),
 
                SN = erlmachine:serial_no(Assembly), true = is_binary(SN)
        end
@@ -47,10 +47,10 @@ erlmachine_factory_test_() ->
       {
        "Inspect assembly: datasheets/extensions/sup_ct.yaml",
        fun() ->
-               FileName = erlmachine:filename("datasheets/extensions/sup_ct.yaml"),
-               {ok, Template} = erlmachine_assembly:template(FileName),
+               Name = erlmachine:filename("datasheets/extensions/sup_ct.yaml"),
+               {ok, T} = erlmachine_assembly:template(Name),
 
-               Assembly = erlmachine_factory:assembly(Template),
+               Assembly = erlmachine_factory:assembly(T),
 
                SN = erlmachine:serial_no(Assembly), true = is_binary(SN)
        end
@@ -94,10 +94,10 @@ erlmachine_factory_test_() ->
       {
        "Inspect datasheet mapping: datasheets/extensions/ct.yaml",
        fun() ->
-               FileName = erlmachine:filename("datasheets/extensions/ct.yaml"),
-               {ok, Template} = erlmachine_assembly:template(FileName),
+               Name = erlmachine:filename("datasheets/extensions/ct.yaml"),
+               {ok, T} = erlmachine_assembly:template(Name),
 
-               Assembly = erlmachine_factory:assembly(Template),
+               Assembly = erlmachine_factory:assembly(T),
                Model = erlmachine_assembly:model(Assembly), Prot = erlmachine_assembly:prototype(Assembly),
 
                SN = erlmachine:serial_no(Assembly), true = is_binary(SN),
@@ -134,10 +134,10 @@ erlmachine_factory_test_() ->
       {
        "Inspect datasheet mapping: datasheets/ct.yaml",
        fun() ->
-               FileName = erlmachine:filename("datasheets/ct.yaml"),
-               {ok, Template} = erlmachine_graph:template(FileName),
+               Name = erlmachine:filename("datasheets/ct.yaml"),
+               {ok, T} = erlmachine_graph:template(Name),
 
-               Graph = erlmachine_factory:graph(Template),
+               Graph = erlmachine_factory:graph(T),
 
                Exts = erlmachine_graph:vertices(Graph), [_A, _B, _C, _D, _E] = Exts,
                [true = is_binary(erlmachine:serial_no(Ext)) || Ext <- Exts]

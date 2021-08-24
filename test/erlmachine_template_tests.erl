@@ -24,9 +24,9 @@ erlmachine_datasheet_test_() ->
       {
        "Inspect datasheet: datasheets/extensions/ct.yaml",
        fun() ->
-               FileName = erlmachine:filename("datasheets/extensions/ct.yaml"),
+               Name = erlmachine:filename("datasheets/extensions/ct.yaml"),
 
-               {ok, T} = erlmachine_assembly:template(FileName), true = is_map(T),
+               {ok, T} = erlmachine_assembly:template(Name), true = is_map(T),
                ?debugFmt("~n~p~n", [T])
 
        end
@@ -34,18 +34,18 @@ erlmachine_datasheet_test_() ->
       {
        "Inspect datasheet: datasheets/extensions/sup_ct.yaml",
         fun() ->
-                FileName = erlmachine:filename("datasheets/extensions/sup_ct.yaml"),
+                Name = erlmachine:filename("datasheets/extensions/sup_ct.yaml"),
 
-                {ok, T} = erlmachine_assembly:template(FileName), true = is_map(T),
+                {ok, T} = erlmachine_assembly:template(Name), true = is_map(T),
                 ?debugFmt("~n~p~n", [T])
         end
       },
       {
        "Inspect datasheet: datasheets/ct.yaml",
        fun() ->
-               FileName = erlmachine:filename("datasheets/ct.yaml"),
+               Name = erlmachine:filename("datasheets/ct.yaml"),
 
-               {ok, T} = erlmachine_graph:template(FileName), true = is_map(T),
+               {ok, T} = erlmachine_graph:template(Name), true = is_map(T),
                ?debugFmt("~n~p~n", [T])
        end
       }
