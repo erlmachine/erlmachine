@@ -16,13 +16,13 @@ erlmachine_datasheet_test_() ->
              application:start(yamerl),
 
              [ok = erlmachine_template:add_schema(T) || T <- Templates]
-    end,
+     end,
      fun(_) ->
              ok = application:stop(yamerl)
      end,
      [
       {
-       "Inspect datasheet: datasheets/extensions/ct.yaml",
+       "Inspect template: datasheets/extensions/ct.yaml",
        fun() ->
                Name = erlmachine:filename("datasheets/extensions/ct.yaml"),
 
@@ -32,7 +32,7 @@ erlmachine_datasheet_test_() ->
        end
       },
       {
-       "Inspect datasheet: datasheets/extensions/sup_ct.yaml",
+       "Inspect template: datasheets/extensions/sup_ct.yaml",
         fun() ->
                 Name = erlmachine:filename("datasheets/extensions/sup_ct.yaml"),
 
@@ -41,7 +41,7 @@ erlmachine_datasheet_test_() ->
         end
       },
       {
-       "Inspect datasheet: datasheets/ct.yaml",
+       "Inspect template: datasheets/ct.yaml",
        fun() ->
                Name = erlmachine:filename("datasheets/ct.yaml"),
 
