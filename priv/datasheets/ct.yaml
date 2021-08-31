@@ -1,8 +1,10 @@
 ### NOTE: There is a place where developer notes should be written:
 
 # Sample transmission datasheet. Should be checked via ct and eunit test
-vertices:
 # Extensions vocabulary guaranties the uniqueness of keys
+
+vertices:
+
 ## Notes about A:
   A:
     type: supervisor
@@ -17,7 +19,8 @@ vertices:
     tags: [root, test]
     env:
       key: value
-    description: Test assembly A (supervisor)
+    description: "Test assembly A (supervisor)"
+
 ## Notes about B:
   B:
     type: worker
@@ -34,7 +37,8 @@ vertices:
     tags: [test]
     env:
       key: value
-    description: Test assembly B (worker)
+    description: "Test assembly B (worker)"
+
 ## Notes about C:
   C:
     type: worker
@@ -46,7 +50,8 @@ vertices:
       module: erlmachine_prototype_def
       options:
         key: value
-    description: Test assembly C (worker)
+    description: "Test assembly C (worker)"
+
 ## Notes about D:
   D:
     type: worker
@@ -58,7 +63,8 @@ vertices:
       module: erlmachine_prototype_def
       options:
         key: value
-    description: Test assembly D (worker)
+    description: "Test assembly D (worker)"
+
 ## Notes about E:
   E:
     type: worker
@@ -70,7 +76,7 @@ vertices:
       module: erlmachine_prototype_def
       options:
         key: value
-    description: Test assembly E (worker)
+    description: "Test assembly E (worker)"
 
 edges:
 # 1. Description (The list guaranties the right order and describes the first element as the root entry)
