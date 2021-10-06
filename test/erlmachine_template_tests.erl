@@ -22,7 +22,7 @@ erlmachine_datasheet_test_() ->
      end,
      [
       {
-       "Inspect template: datasheets/extensions/ct.yaml",
+       "Inspect file: datasheets/extensions/ct.yaml",
        fun() ->
                Name = erlmachine:filename("datasheets/extensions/ct.yaml"),
 
@@ -32,7 +32,7 @@ erlmachine_datasheet_test_() ->
        end
       },
       {
-       "Inspect template: datasheets/extensions/sup_ct.yaml",
+       "Inspect file: datasheets/extensions/sup_ct.yaml",
         fun() ->
                 Name = erlmachine:filename("datasheets/extensions/sup_ct.yaml"),
 
@@ -41,7 +41,7 @@ erlmachine_datasheet_test_() ->
         end
       },
       {
-       "Inspect template: datasheets/ct.yaml",
+       "Inspect file: datasheets/ct.yaml",
        fun() ->
                Name = erlmachine:filename("datasheets/ct.yaml"),
 
