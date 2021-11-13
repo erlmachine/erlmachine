@@ -27,11 +27,14 @@ init_per_suite(Config) ->
 
     application:start(yamerl), application:start(syn),
 
-    Nodes = [node()], Table = 'erlmachine_factory',
+    Scopes = ['erlmachine_factory', 'erlmachine_system'], syn:add_node_to_scopes(Scopes),
 
-    erlmachine_db:create_schema(Nodes), ok = erlmachine_db:start(),
+    Nodes = [node()],
+    mnesia:create_schema(Nodes), ok = mnesia:start(),
 
-    erlmachine_db:create_table(Table), ok = erlmachine_db:wait_for_tables([Table], 1000),
+    Table = 'erlmachine_factory', erlmachine_table:create(Table),
+
+    ok = mnesia:wait_for_tables([Table], 1000),
 
     {ok, _} = erlmachine_factory:start(),
 

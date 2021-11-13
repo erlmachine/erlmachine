@@ -1,22 +1,20 @@
 -module(erlmachine_factory).
-%% NOTE: The factory is responsible to produce and register component by it's own SN;
+%% NOTE: Factory is responsible to produce and register component by it's own SN;
+
 %% TODO: The next features:
 %% 1. Capacity driven factory. Production planning via allocated pool;
 %% 2. Measurements and visualization of production activities in admin panel;
-%% 3. Acceptance procedure execution: prototype layer (supported by test model), model (business layer);
-%% 4. Registered part_no allocation;
+%% 3. Acceptance procedure between layers: prototype (mocked by test model), model (business layer);
 
-%% NOTE: SN (serial_no) is an runtime in which assigned sequentially and calulcated by non-deterministic way;
+%% NOTE: SN (serial_no) is an runtime id which is assigned sequentially and calulcated via non-deterministic way;
 %% NOTE: MN (model_no) is an implementation id which is obtained from -vsn(Vsn) tag of the module;
-%% NOTE: PN (part_no) is an uptime id which is assigned after factory has restarted;
-%% NOTE: The all list can be defined via appropriate module tags: -serial_no(SN), -model_no(MN), -part_no(PN)
 
-%% NOTE: It's encouraged to use datasheet when there is requirement for description
+%% NOTE: It's encouraged to use datasheet when there is a requirement to document produced assembly;
 
 -behaviour(gen_server).
 
--behaviour(erlmachine_db).
--behaviour(erlmachine_registry).
+-behaviour(erlmachine_table).
+-behaviour(erlmachine_scope).
 
 %% API.
 
@@ -24,7 +22,7 @@
 
 -export([table/0, attributes/0]).
 
--export([group/0]).
+-export([scope/0]).
 
 -export([start_link/0]).
 -export([start/0]).
@@ -46,6 +44,7 @@
 -export([graph/1]).
 
 -include("erlmachine_assembly.hrl").
+-include("erlmachine_template.hrl").
 -include("erlmachine_user.hrl").
 -include("erlmachine_graph.hrl").
 -include("erlmachine_system.hrl").
@@ -54,8 +53,6 @@
 
 -type serial_no() :: binary().
 -type part_no() :: binary().
-
--type template() :: erlmachine_template:template().
 
 -type hash() :: binary().
 
@@ -66,6 +63,12 @@
 -spec is_factory(Module::atom()) -> boolean().
 is_factory(Module) ->
     lists:member(?MODULE, erlmachine:behaviours(Module)).
+
+-spec factories() -> [module()].
+factories() ->
+    Modules = erlmachine:modules(),
+
+    [M || M <- Modules, is_factory(M)].
 
 %%% Factories
 
@@ -78,7 +81,7 @@ process([H|Factories], Assembly, T) ->
 
     process(Factories, Rel, T).
 
-%%% erlmachine_db
+%%% erlmachine_table
 
 -spec table() -> atom().
 table() ->
@@ -90,11 +93,13 @@ table() ->
 attributes() ->
     record_info(fields, ?MODULE).
 
-%%% erlmachine_registry
+%%% erlmachine_scope
 
--spec group() -> atom().
-group() ->
+-spec scope() -> atom().
+scope() ->
     ?MODULE.
+
+%%% API
 
 id() ->
     ?MODULE.
@@ -133,13 +138,12 @@ stop() ->
 -type state() :: #state{}.
 
 init([]) ->
-    Modules = erlmachine:modules(),
-    Factories = [M || M <- Modules, is_factory(M)],
+    Factories = factories(),
 
-    Serial = erlmachine_db:update_counter(?MODULE), Hash = erlmachine:guid(Serial),
+    Serial = erlmachine_table:inc(?MODULE), Hash = erlmachine:guid(Serial),
     UID = erlmachine_user:root(),
 
-    {ok, #state{ hash = Hash, serial = Serial, uid = UID, factories = Factories }}.
+    erlmachine:success(#state{ hash = Hash, serial = Serial, uid = UID, factories = Factories }).
 
 handle_call(#produce{ 'assembly' = Assembly, 'template' = T }, _From, State) ->
     Hash = hash(State), Factories = factories(State),
@@ -155,7 +159,7 @@ handle_call(#produce{ 'assembly' = Assembly, 'template' = T }, _From, State) ->
         ],
     Res = assemble(Steps, Assembly, State),
 
-    <<B1:32, B2:32, B3:32, B4:32>> = Hash, Serial = erlmachine_db:update_counter(?MODULE),
+    <<B1:32, B2:32, B3:32, B4:32>> = Hash, Serial = erlmachine_table:inc(?MODULE),
     B5 = erlmachine:phash2({B1, Serial}),
     Rotated = <<(B2 bxor B5):32, (B3 bxor B5):32, (B4 bxor B5):32, B5:32>>,
 
@@ -198,7 +202,7 @@ uid(Assembly, State) ->
 -spec vsn(Assembly::assembly(), State::state()) -> assembly().
 vsn(Assembly, _) ->
     %% TODO: To convert into base64;
-    Model = erlmachine_assembly:model(Assembly), 
+    Model = erlmachine_assembly:model(Assembly),
     Module = erlmachine_model:module(Model),
 
     Vsn = erlmachine:vsn(Module), Model2 = erlmachine_model:vsn(Model, Vsn),
@@ -213,7 +217,8 @@ vsn(Assembly, _) ->
 -spec publish(Assembly::assembly(), State::state()) -> assembly().
 publish(Assembly, _) ->
     %% NOTE: There is a place where production trackers and ws are notified;
-    {ok, _Count} = erlmachine_registry:publish(?MODULE, Assembly),
+
+    {ok, _Count} = erlmachine_scope:publish(?MODULE, _Group = ?MODULE, Assembly),
     Assembly.
 
 %%% Field accessors
@@ -236,7 +241,6 @@ uid(State) ->
 
 %%% Production API
 
-%% TODO To consider a call supported by decorating module as arg;
 -spec gear(Model::atom(), Opt::map(), Env::map()) ->
                   assembly().
 gear(Model, Opt, Env) ->

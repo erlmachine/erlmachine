@@ -7,18 +7,19 @@ erlmachine_factory_test_() ->
     Tables = ['erlmachine_factory'], Templates = ['erlmachine_assembly', 'erlmachine_graph'],
 
     Tags = ['eunit'],
-
     {
      foreach,
      fun() ->
              meck:expect(erlmachine, modules, 0, ['erlmachine_assembly']),
 
-             erlmachine_db:create_schema(Nodes), ok = erlmachine_db:start(),
+             mnesia:create_schema(Nodes), ok = mnesia:start(),
 
-             [erlmachine_db:create_table(T) || T <- Tables], ok = erlmachine_db:wait_for_tables(Tables, 1000),
+             [erlmachine_table:create(T) || T <- Tables], ok = mnesia:wait_for_tables(Tables, 1000),
 
              application:start(yamerl),
              application:start(syn),
+
+             Scopes = ['erlmachine_factory', 'erlmachine_system'], syn:add_node_to_scopes(Scopes),
 
              {ok, _} = erlmachine_factory:start(),
 
@@ -30,7 +31,7 @@ erlmachine_factory_test_() ->
              application:stop(yamerl),
              application:start(syn),
 
-             [erlmachine_db:delete_table(T) || T <- Tables], erlmachine_db:delete_schema(Nodes)
+             [erlmachine_table:delete(T) || T <- Tables], mnesia:delete_schema(Nodes)
      end,
      [
       {

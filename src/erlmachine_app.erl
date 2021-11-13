@@ -13,38 +13,35 @@
 -include("erlmachine_system.hrl").
 
 start(_Type, _Args) ->
-    Nodes = [node()],
-    Modules = erlmachine:modules(),
+    Nodes = [node()], mnesia:create_schema(Nodes),
 
-    erlmachine_db:create_schema(Nodes), ok = erlmachine_db:start(),
+    ok = mnesia:start(),
 
-    [erlmachine_db:create_table(T) || T <- tables(Modules)],
+    Tables = erlmachine:tables(),
+    [erlmachine_table:create(T) || T <- Tables],
+
     erlmachine_sup:start_link().
 
 stop(_State) ->
-    ok = erlmachine_db:stop().
+    ok = mnesia:stop().
 
-start_phase(wait_for_tables, _Type, Timeout) when is_integer(Timeout) ->
-    Modules = erlmachine:modules(),
+start_phase('wait_for_tables', _Type, Timeout) when is_integer(Timeout) ->
+    Tables = erlmachine:tables(),
 
-    Tables = [T || T <- tables(Modules)],
-    ok = erlmachine_db:wait_for_tables(Tables, Timeout);
+    ok = mnesia:wait_for_tables(Tables, Timeout);
 
-start_phase(add_schema, _Type, _)  ->
-    Modules = erlmachine:modules(),
+start_phase('add_schema', _Type, _)  ->
+    Templates = erlmachine:templates(),
 
-    Templates = [T || T <- templates(Modules)],
     [ok = erlmachine_template:add_schema(T) || T <- Templates],
-
     erlmachine:success();
+
+start_phase('add_node_to_scopes', _Type, _)  ->
+    Scopes = erlmachine:scopes(),
+
+    ok = syn:add_node_to_scopes(Scopes);
 
 start_phase(_, _Type, _PhaseArgs) ->
     erlmachine:success().
 
--spec tables(Modules::[atom()]) -> [atom()].
-tables(Modules) ->
-    [M || M <- Modules, erlmachine_db:is_db(M)].
 
--spec templates(Modules::[atom()]) -> [atom()].
-templates(Modules) ->
-    [M || M <- Modules, erlmachine_template:is_template(M)].

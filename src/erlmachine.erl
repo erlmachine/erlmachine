@@ -1,12 +1,14 @@
 -module(erlmachine).
 %% NOTE: The main purpouse of erlmachine project is to provide a set of well designed behaviours which are supported by visual tools (flowcharts, widjets, etc..).
-%% The Erlmachine based design operates via flexible mechanism of prototypes and models. Where business layer is decoupled from a transport implementation.
+%% The Erlmachine based design operates via flexible mechanism of prototype and model where business layer (model) is decoupled from a service (prototype) implementation.
 
--export([start/0, stop/0, get_key/1, priv_dir/0, filename/1]).
+-export([start/0, stop/0, get_key/1, get_key/2, priv_dir/0, filename/1]).
 
--export([modules/0]).
+-export([modules/0, modules/1]).
 -export([vsn/0]).
 -export([description/0]).
+
+-export([tables/0, templates/0, scopes/0]).
 
 -export([is_supervisor/1, is_worker/1]).
 
@@ -96,7 +98,11 @@ stop() ->
 
 -spec get_key(Key::atom()) -> 'undefined' | success(term()).
 get_key(Key) ->
-    application:get_key(?MODULE, Key).
+    get_key(?MODULE, Key).
+
+-spec get_key(App::module(), Key::atom()) -> 'undefined' | success(term()).
+get_key(App, Key) ->
+    application:get_key(App, Key).
 
 -spec priv_dir() -> file:filename().
 priv_dir() ->
@@ -108,28 +114,36 @@ filename(Path) ->
 
 -spec modules() -> [module()].
 modules() ->
-    {ok, Modules} = get_key('modules'),
+    modules(?MODULE).
+
+-spec modules(App::module()) -> [module()].
+modules(App) ->
+    {ok, Modules} = get_key(App, 'modules'),
     Modules.
 
 -spec vsn() -> binary().
 vsn() ->
-    {ok, Vsn} = get_key('vsn'),
+    {ok, Vsn} = get_key(?MODULE, 'vsn'),
     Vsn.
 
 -spec description() ->  binary().
 description() ->
-    {ok, Desc} = get_key('description'),
+    {ok, Desc} = get_key(?MODULE, 'description'),
     Desc.
 
--spec is_supervisor(Assembly::assembly()) -> boolean().
-is_supervisor(Assembly) ->
-    Type = erlmachine_assembly:type(Assembly),
-    Type == 'supervisor'.
+-spec tables() -> [module()].
+tables() ->
+    erlmachine_table:tables(?MODULE).
 
--spec is_worker(Assembly::assembly()) -> boolean().
-is_worker(Assembly) ->
-    Type = erlmachine_assembly:type(Assembly),
-    Type == 'worker'.
+-spec templates() -> [module()].
+templates() ->
+    erlmachine_template:templates(?MODULE).
+
+-spec scopes() -> [module()].
+scopes() ->
+    erlmachine_scope:scopes(?MODULE).
+
+%%% Transmission API
 
 -spec startup(Graph::graph()) ->
                    success(pid()) | ingnore | failure(term()).
@@ -393,7 +407,7 @@ vsn(Module) ->
     {_, [Vsn]} = lists:keyfind('vsn', 1, attributes(Module)),
     Vsn.
 
-%%% Field accessors
+%%% Assembly API
 
 -spec serial_no(Assembly::assembly()) -> serial_no().
 serial_no(Assembly) ->
@@ -442,6 +456,18 @@ part_no(Assembly) ->
 -spec description(Assembly::assembly()) -> binary().
 description(Assembly) ->
     erlmachine_assembly:description(Assembly).
+
+%%% Extensions
+
+-spec is_supervisor(Assembly::assembly()) -> boolean().
+is_supervisor(Assembly) ->
+    Type = erlmachine_assembly:type(Assembly),
+    Type == 'supervisor'.
+
+-spec is_worker(Assembly::assembly()) -> boolean().
+is_worker(Assembly) ->
+    Type = erlmachine_assembly:type(Assembly),
+    Type == 'worker'.
 
 %% NOTE: The next format is safer and more applicable by web applications (in comparison to base64);
 

@@ -8,6 +8,8 @@
 -export([schema/0]).
 -export([file/0]).
 
+-export([is_assembly/1]).
+
 -export([new/0, new/5]).
 
 -export([
@@ -35,6 +37,7 @@
 -export([to_json/1, from_json/1]).
 -export([to_binary/1, from_binary/1]).
 
+-include("erlmachine_template.hrl").
 -include("erlmachine_user.hrl").
 -include("erlmachine_factory.hrl").
 -include("erlmachine_graph.hrl").
@@ -88,14 +91,15 @@
 -type model() :: erlmachine_model:model().
 -type prototype() :: erlmachine_prototype:prototype().
 
--type path() :: erlmachine_datasheet:path().
--type template() :: erlmachine_template:template().
-
 -type assembly() :: #assembly{}.
 
 -type json() :: map().
 
 -export_type([assembly/0]).
+
+-spec is_assembly(Term::term()) -> boolean().
+is_assembly(Term) ->
+    is_record(Term, assembly).
 
 -spec new() -> assembly().
 new() ->
@@ -312,7 +316,9 @@ extensions(Assembly) ->
     Assembly#assembly.extensions.
 
 -spec extensions(Assembly::assembly(), Exts::[] | [assembly()]) -> assembly().
-extensions(Assembly, Exts) ->
+extensions(Assembly, Exts) when is_list(Exts) ->
+    [true = is_assembly(Ext)|| Ext <- Exts],
+
     Assembly#assembly{ 'extensions' = Exts }.
 
 -spec uid(Assembly::assembly()) -> uid().
@@ -321,6 +327,8 @@ uid(Assembly) ->
 
 -spec uid(Assembly::assembly(), UID::uid()) -> assembly().
 uid(Assembly, UID) ->
+    true = is_integer(UID),
+
     Assembly#assembly{ 'uid' = UID }.
 
 -spec part_no(Assembly::assembly()) -> term().
@@ -336,7 +344,7 @@ tags(Assembly) ->
     Assembly#assembly.tags.
 
 -spec tags(Assembly::assembly(), Tags::term()) -> assembly().
-tags(Assembly, Tags) ->
+tags(Assembly, Tags) when is_list(Tags) ->
     Assembly#assembly{ 'tags' = Tags }.
 
 -spec vertex(Assembly::assembly()) -> term().
@@ -357,6 +365,8 @@ env(Assembly) ->
 
 -spec env(Assembly::assembly(), Env::map()) -> assembly().
 env(Assembly, Env) ->
+    true = is_map(Env),
+
     Assembly#assembly{ 'env' = Env }.
 
 -spec description(Assembly::assembly()) -> binary().

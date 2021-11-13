@@ -1,9 +1,9 @@
 -module(erlmachine_system).
 %% TODO: To provide automated system monitoring within predefined range of tags: system, log, etc.
 
--behaviour(erlmachine_registry).
+-behaviour(erlmachine_scope).
 
--export([group/0]).
+-export([scope/0]).
 
 -export([failure/0, failure/1, failure/2, failure/3]).
 -export([success/0, success/1, success/2, success/3]).
@@ -32,10 +32,10 @@
 -export_type([failure/0, failure/1, failure/2, failure/3]).
 -export_type([success/0, success/1, success/2, success/3]).
 
-%%% erlmachine_registry
+%%% erlmachine_scope
 
--spec group() -> atom().
-group() ->
+-spec scope() -> atom().
+scope() ->
     ?MODULE.
 
 -spec failure() -> failure().
@@ -98,22 +98,22 @@ is_failure(_) ->
 %% 1. Supply restarts counter is an edge;
 %% 2. To manage the overall extension vocabulary via syn;
 %% 3. To deliver control messages ("overlad", etc.) via syn
-%% 4. To manage process exit via syn (syn_event_handler) 
+%% 4. To manage process exit via syn (syn_event_handler)
 
--spec startup(success(Pid::pid()) | failure(E::term(), R::term()), Assembly::assembly()) -> 
+-spec startup(success(Pid::pid()) | failure(E::term(), R::term()), Assembly::assembly()) ->
                      success().
 startup({ok, Pid}, Assembly) when is_pid(Pid) ->
     _Graph = erlmachine:graph(Assembly),
-    _Rel = erlmachine_tag:pid(Assembly, Pid),
+    Rel = erlmachine:tag(Assembly, {'pid', Pid}),
 
-    ok = erlmachine_registry:join(?MODULE, Pid, Assembly),
+    ok = erlmachine_scope:join(?MODULE, _Group = ?MODULE, Pid, Rel),
     %ok = add_vertex(Schema, Rel),
     ok;
 startup({error, {E, R}}, Assembly) ->
     _Graph = erlmachine:graph(Assembly),
 
-    _Rel = erlmachine_tag:error(Assembly, E, R),
-    %ok = add_vertex(Schema, Rel), 
+    _Rel = erlmachine:tag(Assembly, {'error', {E, R}}),
+    %ok = add_vertex(Schema, Rel),
     ok.
 
 -spec install(success(Pid::pid()) | failure(E::term(), R::term()), Assembly::assembly(), Ext::assembly()) ->
@@ -121,18 +121,18 @@ startup({error, {E, R}}, Assembly) ->
 install(_Res = {ok, Pid}, Assembly, Ext) when is_pid(Pid) ->
     _Graph = erlmachine:graph(Assembly),
 
-    _Rel = erlmachine_tag:pid(Assembly, Pid),
+    Rel = erlmachine:tag(Assembly, {'pid', Pid}),
     %ok = add_vertex(Schema, Rel),
 
-    _V1 = erlmachine:vertex(Assembly), _V2 = erlmachine:vertex(Ext),
+    _V1 = erlmachine:vertex(Rel), _V2 = erlmachine:vertex(Ext),
 
-    ok = erlmachine_registry:join(?MODULE, Pid, Ext),
+    ok = erlmachine_scope:join(?MODULE, _Group = ?MODULE, Pid, Ext),
     %erlmachine_schema:add_edge(Schema, V1, V2, Res),
     ok;
 install(_Res = {error, {E, R}}, Assembly, Ext) ->
     _Graph = erlmachine:graph(Assembly),
 
-    _Rel = erlmachine_tag:error(Assembly, E, R),
+    _Rel = erlmachine:tag(Assembly, {'error', {E, R}}),
     %ok = add_vertex(Schema, Rel),
 
     _V1 = erlmachine:vertex(Assembly), _V2 = erlmachine:vertex(Ext),
@@ -148,12 +148,11 @@ transmit({ok, _Ret, _Assembly}) ->
 transmit({error, {E, R}, Assembly}) ->
     _Graph = erlmachine:graph(Assembly),
 
-    _Rel = erlmachine_tag:error(Assembly, E, R),
+    _Rel = erlmachine:tag(Assembly, {'error', {E, R}}),
     %ok = add_vertex(Schema, Rel),
 
     %% NOTE: We should support DB indexing based on vertexes and edges;
     %% TODO: To create a separate in-memory datastore to store errors and invocations;
-
     ok.
 
 transmit({ok, _Assembly}, _Ext) ->
@@ -164,7 +163,7 @@ transmit({ok, _Ret, _Assembly}, _Ext) ->
 transmit(_Res = {error, {E, R}, Assembly}, Ext) ->
     _Graph = erlmachine:graph(Assembly),
 
-    _Rel = erlmachine_tag:error(Assembly, E, R),
+    _Rel = erlmachine:tag(Assembly, {'error', {E, R}}),
     %ok = add_vertex(Schema, Rel),
 
     _V1 = erlmachine:vertex(Assembly), _V2 = erlmachine:vertex(Ext),
@@ -185,4 +184,3 @@ shutdown(ok, _Assembly, _V) ->
    % Rel = erlmachine_assembly:extensions(Assembly, []),
     %erlmachine_schema:add_vertex(Schema, Assembly),
  %   ok.
-

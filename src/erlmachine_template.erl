@@ -6,11 +6,11 @@
 %% - Validate template content against https://json-schema.org;
 
 %% NOTE: There is a potential possibility to load template from other sources such DB, network, etc.
--export([is_template/1]).
+-export([is_template/1, templates/1]).
 
 -export([add_schema/1]).
 
--export([file/2]).
+-export([file/2, file/3]).
 -export([decode/3]).
 
 -export([new/0]).
@@ -30,11 +30,17 @@
 
 -include("erlmachine_system.hrl").
 
-%%% Modules
+%%% Modules API
 
 -spec is_template(Module::atom()) -> boolean().
 is_template(Module) ->
     lists:member(?MODULE, erlmachine:behaviours(Module)).
+
+-spec templates(App::module()) -> [module()].
+templates(App) ->
+    [M || M <- erlmachine:modules(App), is_template(M)].
+
+%%% Template API
 
 -spec add_schema(Module::atom()) -> success().
 add_schema(Module) ->
@@ -45,13 +51,17 @@ add_schema(Module) ->
 -spec file(Module::atom(), Path::path()) ->
                   success(template()) | failure(term(), term()).
 file(Module, Path) ->
+    Opt = [{ 'str_node_as_binary', true }, { 'map_node_format', map }],
+
+    file(Module, Path, Opt).
+
+-spec file(Module::atom(), Path::path(), Opt::[term()]) ->
+                  success(template()) | failure(term(), term()).
+file(Module, Path, Opt) ->
     Schema = Module:schema(),
 
     try
-        Opt = [{ 'str_node_as_binary', true }, { 'map_node_format', map }],
-        [Template] = yamerl_constr:file(Path, Opt),
-
-        {ok, _} = jesse:validate(Schema, Template)
+        [Template] = yamerl_constr:file(Path, Opt), {ok, _} = jesse:validate(Schema, Template)
     catch E:R ->
             erlmachine:failure(E, R)
     end.
@@ -62,9 +72,7 @@ decode(Module, Spec, Opt) ->
     Schema = Module:schema(),
 
     try
-        [Template] = yamerl:decode(Spec, Opt),
-
-        {ok, _} = jesse:validate(Schema, Template)
+        [Template] = yamerl:decode(Spec, Opt), {ok, _} = jesse:validate(Schema, Template)
     catch E:R ->
             erlmachine:failure(E, R)
     end.
