@@ -5,7 +5,7 @@
 %% - Read YAML specifications (templates);
 %% - Validate template content against https://json-schema.org;
 
-%% NOTE: There is a potential possibility to load template from other sources such DB, network, etc.
+%% NOTE: There is a potential possibility to load template from other sources: DB, network, etc.
 -export([is_template/1, templates/1]).
 
 -export([add_schema/1]).

@@ -20,6 +20,12 @@ start(_Type, _Args) ->
     Tables = erlmachine:tables(),
     [erlmachine_table:create(T) || T <- Tables],
 
+    Templates = erlmachine:templates(),
+    [ok = erlmachine_template:add_schema(T) || T <- Templates],
+
+    Scopes = erlmachine:scopes(),
+    ok = syn:add_node_to_scopes(Scopes),
+
     erlmachine_sup:start_link().
 
 stop(_State) ->
@@ -29,17 +35,6 @@ start_phase('wait_for_tables', _Type, Timeout) when is_integer(Timeout) ->
     Tables = erlmachine:tables(),
 
     ok = mnesia:wait_for_tables(Tables, Timeout);
-
-start_phase('add_schema', _Type, _)  ->
-    Templates = erlmachine:templates(),
-
-    [ok = erlmachine_template:add_schema(T) || T <- Templates],
-    erlmachine:success();
-
-start_phase('add_node_to_scopes', _Type, _)  ->
-    Scopes = erlmachine:scopes(),
-
-    ok = syn:add_node_to_scopes(Scopes);
 
 start_phase(_, _Type, _PhaseArgs) ->
     erlmachine:success().

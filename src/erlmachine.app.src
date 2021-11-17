@@ -7,9 +7,7 @@
   {env,[]},
   {mod,{application_starter,[erlmachine_app,[]]}},
   {start_phases,[
-                 {wait_for_tables, 1000},
-                 {add_schema, []},
-                 {add_node_to_scopes, []}
+                 {wait_for_tables, 1000}
                 ]
   },
   {licenses, ["apache-2.0"]},
