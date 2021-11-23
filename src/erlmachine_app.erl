@@ -23,8 +23,7 @@ start(_Type, _Args) ->
     Templates = erlmachine:templates(),
     [ok = erlmachine_template:add_schema(T) || T <- Templates],
 
-    Scopes = erlmachine:scopes(),
-    ok = syn:add_node_to_scopes(Scopes),
+    Scopes = erlmachine:scopes(), ok = erlmachine_scope:init(Scopes),
 
     erlmachine_sup:start_link().
 

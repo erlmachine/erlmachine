@@ -1,6 +1,10 @@
 -module(erlmachine_scope).
 
+-behaviour(syn_event_handler).
+
 -export([is_scope/1, scopes/1]).
+
+-export([init/1]).
 
 -export([join/3, join/4]).
 -export([leave/3]).
@@ -10,11 +14,21 @@
 
 -export([is_member/3, members/2]).
 
+-export([on_process_joined/5, on_process_left/5]).
+
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_factory.hrl").
 -include("erlmachine_system.hrl").
 
 -callback scope() -> module().
+
+-callback process_joined(Group::term(), Pid::pid(), Meta::term()) ->
+    success().
+
+-callback process_left(Group::term(), Pid::pid(), Meta::term(), Reason::atom()) ->
+    success().
+
+-optional_callbacks([process_joined/3, process_left/4]).
 
 -type member() :: {pid(), term()}.
 
@@ -28,7 +42,15 @@ is_scope(Module) ->
 scopes(App) ->
     [M || M <- erlmachine:modules(App), is_scope(M)].
 
-%%% API
+%%% Init
+
+-spec init(Scopes::[module()]) -> success().
+init(Scopes) ->
+    ok = syn:add_node_to_scopes(Scopes),
+
+    syn:set_event_handler(?MODULE).
+
+%%% Group
 
 -spec join(Module::module(), Group::term(), Pid::pid()) ->
                   success().
@@ -79,3 +101,13 @@ members(Module, Group) ->
     Scope = Module:scope(),
 
     syn:members(Scope, Group).
+
+-spec on_process_joined(Module::module(), Group::term(), Pid::pid(), Meta::term(), Reason::atom()) ->
+                               success().
+on_process_joined(Module, Group, Pid, Meta, _Reason) ->
+    erlmachine:optional_callback(Module, 'process_joined', [Group, Pid, Meta]).
+
+-spec on_process_left(Module::module(), Group::term(), Pid::pid(), Meta::term(), Reason::atom()) ->
+                             success().
+on_process_left(Module, Group, Pid, Meta, Reason) ->
+    erlmachine:optional_callback(Module, 'process_left', [Group, Pid, Meta, Reason]).
