@@ -8,7 +8,7 @@
 
 -include_lib("eunit/include/eunit.hrl").
 
-erlmachine_datasheet_test_() ->
+erlmachine_template_test_() ->
     {
      foreach,
      fun() ->
