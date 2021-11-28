@@ -38,9 +38,9 @@
 is_scope(Module) ->
     lists:member(?MODULE, erlmachine:behaviours(Module)).
 
--spec scopes(App::module()) -> [module()].
-scopes(App) ->
-    [M || M <- erlmachine:modules(App), is_scope(M)].
+-spec scopes(Modules::[module()]) -> [module()].
+scopes(Modules) ->
+    [M || M <- Modules, is_scope(M)].
 
 %%% Init
 

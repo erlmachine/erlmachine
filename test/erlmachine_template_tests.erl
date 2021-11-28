@@ -9,16 +9,19 @@
 -include_lib("eunit/include/eunit.hrl").
 
 erlmachine_template_test_() ->
+    Modules = ['erlmachine_assembly', 'erlmachine_graph'],
+
     {
      foreach,
      fun() ->
-             Templates = ['erlmachine_assembly', 'erlmachine_graph'],
              application:start(yamerl),
 
-             [ok = erlmachine_template:add_schema(T) || T <- Templates]
+             ok = erlmachine:init(Modules),
+             ok
      end,
      fun(_) ->
-             ok = application:stop(yamerl)
+             application:stop(yamerl),
+             ok
      end,
      [
       {

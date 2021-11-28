@@ -36,9 +36,9 @@
 is_template(Module) ->
     lists:member(?MODULE, erlmachine:behaviours(Module)).
 
--spec templates(App::module()) -> [module()].
-templates(App) ->
-    [M || M <- erlmachine:modules(App), is_template(M)].
+-spec templates(Modules::[module()]) -> [module()].
+templates(Modules) ->
+    [M || M <- Modules, is_template(M)].
 
 %%% Template API
 

@@ -2,13 +2,13 @@
 %% NOTE: The main purpouse of erlmachine project is to provide a set of well designed behaviours which are supported by visual tools (flowcharts, widjets, etc..).
 %% The Erlmachine based design operates via flexible mechanism of prototype and model where business layer (model) is decoupled from a service (prototype) implementation.
 
+-export([init/0, init/1]).
+
 -export([start/0, stop/0, get_key/1, get_key/2, priv_dir/0, filename/1]).
 
--export([modules/0, modules/1]).
+-export([modules/0]).
 -export([vsn/0]).
 -export([description/0]).
-
--export([tables/0, templates/0, scopes/0]).
 
 -export([is_supervisor/1, is_worker/1]).
 
@@ -81,9 +81,27 @@
 
 -record(guid, { node::node(), reference::reference(), serial::term() }).
 
--type guid()::#guid{}.
+-type guid() :: #guid{}.
 
 -export_type([guid/0]).
+
+%%% Behaviours API
+
+-spec init() -> success().
+init() ->
+    Modules = modules(),
+    ok = init(Modules).
+
+-spec init(Modules::[module()]) -> success().
+init(Modules) ->
+    Tables = erlmachine_table:tables(Modules),
+    [ok = erlmachine_table:create(T) || T <- Tables],
+
+    Templates = erlmachine_template:templates(Modules),
+    [ok = erlmachine_template:add_schema(T) || T <- Templates],
+
+    Scopes = erlmachine_scope:scopes(Modules), ok = erlmachine_scope:init(Scopes),
+    success().
 
 %%% Application API
 
@@ -114,11 +132,7 @@ filename(Path) ->
 
 -spec modules() -> [module()].
 modules() ->
-    modules(?MODULE).
-
--spec modules(App::module()) -> [module()].
-modules(App) ->
-    {ok, Modules} = get_key(App, 'modules'),
+    {ok, Modules} = get_key(?MODULE, 'modules'),
     Modules.
 
 -spec vsn() -> binary().
@@ -130,18 +144,6 @@ vsn() ->
 description() ->
     {ok, Desc} = get_key(?MODULE, 'description'),
     Desc.
-
--spec tables() -> [module()].
-tables() ->
-    erlmachine_table:tables(?MODULE).
-
--spec templates() -> [module()].
-templates() ->
-    erlmachine_template:templates(?MODULE).
-
--spec scopes() -> [module()].
-scopes() ->
-    erlmachine_scope:scopes(?MODULE).
 
 %%% Transmission API
 

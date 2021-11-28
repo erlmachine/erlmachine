@@ -23,18 +23,18 @@ suite() ->
     [{timetrap,{minutes,1}}].
 
 init_per_suite(Config) ->
-    meck:expect(erlmachine, modules, 0, ['erlmachine_assembly']),
+    Nodes = [node()], mnesia:create_schema(Nodes),
 
-    application:start(yamerl), application:start(syn),
+    ok = mnesia:start(),
+    ok = application:start(yamerl),
+    ok = application:start(syn),
 
-    Scopes = ['erlmachine_factory', 'erlmachine_system'], syn:add_node_to_scopes(Scopes),
+    Modules = ['erlmachine_factory', 'erlmachine_assembly', 'erlmachine_graph', 'erlmachine_system'],
+    meck:expect(erlmachine, modules, 0, Modules),
 
-    Nodes = [node()],
-    mnesia:create_schema(Nodes), ok = mnesia:start(),
+    ok = erlmachine:init(Modules),
 
-    Table = 'erlmachine_factory', erlmachine_table:create(Table),
-
-    ok = mnesia:wait_for_tables([Table], 1000),
+    ok = mnesia:wait_for_tables(['erlmachine_factory'], 1000),
 
     {ok, _} = erlmachine_factory:start(),
 
@@ -50,6 +50,11 @@ init_per_suite(Config) ->
     lists:concat([Setup, Config]).
 
 end_per_suite(Config) ->
+    ok = erlmachine_factory:stop(),
+
+    ok = application:stop(yamerl),
+    ok = application:stop(syn),
+
     ok.
 
 init_per_group(_GroupName, Config) ->

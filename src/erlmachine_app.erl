@@ -16,14 +16,7 @@ start(_Type, _Args) ->
     Nodes = [node()], mnesia:create_schema(Nodes),
 
     ok = mnesia:start(),
-
-    Tables = erlmachine:tables(),
-    [erlmachine_table:create(T) || T <- Tables],
-
-    Templates = erlmachine:templates(),
-    [ok = erlmachine_template:add_schema(T) || T <- Templates],
-
-    Scopes = erlmachine:scopes(), ok = erlmachine_scope:init(Scopes),
+    ok = erlmachine:init(),
 
     erlmachine_sup:start_link().
 
@@ -31,7 +24,8 @@ stop(_State) ->
     ok = mnesia:stop().
 
 start_phase('wait_for_tables', _Type, Timeout) when is_integer(Timeout) ->
-    Tables = erlmachine:tables(),
+    Modules = erlmachine:modules(),
+    Tables = erlmachine_table:tables(Modules),
 
     ok = mnesia:wait_for_tables(Tables, Timeout);
 

@@ -3,35 +3,35 @@
 -include_lib("eunit/include/eunit.hrl").
 
 erlmachine_factory_test_() ->
-    Nodes = [node()],
-    Tables = ['erlmachine_factory'], Templates = ['erlmachine_assembly', 'erlmachine_graph'],
+    Modules = ['erlmachine_factory', 'erlmachine_assembly', 'erlmachine_graph', 'erlmachine_system'],
 
+    Nodes = [node()],
+
+    Tables = ['erlmachine_factory'],
     Tags = ['eunit'],
     {
      foreach,
      fun() ->
-             meck:expect(erlmachine, modules, 0, ['erlmachine_assembly']),
+             mnesia:create_schema(Nodes),
 
-             mnesia:create_schema(Nodes), ok = mnesia:start(),
-
-             [erlmachine_table:create(T) || T <- Tables], ok = mnesia:wait_for_tables(Tables, 1000),
-
+             mnesia:start(),
              application:start(yamerl),
              application:start(syn),
 
-             Scopes = ['erlmachine_factory', 'erlmachine_system'], syn:add_node_to_scopes(Scopes),
+             meck:expect(erlmachine, modules, 0, Modules),
 
-             {ok, _} = erlmachine_factory:start(),
+             ok = erlmachine:init(Modules),
 
-             [ok = erlmachine_template:add_schema(T) || T <- Templates]
+             ok = mnesia:wait_for_tables(['erlmachine_factory'], 1000),
+
+             {ok, _} = erlmachine_factory:start()
      end,
      fun(_) ->
-             erlmachine_factory:stop(),
+             ok = erlmachine_factory:stop(),
 
-             application:stop(yamerl),
-             application:start(syn),
-
-             [erlmachine_table:delete(T) || T <- Tables], mnesia:delete_schema(Nodes)
+             ok = application:stop(yamerl),
+             ok = application:stop(syn),
+             ok
      end,
      [
       {

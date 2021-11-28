@@ -31,10 +31,8 @@
 is_table(Module) ->
     lists:member(?MODULE, erlmachine:behaviours(Module)).
 
--spec tables(App::module()) -> [module()].
-tables(App) ->
-    Modules = erlmachine:modules(App),
-
+-spec tables(Modules::[module()]) -> [module()].
+tables(Modules) ->
     [M || M <- Modules, is_table(M)].
 
 %%% Tables API
