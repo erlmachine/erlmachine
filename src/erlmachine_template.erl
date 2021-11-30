@@ -10,6 +10,8 @@
 
 -export([add_schema/1]).
 
+-export([validate/2]).
+
 -export([file/2, file/3]).
 -export([decode/3]).
 
@@ -48,6 +50,14 @@ add_schema(Module) ->
 
     [Json] = jsx:consult(File, [return_maps]), ok = jesse:add_schema(Schema, Json).
 
+
+-spec validate(Module::atom(), T::template()) ->
+                      success(template()) | failure(term()).
+validate(Module, T) ->
+    Schema = Module:schema(),
+
+    jesse:validate(Schema, T).
+
 -spec file(Module::atom(), Path::path()) ->
                   success(template()) | failure(term(), term()).
 file(Module, Path) ->
@@ -58,10 +68,8 @@ file(Module, Path) ->
 -spec file(Module::atom(), Path::path(), Opt::[term()]) ->
                   success(template()) | failure(term(), term()).
 file(Module, Path, Opt) ->
-    Schema = Module:schema(),
-
     try
-        [Template] = yamerl_constr:file(Path, Opt), {ok, _} = jesse:validate(Schema, Template)
+        [T] = yamerl_constr:file(Path, Opt), {ok, _} = validate(Module, T)
     catch E:R ->
             erlmachine:failure(E, R)
     end.
@@ -69,10 +77,8 @@ file(Module, Path, Opt) ->
 -spec decode(Module::module(), Spec::spec(), Opt::[term()]) ->
                     success(template()) | failure(term(), term()).
 decode(Module, Spec, Opt) ->
-    Schema = Module:schema(),
-
     try
-        [Template] = yamerl:decode(Spec, Opt), {ok, _} = jesse:validate(Schema, Template)
+        [T] = yamerl:decode(Spec, Opt), {ok, _} = validate(Module, T)
     catch E:R ->
             erlmachine:failure(E, R)
     end.

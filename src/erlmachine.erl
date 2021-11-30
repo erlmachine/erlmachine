@@ -100,7 +100,9 @@ init(Modules) ->
     Templates = erlmachine_template:templates(Modules),
     [ok = erlmachine_template:add_schema(T) || T <- Templates],
 
-    Scopes = erlmachine_scope:scopes(Modules), ok = erlmachine_scope:init(Scopes),
+    Scopes = erlmachine_scope:scopes(Modules),
+    Scopes == [] orelse erlmachine_scope:init(Scopes),
+
     success().
 
 %%% Application API

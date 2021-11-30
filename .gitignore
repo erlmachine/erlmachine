@@ -7,3 +7,4 @@ logs/
 .DS_Store
 .erlmachine.plt
 erlmachine.d
+erl_crash.dump
