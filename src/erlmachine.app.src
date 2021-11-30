@@ -11,7 +11,7 @@
                   jesse
                  ]},
   {env,[]},
-  {mod, {application_starter,[erlmachine_app, []]}},
+  {mod, {erlmachine_app, []}},
 
   {start_phases,[{wait_for_tables, 1000}]},
 
