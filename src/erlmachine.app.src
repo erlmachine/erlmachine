@@ -1,15 +1,24 @@
 {application, erlmachine,
- [{description, "The first flow-based Erlang OTP programming framework"},
-  {vsn,"2.2.0"},
-  {modules,[]},
-  {registered,[]},
-  {applications,[kernel, stdlib, syn, jsx, yamerl, jessy]},
+ [
+  {description,  "The first flow-based Erlang OTP programming framework"},
+  {vsn,          "2.2.0"},
+  {modules,      []},
+  {registered,   []},
+  {applications, [
+                  kernel,
+                  stdlib,
+                  syn,
+                  jsx,
+                  yamerl,
+                  jesse
+                 ]},
   {env,[]},
   {mod,{application_starter,[erlmachine_app,[]]}},
   {start_phases,[
                  {wait_for_tables, 1000}
                 ]
   },
+
   {licenses, ["apache-2.0"]},
   {links, [{"Github", "https://github.com/Erlmachine/erlmachine"}]}
 ]}.
