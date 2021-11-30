@@ -7,7 +7,6 @@
   {applications, [
                   kernel, stdlib, mnesia,
                   syn,
-                  jsx,
                   yamerl,
                   jesse
                  ]},
