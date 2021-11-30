@@ -8,3 +8,7 @@ logs/
 .erlmachine.plt
 erlmachine.d
 erl_crash.dump
+
+_rel/
+config/
+relx.config

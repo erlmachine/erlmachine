@@ -4,7 +4,7 @@
 
 -export([init/0, init/1]).
 
--export([start/0, stop/0, get_key/1, get_key/2, priv_dir/0, filename/1]).
+-export([get_key/1, get_key/2, priv_dir/0, filename/1]).
 
 -export([modules/0]).
 -export([vsn/0]).
@@ -106,15 +106,6 @@ init(Modules) ->
     success().
 
 %%% Application API
-
--spec start() -> success().
-start() ->
-    {ok, _} = application:ensure_all_started(?MODULE),
-    success().
-
--spec stop() -> success() | failure(Reason :: any()).
-stop() ->
-    application:stop(?MODULE).
 
 -spec get_key(Key::atom()) -> 'undefined' | success(term()).
 get_key(Key) ->
