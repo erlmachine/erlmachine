@@ -73,6 +73,7 @@ prototype_terminate(SN, Reason, Timeout) ->
 
 init(#init{ context = Context, opt = Opt }) ->
     ok = dbg("~n~p:init(~p, ~p)~n", [?MODULE, Context, Opt]),
+    ok = dbg("~n~p~n", [Context]),
 
     erlang:process_flag(trap_exit, true),
     {ok, Context2} = erlmachine_worker_prototype:init(Context),
@@ -80,7 +81,8 @@ init(#init{ context = Context, opt = Opt }) ->
     {ok, #state{ context = Context2 }}.
 
 handle_call(#call{ request = Req }, From, #state{ context = Context}) ->
-    ok = dbg("~n~p:handle_call(~p, ~p, ~p)~n", [?MODULE, Req, From, Context]),
+    ok = dbg("~n~p:handle_call(~p)~n", [?MODULE, Req]),
+    ok = dbg("~n~p~n", [Context]),
 
     {ok, Res, Context2} = erlmachine_worker_prototype:call(Context, Req),
     {reply, Res, #state{ context = Context2 }};
@@ -89,19 +91,22 @@ handle_call(_Request, _From, State) ->
     {reply, ignored, State}.
 
 handle_cast(#cast{ message = Msg }, #state{ context = Context }) ->
-    ok = dbg("~n~p:handle_cast(~p, ~p)~n", [?MODULE, Msg, Context]),
+    ok = dbg("~n~p:handle_cast(~p)~n", [?MODULE, Msg]),
+    ok = dbg("~n~p~n", [Context]),
 
     {ok, Context2} = erlmachine_worker_prototype:cast(Context, Msg),
     {noreply, #state{ context = Context2 }}.
 
 handle_info(Info, #state{ context = Context }) ->
-    ok = dbg("~n~p:handle_info(~p, ~p)~n", [?MODULE, Info, Context]),
+    ok = dbg("~n~p:handle_info(~p)~n", [?MODULE, Info]),
+    ok = dbg("~n~p~n", [Context]),
 
     {ok, Context2} = erlmachine_worker_prototype:info(Context, Info),
     {noreply, #state{ context = Context2 }}.
 
 terminate(Reason, #state{ context = Context }) ->
-    ok = dbg("~n~p:terminate(~p, ~p)~n", [?MODULE, Reason, Context]),
+    ok = dbg("~n~p:terminate(~p)~n", [?MODULE, Reason]),
+    ok = dbg("~n~p~n", [Context]),
 
     erlmachine_worker_prototype:terminate(Context, Reason),
     ok.
