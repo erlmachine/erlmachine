@@ -40,14 +40,24 @@ init_per_suite(Config) ->
 
     Tags = ['ct', 'test'],
 
-    Ext = erlmachine:tags(erlmachine_factory:gear('erlmachine_model_ct', _Opt = #{}, _Env = #{}), Tags),
+    Model = 'erlmachine_model_ct',
+    Prot = 'erlmachine_prototype_dbg',
+
+    Env = #{},
+
+    Ext = erlmachine_factory:gear(Model, #{}, Prot, #{},  Env),
     Ext2 = erlmachine:vertex(Ext, 'test'),
+    Ext3 = erlmachine:tags(Ext2, Tags),
 
-    Root = erlmachine:tags(erlmachine_factory:gearbox('erlmachine_sup_model_ct', _Opt = #{}, _Env = #{}, [Ext2]), Tags),
+    Assembly = erlmachine_factory:gearbox('erlmachine_sup_model_ct', #{}, Env, [Ext3]),
+    Assembly2 = erlmachine:tags(Assembly, Tags),
 
-    {ok, Pid} = erlmachine_ct:start(Root), true = is_pid(Pid),
-    Setup = [], %%TODO: To provide test case args;
-    lists:concat([Setup, Config]).
+    {ok, Pid} = erlmachine_ct:start(Assembly2), true = is_pid(Pid),
+
+    %%TODO: Test case args;
+    Setup = [],
+    Setup2 = lists:append(Setup, Config),
+    Setup2.
 
 end_per_suite(Config) ->
     ok = erlmachine_factory:stop(),
@@ -116,7 +126,10 @@ all() ->
 install(_Config) ->
     Tags = ['ct', 'test2', 'install'],
 
-    Ext = erlmachine:tags(erlmachine_factory:gear(erlmachine_model_ct, _Opt = #{}, _Env = #{}), Tags),
+    Model = erlmachine_model_ct,
+    Env = #{},
+
+    Ext = erlmachine:tags(erlmachine_factory:gear(Model, #{}, Env), Tags),
     Ext2 = erlmachine:vertex(Ext, 'test2'),
 
     {ok, Pid} = erlmachine_ct:install(Ext2), true = is_pid(Pid),
@@ -141,7 +154,9 @@ install(_Config) ->
 
 process(_Config) ->
     Event = erlmachine:event(#{}, 'ping', <<"ping">>),
-    ok = erlmachine_ct:add_edge('test', 'test2'), ok = erlmachine_ct:process('test', Event).
+
+    ok = erlmachine_ct:add_edge('test', 'test2'),
+    ok = erlmachine_ct:process('test', Event).
 
 execute(_Config) ->
     Com = erlmachine:command(#{}, 'test', []),

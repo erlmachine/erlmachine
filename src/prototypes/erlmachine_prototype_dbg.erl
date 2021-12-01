@@ -1,5 +1,4 @@
--module(erlmachine_prototype_def).
-%% TODO: Autogenereted documentation catalogue of prototypes;
+-module(erlmachine_prototype_dbg).
 
 -behaviour(gen_server).
 -behaviour(erlmachine_worker_prototype).
@@ -72,30 +71,44 @@ prototype_terminate(SN, Reason, Timeout) ->
 
 -record(state, { context::term() }).
 
-init(#init{ context = Context, opt = _Opt }) ->
-    _ = erlang:process_flag(trap_exit, true),
+init(#init{ context = Context, opt = Opt }) ->
+    ok = dbg("~n~p:init(~p, ~p)~n", [?MODULE, Context, Opt]),
 
+    erlang:process_flag(trap_exit, true),
     {ok, Context2} = erlmachine_worker_prototype:init(Context),
+
     {ok, #state{ context = Context2 }}.
 
-handle_call(#call{ request = Req }, _From, #state{ context = Context}) ->
-    {ok, Res, Context2} = erlmachine_worker_prototype:call(Context, Req),
+handle_call(#call{ request = Req }, From, #state{ context = Context}) ->
+    ok = dbg("~n~p:handle_call(~p, ~p, ~p)~n", [?MODULE, Req, From, Context]),
 
+    {ok, Res, Context2} = erlmachine_worker_prototype:call(Context, Req),
     {reply, Res, #state{ context = Context2 }};
 
 handle_call(_Request, _From, State) ->
     {reply, ignored, State}.
 
 handle_cast(#cast{ message = Msg }, #state{ context = Context }) ->
-    {ok, Context2} = erlmachine_worker_prototype:cast(Context, Msg),
+    ok = dbg("~n~p:handle_cast(~p, ~p)~n", [?MODULE, Msg, Context]),
 
+    {ok, Context2} = erlmachine_worker_prototype:cast(Context, Msg),
     {noreply, #state{ context = Context2 }}.
 
 handle_info(Info, #state{ context = Context }) ->
-    {ok, Context2} = erlmachine_worker_prototype:info(Context, Info),
+    ok = dbg("~n~p:handle_info(~p, ~p)~n", [?MODULE, Info, Context]),
 
+    {ok, Context2} = erlmachine_worker_prototype:info(Context, Info),
     {noreply, #state{ context = Context2 }}.
 
 terminate(Reason, #state{ context = Context }) ->
+    ok = dbg("~n~p:terminate(~p, ~p)~n", [?MODULE, Reason, Context]),
+
     erlmachine_worker_prototype:terminate(Context, Reason),
+    ok.
+
+%%% Trace
+
+-spec dbg(T::list(), Args::[term()]) -> success().
+dbg(T, Args) ->
+    io:format(user, T, Args),
     ok.
