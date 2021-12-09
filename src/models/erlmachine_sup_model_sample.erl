@@ -13,20 +13,17 @@
 
 -spec startup(UID::uid(), Vs::[vertex()], Opt::map(), Env::map()) ->
     success() | failure(term(), term()).
-startup(UID, Vs, Opt, Env) ->
+startup(_UID, _Vs, _Opt, _Env) ->
 %% TODO: To provide test cases parametrization through Env;
-    io:format("~n~p:startup(~p, ~p, ~p, ~p)~n", [?MODULE, UID, Vs, Opt, Env]),
     erlmachine:success().
 
 -spec install(UID::uid(), V::vertex()) ->
     success() | failure(term(), term()).
-install(UID, V) ->
-    io:format("~n~p:install(~p, ~p)~n", [?MODULE, UID, V]),
+install(_UID, _V) ->
     erlmachine:success().
 
 -spec uninstall(UID::uid(), V::vertex()) ->
     success() | failure(term(), term()).
-uninstall(UID, V) ->
-    io:format("~n~p:uninstall(~p, ~p)~n", [?MODULE, UID, V]),
+uninstall(_UID, _V) ->
     erlmachine:success().
 
