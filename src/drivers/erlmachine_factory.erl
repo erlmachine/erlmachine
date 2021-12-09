@@ -101,6 +101,22 @@ scope() ->
 
 %%% API
 
+-record(produce, { assembly::assembly(), template::template() }).
+
+-spec produce(Assembly::assembly()) ->
+                     success(assembly()) | failure(term(), term()).
+produce(Assembly) ->
+    Template = erlmachine_template:new(),
+
+    produce(Assembly, Template).
+
+-spec produce(Assembly::assembly(), T::template()) ->
+                     success(assembly()) | failure(term(), term()).
+produce(Assembly, T) ->
+    gen_server:call(id(), #produce{ 'assembly' = Assembly, 'template' = T }).
+
+%%% Process API
+
 id() ->
     ?MODULE.
 
@@ -112,20 +128,6 @@ start() ->
 -spec start_link() -> success(pid()) | ingnore | failure(term()).
 start_link() ->
     gen_server:start_link({local, id()}, ?MODULE, [], []).
-
--record(produce, { assembly::assembly(), template::template() }).
-
--spec produce(Assembly::assembly()) ->
-                     success(assembly()) | failure(term(), term()).
-produce(Assembly) ->
-    Template = erlmachine_template:new(),
-
-    produce(Assembly, Template).
-
--spec produce(Assembly::assembly(), T::template()) ->
-                       success(assembly()) | failure(term(), term()).
-produce(Assembly, T) ->
-    gen_server:call(id(), #produce{ 'assembly' = Assembly, 'template' = T }).
 
 -spec stop() -> success().
 stop() ->

@@ -300,7 +300,7 @@ return_address(Motion, Address) ->
 
 -spec reply(Req::motion(), Res::motion()) -> motion().
 reply(Req, Res) ->
-    Header = maps:merge(header(Req), header(Res)),
+    Header = maps:merge(header(Res), header(Req)),
     header(Res, Header).
 
 %%% Correlation identifier

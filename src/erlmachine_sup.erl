@@ -8,11 +8,12 @@ start_link() ->
 	supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 init([]) ->
-    Factory = erlmachine_factory, Fun = start_link, Args = [],
-    Strategy = one_for_all,
+    Factory = erlmachine_factory,
 
-    Specs = [
-             #{ 'id' => Factory, 'start' => { Factory, Fun, Args }}
+    Fun = start_link,
+    Args = [],
+
+    Procs = [
+             #{ 'id' => Factory, 'start' => {Factory, Fun, Args} }
             ],
-
-    {ok, {#{ 'strategy' => Strategy }, Specs}}.
+    {ok, {#{ 'strategy' => one_for_all }, Procs}}.

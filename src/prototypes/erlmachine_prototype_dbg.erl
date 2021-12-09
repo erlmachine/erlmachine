@@ -80,7 +80,7 @@ init(#init{ context = Context, opt = Opt }) ->
 
     {ok, #state{ context = Context2 }}.
 
-handle_call(#call{ request = Req }, From, #state{ context = Context}) ->
+handle_call(#call{ request = Req }, _From, #state{ context = Context}) ->
     ok = dbg("~n~p:handle_call(~p)~n", [?MODULE, Req]),
     ok = dbg("~n~p~n", [Context]),
 
