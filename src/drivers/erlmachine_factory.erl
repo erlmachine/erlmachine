@@ -24,15 +24,11 @@
 
 -export([scope/0]).
 
--export([start_link/0]).
--export([start/0]).
+-export([start_link/0, start/0]).
 -export([stop/0]).
 
-%% gen_server.
 -export([init/1]).
--export([handle_call/3]).
--export([handle_cast/2]).
--export([handle_info/2]).
+-export([handle_call/3, handle_cast/2, handle_info/2]).
 -export([terminate/2]).
 
 -export([gear/3, gear/4, gear/5, gear/6]).
@@ -113,25 +109,26 @@ produce(Assembly) ->
 -spec produce(Assembly::assembly(), T::template()) ->
                      success(assembly()) | failure(term(), term()).
 produce(Assembly, T) ->
-    gen_server:call(id(), #produce{ 'assembly' = Assembly, 'template' = T }).
+    Name = name(),
+    gen_server:call(Name, #produce{ 'assembly' = Assembly, 'template' = T }).
 
-%%% Process API
-
-id() ->
+name() ->
     ?MODULE.
 
 -spec start() -> success(pid()) | ingnore | failure(term()).
 start() ->
-    Id = id(),
-    gen_server:start({local, Id}, ?MODULE, [], []).
+    Name = name(),
+    gen_server:start({local, Name}, ?MODULE, [], []).
 
 -spec start_link() -> success(pid()) | ingnore | failure(term()).
 start_link() ->
-    gen_server:start_link({local, id()}, ?MODULE, [], []).
+    Name = name(),
+    gen_server:start_link({local, Name}, ?MODULE, [], []).
 
 -spec stop() -> success().
 stop() ->
-    gen_server:stop(id()).
+    Name = name(),
+    gen_server:stop(Name).
 
 %%% gen_server
 

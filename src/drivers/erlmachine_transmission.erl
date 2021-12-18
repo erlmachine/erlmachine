@@ -1,4 +1,5 @@
 -module(erlmachine_transmission).
+
 -behaviour(gen_server).
 
 %% NOTE: In general the concept of a transmission describes how to build processing algorithms which are executed via structured mechanical extensions;
@@ -32,6 +33,10 @@
 %% API.
 -export([start_link/0]).
 
+-export([init/1]).
+-export([handle_call/3, handle_cast/2, handle_info/2]).
+-export([terminate/2]).
+
 -export([motion/2]).
 -export([header/1, header/2]).
 -export([body/1, body/2]).
@@ -45,16 +50,7 @@
 
 -export([shutdown/4]).
 
-%% gen_server.
--export([
-         init/1,
-         handle_call/3, handle_cast/2, handle_info/2, 
-         terminate/2,
-         code_change/3
-        ]).
-
 -export([mesh/3, pass/3]).
-
 -export([spec/1]).
 
 -include("erlmachine_assembly.hrl").
@@ -73,12 +69,13 @@
 
 -export_type([motion/0, header/0, body/0]).
 
-id() ->
+name() ->
     ?MODULE.
 
 -spec start_link() -> {ok, pid()}.
 start_link() ->
-    gen_server:start_link({local, id()}, ?MODULE, [], []).
+    Name = name(),
+    gen_server:start_link({local, Name}, ?MODULE, [], []).
 
 %%% gen_server
 
@@ -98,9 +95,6 @@ handle_info(_Info, State) ->
 
 terminate(_Reason, _State) ->
     ok.
-
-code_change(_OldVsn, State, _Extra) ->
-    {ok, State}.
 
 %%% Transmission management
 

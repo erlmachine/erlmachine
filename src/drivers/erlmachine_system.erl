@@ -2,8 +2,15 @@
 %% TODO: To provide automated system monitoring within predefined range of tags: system, log, etc.
 
 -behaviour(erlmachine_scope).
+-behaviour(gen_server).
 
 -export([scope/0]).
+
+-export([start_link/0]).
+
+-export([init/1]).
+-export([handle_call/3, handle_cast/2, handle_info/2]).
+-export([terminate/2]).
 
 -export([failure/0, failure/1, failure/2, failure/3]).
 -export([success/0, success/1, success/2, success/3]).
@@ -37,6 +44,35 @@
 -spec scope() -> atom().
 scope() ->
     ?MODULE.
+
+%% API
+
+name() ->
+    ?MODULE.
+
+-spec start_link() -> {ok, pid()}.
+start_link() ->
+    Name = name(),
+    gen_server:start_link({local, Name}, ?MODULE, [], []).
+
+%%% gen_server
+
+-record(state, {}).
+
+init([]) ->
+    {ok, #state{}}.
+
+handle_call(_Request, _From, State) ->
+    {reply, ignored, State}.
+
+handle_cast(_Msg, State) ->
+    {noreply, State}.
+
+handle_info(_Info, State) ->
+    {noreply, State}.
+
+terminate(_Reason, _State) ->
+    ok.
 
 -spec failure() -> failure().
 failure() ->
