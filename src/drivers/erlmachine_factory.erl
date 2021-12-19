@@ -189,7 +189,10 @@ id(Assembly, State) ->
 
 -spec serial_no(Assembly::assembly(), State::state()) -> assembly().
 serial_no(Assembly, State) ->
-    Hash = hash(State), SN = erlmachine:base64url(Hash),
+    MD5 = hash(State),
+
+    Base64 = erlmachine:base64url(MD5),
+    SN = <<"SN-", Base64/binary>>,
 
     Rel = erlmachine_assembly:serial_no(Assembly, SN),
     erlmachine_assembly:vertex(Rel, SN).
