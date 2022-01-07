@@ -36,7 +36,6 @@
                 "$ref": "#/definitions/edge"
             },
             "minItems": 1,
-            "additionalProperties": false,
             "description": "Extensions arrangement on a graph"
         }
     },
