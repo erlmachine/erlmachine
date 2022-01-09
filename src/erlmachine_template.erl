@@ -21,11 +21,13 @@
 -export([find/2]).
 
 -type template() :: map().
+-type iterator() :: term().
+
 
 -type path() :: list().
 -type spec() :: list().
 
--export_type([template/0]).
+-export_type([template/0, iterator/0]).
 
 -callback schema() -> term().
 -callback file() -> path().
@@ -87,14 +89,17 @@ decode(Module, Spec, Opt) ->
 new() ->
     maps:new().
 
--spec iterator(Template::template()) -> term().
-iterator(Template) ->
-    maps:iterator(Template).
+-spec iterator(T::template()) -> iterator().
+iterator(T) ->
+    Res = maps:iterator(T),
+    Res.
 
--spec next(Iterator::term()) -> none | {binary(), term(), term()}.
-next(Iterator) ->
-    maps:next(Iterator).
+-spec next(I::iterator()) -> none | {binary(), term(), term()}.
+next(I) ->
+    Res = maps:next(I),
+    Res.
 
--spec find(Field::term(), Template::template()) -> success(term()) | failure().
-find(Field, Template) ->
-    maps:find(Field, Template).
+-spec find(Field::term(), T::template()) -> success(term()) | failure().
+find(Field, T) ->
+    Res = maps:find(Field, T),
+    Res.
