@@ -335,21 +335,24 @@ assembly(T) ->
 assembly(T, Exts) when is_list(Exts) ->
     Assembly = assembly(T),
 
-    erlmachine_assembly:extensions(Assembly, Exts).
+    Res = erlmachine_assembly:extensions(Assembly, Exts),
+    Res.
 
 %% Graph
 
 -spec vertices(T::template()) -> [term()].
 vertices(T) ->
-    {ok, Res} = erlmachine_template:find(<<"vertices">>, T),
+    Res0 = erlmachine_template:get(<<"vertices">>, T),
 
-    _Vertices = maps:to_list(Res).
+    Res1 = maps:to_list(Res0),
+    Res1.
 
 -spec edges(T::template()) -> [term()].
 edges(T) ->
-    {ok, Edges} = erlmachine_template:find(<<"edges">>, T),
+    Edges = erlmachine_template:get(<<"edges">>, T),
 
-    [begin [E] = maps:to_list(Edge), E end|| Edge <- Edges].
+    Res = [begin [E] = maps:to_list(Edge), E end|| Edge <- Edges],
+    Res.
 
 -spec graph(T::template()) -> assembly().
 graph(T) ->
@@ -358,20 +361,26 @@ graph(T) ->
     Vertices = vertices(T), Edges = edges(T),
     [begin A = assembly(D), _ = add_vertex(Graph, V, A) end || {V, D} <- Vertices],
 
-    [_ = add_edge(Graph, V, V2)|| {V, V2} <- Edges],
-    Graph.
+    [add_edge(Graph, V, V2)|| {V, V2} <- Edges],
+
+    Res = Graph,
+    Res.
 
 -spec add_vertex(V::binary(), Assembly::assembly(), Graph::graph()) ->
                          term().
 add_vertex(Graph, V, Assembly) ->
     Rel = erlmachine_assembly:vertex(Assembly, V),
 
-    _ = erlmachine_graph:add_vertex(Graph, V, Rel).
+    Res = erlmachine_graph:add_vertex(Graph, V, Rel),
+    Res.
 
 -spec add_edge(Graph::graph(), V::binary(), V2::binary() | [binary()]) ->
                        term().
 add_edge(Graph, V, V2) when is_list(V2) ->
-    [_ = erlmachine_graph:add_edge(Graph, V, Vn, []) || Vn <- V2];
+    Res = [erlmachine_graph:add_edge(Graph, V, Vn, []) || Vn <- V2],
+    Res;
+
 add_edge(Graph, V, V2) ->
-    _ = erlmachine_graph:add_edge(Graph, V, V2, []).
+    Res = erlmachine_graph:add_edge(Graph, V, V2, []),
+    Res.
 

@@ -134,11 +134,12 @@ file() ->
 
 %%% erlmachine_factory
 
--spec process(Assembly::assembly(), Template::template()) -> assembly().
-process(Assembly, Template) ->
-    I = erlmachine_template:iterator(Template), Next = erlmachine_template:next(I),
+-spec process(Assembly::assembly(), T::template()) -> assembly().
+process(Assembly, T) ->
+    I = erlmachine_template:iterator(T), Next = erlmachine_template:next(I),
 
-    next(Assembly, Next).
+    Res = next(Assembly, Next),
+    Res.
 
 -spec next(Assembly::assembly(), none | {binary(), term(), term()}) ->
                   assembly().
@@ -148,30 +149,37 @@ next(Assembly, none) ->
 next(Assembly, {<<"serial_no">>, V, I}) ->
     Rel = serial_no(Assembly, V),
 
-    next(Rel, erlmachine_template:next(I));
+    Res = next(Rel, erlmachine_template:next(I)),
+    Res;
 
 next(Assembly, {<<"type">>, V, I}) ->
     Rel = type(Assembly, binary_to_atom(V)),
 
-    next(Rel, erlmachine_template:next(I));
+    Res = next(Rel, erlmachine_template:next(I)),
+    Res;
 
 next(Assembly, {<<"body">>, V, I}) ->
     Rel = body(Assembly, V),
 
-    next(Rel, erlmachine_template:next(I));
+    Res = next(Rel, erlmachine_template:next(I)),
+    Res;
 
 next(Assembly, {<<"model_no">>, V, I}) ->
     Rel = model_no(Assembly, V),
 
-    next(Rel, erlmachine_template:next(I));
+    Res = next(Rel, erlmachine_template:next(I)),
+    Res;
 
 next(Assembly, {<<"port">>, V, I}) ->
     Rel = port(Assembly, V),
 
-    next(Rel, erlmachine_template:next(I));
+    Res = next(Rel, erlmachine_template:next(I)),
+    Res;
 
 next(Assembly, {<<"model">>, V, I}) ->
-    {ok, Name} = erlmachine_template:find(<<"module">>, V), Module = binary_to_atom(Name),
+    Name = erlmachine_template:get(<<"module">>, V),
+    Module = binary_to_atom(Name),
+
     Model =
         case erlmachine_template:find(<<"options">>, V) of
             {ok, Opt} ->
@@ -179,12 +187,16 @@ next(Assembly, {<<"model">>, V, I}) ->
             _ ->
                 erlmachine_model:new(Module)
         end,
+
     Rel = model(Assembly, Model),
 
-    next(Rel, erlmachine_template:next(I));
+    Res = next(Rel, erlmachine_template:next(I)),
+    Res;
 
 next(Assembly, {<<"prototype">>, V, I}) ->
-    {ok, Name} = erlmachine_template:find(<<"module">>, V), Module = binary_to_atom(Name),
+    Name = erlmachine_template:get(<<"module">>, V),
+    Module = binary_to_atom(Name),
+
     Prot =
         case erlmachine_template:find(<<"options">>, V) of
             {ok, Opt} ->
@@ -192,42 +204,51 @@ next(Assembly, {<<"prototype">>, V, I}) ->
             _ ->
                 erlmachine_prototype:new(Module)
         end,
+
     Rel = prototype(Assembly, Prot),
 
-    next(Rel, erlmachine_template:next(I));
+    Res = next(Rel, erlmachine_template:next(I)),
+    Res;
 
 next(Assembly, {<<"uid">>, V, I}) ->
     Rel = uid(Assembly, V),
 
-    next(Rel, erlmachine_template:next(I));
+    Res = next(Rel, erlmachine_template:next(I)),
+    Res;
 
 next(Assembly, {<<"tags">>, V, I}) ->
     Rel = tags(Assembly, V),
 
-    next(Rel, erlmachine_template:next(I));
+    Res = next(Rel, erlmachine_template:next(I)),
+    Res;
 
 next(Assembly, {<<"vertex">>, V, I}) ->
     Rel = vertex(Assembly, V),
 
-    next(Rel, erlmachine_template:next(I));
+    Res = next(Rel, erlmachine_template:next(I)),
+    Res;
 
 next(Assembly, {<<"part_no">>, V, I}) ->
     Rel = part_no(Assembly, V),
 
-    next(Rel, erlmachine_template:next(I));
+    Res = next(Rel, erlmachine_template:next(I)),
+    Res;
 
 next(Assembly, {<<"env">>, V, I}) ->
     Rel = env(Assembly, V),
 
-    next(Rel, erlmachine_template:next(I));
+    Res = next(Rel, erlmachine_template:next(I)),
+    Res;
 
 next(Assembly, {<<"description">>, V, I}) ->
     Rel = description(Assembly, V),
 
-    next(Rel, erlmachine_template:next(I));
+    Res = next(Rel, erlmachine_template:next(I)),
+    Res;
 
 next(Assembly, {_, _, I}) ->
-    next(Assembly, erlmachine_template:next(I)).
+    Res = next(Assembly, erlmachine_template:next(I)),
+    Res.
 
 %%% Field accessors
 

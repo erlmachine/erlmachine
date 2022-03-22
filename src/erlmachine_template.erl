@@ -18,11 +18,15 @@
 -export([new/0]).
 
 -export([iterator/1, next/1]).
+
 -export([find/2]).
+-export([get/2]).
+
+-type field() :: binary().
+-type value() :: binary() | [term()] | integer() | map() | float() | null.
 
 -type template() :: map().
 -type iterator() :: term().
-
 
 -type path() :: list().
 -type spec() :: list().
@@ -94,12 +98,17 @@ iterator(T) ->
     Res = maps:iterator(T),
     Res.
 
--spec next(I::iterator()) -> none | {binary(), term(), term()}.
+-spec next(I::iterator()) -> none | {field(), value(), iterator()}.
 next(I) ->
     Res = maps:next(I),
     Res.
 
--spec find(Field::term(), T::template()) -> success(term()) | failure().
+-spec find(Field::field(), T::template()) -> success(value()) | failure().
 find(Field, T) ->
     Res = maps:find(Field, T),
+    Res.
+
+-spec get(Field::field(), T::template()) -> value().
+get(Field, T) ->
+    Res = maps:get(Field, T),
     Res.

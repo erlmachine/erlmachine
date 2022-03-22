@@ -29,7 +29,10 @@ init_per_suite(Config) ->
     ok = application:start(yamerl),
     ok = application:start(syn),
 
-    Modules = ['erlmachine_factory', 'erlmachine_assembly', 'erlmachine_graph', 'erlmachine_system'],
+    Modules = [ 'erlmachine_factory', 'erlmachine_assembly', 'erlmachine_graph',
+                'erlmachine_system'
+              ],
+
     meck:expect(erlmachine, modules, 0, Modules),
 
     ok = erlmachine:init(Modules),
@@ -155,18 +158,25 @@ install(_Config) ->
 process(_Config) ->
     Event = erlmachine:event(#{}, 'ping', <<"ping">>),
 
-    ok = erlmachine_ct:add_edge('test', 'test2'),
-    ok = erlmachine_ct:process('test', Event).
+    Res = erlmachine_ct:add_edge('test', 'test2'),
+    Res = erlmachine_ct:process('test', Event),
+
+    Res = ok.
 
 execute(_Config) ->
     Com = erlmachine:command(#{}, 'test', []),
-    ok = erlmachine_ct:execute('test', Com).
+    Res = erlmachine_ct:execute('test', Com),
+
+    Res = ok.
 
 pressure(_Config) ->
-    ok = erlmachine_ct:pressure('test', <<"load">>).
+    Res = erlmachine_ct:pressure('test', <<"load">>),
+    Res = ok.
 
 uninstall(_Config) ->
-    ok = erlmachine_ct:uninstall('test2').
+    Res = erlmachine_ct:uninstall('test2'),
+    Res = ok.
 
 shutdown(_Config) ->
-    ok = erlmachine_ct:shutdown('test').
+    Res = erlmachine_ct:shutdown('test'),
+    Res = ok.
