@@ -1,6 +1,6 @@
 -module(erlmachine).
-%% NOTE: The main purpouse of erlmachine project is to provide a set of well designed behaviours which are supported by visual tools (flowcharts, widjets, etc..).
-%% The Erlmachine based design operates via flexible mechanism of prototype and model where business layer (model) is decoupled from a service (prototype) implementation.
+%% NOTE: The main purpouse of erlmachine project is to provide a set of well designed behaviours which are supported by visual tools (flowcharts, widjets, etc..)
+%% NOTE: The Erlmachine based design operates via flexible mechanism of prototype and model where business layer (model) is decoupled from a service (prototype) implementation.
 
 -export([init/0, init/1]).
 
