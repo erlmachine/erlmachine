@@ -2,6 +2,10 @@
 %% NOTE: The main purpouse of erlmachine project is to provide a set of well designed behaviours which are supported by visual tools (flowcharts, widjets, etc..)
 %% NOTE: The Erlmachine based design operates via flexible mechanism of prototype and model where business layer (model) is decoupled from a service (prototype) implementation.
 
+%% TODO Replicated topology graph based on https://github.com/rabbitmq/ra (distributed graph processing);
+%%
+%%
+
 -export([init/0, init/1]).
 
 -export([get_key/1, get_key/2, priv_dir/0, filename/1]).
@@ -468,13 +472,14 @@ is_worker(Assembly) ->
 
 -spec guid(Serial::term()) -> binary().
 guid(Serial) ->
-    GUID = #guid{
-              node = node(),
-              serial = Serial,
+    GUID = #guid{ node = node(),
+                  serial = Serial,
 
-              reference = make_ref()
-             },
-    md5(GUID).
+                  reference = make_ref()
+                },
+
+    Res = md5(GUID),
+    Res.
 
 -spec md5(Data::term()) -> binary().
 md5(Data) ->
@@ -485,11 +490,22 @@ md5(Data) ->
 phash2(Term) ->
     erlang:phash2(Term, 4294967296).
 
+%% TODO Replace with https://github.com/okeuday/uuid
+%%
+
 -spec base64url(N::binary()) -> Base64::binary().
 base64url(N) when is_binary(N) ->
     Base64 = base64:encode(N),
-    Base64Url = [fun($+) -> <<"-">>; ($/) -> <<"_">>; (X) -> <<X>> end(Ch)|| <<Ch>> <= Base64],
-    << <<X/binary>> || X <- Base64Url >>.
+
+    Base64Url = [ begin case Char of
+                            $+ -> <<"-">>;
+                            $/ -> <<"_">>;
+                            _ -> <<Char>>
+                        end
+                  end || <<Char>> <= Base64, Char /= $= ],
+
+    Res = << <<X/binary>> || X <- Base64Url >>,
+    Res.
 
 -spec tag(Assembly::assembly(), Tag::term()) -> assembly().
 tag(Assembly, Tag) ->
