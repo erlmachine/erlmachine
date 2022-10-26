@@ -1,6 +1,6 @@
 PROJECT = erlmachine
 PROJECT_DESCRIPTION = The first flow-based Erlang OTP programming framework
-PROJECT_VERSION = 2.0.0
+PROJECT_VERSION = 3.2.0
 
 DEPS = erlbox ra syn yamerl jesse
 
