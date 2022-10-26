@@ -10,8 +10,9 @@
 
 -export([shutdown/3]).
 
+-include_lib("erlbox/include/erlbox.hrl").
+
 -include("erlmachine_user.hrl").
--include("erlmachine_system.hrl").
 
 -type state() :: map().
 

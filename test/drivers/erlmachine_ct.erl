@@ -19,10 +19,11 @@
 -export([handle_info/2]).
 -export([terminate/2]).
 
+-include_lib("erlbox/include/erlbox.hrl").
+
 -include("erlmachine_factory.hrl").
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_graph.hrl").
--include("erlmachine_system.hrl").
 
 id() ->
     ?MODULE.

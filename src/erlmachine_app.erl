@@ -10,7 +10,7 @@
 
 -export([start_phase/3]).
 
--include("erlmachine_system.hrl").
+-include_lib("erlbox/include/erlbox.hrl").
 
 start(_Type, _Args) ->
     Nodes = [node()], mnesia:create_schema(Nodes),

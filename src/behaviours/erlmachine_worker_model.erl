@@ -20,10 +20,11 @@
 
 -type state() :: term().
 
+-include_lib("erlbox/include/erlbox.hrl").
+
 -include("erlmachine_user.hrl").
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_graph.hrl").
--include("erlmachine_system.hrl").
 
 -callback startup(UID::uid(), State::state(), Opt::map(), Env::map()) ->
     success(state()) | failure(term(), term(), state()).

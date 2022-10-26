@@ -29,10 +29,11 @@
 
 -type context() :: term().
 
+-include_lib("erlbox/include/erlbox.hrl").
+
 -include("erlmachine_factory.hrl").
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_graph.hrl").
--include("erlmachine_system.hrl").
 
 -callback prototype_init(SN::serial_no(), Specs::[map()], Context::context(), Opt::map()) ->
     success(pid()) | failure(term(), term()).

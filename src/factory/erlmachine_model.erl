@@ -8,7 +8,7 @@
          vsn/1, vsn/2
         ]).
 
--include("erlmachine_system.hrl").
+-include_lib("erlbox/include/erlbox.hrl").
 
 -record(model, {
                 %% Module name

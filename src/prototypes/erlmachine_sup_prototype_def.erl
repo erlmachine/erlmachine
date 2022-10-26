@@ -13,8 +13,9 @@
 %% supervisor
 -export([init/1]).
 
+-include_lib("erlbox/include/erlbox.hrl").
+
 -include("erlmachine_factory.hrl").
--include("erlmachine_system.hrl").
 
 -spec name() -> atom().
 name() ->

@@ -7,9 +7,10 @@
 -export([startup/4]).
 -export([install/2, uninstall/2]).
 
+-include_lib("erlbox/include/erlbox.hrl").
+
 -include("erlmachine_user.hrl").
 -include("erlmachine_graph.hrl").
--include("erlmachine_system.hrl").
 
 -spec startup(UID::uid(), Vs::[vertex()], Opt::map(), Env::map()) ->
     success() | failure(term(), term()).

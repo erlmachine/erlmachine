@@ -16,9 +16,10 @@
 
 -export([on_process_joined/5, on_process_left/5]).
 
+-include_lib("erlbox/include/erlbox.hrl").
+
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_factory.hrl").
--include("erlmachine_system.hrl").
 
 -callback scope() -> module().
 

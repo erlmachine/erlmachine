@@ -3,9 +3,10 @@
 -export([process/2]).
 -export([mesh/4, pass/2]).
 
+-include_lib("erlbox/include/erlbox.hrl").
+
 -include("erlmachine_factory.hrl").
 -include("erlmachine_assembly.hrl").
--include("erlmachine_system.hrl").
 
 -spec process(Assembly::assembly(), Motion::term()) ->
                      success(assembly()) | success(term(), assembly()) | failure(term(), term(), assembly()).

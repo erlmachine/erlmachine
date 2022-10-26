@@ -1,10 +1,12 @@
 -module(erlmachine).
-%% NOTE: The main purpouse of erlmachine project is to provide a set of well designed behaviours which are supported by visual tools (flowcharts, widjets, etc..)
-%% NOTE: The Erlmachine based design operates via flexible mechanism of prototype and model where business layer (model) is decoupled from a service (prototype) implementation.
 
-%% TODO Replicated topology graph based on https://github.com/rabbitmq/ra (distributed graph processing);
-%%
-%%
+%% NOTE The main purpouse of erlmachine project is to provide a set of well designed behaviours
+%% NOTE They should be supported by visual tools (flowcharts, widjets, etc.)
+
+%% NOTE Erlmachine based design operates via flexible mechanism of prototypes and models
+%% NOTE They are designed to decouple a business layer (model) from service (prototype) implementation
+
+%% TODO Erlanchine has replicated topology graph which is based on https://github.com/rabbitmq/ra
 
 -export([init/0, init/1]).
 
@@ -71,7 +73,8 @@
 
 -export([timestamp/0]).
 
--include("erlmachine_system.hrl").
+-include_lib("erlbox/include/erlbox.hrl").
+
 -include("erlmachine_user.hrl").
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_factory.hrl").
@@ -334,47 +337,47 @@ history(Motion, Log) ->
     History = history(Motion),
     header(Motion, Header#{ history => [Log|History] }).
 
-%%% Result API
+%%% Response API
 
 -spec failure() -> failure().
 failure() ->
-    erlmachine_system:failure().
+    erlbox:failure().
 
 -spec failure(E::term()) -> failure(term()).
 failure(E) ->
-    erlmachine_system:failure(E).
+    erlbox:failure(E).
 
 -spec failure(E::term(), R::term()) -> failure(term(), term()).
 failure(E, R) ->
-    erlmachine_system:failure(E, R).
+    erlbox:failure(E, R).
 
 -spec failure(E::term(), R::term(), S::term()) -> failure(term(), term(), term()).
 failure(E, R, S) ->
-    erlmachine_system:failure(E, R, S).
+    erlbox:failure(E, R, S).
 
 -spec success() -> success().
 success() ->
-    erlmachine_system:success().
+    erlbox:success().
 
 -spec success(Res::term()) -> success(term()).
 success(Res) ->
-    erlmachine_system:success(Res).
+    erlbox:success(Res).
 
 -spec success(Res::term(), S::term()) -> success(term(), term()).
 success(Res, S) ->
-    erlmachine_system:success(Res, S).
+    erlbox:success(Res, S).
 
 -spec success(Res::term(), S::term(), A::[term()]) -> success(term(), term(), [term()]).
 success(Res, S, A) ->
-    erlmachine_system:success(Res, S, A).
+    erlbox:success(Res, S, A).
 
 -spec is_success(Res::term()) -> boolean().
 is_success(Res) ->
-    erlmachine_system:is_success(Res).
+    erlbox:is_success(Res).
 
 -spec is_failure(Res::term()) -> boolean().
 is_failure(Res) ->
-    erlmachine_system:is_failure(Res).
+    erlbox:is_failure(Res).
 
 %%% Module API
 

@@ -6,7 +6,7 @@
 -export([inc/1, inc/2]).
 -export([delete/1]).
 
--include("erlmachine_system.hrl").
+-include_lib("erlbox/include/erlbox.hrl").
 
 -type table() :: atom().
 -type field() :: atom().

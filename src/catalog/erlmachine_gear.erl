@@ -6,8 +6,9 @@
 -export([new/1]).
 -export([type/0]).
 
+-include_lib("erlbox/include/erlbox.hrl").
+
 -include("erlmachine_assembly.hrl").
--include("erlmachine_system.hrl").
 
 -spec new(assembly()) -> assembly(). %% Default representation;
 new(Assembly) ->

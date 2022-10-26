@@ -4,6 +4,8 @@
 -export([start_link/0]).
 -export([init/1]).
 
+-include_lib("erlbox/include/erlbox.hrl").
+
 start_link() ->
 	supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
@@ -22,5 +24,5 @@ init([]) ->
              #{ 'id' => Transmission, 'start' => {Transmission, Fun, Args} },
              #{ 'id' => Factory, 'start' => {Factory, Fun, Args} }
             ],
-    {ok, {#{ 'strategy' => one_for_all }, Procs}}.
+    erlbox:success({#{ 'strategy' => one_for_all }, Procs}).
  

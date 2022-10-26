@@ -33,8 +33,9 @@
 
 -export([topsort/1]).
 
+-include_lib("erlbox/include/erlbox.hrl").
+
 -include("erlmachine_assembly.hrl").
--include("erlmachine_system.hrl").
 
 -type graph() :: term().
 

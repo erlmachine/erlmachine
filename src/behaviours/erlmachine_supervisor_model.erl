@@ -26,11 +26,11 @@
 -export([startup/2]).
 -export([install/2, uninstall/2]).
 
+-include_lib("erlbox/include/erlbox.hrl").
+
 -include("erlmachine_user.hrl").
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_graph.hrl").
--include("erlmachine_system.hrl").
-
 
 -callback startup(UID::uid(), Vertices::[vertex()], Opt::map(), Env::map()) ->
     success() | failure(term(), term()).

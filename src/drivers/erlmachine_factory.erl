@@ -39,11 +39,12 @@
 -export([assembly/1, assembly/2]).
 -export([graph/1]).
 
+-include_lib("erlbox/include/erlbox.hrl").
+
 -include("erlmachine_assembly.hrl").
 -include("erlmachine_template.hrl").
 -include("erlmachine_user.hrl").
 -include("erlmachine_graph.hrl").
--include("erlmachine_system.hrl").
 
 -callback process(Assembly::assembly(), T::template()) -> assembly().
 

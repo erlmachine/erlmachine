@@ -53,8 +53,9 @@
 -export([mesh/3, pass/3]).
 -export([spec/1]).
 
+-include_lib("erlbox/include/erlbox.hrl").
+
 -include("erlmachine_assembly.hrl").
--include("erlmachine_system.hrl").
 
 -type graph() :: erlmachine_graph:graph().
 -type vertex() :: erlmachine_graph:vertex().

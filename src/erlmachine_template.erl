@@ -36,7 +36,7 @@
 -callback schema() -> term().
 -callback file() -> path().
 
--include("erlmachine_system.hrl").
+-include_lib("erlbox/include/erlbox.hrl").
 
 %%% Modules API
 

@@ -37,11 +37,12 @@
 -export([to_json/1, from_json/1]).
 -export([to_binary/1, from_binary/1]).
 
+-include_lib("erlbox/include/erlbox.hrl").
+
 -include("erlmachine_template.hrl").
 -include("erlmachine_user.hrl").
 -include("erlmachine_factory.hrl").
 -include("erlmachine_graph.hrl").
--include("erlmachine_system.hrl").
 
 %% NOTE: Here is implemented incapsulation across independent parts and the whole transmission too;
 %% We consider model and prototype as implementation parts (like classes) and serial number as unique id of an instance (object);

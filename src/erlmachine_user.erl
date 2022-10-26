@@ -3,7 +3,8 @@
 %% API.
 -export([root/0]).
 
--include("erlmachine_system.hrl").
+-include_lib("erlbox/include/erlbox.hrl").
+
 %% NOTE: User -1 can be assigned to mark the automated system objects;
 -record(user, {
                id::uid(),
