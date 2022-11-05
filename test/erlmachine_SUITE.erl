@@ -58,9 +58,8 @@ init_per_suite(Config) ->
     {ok, Pid} = erlmachine_ct:start(Assembly2), true = is_pid(Pid),
 
     %%TODO: Test case args;
-    Setup = [],
-    Setup2 = lists:append(Setup, Config),
-    Setup2.
+    Setup = lists:append(_Setup = [], Config),
+    Setup.
 
 end_per_suite(Config) ->
     ok = erlmachine_factory:stop(),
@@ -103,6 +102,7 @@ end_per_testcase(_TestCase, _Config) ->
 %%
 %% Description: Returns a list of test case group definitions.
 %%--------------------------------------------------------------------
+
 groups() ->
     [{sample, [sequence], [install, process, execute, pressure, uninstall, shutdown]}].
 
@@ -120,23 +120,13 @@ groups() ->
 %% Description: Returns the list of groups and test cases that
 %%              are to be executed.
 %%--------------------------------------------------------------------
+
 all() ->
     [{group, sample}].
 
 %%--------------------------------------------------------------------
 %% TEST CASES
 %%--------------------------------------------------------------------
-install(_Config) ->
-    Tags = ['ct', 'test2', 'install'],
-
-    Model = erlmachine_model_ct,
-    Env = #{},
-
-    Ext = erlmachine:tags(erlmachine_factory:gear(Model, #{}, Env), Tags),
-    Ext2 = erlmachine:vertex(Ext, 'test2'),
-
-    {ok, Pid} = erlmachine_ct:install(Ext2), true = is_pid(Pid),
-    {comment, Pid}.
 
 %%--------------------------------------------------------------------
 %% Function: TestCase(Config0) ->
@@ -154,6 +144,18 @@ install(_Config) ->
 %%              the all/0 list or in a test case group for the test case
 %%              to be executed).
 %%--------------------------------------------------------------------
+
+install(_Config) ->
+    Tags = ['ct', 'test2', 'install'],
+
+    Model = erlmachine_model_ct,
+    Env = #{},
+
+    Ext = erlmachine:tags(erlmachine_factory:gear(Model, #{}, Env), Tags),
+    Ext2 = erlmachine:vertex(Ext, 'test2'),
+
+    {ok, Pid} = erlmachine_ct:install(Ext2), true = is_pid(Pid),
+    {comment, Pid}.
 
 process(_Config) ->
     Event = erlmachine:event(#{}, 'ping', <<"ping">>),
