@@ -48,18 +48,18 @@ init_per_suite(Config) ->
 
     Env = #{},
 
-    Ext = erlmachine_factory:gear(Model, #{}, Prot, #{},  Env),
-    Ext2 = erlmachine:vertex(Ext, 'test'),
-    Ext3 = erlmachine:tags(Ext2, Tags),
+    Ext0 = erlmachine_factory:gear(Model, #{}, Prot, #{},  Env),
+    Ext1 = erlmachine:vertex(Ext0, 'test'),
+    Ext2 = erlmachine:tags(Ext1, Tags),
 
-    Assembly = erlmachine_factory:gearbox('erlmachine_sup_model_ct', #{}, Env, [Ext3]),
-    Assembly2 = erlmachine:tags(Assembly, Tags),
+    Assembly0 = erlmachine_factory:gearbox('erlmachine_sup_model_ct', #{}, Env, [Ext2]),
+    Assembly1 = erlmachine:tags(Assembly0, Tags),
 
-    {ok, Pid} = erlmachine_ct:start(Assembly2), true = is_pid(Pid),
+    {ok, Pid} = erlmachine_ct:start(Assembly1), true = is_pid(Pid),
 
     %%TODO: Test case args;
-    Setup = lists:append(_Setup = [], Config),
-    Setup.
+    Res = lists:append(_Setup = [], Config),
+    Res.
 
 end_per_suite(Config) ->
     ok = erlmachine_factory:stop(),

@@ -45,11 +45,11 @@
 -include("erlmachine_graph.hrl").
 
 %% NOTE: Here is implemented incapsulation across independent parts and the whole transmission too;
-%% We consider model and prototype as implementation parts (like classes) and serial number as unique id of an instance (object);
-%% We can support polymorphism by different ways - by overriding prototype or by changing model itself;
+%% NOTE: We consider model and prototype as implementation parts (like classes) and serial number as unique id of an instance (object);
+%% NOTE: We can support polymorphism by different ways - by overriding prototype or by changing model itself;
 
 %% NOTE: I am thinking about two kinds of assembly manual and automated;
-%% Manual can be produced on canvas whereas automated via function call
+%% NOTE: Manual can be produced on canvas whereas automated via function call
 
 -record (assembly, {
                     %% Produced number which is assigned by factory
@@ -136,10 +136,13 @@ file() ->
 %%% erlmachine_factory
 
 -spec process(Assembly::assembly(), T::template()) -> assembly().
-process(Assembly, T) ->
-    I = erlmachine_template:iterator(T), Next = erlmachine_template:next(I),
+process(Assembly, T0) ->
+    T1 = maps:get(<<"assembly">>, T0, _Default = #{}),
 
-    Res = next(Assembly, Next),
+    I0 = erlmachine_template:iterator(T1),
+    I1 = erlmachine_template:next(I0),
+
+    Res = next(Assembly, I1),
     Res.
 
 -spec next(Assembly::assembly(), none | {binary(), term(), term()}) ->

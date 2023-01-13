@@ -1,86 +1,90 @@
 {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "title": "Assembly datasheet",
-    "description": "The document that summarizes characteristics of an assembly",
-
+    "title": "Extension datasheet",
+    "description": "The document that summarizes characteristics of an extension",
     "definitions":{
         "module":{
             "type": "string",
             "description": "Module name"
         }
     },
-
     "type": "object",
     "properties":{
-        "serial_no":{
-            "description": "Runtime unique identifier (S/N)"
-        },
-        "type":{
-            "enum": ["worker", "supervisor"],
-            "description": "Behavioral type of an assembly"
-        },
-        "body":{
-            "type": "object",
-            "description": "Data structure that keeps the state of an assembly"
-        },
-        "model_no":{
-            "description": "Product configurator input to generate a master-production schedule"
-        },
-        "port":{
-            "description": "Conenction port of an extension (accordingly to J.P. Morrison)"
-        },
-        "model":{
+        "assembly": {
             "type": "object",
             "properties":{
-                "module":{
-                    "$ref": "#/definitions/module"
+                                "serial_no":{
+                    "description": "Runtime unique identifier (S/N)"
                 },
-                "options": {
+                "type":{
+                    "enum": ["worker", "supervisor"],
+                    "description": "Behavioral type of an extension"
+                },
+                "body":{
                     "type": "object",
-                    "description": "Domain level options which are passed as is"
+                    "description": "Data structure that keeps the state of an extension"
+                },
+                "model_no":{
+                    "description": "Product configurator input to generate a master-production schedule"
+                },
+                "port":{
+                    "description": "Conenction port of an extension (accordingly to J.P. Morrison)"
+                },
+                "model":{
+                    "type": "object",
+                    "properties":{
+                        "module":{
+                            "$ref": "#/definitions/module"
+                        },
+                        "options": {
+                            "type": "object",
+                            "description": "Domain level options which are passed as is"
+                        }
+                    },
+                    "additionalProperties": false,
+                    "required": [ "module" ],
+                    "description": "Domain level implementation module"
+                },
+                "prototype":{
+                    "type": "object",
+                    "properties":{
+                        "module":{
+                            "$ref": "#/definitions/module"
+                        },
+                        "options": {
+                            "type": "object",
+                            "description": "Service level options which are passed as is"
+                        }
+                    },
+                    "additionalProperties": false,
+                    "required": [ "module" ],
+                    "description": "Service level implementation module"
+                },
+                "uid":{
+                    "type": "integer",
+                    "description": "The unique identity of Erlmachine engineer"
+                },
+                "tags":{
+                    "type": "array",
+                    "description": "Index terms which are assigned as meta-information"
+                },
+                "vertex":{
+                    "description": "The identity on a graph (by default serial_no)"
+                },
+                "part_no":{
+                    "description": "Deployment identity to track the quality of an extension"
+                },
+                "env":{
+                    "type": "object",
+                    "description": "The environment context which is passed to the domain level module"
+                },
+                "description":{
+                    "type": "string",
+                    "description": "Short textual overview or metadata for a generated extension"
                 }
             },
-            "additionalProperties": false,
-            "required": [ "module" ],
-            "description": "Domain level implementation"
-        },
-        "prototype":{
-            "type": "object",
-            "properties":{
-                "module":{
-                    "$ref": "#/definitions/module"
-                },
-                "options": {
-                    "type": "object",
-                    "description": "Service level options which are passed as is"
-                }
-            },
-            "additionalProperties": false,
-            "required": [ "module" ],
-            "description": "Service level implementation"
-        },
-        "uid":{
-            "type": "integer",
-            "description": "The unique identity of Erlmachine operator"
-        },
-        "tags":{
-            "type": "array",
-            "description": "Index terms which are assigned as meta-information"
-        },
-        "vertex":{
-            "description": "The identity on a graph (by default serial_no)"
-        },
-        "part_no":{
-            "description": "Deployment identity to track the quality of an assembly through a release period"
-        },
-        "env":{
-            "type": "object",
-            "description": "The environment context which is passed to the domain level implementation"
-        },
-        "description":{
-            "type": "string",
-            "description": "Short textual overview or metadata for a generated assembly"
+            "required": [ "type", "model", "prototype" ]
         }
     },
-    "required": [ "type", "model", "prototype" ]
+    "required": [ "extension" ],
 }

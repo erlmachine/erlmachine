@@ -1,21 +1,24 @@
-serial_no: SN-1
-type: supervisor
-body:
-  key: value
-model_no: MN-0
-model:
-  module: erlmachine_sup_model_ct
-  options:
+# This sample specification should be changed in conjunction with erlmachine_factory_tests module
+
+extension:
+  serial_no: SN-1
+  type: supervisor
+  body:
     key: value
-prototype:
-  module: erlmachine_sup_prototype_def
-  options:
+  model_no: MN-0
+  model:
+    module: erlmachine_sup_model_ct
+    options:
+      key: value
+  prototype:
+    module: erlmachine_sup_prototype_def
+    options:
+      key: value
+  uid: 0
+  tags:
+    - test
+  vertex: sup-test
+  part_no: PN-0
+  env:
     key: value
-uid: 0
-tags:
-  - test
-vertex: sup-test
-part_no: PN-0
-env:
-  key: value
-description: Supervisor datasheet sample
+  description: Supervisor datasheet sample

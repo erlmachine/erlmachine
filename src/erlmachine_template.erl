@@ -1,11 +1,10 @@
 -module(erlmachine_template).
-
-%% This module is responsible:
+%% NOTE: There is a potential possibility to load template from other sources: DB, network, etc.
+%% NOTE: This module is responsible:
 
 %% - Read YAML specifications (templates);
 %% - Validate template content against https://json-schema.org;
 
-%% NOTE: There is a potential possibility to load template from other sources: DB, network, etc.
 -export([is_template/1, templates/1]).
 
 -export([add_schema/1]).
