@@ -33,9 +33,9 @@ erlmachine_factory_test_() ->
               ok
       end,
       [
-       { "Inspect assembly: datasheets/extensions/ct.yaml",
+       { "Inspect assembly: extensions/ct.yaml",
          fun() ->
-                 Path = erlmachine:filename("datasheets/extensions/ct.yaml"),
+                 Path = erlmachine:filename("extensions/ct.yaml"),
                  {ok, T} = erlmachine_assembly:template(Path),
 
                  Assembly = erlmachine_factory:assembly(T),
@@ -43,9 +43,9 @@ erlmachine_factory_test_() ->
                  SN = erlmachine:serial_no(Assembly), true = is_binary(SN)
          end
        },
-       { "Inspect assembly: datasheets/extensions/sup_ct.yaml",
+       { "Inspect assembly: extensions/sup_ct.yaml",
          fun() ->
-                 Path = erlmachine:filename("datasheets/extensions/sup_ct.yaml"),
+                 Path = erlmachine:filename("extensions/sup_ct.yaml"),
                  {ok, T} = erlmachine_assembly:template(Path),
 
                  Assembly = erlmachine_factory:assembly(T),
@@ -89,9 +89,9 @@ erlmachine_factory_test_() ->
                 SN = V
         end
       },
-      { "Inspect datasheet mapping: datasheets/extensions/ct.yaml",
+      { "Inspect datasheet mapping: extensions/ct.yaml",
         fun() ->
-                Path = erlmachine:filename("datasheets/extensions/ct.yaml"),
+                Path = erlmachine:filename("extensions/ct.yaml"),
                 {ok, T} = erlmachine_assembly:template(Path),
 
                 Assembly = erlmachine_factory:assembly(T),
@@ -147,11 +147,12 @@ erlmachine_factory_test_() ->
 
                 Graph = erlmachine_factory:graph(T),
 
-                Exts = erlmachine_graph:vertices(Graph),
-                [_A, _B, _C, _D, _E] = Exts,
+                [A, B, C, D, E] = erlmachine_graph:vertices(Graph),
 
-                [ begin SN = erlmachine:serial_no(Ext),
-                        true = is_binary(SN) end || Ext <- Exts ]
+                [ begin Res = is_binary(_SN = erlmachine:serial_no(Ext)),
+                        Res = true
+                  end || Ext <- [A, B, C, D, E]
+                ]
         end
       },
        { "Inspect serial: rotation",
