@@ -6,7 +6,7 @@ DEPS = erlbox ra syn yamerl jesse
 
 TEST_DEPS = meck
 
-dep_erlbox = git https://github.com/erlmachine/erlbox.git
+dep_erlbox = git https://github.com/erlmachinedev/erlbox.git
 
 dep_ra = git https://github.com/rabbitmq/ra.git v2.2.0
 
